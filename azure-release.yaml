@@ -38,6 +38,9 @@ steps:
         echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
         gpg --import $(pubring.secureFilePath)
         gpg --batch --import $(secring.secureFilePath)
+    env:
+      # Needed for GPG to work on headless Azure agents
+      GPG_TTY: /dev/pts/0
 
   - task: Maven@3
     displayName: 'Maven package and publish'
@@ -49,6 +52,11 @@ steps:
       publishJUnitResults: false
       goals: 'deploy'
       options: '-s $(Pipeline.Workspace)/release-settings.xml -Prelease -Dgpg.passphrase=$(GPG_PASSPHRASE)'
+    env:
+      # Secrets must be extracted explicitly
+      OSSRH_USERNAME: $(OSSRH_USERNAME)
+      OSSRH_PASSWORD: $(OSSRH_PASSWORD)
+      GPG_PASSPHRASE: $(GPG_PASSPHRASE)
 
   - task: Bash@3
     displayName: 'Clean environment'
@@ -58,11 +66,3 @@ steps:
         rm -rf $(pubring.secureFilePath)
         rm -rf $(secring.secureFilePath)
         rm -rf ~/.gnupg
-
-env:
-  # Secrets must be extracted explicitly
-  OSSRH_USERNAME: $(OSSRH_USERNAME)
-  OSSRH_PASSWORD: $(OSSRH_PASSWORD)
-  GPG_PASSPHRASE: $(GPG_PASSPHRASE)
-  # Needed for GPG to work on headless Azure agents
-  GPG_TTY: /dev/pts/0
