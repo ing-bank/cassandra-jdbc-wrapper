@@ -1,3 +1,4 @@
+name: 'Build pipeline'
 trigger:
   batch: true
   branches:
@@ -9,6 +10,7 @@ pool:
 
 steps:
   - task: Maven@3
+    displayName: 'Maven build'
     inputs:
       mavenPomFile: 'pom.xml'
       javaHomeOption: 'JDKVersion'

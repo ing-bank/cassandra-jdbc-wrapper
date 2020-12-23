@@ -1,9 +1,10 @@
+# This workflow is used to update the build status badge in the README file.
 name: CI Workflow
 
 on:
   push:
-    branches-ignore:
-      - '**'
+    branches:
+      - 'release/next'
 
 jobs:
   build:

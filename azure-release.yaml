@@ -1,0 +1,68 @@
+name: 'Release pipeline'
+trigger:
+  batch: true
+  branches:
+    include:
+      - 'release/next'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: SonatypeCredentials
+  - group: GPGKey
+
+steps:
+  - task: DownloadSecureFile@1
+    displayName: 'Get GPG public key'
+    name: pubring
+    inputs:
+      secureFile: pubring.asc
+
+  - task: DownloadSecureFile@1
+    displayName: 'Get GPG private key'
+    name: secring
+    inputs:
+      secureFile: secring.asc
+
+  - task: Bash@3
+    displayName: 'Prepare GPG key to sign artifacts'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo $(tty)
+        ls -la $(pubring.secureFilePath)
+        ls -la $(secring.secureFilePath)
+        mkdir ~/.gnupg
+        chmod -R 700 ~/.gnupg
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+        gpg --import $(pubring.secureFilePath)
+        gpg --batch --import $(secring.secureFilePath)
+
+  - task: Maven@3
+    displayName: 'Maven package and publish'
+    inputs:
+      mavenPomFile: 'pom.xml'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.8'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: false
+      goals: 'deploy'
+      options: '-s $(Pipeline.Workspace)/release-settings.xml -Prelease -Dgpg.passphrase=$(GPG_PASSPHRASE)'
+
+  - task: Bash@3
+    displayName: 'Clean environment'
+    inputs:
+      targetType: 'inline'
+      script: |
+        rm -rf $(pubring.secureFilePath)
+        rm -rf $(secring.secureFilePath)
+        rm -rf ~/.gnupg
+
+env:
+  # Secrets must be extracted explicitly
+  OSSRH_USERNAME: $(OSSRH_USERNAME)
+  OSSRH_PASSWORD: $(OSSRH_PASSWORD)
+  GPG_PASSPHRASE: $(GPG_PASSPHRASE)
+  # Needed for GPG to work on headless Azure agents
+  GPG_TTY: /dev/pts/0
