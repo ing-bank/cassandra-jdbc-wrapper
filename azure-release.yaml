@@ -51,7 +51,7 @@ steps:
       jdkArchitectureOption: 'x64'
       publishJUnitResults: false
       goals: 'deploy'
-      options: '-s $(Pipeline.Workspace)/release-settings.xml -Prelease -Dgpg.passphrase=$(GPG_PASSPHRASE)'
+      options: '-s $(System.DefaultWorkingDirectory)/release-settings.xml -Prelease -Dgpg.passphrase=$(GPG_PASSPHRASE)'
     env:
       # Secrets must be extracted explicitly
       OSSRH_USERNAME: $(OSSRH_USERNAME)
