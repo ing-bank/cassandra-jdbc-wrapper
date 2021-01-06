@@ -14,12 +14,17 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code ASCII} CQL type (corresponding Java type: {@link String}).
+ * <p>CQL type description: US-ASCII character string.</p>
+ */
 public class JdbcAscii extends AbstractJdbcType<String> {
-    private static final Charset US_ASCII = StandardCharsets.US_ASCII;
+
+    /**
+     * Gets a {@code JdbcAscii} instance.
+     */
     public static final JdbcAscii instance = new JdbcAscii();
 
     JdbcAscii() {
@@ -30,11 +35,11 @@ public class JdbcAscii extends AbstractJdbcType<String> {
     }
 
     public int getScale(final String obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final String obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {

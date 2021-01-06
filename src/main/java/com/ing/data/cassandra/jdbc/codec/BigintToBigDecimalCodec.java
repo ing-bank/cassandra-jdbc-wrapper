@@ -25,7 +25,10 @@ import org.apache.cassandra.utils.ByteBufferUtil;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-public class BigintToBigDecimalCodec implements TypeCodec<BigDecimal> {
+/**
+ * Manages the two-way conversion between the CQL type {@link DataTypes#BIGINT} and the Java type {@link BigDecimal}.
+ */
+public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implements TypeCodec<BigDecimal> {
 
     public BigintToBigDecimalCodec() {
     }
@@ -43,33 +46,31 @@ public class BigintToBigDecimalCodec implements TypeCodec<BigDecimal> {
     }
 
     @Override
-    public ByteBuffer encode(final BigDecimal paramT, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramT == null) {
+    public ByteBuffer encode(final BigDecimal value, @NonNull final ProtocolVersion protocolVersion) {
+        if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(paramT.longValue());
+        return ByteBufferUtil.bytes(value.longValue());
     }
 
     @Override
-    public BigDecimal decode(final ByteBuffer paramByteBuffer, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramByteBuffer == null) {
+    public BigDecimal decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+        if (bytes == null) {
             return null;
-
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        final long value = ByteBufferUtil.toLong(paramByteBuffer.duplicate());
+        final long value = ByteBufferUtil.toLong(bytes.duplicate());
         return new BigDecimal(value);
     }
 
     @Override
-    public BigDecimal parse(final String paramString) {
-        return BigDecimal.valueOf(Long.parseLong(paramString));
+    BigDecimal parseNonNull(@NonNull final String value) {
+        return BigDecimal.valueOf(Long.parseLong(value));
     }
 
-    @NonNull
     @Override
-    public String format(final BigDecimal paramT) {
-        return String.valueOf(paramT);
+    String formatNonNull(@NonNull final BigDecimal value) {
+        return String.valueOf(value);
     }
 
 }

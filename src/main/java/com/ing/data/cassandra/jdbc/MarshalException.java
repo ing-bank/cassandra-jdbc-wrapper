@@ -14,11 +14,25 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+/**
+ * An exception thrown during a marshalling process.
+ */
 public class MarshalException extends RuntimeException {
+    /**
+     * Constructs a {@code MarshalException} with a given message.
+     *
+     * @param message A message describing the exception.
+     */
     public MarshalException(final String message) {
         super(message);
     }
 
+    /**
+     * Constructs a {@code MarshalException} with a given message and cause.
+     *
+     * @param message A message describing the exception.
+     * @param cause   The underlying cause of the exception.
+     */
     public MarshalException(final String message, final Throwable cause) {
         super(message, cause);
     }

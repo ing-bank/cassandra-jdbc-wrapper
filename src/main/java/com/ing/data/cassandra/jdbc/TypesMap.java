@@ -17,6 +17,9 @@ package com.ing.data.cassandra.jdbc;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Mapping of Apache Cassandra CQL types to JDBC-equivalent types.
+ */
 public class TypesMap {
     private final static Map<String, AbstractJdbcType<?>> map = new HashMap<>();
 
@@ -38,20 +41,17 @@ public class TypesMap {
         map.put("org.apache.cassandra.db.marshal.UTF8Type", JdbcUTF8.instance);
         map.put("org.apache.cassandra.db.marshal.UUIDType", JdbcUUID.instance);
 
-        // Cassandra 2.x types
         map.put("org.apache.cassandra.db.marshal.ascii", JdbcAscii.instance);
         map.put("org.apache.cassandra.db.marshal.bigint", JdbcLong.instance);
         map.put("org.apache.cassandra.db.marshal.blob", JdbcBytes.instance);
         map.put("org.apache.cassandra.db.marshal.boolean", JdbcBoolean.instance);
         map.put("org.apache.cassandra.db.marshal.counter", JdbcLong.instance);
+        map.put("org.apache.cassandra.db.marshal.date", JdbcDate.instance);
         map.put("org.apache.cassandra.db.marshal.decimal", JdbcDecimal.instance);
         map.put("org.apache.cassandra.db.marshal.double", JdbcDouble.instance);
         map.put("org.apache.cassandra.db.marshal.float", JdbcFloat.instance);
         map.put("org.apache.cassandra.db.marshal.inet", JdbcInetAddress.instance);
         map.put("org.apache.cassandra.db.marshal.int", JdbcInt32.instance);
-        /*list
-        map
-        set*/
         map.put("org.apache.cassandra.db.marshal.text", JdbcUTF8.instance);
         map.put("org.apache.cassandra.db.marshal.timestamp", JdbcDate.instance);
         map.put("org.apache.cassandra.db.marshal.uuid", JdbcUUID.instance);
@@ -60,14 +60,29 @@ public class TypesMap {
         map.put("org.apache.cassandra.db.marshal.varint", JdbcInteger.instance);
         map.put("org.apache.cassandra.db.marshal.udt", JdbcUdt.instance);
         map.put("org.apache.cassandra.db.marshal.tuple", JdbcTuple.instance);
+
+        // TODO: add the types below:
+        //       map.put("org.apache.cassandra.db.marshal.DurationType", JdbcDuration.instance);
+        //       map.put("org.apache.cassandra.db.marshal.duration", JdbcDuration.instance);
+        //       map.put("org.apache.cassandra.db.marshal.ShortType", JdbcShort.instance);
+        //       map.put("org.apache.cassandra.db.marshal.smallint", JdbcShort.instance);
+        //       map.put("org.apache.cassandra.db.marshal.TimeType", JdbcTime.instance);
+        //       map.put("org.apache.cassandra.db.marshal.time", JdbcTime.instance);
+        //       map.put("org.apache.cassandra.db.marshal.ByteType", JdbcByte.instance);
+        //       map.put("org.apache.cassandra.db.marshal.tinyint", JdbcByte.instance);
     }
 
+    /**
+     * Gets the JDBC-equivalent type for the given CQL type.
+     *
+     * @param comparator The CQL type.
+     * @return The JDBC-equivalent type for the given CQL type.
+     */
     public static AbstractJdbcType<?> getTypeForComparator(final String comparator) {
-        // If not fully qualified, assume it's the short name for a built-in.
+        // If not fully qualified, assume it's the short name for a built-in type.
         if ((comparator != null) && (!comparator.contains("."))) {
             return map.getOrDefault("org.apache.cassandra.db.marshal." + comparator.toLowerCase(), JdbcOther.instance);
         }
-
         return map.getOrDefault(comparator, JdbcOther.instance);
     }
 }

@@ -16,7 +16,18 @@ package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code FLOAT} CQL type (corresponding Java type: {@link Float}).
+ * <p>CQL type description: 32-bit IEEE-754 floating point.</p>
+ */
 public class JdbcFloat extends AbstractJdbcType<Float> {
+
+    private static final int FLOAT_SCALE = 40;
+    private static final int FLOAT_PRECISION = 7;
+
+    /**
+     * Gets a {@code JdbcFloat} instance.
+     */
     public static final JdbcFloat instance = new JdbcFloat();
 
     JdbcFloat() {
@@ -27,11 +38,11 @@ public class JdbcFloat extends AbstractJdbcType<Float> {
     }
 
     public int getScale(final Float obj) {
-        return 40;
+        return FLOAT_SCALE;
     }
 
     public int getPrecision(final Float obj) {
-        return 7;
+        return FLOAT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -65,4 +76,5 @@ public class JdbcFloat extends AbstractJdbcType<Float> {
     public Object decompose(final Float value) {
         return value;
     }
+
 }

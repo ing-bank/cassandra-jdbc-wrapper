@@ -14,9 +14,18 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+/**
+ * JDBC description of {@code COUNTER} CQL type (corresponding Java type: {@link Long}).
+ * <p>CQL type description: distributed counter value (64-bit long).</p>
+ */
 public class JdbcCounterColumn extends JdbcLong {
+
+    /**
+     * Gets a {@code JdbcCounterColumn} instance.
+     */
     public static final JdbcCounterColumn instance = new JdbcCounterColumn();
 
     JdbcCounterColumn() {
     }
+
 }

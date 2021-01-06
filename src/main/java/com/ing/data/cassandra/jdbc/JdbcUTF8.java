@@ -16,7 +16,15 @@ package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code VARCHAR} CQL type (corresponding Java type: {@link String}).
+ * <p>CQL type description: UTF-8 encoded string.</p>
+ */
 public class JdbcUTF8 extends AbstractJdbcType<String> {
+
+    /**
+     * Gets a {@code JdbcUTF8} instance.
+     */
     public static final JdbcUTF8 instance = new JdbcUTF8();
 
     public JdbcUTF8() {
@@ -27,11 +35,11 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     }
 
     public int getScale(final String obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final String obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -69,4 +77,5 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     public Object decompose(final String value) {
         return value;
     }
+
 }

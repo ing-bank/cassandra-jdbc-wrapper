@@ -14,6 +14,10 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.type.DataType;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -29,14 +33,58 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 
 /**
- * Abstract result set class to hold all the unimplemented methods.
+ * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
+ * methods of {@link java.sql.ResultSet} interface. It also provides helper methods for CQL type management in the
+ * implementation of {@link java.sql.ResultSet} interface.
  */
 abstract class AbstractResultSet {
+
+    /**
+     * Checks whether the {@code i}th column has the given CQL data type.
+     *
+     * @param columnIndex   The column index (first column is 1).
+     * @param type          The data type to check.
+     * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     */
+    boolean isCqlType(final int columnIndex, @NonNull final DataTypeEnum type) {
+        final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnIndex)), "<");
+        return type.cqlType.equalsIgnoreCase(columnType);
+    }
+
+    /**
+     * Checks whether the column with the given name has the given CQL data type.
+     *
+     * @param columnLabel   The column name.
+     * @param type          The data type to check.
+     * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     */
+    boolean isCqlType(final String columnLabel, @NonNull final DataTypeEnum type) {
+        final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnLabel)), "<");
+        return type.cqlType.equalsIgnoreCase(columnType);
+    }
+
+    /**
+     * Gets the CQL type of the {@code i}th column.
+     *
+     * @param columnIndex The column index (first column is 1).
+     * @return The CQL data type of the column.
+     */
+    abstract DataType getCqlDataType(final int columnIndex);
+
+    /**
+     * Gets the CQL type of the column with the given name.
+     *
+     * @param columnLabel The column name.
+     * @return The CQL data type of the column.
+     */
+    abstract DataType getCqlDataType(final String columnLabel);
+
     public void cancelRowUpdates() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -45,35 +93,35 @@ abstract class AbstractResultSet {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Array getArray(final int arg0) throws SQLException {
+    public Array getArray(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Array getArray(final String arg0) throws SQLException {
+    public Array getArray(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public InputStream getAsciiStream(final int arg0) throws SQLException {
+    public InputStream getAsciiStream(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public InputStream getAsciiStream(final String arg0) throws SQLException {
+    public InputStream getAsciiStream(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Reader getCharacterStream(final int arg0) throws SQLException {
+    public Reader getCharacterStream(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Reader getCharacterStream(final String arg0) throws SQLException {
+    public Reader getCharacterStream(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Clob getClob(final int arg0) throws SQLException {
+    public Clob getClob(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Clob getClob(final String arg0) throws SQLException {
+    public Clob getClob(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -81,35 +129,35 @@ abstract class AbstractResultSet {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Reader getNCharacterStream(final int arg0) throws SQLException {
+    public Reader getNCharacterStream(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Reader getNCharacterStream(final String arg0) throws SQLException {
+    public Reader getNCharacterStream(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public NClob getNClob(final int arg0) throws SQLException {
+    public NClob getNClob(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public NClob getNClob(final String arg0) throws SQLException {
+    public NClob getNClob(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public String getNString(final int arg0) throws SQLException {
+    public String getNString(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public String getNString(final String arg0) throws SQLException {
+    public String getNString(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Object getObject(final int arg0, final Map<String, Class<?>> arg1) throws SQLException {
+    public Object getObject(final int columnIndex, final Map<String, Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Object getObject(final String arg0, final Map<String, Class<?>> arg1) throws SQLException {
+    public Object getObject(final String columnLabel, final Map<String, Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -121,27 +169,27 @@ abstract class AbstractResultSet {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Ref getRef(final int arg0) throws SQLException {
+    public Ref getRef(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public Ref getRef(final String arg0) throws SQLException {
+    public Ref getRef(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public SQLXML getSQLXML(final int arg0) throws SQLException {
+    public SQLXML getSQLXML(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public SQLXML getSQLXML(final String arg0) throws SQLException {
+    public SQLXML getSQLXML(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public InputStream getUnicodeStream(final int arg0) throws SQLException {
+    public InputStream getUnicodeStream(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public InputStream getUnicodeStream(final String arg0) throws SQLException {
+    public InputStream getUnicodeStream(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -177,283 +225,287 @@ abstract class AbstractResultSet {
      * All the update methods are unsupported, it requires a separate statement in Cassandra.
      */
 
-    public void updateArray(final int arg0, final Array arg1) throws SQLException {
+    public void updateArray(final int columnIndex, final Array x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateArray(final String arg0, final Array arg1) throws SQLException {
+    public void updateArray(final String columnLabel, final Array x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final int arg0, final InputStream arg1) throws SQLException {
+    public void updateAsciiStream(final int columnIndex, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final int arg0, final InputStream arg1, final int arg2) throws SQLException {
+    public void updateAsciiStream(final int columnLabel, final InputStream x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final int arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateAsciiStream(final int columnIndex, final InputStream x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final String arg0, final InputStream arg1) throws SQLException {
+    public void updateAsciiStream(final String columnLabel, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final String arg0, final InputStream arg1, final int arg2) throws SQLException {
+    public void updateAsciiStream(final String columnLabel, final InputStream x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateAsciiStream(final String arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateAsciiStream(final String columnLabel, final InputStream x, final long length)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBigDecimal(final int arg0, final BigDecimal arg1) throws SQLException {
+    public void updateBigDecimal(final int columnIndex, final BigDecimal x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBigDecimal(final String arg0, final BigDecimal arg1) throws SQLException {
+    public void updateBigDecimal(final String columnLabel, final BigDecimal x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final int arg0, final InputStream arg1) throws SQLException {
+    public void updateBinaryStream(final int columnIndex, final InputStream length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final int arg0, final InputStream arg1, final int arg2) throws SQLException {
+    public void updateBinaryStream(final int columnIndex, final InputStream x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final int arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateBinaryStream(final int columnIndex, final InputStream x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final String arg0, final InputStream arg1) throws SQLException {
+    public void updateBinaryStream(final String columnLabel, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final String arg0, final InputStream arg1, final int arg2) throws SQLException {
+    public void updateBinaryStream(final String columnLabel, final InputStream x, final int length)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBinaryStream(final String arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateBinaryStream(final String columnLabel, final InputStream x, final long length)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final int arg0, final Blob arg1) throws SQLException {
+    public void updateBlob(final int columnIndex, final Blob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final int arg0, final InputStream arg1) throws SQLException {
+    public void updateBlob(final int columnIndex, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final int arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateBlob(final int columnIndex, final InputStream x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final String arg0, final Blob arg1) throws SQLException {
+    public void updateBlob(final String columnLabel, final Blob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final String arg0, final InputStream arg1) throws SQLException {
+    public void updateBlob(final String columnLabel, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBlob(final String arg0, final InputStream arg1, final long arg2) throws SQLException {
+    public void updateBlob(final String columnLabel, final InputStream x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBoolean(final int arg0, final boolean arg1) throws SQLException {
+    public void updateBoolean(final int columnIndex, final boolean x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBoolean(final String arg0, final boolean arg1) throws SQLException {
+    public void updateBoolean(final String columnLabel, final boolean x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateByte(final int arg0, final byte arg1) throws SQLException {
+    public void updateByte(final int columnIndex, final byte x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateByte(final String arg0, final byte arg1) throws SQLException {
+    public void updateByte(final String columnLabel, final byte x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBytes(final int arg0, final byte[] arg1) throws SQLException {
+    public void updateBytes(final int columnIndex, final byte[] x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateBytes(final String arg0, final byte[] arg1) throws SQLException {
+    public void updateBytes(final String columnLabel, final byte[] x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final int arg0, final Reader arg1) throws SQLException {
+    public void updateCharacterStream(final int columnIndex, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final int arg0, final Reader arg1, final int arg2) throws SQLException {
+    public void updateCharacterStream(final int columnIndex, final Reader x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final int arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateCharacterStream(final int columnIndex, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final String arg0, final Reader arg1) throws SQLException {
+    public void updateCharacterStream(final String columnLabel, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final String arg0, final Reader arg1, final int arg2) throws SQLException {
+    public void updateCharacterStream(final String columnLabel, final Reader x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateCharacterStream(final String arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateCharacterStream(final String columnLabel, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final int arg0, final Clob arg1) throws SQLException {
+    public void updateClob(final int columnIndex, final Clob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final int arg0, final Reader arg1) throws SQLException {
+    public void updateClob(final int columnIndex, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final int arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateClob(final int columnIndex, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final String arg0, final Clob arg1) throws SQLException {
+    public void updateClob(final String columnLabel, final Clob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final String arg0, final Reader arg1) throws SQLException {
+    public void updateClob(final String columnLabel, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateClob(final String arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateClob(final String columnLabel, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateDate(final int arg0, final Date arg1) throws SQLException {
+    public void updateDate(final int columnIndex, final Date x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateDate(final String arg0, final Date arg1) throws SQLException {
+    public void updateDate(final String columnLabel, final Date x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateDouble(final int arg0, final double arg1) throws SQLException {
+    public void updateDouble(final int columnIndex, final double x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateDouble(final String arg0, final double arg1) throws SQLException {
+    public void updateDouble(final String columnLabel, final double x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateFloat(final int arg0, final float arg1) throws SQLException {
+    public void updateFloat(final int columnIndex, final float x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateFloat(final String arg0, final float arg1) throws SQLException {
+    public void updateFloat(final String columnLabel, final float x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateInt(final int arg0, final int arg1) throws SQLException {
+    public void updateInt(final int columnIndex, final int x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateInt(final String arg0, final int arg1) throws SQLException {
+    public void updateInt(final String columnLabel, final int x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateLong(final int arg0, final long arg1) throws SQLException {
+    public void updateLong(final int columnIndex, final long x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateLong(final String arg0, final long arg1) throws SQLException {
+    public void updateLong(final String columnLabel, final long x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNCharacterStream(final int arg0, final Reader arg1) throws SQLException {
+    public void updateNCharacterStream(final int columnIndex, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNCharacterStream(final int arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateNCharacterStream(final int columnIndex, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNCharacterStream(final String arg0, final Reader arg1) throws SQLException {
+    public void updateNCharacterStream(final String columnLabel, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNCharacterStream(final String arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateNCharacterStream(final String columnLabel, final Reader x, final long length)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final int arg0, final NClob arg1) throws SQLException {
+    public void updateNClob(final int columnIndex, final NClob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final int arg0, final Reader arg1) throws SQLException {
+    public void updateNClob(final int columnIndex, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final int arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateNClob(final int columnIndex, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final String arg0, final NClob arg1) throws SQLException {
+    public void updateNClob(final String columnLabel, final NClob x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final String arg0, final Reader arg1) throws SQLException {
+    public void updateNClob(final String columnLabel, final Reader x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNClob(final String arg0, final Reader arg1, final long arg2) throws SQLException {
+    public void updateNClob(final String columnLabel, final Reader x, final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNString(final int arg0, final String arg1) throws SQLException {
+    public void updateNString(final int columnIndex, final String x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNString(final String arg0, final String arg1) throws SQLException {
+    public void updateNString(final String columnLabel, final String x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNull(final int arg0) throws SQLException {
+    public void updateNull(final int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateNull(final String arg0) throws SQLException {
+    public void updateNull(final String columnLabel) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateObject(final int arg0, final Object arg1) throws SQLException {
+    public void updateObject(final int columnIndex, final Object x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateObject(final int arg0, final Object arg1, final int arg2) throws SQLException {
+    public void updateObject(final int columnIndex, final Object x, final int scaleOrLength) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateObject(final String arg0, final Object arg1) throws SQLException {
+    public void updateObject(final String columnLabel, final Object x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateObject(final String arg0, final Object arg1, final int arg2) throws SQLException {
+    public void updateObject(final String columnLabel, final Object x, final int scaleOrLength) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateRef(final int arg0, final Ref arg1) throws SQLException {
+    public void updateRef(final int columnIndex, final Ref x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateRef(final String arg0, final Ref arg1) throws SQLException {
+    public void updateRef(final String columnLabel, final Ref x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -461,51 +513,51 @@ abstract class AbstractResultSet {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateRowId(final int arg0, final RowId arg1) throws SQLException {
+    public void updateRowId(final int columnIndex, final RowId x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateRowId(final String arg0, final RowId arg1) throws SQLException {
+    public void updateRowId(final String columnLabel, final RowId x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateShort(final int arg0, final short arg1) throws SQLException {
+    public void updateShort(final int columnIndex, final short x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateShort(final String arg0, final short arg1) throws SQLException {
+    public void updateShort(final String columnLabel, final short x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateSQLXML(final int arg0, final SQLXML arg1) throws SQLException {
+    public void updateSQLXML(final int columnIndex, final SQLXML x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateSQLXML(final String arg0, final SQLXML arg1) throws SQLException {
+    public void updateSQLXML(final String columnLabel, final SQLXML x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateString(final int arg0, final String arg1) throws SQLException {
+    public void updateString(final int columnIndex, final String x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateString(final String arg0, final String arg1) throws SQLException {
+    public void updateString(final String columnLabel, final String x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateTime(final int arg0, final Time arg1) throws SQLException {
+    public void updateTime(final int columnIndex, final Time x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateTime(final String arg0, final Time arg1) throws SQLException {
+    public void updateTime(final String columnLabel, final Time x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateTimestamp(final int arg0, final Timestamp arg1) throws SQLException {
+    public void updateTimestamp(final int columnIndex, final Timestamp x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void updateTimestamp(final String arg0, final Timestamp arg1) throws SQLException {
+    public void updateTimestamp(final String columnLabel, final Timestamp x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 }

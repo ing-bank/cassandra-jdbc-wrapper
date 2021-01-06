@@ -38,55 +38,61 @@ import static com.ing.data.cassandra.jdbc.Utils.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
 
 /**
- * The Class CassandraDriver.
+ * The Cassandra driver implementation.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class CassandraDriver implements Driver {
-    public static final int DVR_MAJOR_VERSION = 2;
-    public static final int DVR_MINOR_VERSION = 1;
-    public static final int DVR_PATCH_VERSION = 6;
-    public static final String DVR_NAME = "Datastax JDBC Driver";
+
+    /**
+     * The JDBC driver major version.
+     */
+    public static final int DRIVER_MAJOR_VERSION = 4;
+    /**
+     * The JDBC driver minor version.
+     */
+    public static final int DRIVER_MINOR_VERSION = 4;
+    /**
+     * The JDBC driver patch version.
+     */
+    public static final int DRIVER_PATCH_VERSION = 0;
+    /**
+     * The JDBC driver name.
+     */
+    public static final String DRIVER_NAME = "Cassandra JDBC Driver";
 
     static {
         // Register the CassandraDriver with DriverManager.
         try {
-            final CassandraDriver driverInst = new CassandraDriver();
-            DriverManager.registerDriver(driverInst);
+            final CassandraDriver driverInstance = new CassandraDriver();
+            DriverManager.registerDriver(driverInstance);
         } catch (final SQLException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    // Caches Sessions so that multiple CassandraConnections created with the same parameters use the same Session.
+    // Caching sessions so that multiple CassandraConnections created with the same parameters use the same Session.
     private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = CacheBuilder.newBuilder()
         .build(new CacheLoader<Map<String, String>, SessionHolder>() {
                    @Override
-                   public SessionHolder load(@Nonnull final Map<String, String> params)
-                       throws Exception {
+                   public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
                        return new SessionHolder(params, sessionsCache);
                    }
                }
         );
 
-    /**
-     * Method to validate whether provided connection url matches with pattern or not.
-     */
     @Override
     public boolean acceptsURL(final String url) {
         return url.startsWith(PROTOCOL);
     }
 
-    /**
-     * Method to return connection instance for given connection url and connection props.
-     */
     @Override
-    public Connection connect(final String url, final Properties props) throws SQLException {
+    public Connection connect(final String url, final Properties properties) throws SQLException {
         if (acceptsURL(url)) {
             final ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
-
-            final Enumeration<Object> keys = props.keys();
+            final Enumeration<Object> keys = properties.keys();
             while (keys.hasMoreElements()) {
                 final String key = (String) keys.nextElement();
-                params.put(key, props.getProperty(key));
+                params.put(key, properties.getProperty(key));
             }
             params.put(SessionHolder.URL_KEY, url);
 
@@ -94,48 +100,43 @@ public class CassandraDriver implements Driver {
 
             try {
                 while (true) {
-                    // Get (or create) the corresponding Session from the cache
-                    final SessionHolder sessionHolder = sessionsCache.get(cacheKey);
+                    // Get (or create) the corresponding Session from the cache.
+                    final SessionHolder sessionHolder = this.sessionsCache.get(cacheKey);
 
-                    if (sessionHolder.acquire())
+                    if (sessionHolder.acquire()) {
                         return new CassandraConnection(sessionHolder);
-                    // If we failed to acquire, it means we raced with the release of the last reference to the session
-                    // (which also removes it from the cache).
+                    }
+                    // If we failed to acquire a connection, it means we raced with the release of the last reference
+                    // to the session (which also removes it from the cache, see SessionHolder class for details).
                     // Loop to try again, that will cause the cache to create a new instance.
                 }
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
-                if (cause instanceof SQLException)
+                if (cause instanceof SQLException) {
                     throw (SQLException) cause;
-                throw new SQLNonTransientConnectionException("Unexpected error while creating connection", e);
+                }
+                throw new SQLNonTransientConnectionException("Unexpected error while creating connection.", e);
             }
         }
-        return null; // signal it is the wrong driver for this protocol:subprotocol
+        // Signal it is the wrong driver for this <protocol:sub_protocol>.
+        return null;
     }
 
-    /**
-     * Returns default major version.
-     */
     @Override
     public int getMajorVersion() {
-        return DVR_MAJOR_VERSION;
+        return DRIVER_MAJOR_VERSION;
     }
 
-    /**
-     * Returns default minor version.
-     */
     @Override
     public int getMinorVersion() {
-        return DVR_MINOR_VERSION;
+        return DRIVER_MINOR_VERSION;
     }
 
-    /**
-     * Returns default driver property info object.
-     */
     @Override
     public DriverPropertyInfo[] getPropertyInfo(final String url, Properties props) {
-        if (props == null) props = new Properties();
-
+        if (props == null) {
+            props = new Properties();
+        }
         final DriverPropertyInfo[] info = new DriverPropertyInfo[2];
 
         info[0] = new DriverPropertyInfo(TAG_USER, props.getProperty(TAG_USER));
@@ -148,14 +149,18 @@ public class CassandraDriver implements Driver {
     }
 
     /**
-     * Returns true, if it is jdbc compliant.
+     * Reports whether this driver is a genuine JDBC Compliant™ driver. A driver may only report {@code true} here if
+     * it passes the JDBC compliance tests; otherwise it is required to return {@code false}.
+     * <p>
+     *     For Cassandra, this is not possible as it is not SQL92 compliant (among others).
+     * </p>
      */
     @Override
     public boolean jdbcCompliant() {
         return false;
     }
 
-    @SuppressWarnings("override")
+    @Override
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

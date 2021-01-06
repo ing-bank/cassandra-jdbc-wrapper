@@ -14,12 +14,21 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+/**
+ * JDBC description of {@code UUID} CQL type (corresponding Java type: {@link UUID}).
+ * <p>CQL type description: a UUID in standard UUID format.</p>
+ */
 public class JdbcUUID extends AbstractJdbcUUID {
+
+    /**
+     * Gets a {@code JdbcUUID} instance.
+     */
     public static final JdbcUUID instance = new JdbcUUID();
 
     JdbcUUID() {
@@ -38,17 +47,15 @@ public class JdbcUUID extends AbstractJdbcUUID {
             return StringUtils.EMPTY;
         }
         if (bytes.remaining() != 16) {
-            throw new MarshalException("UUIDs must be exactly 16 bytes");
+            throw new MarshalException("UUIDs must be exactly 16 bytes, but found: " + bytes.remaining());
         }
-
         return compose(bytes).toString();
     }
 
-    public UUID compose(final Object obj) {
+    public UUID compose(@NonNull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
-    @Override
     public Object decompose(final UUID obj) {
         return obj;
     }

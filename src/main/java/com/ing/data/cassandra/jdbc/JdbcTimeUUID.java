@@ -14,19 +14,30 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.util.UUID;
 
+/**
+ * JDBC description of {@code TIMEUUID} CQL type (corresponding Java type: {@link UUID}).
+ * <p>CQL type description: version 1 UUID only.</p>
+ */
 public class JdbcTimeUUID extends AbstractJdbcUUID {
+
+    /**
+     * Gets a {@code JdbcTimeUUID} instance.
+     */
     public static final JdbcTimeUUID instance = new JdbcTimeUUID();
 
     JdbcTimeUUID() {
     }
 
-    public UUID compose(final Object obj) {
+    public UUID compose(@NonNull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
-    public Object decompose(final UUID value) {
+    public Object decompose(@NonNull final UUID value) {
         return value.toString();
     }
+
 }

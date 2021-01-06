@@ -24,40 +24,38 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Metadata describing the columns returned in a {@link CassandraResultSet} or a
- * {@link CassandraPreparedStatement}.
+ * Metadata describing the columns returned in a {@link CassandraResultSet} or a {@link CassandraPreparedStatement}.
  * <p>
- * A {@code columnDefinitions}} instance is mainly a list of
- * {@code ColumnsDefinitions.Definition}. The definitions or metadata for a column
- * can be accessed either by:
- * <ul>
- * <li>index (indexed from 0)</li>
- * <li>name</li>
- * </ul>
+ *     A {@code ColumnDefinitions} instance is mainly a list of {@link Definition}. The definitions or metadata for a
+ *     column can be accessed either by:
+ *     <ul>
+ *         <li>index (indexed from 0)</li>
+ *         <li>name</li>
+ *     </ul>
+ * </p>
  * <p>
- * When accessed by name, column selection is case insensitive. In case multiple
- * columns only differ by the case of their name, then the column returned with
- * be the first column that has been defined in CQL without forcing case sensitivity
- * (that is, it has either been defined without quotes or is fully lowercase).
- * If none of the columns have been defined in this manner, the first column matching
- * (with case insensitivity) is returned. You can force the case of a selection
- * by double quoting the name.
+ *     When accessed by name, column selection is case insensitive. In case multiple columns only differ by the case of
+ *     their name, then the column returned will be the first column that has been defined in CQL without forcing case
+ *     sensitivity (that is, it has either been defined without quotes or is fully lowercase). If none of the columns
+ *     have been defined in this manner, the first column matching (with case insensitivity) is returned. You can force
+ *     the case of a selection by using double quotes (") around the name.
+ * </p>
  * <p>
- * For example:
- * <ul>
- * <li>If {@code cd} contains column {@code fOO}, then {@code cd.contains("foo")},
- * {@code cd.contains("fOO")} and {@code cd.contains("Foo")} will return {@code true}.</li>
- * <li>If {@code cd} contains both {@code foo} and {@code FOO} then:
- * <ul>
- * <li>{@code cd.getType("foo")}, {@code cd.getType("fOO")} and {@code cd.getType("FOO")}
- * will all match column {@code foo}.</li>
- * <li>{@code cd.getType("\"FOO\"")} will match column {@code FOO}</li>
- * </ul>
- * </ul>
- * Note that the preceding rules mean that if a {@code ColumnDefinitions} object
- * contains multiple occurrences of the exact same name (be it the same column
- * multiple times or columns from different tables with the same name), you
- * will have to use selection by index to disambiguate.
+ *     For example, considering {@code cd} an instance of {@code ColumnDefinitions}:
+ *     <ul>
+ *         <li>if {@code cd} contains column {@code bAR}, then {@code cd.contains("bar")}, {@code cd.contains("bAR")}
+ *         and {@code cd.contains("Bar")} will return {@code true}</li>
+ *         <li>if {@code cd} contains both {@code foo} and {@code FOO} then:
+ *         <ul>
+ *             <li>{@code cd.getType("foo")}, {@code cd.getType("fOO")} and {@code cd.getType("FOO")} will all match
+ *             the column {@code foo}</li>
+ *             <li>{@code cd.getType("\"FOO\"")} will match the column {@code FOO}</li>
+ *         </ul>
+ *     </ul>
+ *     Note that the preceding rules mean that if a {@code ColumnDefinitions} object contains multiple occurrences of
+ *     the exact same name (either the same column multiple times or columns from different tables with the same name),
+ *     you will have to use selection by index to disambiguate.
+ * </p>
  */
 public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition> {
 
@@ -67,150 +65,148 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
     /**
      * Constructor.
      *
-     * @param defs Array of columns definitions.
+     * @param definitions Array of columns definitions.
      */
-    public ColumnDefinitions(final Definition[] defs) {
-        this.byIdx = defs;
-        this.byName = new HashMap<>(defs.length);
+    public ColumnDefinitions(final Definition[] definitions) {
+        this.byIdx = definitions;
+        this.byName = new HashMap<>(definitions.length);
 
-        for (int i = 0; i < defs.length; i++) {
+        for (int i = 0; i < definitions.length; i++) {
             // Be optimistic, 99% of the time, previous will be null.
-            final int[] previous = this.byName.put(defs[i].name.toLowerCase(), new int[]{i});
+            final int[] previous = this.byName.put(definitions[i].name.toLowerCase(), new int[]{i});
             if (previous != null) {
                 final int[] indexes = new int[previous.length + 1];
                 System.arraycopy(previous, 0, indexes, 0, previous.length);
                 indexes[indexes.length - 1] = i;
-                this.byName.put(defs[i].name.toLowerCase(), indexes);
+                this.byName.put(definitions[i].name.toLowerCase(), indexes);
             }
         }
     }
 
     /**
-     * Returns the number of columns described by this {@code Columns}
-     * instance.
+     * Returns the number of columns described by this {@code ColumnDefinitions} instance.
      *
-     * @return the number of columns described by this metadata.
+     * @return The number of columns described by these metadata.
      */
     public int size() {
-        return byIdx.length;
+        return this.byIdx.length;
     }
 
     /**
-     * Returns whether this metadata contains a given name.
+     * Returns whether these metadata contains a given name.
      *
-     * @param name the name to check.
-     * @return {@code true} if this metadata contains the column named {@code name},
-     * {@code false} otherwise.
+     * @param name The name to check.
+     * @return {@code true} if these metadata contains the column named {@code name}, {@code false} otherwise.
      */
     public boolean contains(final String name) {
         return findAllIdx(name) != null;
     }
 
     /**
-     * The first index in this metadata of the provided name, if present.
+     * Returns the first index in these metadata of the provided column name, if present.
      *
-     * @param name the name of the column.
-     * @return the index of the first occurrence of {@code name} in this metadata if
-     * {@code contains(name)}, -1 otherwise.
+     * @param name The name of the column.
+     * @return The index of the first occurrence of the column name in these metadata if present, -1 otherwise.
      */
     public int getIndexOf(final String name) {
         return findFirstIdx(name);
     }
 
     /**
-     * Returns an iterator over the {@link Definition} contained in this metadata.
+     * Returns an iterator over the {@link Definition} contained in these metadata.
      * <p>
-     * The order of the iterator will be the one of this metadata.
+     *     The order of the iterator will be the one of these metadata.
+     * </p>
      *
-     * @return an iterator over the {@link Definition} contained in this metadata.
+     * @return An iterator over the {@link Definition} contained in these metadata.
      */
     @Override
     @Nonnull
     public Iterator<Definition> iterator() {
-        return Arrays.asList(byIdx).iterator();
+        return Arrays.asList(this.byIdx).iterator();
     }
 
     /**
-     * Returns a list containing all the definitions of this metadata in order.
+     * Returns a list containing all the definitions of these metadata ordered by index.
      *
-     * @return a list of the {@link Definition} contained in this metadata.
+     * @return A list of the {@link Definition} contained in these metadata.
      */
     public List<Definition> asList() {
-        return Arrays.asList(byIdx);
+        return Arrays.asList(this.byIdx);
     }
 
     /**
-     * Returns the name of the {@code i}th column in this metadata.
+     * Returns the name of the {@code i}th column in these metadata.
      *
-     * @param i the index in this metadata.
-     * @return the name of the {@code i}th column in this metadata.
-     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}
+     * @param i The index of the column in these metadata (the first column is 0).
+     * @return The name of the {@code i}th column in these metadata.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public String getName(final int i) {
-        return byIdx[i].name;
+        return this.byIdx[i].name;
     }
 
     /**
-     * Returns the type of the {@code i}th column in this metadata.
+     * Returns the type of the {@code i}th column in these metadata.
      *
-     * @param i the index in this metadata.
-     * @return the type of the {@code i}th column in this metadata.
-     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}
+     * @param i The index of the column in these metadata (the first column is 0).
+     * @return The type of the {@code i}th column in these metadata.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public DataType getType(final int i) {
         return byIdx[i].type;
     }
 
     /**
-     * Returns the type of the first occurrence of {@code name} in this metadata.
+     * Returns the type of the first occurrence of the column {@code name} in these metadata.
      *
-     * @param name the name of the column.
-     * @return the type of (the first occurrence of) {@code name} in this metadata.
-     * @throws IllegalArgumentException if {@code name} is not in this metadata.
+     * @param name The name of the column.
+     * @return The type of (the first occurrence of) the column {@code name} in these metadata.
+     * @throws IllegalArgumentException if {@code name} is not in these metadata.
      */
     public DataType getType(final String name) {
         return getType(getFirstIdx(name));
     }
 
     /**
-     * Returns the keyspace of the {@code i}th column in this metadata.
+     * Returns the keyspace of the {@code i}th column in these metadata.
      *
-     * @param i the index in this metadata.
-     * @return the keyspace of the {@code i}th column in this metadata.
-     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}
+     * @param i The index of the column in these metadata (the first column is 0).
+     * @return The keyspace of the {@code i}th column in these metadata.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public String getKeyspace(final int i) {
-        return byIdx[i].keyspace;
+        return this.byIdx[i].keyspace;
     }
 
     /**
-     * Returns the keyspace of the first occurrence of {@code name} in this metadata.
+     * Returns the keyspace of the first occurrence of the column {@code name} in these metadata.
      *
-     * @param name the name of the column.
-     * @return the keyspace of (the first occurrence of) column {@code name} in this metadata.
-     * @throws IllegalArgumentException if {@code name} is not in this metadata.
+     * @param name The name of the column.
+     * @return The keyspace of (the first occurrence of) the column {@code name} in these metadata.
+     * @throws IllegalArgumentException if {@code name} is not in these metadata.
      */
     public String getKeyspace(final String name) {
         return getKeyspace(getFirstIdx(name));
     }
 
     /**
-     * Returns the table of the {@code i}th column in this metadata.
+     * Returns the table name of the {@code i}th column in these metadata.
      *
-     * @param i the index in this metadata.
-     * @return the table of the {@code i}th column in this metadata.
-     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}
+     * @param i The index of the column in these metadata (the first column is 0).
+     * @return The table name of the {@code i}th column in these metadata.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public String getTable(final int i) {
-        return byIdx[i].table;
+        return this.byIdx[i].table;
     }
 
     /**
-     * Returns the table of first occurrence of {@code name} in this metadata.
+     * Returns the table name of the first occurrence of the column {@code name} in these metadata.
      *
-     * @param name the name of the column.
-     * @return the table of (the first occurrence of) column {@code name} in this metadata.
-     * @throws IllegalArgumentException if {@code name} is not in this metadata.
+     * @param name The name of the column.
+     * @return The table name of (the first occurrence of) the column {@code name} in these metadata.
+     * @throws IllegalArgumentException if {@code name} is not in these metadata.
      */
     public String getTable(final String name) {
         return getTable(getFirstIdx(name));
@@ -221,8 +217,9 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         final StringBuilder sb = new StringBuilder();
         sb.append("Columns[");
         for (int i = 0; i < size(); i++) {
-            if (i != 0)
+            if (i != 0) {
                 sb.append(", ");
+            }
             final Definition def = byIdx[i];
             sb.append(def.name).append('(').append(def.type).append(')');
         }
@@ -232,7 +229,11 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
 
     int findFirstIdx(final String name) {
         final int[] indexes = findAllIdx(name);
-        return indexes == null ? -1 : indexes[0];
+        if (indexes == null) {
+            return -1;
+        } else {
+            return indexes[0];
+        }
     }
 
     int[] findAllIdx(String name) {
@@ -242,15 +243,15 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
             caseSensitive = true;
         }
 
-        final int[] indexes = byName.get(name.toLowerCase());
+        final int[] indexes = this.byName.get(name.toLowerCase());
         if (!caseSensitive || indexes == null) {
             return indexes;
         }
 
-        // First, optimistic and assume all are matching
+        // First, optimistic and assume all are matching.
         int nbMatch = 0;
         for (final int index : indexes) {
-            if (name.equals(byIdx[index].name)) {
+            if (name.equals(this.byIdx[index].name)) {
                 nbMatch++;
             }
         }
@@ -262,7 +263,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         final int[] result = new int[nbMatch];
         int j = 0;
         for (final int idx : indexes) {
-            if (name.equals(byIdx[idx].name)) {
+            if (name.equals(this.byIdx[idx].name)) {
                 result[j++] = idx;
             }
         }
@@ -273,7 +274,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
     int[] getAllIdx(final String name) {
         final int[] indexes = findAllIdx(name);
         if (indexes == null) {
-            throw new IllegalArgumentException(name + " is not a column defined in this metadata");
+            throw new IllegalArgumentException(name + " is not a column defined in these metadata.");
         }
         return indexes;
     }
@@ -296,7 +297,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
          * Constructor.
          *
          * @param keyspace The Cassandra keyspace.
-         * @param table    The Cassandra table.
+         * @param table    The Cassandra table name.
          * @param name     The column name.
          * @param type     The column type.
          */
@@ -308,44 +309,44 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         }
 
         /**
-         * The name of the keyspace this column is part of.
+         * Gets the name of the keyspace this column is part of.
          *
-         * @return the name of the keyspace this column is part of.
+         * @return The name of the keyspace this column is part of.
          */
         public String getKeyspace() {
-            return keyspace;
+            return this.keyspace;
         }
 
         /**
-         * Returns the name of the table this column is part of.
+         * Gets the name of the table this column is part of.
          *
-         * @return the name of the table this column is part of.
+         * @return The name of the table this column is part of.
          */
         public String getTable() {
-            return table;
+            return this.table;
         }
 
         /**
-         * Returns the name of the column.
+         * Gets the name of the column.
          *
-         * @return the name of the column.
+         * @return The name of the column.
          */
         public String getName() {
-            return name;
+            return this.name;
         }
 
         /**
-         * Returns the type of the column.
+         * Gets the type of the column.
          *
-         * @return the type of the column.
+         * @return The type of the column.
          */
         public DataType getType() {
-            return type;
+            return this.type;
         }
 
         @Override
         public final int hashCode() {
-            return Arrays.hashCode(new Object[]{keyspace, table, name, type});
+            return Arrays.hashCode(new Object[]{this.keyspace, this.table, this.name, this.type});
         }
 
         @Override
@@ -355,10 +356,10 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
             }
 
             final Definition other = (Definition) o;
-            return keyspace.equals(other.keyspace)
-                && table.equals(other.table)
-                && name.equals(other.name)
-                && type.equals(other.type);
+            return this.keyspace.equals(other.keyspace)
+                && this.table.equals(other.table)
+                && this.name.equals(other.name)
+                && this.type.equals(other.type);
         }
     }
 }

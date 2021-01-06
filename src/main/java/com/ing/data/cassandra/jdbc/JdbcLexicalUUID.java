@@ -14,19 +14,30 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.util.UUID;
 
+/**
+ * JDBC description of {@code UUID} CQL type (corresponding Java type: {@link UUID}).
+ * <p>CQL type description: a lexical UUID in standard UUID format.</p>
+ */
 public class JdbcLexicalUUID extends AbstractJdbcUUID {
+
+    /**
+     * Gets a {@code JdbcLexicalUUID} instance.
+     */
     public static final JdbcLexicalUUID instance = new JdbcLexicalUUID();
 
     public JdbcLexicalUUID() {
     }
 
-    public UUID compose(final Object obj) {
+    public UUID compose(@NonNull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
-    public Object decompose(final UUID value) {
+    public Object decompose(@NonNull final UUID value) {
         return value.toString();
     }
+
 }

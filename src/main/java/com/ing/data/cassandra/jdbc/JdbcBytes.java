@@ -14,11 +14,20 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
-
+/**
+ * JDBC description of {@code BLOB} CQL type (corresponding Java type: {@link ByteBuffer}).
+ * <p>CQL type description: arbitrary bytes (no validation), expressed as hexadecimal.</p>
+ */
 public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
+
+    /**
+     * Gets a {@code JdbcBytes} instance.
+     */
     public static final JdbcBytes instance = new JdbcBytes();
 
     JdbcBytes() {
@@ -29,11 +38,11 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
     }
 
     public int getScale(final ByteBuffer obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final ByteBuffer obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -45,7 +54,7 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
     }
 
     public String toString(final ByteBuffer obj) {
-        return "";
+        return StringUtils.EMPTY;
     }
 
     public boolean needsQuotes() {
@@ -72,4 +81,5 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
     public ByteBuffer compose(final Object obj) {
         return null;
     }
+
 }

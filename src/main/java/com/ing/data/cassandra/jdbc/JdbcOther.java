@@ -16,7 +16,14 @@ package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of unknown or other CQL types (corresponding Java type: {@link String}).
+ */
 public class JdbcOther extends AbstractJdbcType<String> {
+
+    /**
+     * Gets a {@code JdbcOther} instance.
+     */
     public static final JdbcOther instance = new JdbcOther();
 
     JdbcOther() {
@@ -27,11 +34,11 @@ public class JdbcOther extends AbstractJdbcType<String> {
     }
 
     public int getScale(final String obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final String obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {

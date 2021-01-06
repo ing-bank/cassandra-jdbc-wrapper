@@ -52,20 +52,29 @@ import java.util.stream.Collectors;
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.
  * <p>
- * This class uses reference counting to track if active CassandraConnections still use
- * the Session. When the last CassandraConnection has closed, the Session gets closed.
+ *     This class uses reference counting to track if active {@code CassandraConnections} still use the session. When
+ *     the last {@link CassandraConnection} has been closed, the {@code Session} is closed.
+ * </p>
  */
+@SuppressWarnings("UnstableApiUsage")
 class SessionHolder {
-    private static final Logger log = LoggerFactory.getLogger(SessionHolder.class);
     static final String URL_KEY = "jdbcUrl";
 
-    private final LoadingCache<Map<String, String>, SessionHolder> parentCache;
-    private final Map<String, String> cacheKey;
+    private static final Logger log = LoggerFactory.getLogger(SessionHolder.class);
 
-    private final AtomicInteger references = new AtomicInteger();
     final Session session;
     final Properties properties;
+    private final LoadingCache<Map<String, String>, SessionHolder> parentCache;
+    private final Map<String, String> cacheKey;
+    private final AtomicInteger references = new AtomicInteger();
 
+    /**
+     * Constructs a {@code SessionHolder} instance.
+     *
+     * @param params        The parameters.
+     * @param parentCache   The cache.
+     * @throws SQLException when something went wrong during the {@link Session} creation.
+     */
     SessionHolder(final Map<String, String> params, final LoadingCache<Map<String, String>, SessionHolder> parentCache)
         throws SQLException {
         this.cacheKey = params;
@@ -73,60 +82,61 @@ class SessionHolder {
 
         final String url = params.get(URL_KEY);
 
-        // parse the URL into a set of Properties
-        // replace " by ' to handle the fact that " is not a valid character in URIs
-        properties = Utils.parseURL(url.replace("\"", "'"));
+        // Parse the URL into a set of Properties and replace double quote marks (") by simple quotes (') to handle the
+        // fact that double quotes (") are not valid characters in URIs.
+        this.properties = Utils.parseURL(url.replace("\"", "'"));
 
-        // other properties in params come from the initial call to connect(), they take priority
-        for (final String key : params.keySet()) {
-            if (!URL_KEY.equals(key)) {
-                properties.put(key, params.get(key));
-            }
-        }
-
+        // Other properties in parameters come from the initial call to connect(), they take priority.
+        params.keySet().stream()
+            .filter(key -> !URL_KEY.equals(key))
+            .forEach(key -> this.properties.put(key, params.get(key)));
         if (log.isDebugEnabled()) {
-            log.debug("Final Properties to Connection: {}", properties);
+            log.debug("Final Properties to Connection: {}", this.properties);
         }
 
-        session = createSession(properties);
+        this.session = createSession(this.properties);
     }
 
     /**
-     * Indicates that a CassandraConnection has closed and stopped using this object.
+     * Indicates that a {@link CassandraConnection} has been closed and stopped using this object.
      */
     void release() {
         int newRef;
         while (true) {
-            final int ref = references.get();
-            // We set to -1 after the last release, to distinguish it from the initial state
-            newRef = (ref == 1) ? -1 : ref - 1;
-            if (references.compareAndSet(ref, newRef)) {
+            final int ref = this.references.get();
+            // We set to -1 after the last release, to distinguish it from the initial state.
+            if (ref == 1) {
+                newRef = -1;
+            } else {
+                newRef = ref - 1;
+            }
+            if (this.references.compareAndSet(ref, newRef)) {
                 break;
             }
         }
         if (newRef == -1) {
-            log.debug("Released last reference to {}, closing Session", cacheKey.get(URL_KEY));
+            log.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
             dispose();
         } else {
-            log.debug("Released reference to {}, new count = {}", cacheKey.get(URL_KEY), newRef);
+            log.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
         }
     }
 
     /**
-     * Called when a CassandraConnection tries to acquire a reference to this object.
+     * Method called when a {@link CassandraConnection} tries to acquire a reference to this object.
      *
-     * @return whether the reference was acquired successfully
+     * @return {@code true} if the reference was acquired successfully, {@code false} otherwise.
      */
     boolean acquire() {
         while (true) {
-            final int ref = references.get();
+            final int ref = this.references.get();
             if (ref < 0) {
-                // We raced with the release of the last reference, the caller will need to create a new session
-                log.debug("Failed to acquire reference to {}", cacheKey.get(URL_KEY));
+                // We raced with the release of the last reference, the caller will need to create a new session.
+                log.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
                 return false;
             }
-            if (references.compareAndSet(ref, ref + 1)) {
-                log.debug("Acquired reference to {}, new count = {}", cacheKey.get(URL_KEY), ref + 1);
+            if (this.references.compareAndSet(ref, ref + 1)) {
+                log.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
                 return true;
             }
         }
@@ -139,33 +149,33 @@ class SessionHolder {
         final String keyspace = properties.getProperty(Utils.TAG_DATABASE_NAME);
         final String username = properties.getProperty(Utils.TAG_USER, StringUtils.EMPTY);
         final String password = properties.getProperty(Utils.TAG_PASSWORD, StringUtils.EMPTY);
-        final String loadBalancingPolicy = properties.getProperty(Utils.TAG_LOADBALANCING_POLICY, StringUtils.EMPTY);
+        final String loadBalancingPolicy = properties.getProperty(Utils.TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
         final String localDatacenter = properties.getProperty(Utils.TAG_LOCAL_DATACENTER, StringUtils.EMPTY);
         final String retryPolicy = properties.getProperty(Utils.TAG_RETRY_POLICY, StringUtils.EMPTY);
         final String reconnectPolicy = properties.getProperty(Utils.TAG_RECONNECT_POLICY, StringUtils.EMPTY);
         final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(Utils.TAG_DEBUG,
             StringUtils.EMPTY));
 
+        // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();
         final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder =
             DriverConfigLoader.programmaticBuilder();
+        driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
         builder.addContactPoints(Arrays.stream(hosts.split("--"))
             .map(host -> InetSocketAddress.createUnresolved(host, port))
             .collect(Collectors.toList())
         );
 
-        // Set credentials when applicable
+        // Set credentials when applicable.
         if (username.length() > 0) {
             builder.withAuthCredentials(username, password);
         }
-
-        driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
 
         // The DefaultLoadBalancingPolicy requires to specify a local data center.
         builder.withLocalDatacenter(localDatacenter);
         if (loadBalancingPolicy.length() > 0) {
             // if a custom load balancing policy has been given in the JDBC URL, parse it and add it to the cluster
-            // builder
+            // builder.
             try {
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     loadBalancingPolicy);
@@ -173,7 +183,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing load balancing policy :" + e.getMessage()
+                log.warn("Error occurred while parsing load balancing policy: " + e.getMessage()
                     + " / Forcing to DefaultLoadBalancingPolicy...");
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     DefaultLoadBalancingPolicy.class.getSimpleName());
@@ -181,19 +191,19 @@ class SessionHolder {
         }
 
         if (retryPolicy.length() > 0) {
-            // if retry policy has been given in the JDBC URL, parse it and add it to the cluster builder
+            // if retry policy has been given in the JDBC URL, parse it and add it to the cluster builder.
             try {
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.RETRY_POLICY_CLASS, retryPolicy);
             } catch (final Exception e) {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing retry policy :" + e.getMessage() + " / skipping...");
+                log.warn("Error occurred while parsing retry policy: " + e.getMessage() + " / skipping...");
             }
         }
 
         if (reconnectPolicy.length() > 0) {
-            // if reconnection policy has been given in the JDBC URL, parse it and add it to the cluster builder
+            // if reconnection policy has been given in the JDBC URL, parse it and add it to the cluster builder.
             try {
                 final Map<DriverOption, Object> parsedPolicy = Optional.ofNullable(
                     Utils.parseReconnectionPolicy(reconnectPolicy)).orElse(new HashMap<>());
@@ -212,11 +222,11 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing reconnection policy :" + e.getMessage() + " / skipping...");
+                log.warn("Error occurred while parsing reconnection policy: " + e.getMessage() + " / skipping...");
             }
         }
 
-        // Declare and register codecs
+        // Declare and register codecs.
         final List<TypeCodec<?>> codecs = new ArrayList<>();
         codecs.add(new TimestampToLongCodec());
         codecs.add(new LongToIntCodec());
@@ -225,7 +235,6 @@ class SessionHolder {
         codecs.add(new DecimalToDoubleCodec());
         codecs.add(new FloatToDoubleCodec());
         builder.addTypeCodecs(codecs.toArray(new TypeCodec[]{}));
-        // end of codec register
 
         builder.withKeyspace(keyspace);
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
@@ -233,16 +242,17 @@ class SessionHolder {
         try {
             return builder.build();
         } catch (final DriverException e) {
-            if (session != null) {
-                session.close();
+            if (this.session != null) {
+                this.session.close();
             }
             throw new SQLNonTransientConnectionException(e);
         }
     }
 
     private void dispose() {
-        // No one else has a reference to the parent Cluster, and only one Session was created from it:
-        session.close();
-        parentCache.invalidate(cacheKey);
+        // No one else has a reference to the parent cluster, and only one Session was created from it, so close the
+        // session and invalidate the cache.
+        this.session.close();
+        this.parentCache.invalidate(this.cacheKey);
     }
 }

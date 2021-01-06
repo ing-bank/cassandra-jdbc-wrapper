@@ -58,7 +58,7 @@ class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
         cnx = ds.getConnection();
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
-        assertEquals(VERSION, ((CassandraConnection) cnx).getConnectionProps().get(Utils.TAG_CQL_VERSION));
+        assertEquals(VERSION, ((CassandraConnection) cnx).getConnectionProperties().get(Utils.TAG_CQL_VERSION));
         assertEquals(5, ds.getLoginTimeout());
     }
 

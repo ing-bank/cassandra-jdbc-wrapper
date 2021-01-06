@@ -18,7 +18,9 @@ package org.apache.cassandra2.cql.jdbc;
 import java.sql.Driver;
 
 /**
- * The Class CassandraDriver.
+ * The {@code CassandraDriver} class.
+ *
+ * @see com.ing.data.cassandra.jdbc.CassandraDriver
  */
 public class CassandraDriver extends com.ing.data.cassandra.jdbc.CassandraDriver implements Driver {
 }

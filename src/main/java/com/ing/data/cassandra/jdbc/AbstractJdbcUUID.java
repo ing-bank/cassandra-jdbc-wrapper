@@ -14,11 +14,17 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.sql.Types;
 import java.util.UUID;
 
+/**
+ * Abstract class providing description about the JDBC equivalent of any CQL type based on the Java type {@link UUID}.
+ */
 public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
-    public String toString(final UUID obj) {
+
+    public String toString(@NonNull final UUID obj) {
         return obj.toString();
     }
 
@@ -27,11 +33,11 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
     }
 
     public int getScale(final UUID obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final UUID obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -53,4 +59,5 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
     public int getJdbcType() {
         return Types.OTHER;
     }
+
 }

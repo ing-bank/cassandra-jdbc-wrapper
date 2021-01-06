@@ -56,7 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * These tests of non-regression are those existing in the original project from GitHub.
+ * These tests of non-regression are those existing in the
+ * <a href="https://github.com/adejanovski/cassandra-jdbc-wrapper/">original project from GitHub</a>.
  */
 class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
     private static final Logger log = LoggerFactory.getLogger(JdbcRegressionUnitTest.class);

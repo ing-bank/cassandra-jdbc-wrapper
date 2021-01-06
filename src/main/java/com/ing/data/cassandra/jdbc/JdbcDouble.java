@@ -16,7 +16,18 @@ package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code DOUBLE} CQL type (corresponding Java type: {@link Double}).
+ * <p>CQL type description: 64-bit IEEE-754 floating point.</p>
+ */
 public class JdbcDouble extends AbstractJdbcType<Double> {
+
+    private static final int DOUBLE_SCALE = 300;
+    private static final int DOUBLE_PRECISION = 300;
+
+    /**
+     * Gets a {@code JdbcDouble} instance.
+     */
     public static final JdbcDouble instance = new JdbcDouble();
 
     JdbcDouble() {
@@ -27,11 +38,11 @@ public class JdbcDouble extends AbstractJdbcType<Double> {
     }
 
     public int getScale(final Double obj) {
-        return 300;
+        return DOUBLE_SCALE;
     }
 
     public int getPrecision(final Double obj) {
-        return 15;
+        return DOUBLE_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -65,4 +76,5 @@ public class JdbcDouble extends AbstractJdbcType<Double> {
     public Object decompose(final Double value) {
         return value;
     }
+
 }

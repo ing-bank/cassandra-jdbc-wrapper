@@ -12,12 +12,12 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.internal.core.type.DefaultListType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
@@ -54,7 +54,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,109 +61,145 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
-class CassandraPreparedStatement extends CassandraStatement implements PreparedStatement {
+/**
+ * Cassandra prepared statement: implementation class for {@link PreparedStatement}.
+ * <p>
+ *     It extends {@link CassandraStatement} and thereby also implements {@link CassandraStatementExtras} interface
+ *     providing extra methods not defined in JDBC API to manage some properties specific to the Cassandra statements
+ *     (e.g. consistency level).
+ * </p>
+ */
+public class CassandraPreparedStatement extends CassandraStatement implements PreparedStatement {
+
     private static final Logger log = LoggerFactory.getLogger(CassandraPreparedStatement.class);
 
-    /**
-     * The count of bound variable markers (?) encountered in the parse of the CQL server-side.
-     */
+    // The count of bound variable markers ('?') encountered during the parsing of the CQL server-side.
     private final int count;
-
-    /**
-     * A map of the current bound values encountered in setXXX() methods.
-     */
-    private final Map<Integer, Object> bindValues = new LinkedHashMap<Integer, Object>();
-    private final com.datastax.oss.driver.api.core.cql.PreparedStatement stmt;
-
-    private BoundStatement statement;
+    // A map of the current bound values encountered in setXXX() methods.
+    private final Map<Integer, Object> bindValues = new LinkedHashMap<>();
+    private final com.datastax.oss.driver.api.core.cql.PreparedStatement preparedStatement;
+    private BoundStatement boundStatement;
     private ArrayList<BoundStatement> batchStatements;
-    protected ResultSet currentResultSet = null;
 
     /**
-     * Constructor.
+     * Constructor. It instantiates a new Cassandra prepared statement with default values for a
+     * {@link CassandraConnection}.
+     * <p>
+     *     By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
+     *     {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
+     *     {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
+     * </p>
      *
-     * @param con The {@link CassandraConnection} instance.
-     * @param cql The CQL statement.
+     * @param connection    The Cassandra connection to the database.
+     * @param cql           The CQL statement.
      * @throws SQLException when something went wrong during the initialisation of the statement.
      */
-    CassandraPreparedStatement(final CassandraConnection con, final String cql) throws SQLException {
-        this(con, cql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    CassandraPreparedStatement(final CassandraConnection connection, final String cql) throws SQLException {
+        this(connection, cql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+            ResultSet.HOLD_CURSORS_OVER_COMMIT);
     }
 
     /**
-     * Constructor.
+     * Constructor. It instantiates a new Cassandra prepared statement for a {@link CassandraConnection}.
      *
-     * @param con           The {@link CassandraConnection} instance.
-     * @param cql           The CQL statement.
-     * @param rsType        The result set type.
-     * @param rsConcurrency The result set concurrency
-     * @param rsHoldability The result set holdability.
+     * @param connection           The {@link CassandraConnection} instance.
+     * @param cql                  The CQL statement.
+     * @param resultSetType        The result set type.
+     * @param resultSetConcurrency The result set concurrency
+     * @param resultSetHoldability The result set holdability.
      * @throws SQLException when something went wrong during the initialisation of the statement.
      */
-    CassandraPreparedStatement(final CassandraConnection con, final String cql, final int rsType,
-                               final int rsConcurrency, final int rsHoldability) throws SQLException {
-        super(con, cql, rsType, rsConcurrency, rsHoldability);
-
-        if (log.isTraceEnabled()) {
+    CassandraPreparedStatement(final CassandraConnection connection, final String cql, final int resultSetType,
+                               final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+        super(connection, cql, resultSetType, resultSetConcurrency, resultSetHoldability);
+        if (log.isTraceEnabled() || connection.isDebugMode()) {
             log.trace("CQL: " + this.cql);
         }
         try {
-            stmt = ((CqlSession) this.connection.getSession()).prepare(cql);
-            this.statement = stmt.boundStatementBuilder().build();
-            batchStatements = Lists.newArrayList();
-            count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
+            this.preparedStatement = getCqlSession().prepare(cql);
+            this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+            this.batchStatements = Lists.newArrayList();
+            this.count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
         } catch (final Exception e) {
             throw new SQLTransientException(e);
         }
     }
 
-    String getCql() {
-        return cql;
-    }
-
-    @SuppressWarnings("boxing")
     private void checkIndex(final int index) throws SQLException {
-        if (index > count) {
+        if (index > this.count) {
             throw new SQLRecoverableException(String.format(
-                "the column index : %d is greater than the count of bound variable markers in the CQL: %d", index,
-                count));
+                "The column index: %d is greater than the count of bound variable markers in the CQL: %d", index,
+                this.count));
         }
         if (index < 1) {
-            throw new SQLRecoverableException(String.format("the column index must be a positive number : %d", index));
+            throw new SQLRecoverableException(String.format("The column index must be a positive number: %d", index));
         }
+    }
+
+    String getCql() {
+        return this.cql;
+    }
+
+    CqlSession getCqlSession() {
+        return (CqlSession) this.connection.getSession();
+    }
+
+    ColumnDefinitions getBoundStatementVariableDefinitions() {
+        return this.boundStatement.getPreparedStatement().getVariableDefinitions();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> List<T> handleAsList(final Class<?> objectClass, final Object object) {
+        if (!List.class.isAssignableFrom(objectClass)) {
+            return null;
+        }
+        return (List<T>) object.getClass().cast(object);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Set<T> handleAsSet(final Class<?> objectClass, final Object object) {
+        if (!Set.class.isAssignableFrom(objectClass)) {
+            return null;
+        }
+        return (Set<T>) object.getClass().cast(object);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> HashMap<K, V> handleAsMap(final Class<?> objectClass, final Object object) {
+        if (!Map.class.isAssignableFrom(objectClass)) {
+            return null;
+        }
+        return (HashMap<K, V>) object.getClass().cast(object);
     }
 
     @Override
     public void close() {
         try {
-            connection.removeStatement(this);
+            this.connection.removeStatement(this);
         } catch (final Exception e) {
             log.warn("Unable to close the prepared statement: " + e.getMessage());
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void doExecute() throws SQLException {
-        if (log.isTraceEnabled()) {
-            log.trace("CQL: " + cql);
-        }
         try {
             resetResults();
-            if (this.connection.debugMode) {
-                System.out.println("CQL: " + cql);
+            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                log.trace("CQL: " + this.cql);
             }
-            if (this.statement.getPageSize() == 0) {
-                // force paging to avoid timeout and node harm...
-                this.statement.setPageSize(100);
+            // Force paging to avoid timeout and node harm.
+            if (this.boundStatement.getPageSize() == 0) {
+                this.boundStatement.setPageSize(DEFAULT_FETCH_SIZE);
             }
-            this.statement.setConsistencyLevel(this.connection.defaultConsistencyLevel);
-            for (int i = 0; i < this.statement.getPreparedStatement().getVariableDefinitions().size(); i++) {
-                // Set parameters to null if unset
-                if (!this.statement.isSet(i)) {
-                    this.statement.setToNull(i);
+            this.boundStatement.setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+            for (int i = 0; i < getBoundStatementVariableDefinitions().size(); i++) {
+                // Set parameters to null if unset.
+                if (!this.boundStatement.isSet(i)) {
+                    this.boundStatement.setToNull(i);
                 }
             }
-            currentResultSet = new CassandraResultSet(this, ((CqlSession) this.connection.getSession())
-                .execute(this.statement));
+            this.currentResultSet = new CassandraResultSet(this, getCqlSession().execute(this.boundStatement));
         } catch (final Exception e) {
             throw new SQLTransientException(e);
         }
@@ -172,33 +207,49 @@ class CassandraPreparedStatement extends CassandraStatement implements PreparedS
 
     @Override
     public void addBatch() throws SQLException {
-        batchStatements.add(statement);
-        this.statement = stmt.boundStatementBuilder().build();
-        if (batchStatements.size() > MAX_ASYNC_QUERIES) {
+        this.batchStatements.add(this.boundStatement);
+        this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+        if (this.batchStatements.size() > MAX_ASYNC_QUERIES) {
             throw new SQLNonTransientException("Too many queries at once (" + batchStatements.size() + "). You must "
-                + "split your queries into more batches !");
+                + "split your queries into more batches!");
         }
     }
 
     @Override
+    public void clearParameters() throws SQLException {
+        checkNotClosed();
+        this.bindValues.clear();
+    }
+
+    @Override
+    public boolean execute() throws SQLException {
+        checkNotClosed();
+        doExecute();
+        return this.currentResultSet != null;
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Override
     public int[] executeBatch() throws SQLException {
-        final int[] returnCounts = new int[batchStatements.size()];
+        final int[] returnCounts = new int[this.batchStatements.size()];
         try {
             final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-            if (this.connection.debugMode) System.out.println("CQL statements : " + batchStatements.size());
-            for (final BoundStatement q : batchStatements) {
-                for (int i = 0; i < q.getPreparedStatement().getVariableDefinitions().size(); i++) {
-                    // Set parameters to null if unset
-                    if (!q.isSet(i)) {
-                        q.setToNull(i);
+            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                log.trace("CQL statements: " + this.batchStatements.size());
+            }
+            for (final BoundStatement statement : this.batchStatements) {
+                for (int i = 0; i < statement.getPreparedStatement().getVariableDefinitions().size(); i++) {
+                    // Set parameters to null if unset.
+                    if (!statement.isSet(i)) {
+                        statement.setToNull(i);
                     }
                 }
-                if (this.connection.debugMode) {
-                    System.out.println("CQL: " + cql);
+                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                    log.trace("CQL: " + this.cql);
                 }
-                final BoundStatement boundStatement = q.setConsistencyLevel(this.connection.defaultConsistencyLevel);
-                final CompletionStage<AsyncResultSet> resultSetFuture = ((CqlSession) this.connection.getSession())
-                    .executeAsync(boundStatement);
+                final BoundStatement boundStatement = statement.setConsistencyLevel(
+                    this.connection.getDefaultConsistencyLevel());
+                final CompletionStage<AsyncResultSet> resultSetFuture = getCqlSession().executeAsync(boundStatement);
                 futures.add(resultSetFuture);
             }
 
@@ -209,11 +260,11 @@ class CassandraPreparedStatement extends CassandraStatement implements PreparedS
                 i++;
             }
 
-            // empty batch statement list after execution
-            batchStatements = Lists.newArrayList();
+            // Empty the batch statement list after execution.
+            this.batchStatements = Lists.newArrayList();
         } catch (final Exception e) {
-            // empty batch statement list after execution even if it failed...
-            batchStatements = Lists.newArrayList();
+            // Empty the batch statement list after execution even if it failed.
+            this.batchStatements = Lists.newArrayList();
             throw new SQLTransientException(e);
         }
 
@@ -221,394 +272,53 @@ class CassandraPreparedStatement extends CassandraStatement implements PreparedS
     }
 
     @Override
-    public void clearParameters() throws SQLException {
-        checkNotClosed();
-        bindValues.clear();
-    }
-
-    @Override
-    public boolean execute() throws SQLException {
-        checkNotClosed();
-        doExecute();
-        return !(currentResultSet == null);
-    }
-
-    @Override
     public ResultSet executeQuery() throws SQLException {
         checkNotClosed();
         doExecute();
-        if (currentResultSet == null) {
-            throw new SQLNonTransientException(Utils.NO_RESULTSET);
+        if (this.currentResultSet == null) {
+            throw new SQLNonTransientException(Utils.NO_RESULT_SET);
         }
-        return currentResultSet;
+        return this.currentResultSet;
     }
 
+    /**
+     * Executes the CQL statement in this {@link PreparedStatement} object, which must be a CQL Data Manipulation
+     * Language (DML) statement, such as {@code INSERT}, {@code UPDATE} or {@code DELETE}; or a CQL statement that
+     * returns nothing, such as a DDL statement.
+     *
+     * @return Always 0, for any statement. The rationale is that Datastax Java driver does not provide update count.
+     * @throws SQLException when something went wrong during the execution of the statement.
+     */
     @Override
     public int executeUpdate() throws SQLException {
         checkNotClosed();
         doExecute();
-        // if (currentResultSet != null) throw new SQLNonTransientException(NO_UPDATE_COUNT);
-        // no update count available with the Datastax java driver
+        // There is no updateCount available in Datastax Java driver, so return 0.
         return 0;
     }
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
+        // TODO: method to implement
         return null;
     }
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
+        // TODO: method to implement
         return null;
     }
 
     @Override
-    public void setBigDecimal(final int parameterIndex, final BigDecimal decimal) throws SQLException {
+    public void setBigDecimal(final int parameterIndex, final BigDecimal x) throws SQLException {
         checkNotClosed();
         checkIndex(parameterIndex);
-        this.statement = this.statement.setBigDecimal(parameterIndex - 1, decimal);
+        this.boundStatement = this.boundStatement.setBigDecimal(parameterIndex - 1, x);
     }
 
     @Override
-    public void setBoolean(final int parameterIndex, final boolean truth) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setBoolean(parameterIndex - 1, truth);
-    }
-
-    @Override
-    public void setByte(final int parameterIndex, final byte b) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setByte(parameterIndex - 1, b);
-    }
-
-    @Override
-    public void setBytes(final int parameterIndex, final byte[] bytes) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(bytes));
-    }
-
-    @Override
-    public void setDate(final int parameterIndex, final Date value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setLocalDate(parameterIndex - 1, value.toLocalDate());
-    }
-
-    @Override
-    public void setDate(final int parameterIndex, final Date date, final Calendar cal) throws SQLException {
-        // silently ignore the calendar argument it is not useful for the Cassandra implementation
-        setDate(parameterIndex, date);
-    }
-
-    @Override
-    public void setDouble(final int parameterIndex, final double decimal) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setDouble(parameterIndex - 1, decimal);
-    }
-
-    @Override
-    public void setFloat(final int parameterIndex, final float decimal) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setFloat(parameterIndex - 1, decimal);
-    }
-
-    @Override
-    @SuppressWarnings("cast")
-    public void setInt(final int parameterIndex, final int integer) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        if (DataTypeEnum.VARINT.cqlType.equals(this.statement.getPreparedStatement().getVariableDefinitions()
-            .get(parameterIndex - 1).getType().asCql(false, false))) {
-            this.statement = this.statement.setBigInteger(parameterIndex - 1,
-                BigInteger.valueOf(Long.parseLong(String.valueOf(integer))));
-        } else {
-            this.statement = this.statement.setInt(parameterIndex - 1, integer);
-        }
-    }
-
-    @Override
-    public void setLong(final int parameterIndex, final long bigint) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setLong(parameterIndex - 1, bigint);
-    }
-
-    @Override
-    public void setNString(final int parameterIndex, final String value) throws SQLException {
-        // treat like a String
-        setString(parameterIndex, value);
-    }
-
-    @Override
-    public void setNull(final int parameterIndex, final int sqlType) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        // silently ignore type for cassandra... just store an empty String
-        this.statement = this.statement.setToNull(parameterIndex - 1);
-    }
-
-    @Override
-    public void setNull(final int parameterIndex, final int sqlType, final String typeName) throws SQLException {
-        // silently ignore type and type name for cassandra... just store an empty BB
-        setNull(parameterIndex, sqlType);
-    }
-
-    @Override
-    public void setObject(final int parameterIndex, final Object object) throws SQLException {
-        int targetType;
-        if (object.getClass().equals(java.lang.Long.class)) {
-            targetType = Types.BIGINT;
-        } else if (object.getClass().equals(java.io.ByteArrayInputStream.class)) {
-            targetType = Types.BINARY;
-        } else if (object.getClass().equals(java.lang.String.class)) {
-            targetType = Types.VARCHAR;
-        } else if (object.getClass().equals(java.lang.Boolean.class)) {
-            targetType = Types.BOOLEAN;
-        } else if (object.getClass().equals(java.math.BigDecimal.class)) {
-            targetType = Types.DECIMAL;
-        } else if (object.getClass().equals(java.math.BigInteger.class)) {
-            targetType = Types.BIGINT;
-        } else if (object.getClass().equals(java.lang.Double.class)) {
-            targetType = Types.DOUBLE;
-        } else if (object.getClass().equals(java.lang.Float.class)) {
-            targetType = Types.FLOAT;
-        } else if (object.getClass().equals(java.net.Inet4Address.class)) {
-            targetType = Types.OTHER;
-        } else if (object.getClass().equals(java.lang.Integer.class)) {
-            targetType = Types.INTEGER;
-        } else if (object.getClass().equals(java.sql.Timestamp.class)) {
-            targetType = Types.TIMESTAMP;
-        } else if (object.getClass().equals(java.util.UUID.class)) {
-            targetType = Types.ROWID;
-        } else {
-            targetType = Types.OTHER;
-        }
-        setObject(parameterIndex, object, targetType, 0);
-    }
-
-    @Override
-    public void setObject(final int parameterIndex, final Object object, final int targetSqlType) throws SQLException {
-        setObject(parameterIndex, object, targetSqlType, 0);
-    }
-
-    @Override
-    @SuppressWarnings({"boxing", "unchecked"})
-    public final void setObject(final int parameterIndex, final Object object, final int targetSqlType,
-                                final int scaleOrLength) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-
-        switch (targetSqlType) {
-            case Types.BIGINT:
-                if (object instanceof BigInteger) {
-                    this.statement = this.statement.setBigInteger(parameterIndex - 1, (BigInteger) object);
-                } else {
-                    this.statement = this.statement.setLong(parameterIndex - 1, Long.parseLong(object.toString()));
-                }
-                break;
-            case Types.BINARY:
-                final byte[] array = new byte[((java.io.ByteArrayInputStream) object).available()];
-                try {
-                    ((java.io.ByteArrayInputStream) object).read(array);
-                } catch (final IOException e) {
-                    log.warn("Exception while setting object of BINARY type", e);
-                }
-                this.statement = this.statement.setByteBuffer(parameterIndex - 1, (ByteBuffer.wrap((array))));
-                break;
-            case Types.BOOLEAN:
-                this.statement = this.statement.setBoolean(parameterIndex - 1, (Boolean) object);
-                break;
-            case Types.CHAR:
-            case Types.CLOB:
-            case Types.VARCHAR:
-                this.statement = this.statement.setString(parameterIndex - 1, object.toString());
-                break;
-            case Types.TIMESTAMP:
-                this.statement = this.statement.setInstant(parameterIndex - 1, ((Timestamp) object).toInstant());
-                break;
-            case Types.DECIMAL:
-                this.statement = this.statement.setBigDecimal(parameterIndex - 1, (BigDecimal) object);
-                break;
-            case Types.DOUBLE:
-                this.statement = this.statement.setDouble(parameterIndex - 1, (Double) object);
-                break;
-            case Types.FLOAT:
-                this.statement = this.statement.setFloat(parameterIndex - 1, (Float) object);
-                break;
-            case Types.INTEGER:
-                // If the value is an integer but the target CQL type is VARINT, cast to BigInteger.
-                if (DataTypeEnum.VARINT.cqlType.equals(this.statement.getPreparedStatement().getVariableDefinitions()
-                    .get(parameterIndex - 1).getType().asCql(false, false))) {
-                    this.statement = this.statement.setBigInteger(parameterIndex - 1,
-                        BigInteger.valueOf(Long.parseLong(object.toString())));
-                } else {
-                    this.statement = this.statement.setInt(parameterIndex - 1, (Integer) object);
-                }
-                break;
-            case Types.DATE:
-                this.statement = this.statement.setLocalDate(parameterIndex - 1, ((Date) object).toLocalDate());
-                break;
-            case Types.ROWID:
-                this.statement = this.statement.setUuid(parameterIndex - 1, (java.util.UUID) object);
-                break;
-            case Types.OTHER:
-                if (object.getClass().equals(TupleValue.class)) {
-                    this.statement = this.statement.setTupleValue(parameterIndex - 1, (TupleValue) object);
-                }
-                if (object.getClass().equals(java.util.UUID.class)) {
-                    this.statement = this.statement.setUuid(parameterIndex - 1, (java.util.UUID) object);
-                }
-                if (object.getClass().equals(java.net.InetAddress.class) || object.getClass().equals(java.net.Inet4Address.class)) {
-                    assert object instanceof InetAddress;
-                    this.statement = this.statement.setInetAddress(parameterIndex - 1, (InetAddress) object);
-                } else if (List.class.isAssignableFrom(object.getClass())) {
-                    final List handledList = handleAsList(object.getClass(), object);
-                    final DefaultListType listType = (DefaultListType) this.statement.getPreparedStatement()
-                        .getVariableDefinitions().get(parameterIndex - 1).getType();
-                    final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(listType.getElementType()
-                        .asCql(false, false)).javaType;
-                    this.statement = this.statement.setList(parameterIndex - 1, handledList, itemsClass);
-                } else if (Set.class.isAssignableFrom(object.getClass())) {
-                    final Set handledSet = handleAsSet(object.getClass(), object);
-                    final DefaultSetType setType = (DefaultSetType) this.statement.getPreparedStatement()
-                        .getVariableDefinitions().get(parameterIndex - 1).getType();
-                    final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(setType.getElementType()
-                        .asCql(false, false)).javaType;
-                    this.statement = this.statement.setSet(parameterIndex - 1, handledSet, itemsClass);
-                } else if (Map.class.isAssignableFrom(object.getClass())) {
-                    final Map handledMap = handleAsMap(object.getClass(), object);
-                    final DefaultMapType mapType = (DefaultMapType) this.statement.getPreparedStatement()
-                        .getVariableDefinitions().get(parameterIndex - 1).getType();
-                    final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType()
-                        .asCql(false, false)).javaType;
-                    final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType()
-                        .asCql(false, false)).javaType;
-                    this.statement = this.statement.setMap(parameterIndex - 1, handledMap, keysClass, valuesClass);
-                }
-
-                break;
-        }
-    }
-
-    @Override
-    public void setRowId(final int parameterIndex, final RowId value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement.setToNull(parameterIndex - 1);
-    }
-
-    @Override
-    public void setShort(final int parameterIndex, final short smallint) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement.setInt(parameterIndex - 1, smallint);
-    }
-
-    @Override
-    public void setString(final int parameterIndex, final String value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        this.statement = this.statement.setString(parameterIndex - 1, value);
-    }
-
-    @Override
-    @SuppressWarnings("boxing")
-    public void setTime(final int parameterIndex, final Time value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        // time type data is handled as an 8 byte Long value of milliseconds since the epoch
-        bindValues.put(parameterIndex,
-            value == null ? null : JdbcLong.instance.decompose(value.getTime()));
-    }
-
-    @Override
-    public void setTime(final int parameterIndex, final Time value, final Calendar cal) throws SQLException {
-        // silently ignore the calendar argument it is not useful for the Cassandra implementation
-        setTime(parameterIndex, value);
-    }
-
-    @Override
-    public void setTimestamp(final int parameterIndex, final Timestamp value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        // timestamp type data is handled as an 8 byte Long value of milliseconds since the epoch. Nanos are not
-        // supported and are ignored.
-        this.statement = this.statement.setInstant(parameterIndex - 1, value.toInstant());
-    }
-
-    @Override
-    public void setTimestamp(final int parameterIndex, final Timestamp value, final Calendar cal) throws SQLException {
-        // silently ignore the calendar argument it is not useful for the Cassandra implementation
-        setTimestamp(parameterIndex, value);
-    }
-
-    @Override
-    public void setURL(final int parameterIndex, final URL value) throws SQLException {
-        checkNotClosed();
-        checkIndex(parameterIndex);
-        // URl type data is handled as an string
-        final String url = value.toString();
-        setString(parameterIndex, url);
-    }
-
-    @Override
-    public ResultSet getResultSet() throws SQLException {
-        checkNotClosed();
-        return currentResultSet;
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static <T> List handleAsList(final Class<?> objectClass, final Object object) {
-        if (!List.class.isAssignableFrom(objectClass)) {
-            return null;
-        }
-        return (List<T>) object.getClass().cast(object);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static <T> Set handleAsSet(final Class<?> objectClass, final Object object) {
-        if (!Set.class.isAssignableFrom(objectClass)) {
-            return null;
-        }
-        return (Set<T>) object.getClass().cast(object);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static <K, V> HashMap handleAsMap(final Class<?> objectClass, final Object object) {
-        if (!Map.class.isAssignableFrom(objectClass)) {
-            return null;
-        }
-        return (HashMap<K, V>) object.getClass().cast(object);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static Class<?> getCollectionElementType(final Object maybeCollection) {
-        final Collection trial = (Collection) maybeCollection;
-        if (trial.isEmpty()) {
-            return trial.getClass();
-        }
-        return trial.iterator().next().getClass();
-    }
-
-    @SuppressWarnings({"unused", "rawtypes"})
-    private static Class<?> getKeyElementType(final Object maybeMap) {
-        return getCollectionElementType(((Map) maybeMap).keySet());
-    }
-
-    @SuppressWarnings({"unused", "rawtypes"})
-    private static Class<?> getValueElementType(final Object maybeMap) {
-        return getCollectionElementType(((Map) maybeMap).values());
-    }
-
-    @SuppressWarnings("boxing")
-    @Override
-    public void setBlob(final int parameterIndex, final Blob value) throws SQLException {
-        final InputStream in = value.getBinaryStream();
+    public void setBlob(final int parameterIndex, final Blob x) throws SQLException {
+        final InputStream in = x.getBinaryStream();
         setBlob(parameterIndex, in);
     }
 
@@ -632,9 +342,32 @@ class CassandraPreparedStatement extends CassandraStatement implements PreparedS
             throw new SQLNonTransientException(e);
         }
 
-        this.statement = this.statement.setByteBuffer(parameterIndex - 1, (ByteBuffer.wrap((buffer.toByteArray()))));
+        this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1,
+            ByteBuffer.wrap(buffer.toByteArray()));
     }
 
+    @Override
+    public void setBoolean(final int parameterIndex, final boolean x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setBoolean(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setByte(final int parameterIndex, final byte x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setByte(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setBytes(final int parameterIndex, final byte[] x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(x));
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
     @Override
     public void setCharacterStream(final int parameterIndex, final Reader reader, final int length)
         throws SQLException {
@@ -645,6 +378,281 @@ class CassandraPreparedStatement extends CassandraStatement implements PreparedS
         } catch (final IOException e) {
             throw new SQLNonTransientException(e);
         }
+    }
+
+    @Override
+    public void setDate(final int parameterIndex, final Date x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setLocalDate(parameterIndex - 1, x.toLocalDate());
+    }
+
+    @Override
+    public void setDate(final int parameterIndex, final Date x, final Calendar cal) throws SQLException {
+        // Silently ignore the Calendar argument; it is not useful for the Cassandra implementation.
+        setDate(parameterIndex, x);
+    }
+
+    @Override
+    public void setDouble(final int parameterIndex, final double x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setDouble(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setFloat(final int parameterIndex, final float x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setFloat(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setInt(final int parameterIndex, final int x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        if (DataTypeEnum.VARINT.cqlType.equals(
+            getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType().asCql(false, false))) {
+            this.boundStatement = this.boundStatement.setBigInteger(parameterIndex - 1,
+                BigInteger.valueOf(Long.parseLong(String.valueOf(x))));
+        } else {
+            this.boundStatement = this.boundStatement.setInt(parameterIndex - 1, x);
+        }
+    }
+
+    @Override
+    public void setLong(final int parameterIndex, final long x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setLong(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setNString(final int parameterIndex, final String value) throws SQLException {
+        // Treat this like a String.
+        setString(parameterIndex, value);
+    }
+
+    @Override
+    public void setNull(final int parameterIndex, final int sqlType) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setToNull(parameterIndex - 1);
+    }
+
+    @Override
+    public void setNull(final int parameterIndex, final int sqlType, final String typeName) throws SQLException {
+        setNull(parameterIndex, sqlType);
+    }
+
+    @Override
+    public void setObject(final int parameterIndex, final Object x) throws SQLException {
+        int targetType;
+        if (x.getClass().equals(java.lang.Long.class)) {
+            targetType = Types.BIGINT;
+        } else if (x.getClass().equals(java.io.ByteArrayInputStream.class)) {
+            targetType = Types.BINARY;
+        } else if (x.getClass().equals(java.lang.String.class)) {
+            targetType = Types.VARCHAR;
+        } else if (x.getClass().equals(java.lang.Boolean.class)) {
+            targetType = Types.BOOLEAN;
+        } else if (x.getClass().equals(java.math.BigDecimal.class)) {
+            targetType = Types.DECIMAL;
+        } else if (x.getClass().equals(java.math.BigInteger.class)) {
+            targetType = Types.BIGINT;
+        } else if (x.getClass().equals(java.lang.Double.class)) {
+            targetType = Types.DOUBLE;
+        } else if (x.getClass().equals(java.lang.Float.class)) {
+            targetType = Types.FLOAT;
+        } else if (x.getClass().equals(java.net.Inet4Address.class)) {
+            targetType = Types.OTHER;
+        } else if (x.getClass().equals(java.lang.Integer.class)) {
+            targetType = Types.INTEGER;
+        } else if (x.getClass().equals(java.sql.Timestamp.class)) {
+            targetType = Types.TIMESTAMP;
+        } else if (x.getClass().equals(java.util.UUID.class)) {
+            targetType = Types.ROWID;
+        } else {
+            targetType = Types.OTHER;
+        }
+        setObject(parameterIndex, x, targetType, 0);
+    }
+
+    @Override
+    public void setObject(final int parameterIndex, final Object x, final int targetSqlType) throws SQLException {
+        setObject(parameterIndex, x, targetSqlType, 0);
+    }
+
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "unchecked", "rawtypes"})
+    @Override
+    public final void setObject(final int parameterIndex, final Object x, final int targetSqlType,
+                                final int scaleOrLength) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+
+        switch (targetSqlType) {
+            case Types.BIGINT:
+                if (x instanceof BigInteger) {
+                    this.boundStatement = this.boundStatement.setBigInteger(parameterIndex - 1, (BigInteger) x);
+                } else {
+                    this.boundStatement = this.boundStatement.setLong(parameterIndex - 1, Long.parseLong(x.toString()));
+                }
+                break;
+            case Types.BINARY:
+                final byte[] array = new byte[((java.io.ByteArrayInputStream) x).available()];
+                try {
+                    ((java.io.ByteArrayInputStream) x).read(array);
+                } catch (final IOException e) {
+                    log.warn("Exception while setting object of BINARY type.", e);
+                }
+                this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(array));
+                break;
+            case Types.BOOLEAN:
+                this.boundStatement = this.boundStatement.setBoolean(parameterIndex - 1, (Boolean) x);
+                break;
+            case Types.CHAR:
+            case Types.CLOB:
+            case Types.VARCHAR:
+                this.boundStatement = this.boundStatement.setString(parameterIndex - 1, x.toString());
+                break;
+            case Types.TIMESTAMP:
+                this.boundStatement = this.boundStatement.setInstant(parameterIndex - 1, ((Timestamp) x).toInstant());
+                break;
+            case Types.DECIMAL:
+                this.boundStatement = this.boundStatement.setBigDecimal(parameterIndex - 1, (BigDecimal) x);
+                break;
+            case Types.DOUBLE:
+                this.boundStatement = this.boundStatement.setDouble(parameterIndex - 1, (Double) x);
+                break;
+            case Types.FLOAT:
+                this.boundStatement = this.boundStatement.setFloat(parameterIndex - 1, (Float) x);
+                break;
+            case Types.INTEGER:
+                // If the value is an integer but the target CQL type is VARINT, cast to BigInteger.
+                if (DataTypeEnum.VARINT.cqlType.equals(
+                    getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType().asCql(false, false))) {
+                    this.boundStatement = this.boundStatement.setBigInteger(parameterIndex - 1,
+                        BigInteger.valueOf(Long.parseLong(x.toString())));
+                } else {
+                    this.boundStatement = this.boundStatement.setInt(parameterIndex - 1, (Integer) x);
+                }
+                break;
+            case Types.DATE:
+                this.boundStatement = this.boundStatement.setLocalDate(parameterIndex - 1, ((Date) x).toLocalDate());
+                break;
+            case Types.ROWID:
+                this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, (java.util.UUID) x);
+                break;
+            case Types.OTHER:
+                // TODO: replace x.getClass().equals(T.class) by x instanceof T ?
+                if (x.getClass().equals(TupleValue.class)) {
+                    this.boundStatement = this.boundStatement.setTupleValue(parameterIndex - 1, (TupleValue) x);
+                }
+                if (x.getClass().equals(java.util.UUID.class)) {
+                    this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, (java.util.UUID) x);
+                }
+                if (x.getClass().equals(java.net.InetAddress.class)
+                    || x.getClass().equals(java.net.Inet4Address.class)) {
+                    this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, (InetAddress) x);
+                } else if (List.class.isAssignableFrom(x.getClass())) {
+                    final List handledList = handleAsList(x.getClass(), x);
+                    final DefaultListType listType =
+                        (DefaultListType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
+                    final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(listType.getElementType()
+                        .asCql(false, false)).javaType;
+                    this.boundStatement = this.boundStatement.setList(parameterIndex - 1, handledList, itemsClass);
+                } else if (Set.class.isAssignableFrom(x.getClass())) {
+                    final Set handledSet = handleAsSet(x.getClass(), x);
+                    final DefaultSetType setType =
+                        (DefaultSetType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
+                    final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(setType.getElementType()
+                        .asCql(false, false)).javaType;
+                    this.boundStatement = this.boundStatement.setSet(parameterIndex - 1, handledSet, itemsClass);
+                } else if (Map.class.isAssignableFrom(x.getClass())) {
+                    final Map handledMap = handleAsMap(x.getClass(), x);
+                    final DefaultMapType mapType =
+                        (DefaultMapType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
+                    final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType()
+                        .asCql(false, false)).javaType;
+                    final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType()
+                        .asCql(false, false)).javaType;
+                    this.boundStatement = this.boundStatement.setMap(parameterIndex - 1, handledMap, keysClass,
+                        valuesClass);
+                }
+
+                break;
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Override
+    public void setRowId(final int parameterIndex, final RowId x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement.setToNull(parameterIndex - 1);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Override
+    public void setShort(final int parameterIndex, final short x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement.setInt(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setString(final int parameterIndex, final String x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        this.boundStatement = this.boundStatement.setString(parameterIndex - 1, x);
+    }
+
+    @Override
+    public void setTime(final int parameterIndex, final Time x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        // Time data type is handled as an 8 byte Long value of milliseconds since the epoch.
+        Object timeValue = null;
+        if (x != null) {
+           timeValue = JdbcLong.instance.decompose(x.getTime());
+        }
+        this.bindValues.put(parameterIndex, timeValue);
+    }
+
+    @Override
+    public void setTime(final int parameterIndex, final Time x, final Calendar cal) throws SQLException {
+        // Silently ignore the Calendar argument; it is not useful for the Cassandra implementation.
+        setTime(parameterIndex, x);
+    }
+
+    @Override
+    public void setTimestamp(final int parameterIndex, final Timestamp x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        // Timestamp data type is handled as an 8 byte Long value of milliseconds since the epoch.Nanos are not
+        // supported and are ignored.
+        this.boundStatement = this.boundStatement.setInstant(parameterIndex - 1, x.toInstant());
+    }
+
+    @Override
+    public void setTimestamp(final int parameterIndex, final Timestamp x, final Calendar cal) throws SQLException {
+        // Silently ignore the Calendar argument; it is not useful for the Cassandra implementation.
+        setTimestamp(parameterIndex, x);
+    }
+
+    @Override
+    public void setURL(final int parameterIndex, final URL value) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        // URL data type is handled as a String.
+        final String url = value.toString();
+        setString(parameterIndex, url);
+    }
+
+    @Override
+    public ResultSet getResultSet() throws SQLException {
+        checkNotClosed();
+        return this.currentResultSet;
     }
 
 }

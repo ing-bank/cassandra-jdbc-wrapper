@@ -36,17 +36,26 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CON;
+import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
 
+/**
+ * Cassandra prepared statement executed in the context of a pool of connections managed in a
+ * {@link PooledCassandraConnection}.
+ */
 class ManagedPreparedStatement extends AbstractStatement implements PreparedStatement {
+
     private final PooledCassandraConnection pooledCassandraConnection;
-
     private final ManagedConnection managedConnection;
-
     private CassandraPreparedStatement preparedStatement;
-
     private boolean poolable;
 
+    /**
+     * Constructor.
+     *
+     * @param pooledCassandraConnection The pooled connection to Cassandra database.
+     * @param managedConnection         The managed connection.
+     * @param preparedStatement         The prepared statement.
+     */
     ManagedPreparedStatement(final PooledCassandraConnection pooledCassandraConnection,
                              final ManagedConnection managedConnection,
                              final CassandraPreparedStatement preparedStatement) {
@@ -57,30 +66,30 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
 
     private void checkNotClosed() throws SQLNonTransientConnectionException {
         if (isClosed()) {
-            throw new SQLNonTransientConnectionException(WAS_CLOSED_CON);
+            throw new SQLNonTransientConnectionException(WAS_CLOSED_CONN);
         }
     }
 
     @Override
     public ManagedConnection getConnection() {
-        return managedConnection;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return preparedStatement == null || preparedStatement.isClosed();
+        return this.managedConnection;
     }
 
     @Override
     public void close() throws SQLNonTransientConnectionException {
         checkNotClosed();
-        pooledCassandraConnection.statementClosed(preparedStatement);
-        preparedStatement = null;
+        this.pooledCassandraConnection.statementClosed(this.preparedStatement);
+        this.preparedStatement = null;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return this.preparedStatement == null || this.preparedStatement.isClosed();
     }
 
     @Override
     public boolean isPoolable() {
-        return poolable;
+        return this.poolable;
     }
 
     @Override
@@ -90,7 +99,7 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
 
     @Override
     public int hashCode() {
-        return preparedStatement.getCql().hashCode();
+        return this.preparedStatement.getCql().hashCode();
     }
 
     @Override
@@ -98,15 +107,13 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
         return super.equals(o);
     }
 
-    // All the following methods use the pattern checkNotClosed() ; try-return/void ; catch-notify-throw
-
     @Override
-    public void addBatch(final String arg0) throws SQLException {
+    public void addBatch(final String cql) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.addBatch(arg0);
+            this.preparedStatement.addBatch(cql);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -115,9 +122,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void clearBatch() throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.clearBatch();
+            this.preparedStatement.clearBatch();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -126,31 +133,31 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void clearWarnings() throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.clearWarnings();
+            this.preparedStatement.clearWarnings();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public boolean execute(final String arg0) throws SQLException {
+    public boolean execute(final String cql) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.execute(arg0);
+            return this.preparedStatement.execute(cql);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public boolean execute(final String arg0, final int arg1) throws SQLException {
+    public boolean execute(final String cql, final int autoGeneratedKeys) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.execute(arg0, arg1);
+            return this.preparedStatement.execute(cql, autoGeneratedKeys);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -159,42 +166,42 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int[] executeBatch() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeBatch();
+            return this.preparedStatement.executeBatch();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public ResultSet executeQuery(final String arg0) throws SQLException {
+    public ResultSet executeQuery(final String cql) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeQuery(arg0);
+            return this.preparedStatement.executeQuery(cql);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public int executeUpdate(final String arg0) throws SQLException {
+    public int executeUpdate(final String cql) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeUpdate(arg0);
+            return this.preparedStatement.executeUpdate(cql);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public int executeUpdate(final String arg0, final int arg1) throws SQLException {
+    public int executeUpdate(final String cql, final int autoGeneratedKeys) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeUpdate(arg0, arg1);
+            return this.preparedStatement.executeUpdate(cql, autoGeneratedKeys);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -203,9 +210,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getFetchDirection() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getFetchDirection();
+            return this.preparedStatement.getFetchDirection();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setFetchDirection(final int direction) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setFetchDirection(direction);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -214,9 +232,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getFetchSize() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getFetchSize();
+            return this.preparedStatement.getFetchSize();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setFetchSize(final int rows) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setFetchSize(rows);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -225,9 +254,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getMaxFieldSize() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getMaxFieldSize();
+            return this.preparedStatement.getMaxFieldSize();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setMaxFieldSize(final int max) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setMaxFieldSize(max);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -236,9 +276,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getMaxRows() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getMaxRows();
+            return this.preparedStatement.getMaxRows();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setMaxRows(final int max) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setMaxRows(max);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -247,20 +298,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public boolean getMoreResults() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getMoreResults();
+            return this.preparedStatement.getMoreResults();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public boolean getMoreResults(final int arg0) throws SQLException {
+    public boolean getMoreResults(final int current) throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getMoreResults(arg0);
+            return this.preparedStatement.getMoreResults(current);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -269,9 +320,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getQueryTimeout() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getQueryTimeout();
+            return this.preparedStatement.getQueryTimeout();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setQueryTimeout(final int seconds) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setQueryTimeout(seconds);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -280,9 +342,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public ResultSet getResultSet() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getResultSet();
+            return this.preparedStatement.getResultSet();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -291,9 +353,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getResultSetConcurrency() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getResultSetConcurrency();
+            return this.preparedStatement.getResultSetConcurrency();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -302,9 +364,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getResultSetHoldability() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getResultSetHoldability();
+            return this.preparedStatement.getResultSetHoldability();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -313,9 +375,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getResultSetType() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getResultSetType();
+            return this.preparedStatement.getResultSetType();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -324,9 +386,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int getUpdateCount() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getUpdateCount();
+            return this.preparedStatement.getUpdateCount();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -335,97 +397,42 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public SQLWarning getWarnings() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getWarnings();
+            return this.preparedStatement.getWarnings();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public void setEscapeProcessing(final boolean arg0) throws SQLException {
+    public void setEscapeProcessing(final boolean enable) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setEscapeProcessing(arg0);
+            this.preparedStatement.setEscapeProcessing(enable);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public void setFetchDirection(final int arg0) throws SQLException {
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setFetchDirection(arg0);
+            return this.preparedStatement.isWrapperFor(iface);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
     @Override
-    public void setFetchSize(final int arg0) throws SQLException {
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setFetchSize(arg0);
+            return this.preparedStatement.unwrap(iface);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public void setMaxFieldSize(final int arg0) throws SQLException {
-        checkNotClosed();
-        try {
-            preparedStatement.setMaxFieldSize(arg0);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public void setMaxRows(final int arg0) throws SQLException {
-        checkNotClosed();
-        try {
-            preparedStatement.setMaxRows(arg0);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public void setQueryTimeout(final int arg0) throws SQLException {
-        checkNotClosed();
-        try {
-            preparedStatement.setQueryTimeout(arg0);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public boolean isWrapperFor(final Class<?> arg0) throws SQLException {
-        checkNotClosed();
-        try {
-            return preparedStatement.isWrapperFor(arg0);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public <T> T unwrap(final Class<T> arg0) throws SQLException {
-        checkNotClosed();
-        try {
-            return preparedStatement.unwrap(arg0);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -434,9 +441,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void addBatch() throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.addBatch();
+            this.preparedStatement.addBatch();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -445,9 +452,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void clearParameters() throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.clearParameters();
+            this.preparedStatement.clearParameters();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -456,9 +463,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public boolean execute() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.execute();
+            return this.preparedStatement.execute();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -467,9 +474,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public ResultSet executeQuery() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeQuery();
+            return this.preparedStatement.executeQuery();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -478,9 +485,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public int executeUpdate() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.executeUpdate();
+            return this.preparedStatement.executeUpdate();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -489,9 +496,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public ResultSetMetaData getMetaData() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getMetaData();
+            return this.preparedStatement.getMetaData();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -500,9 +507,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public ParameterMetaData getParameterMetaData() throws SQLException {
         checkNotClosed();
         try {
-            return preparedStatement.getParameterMetaData();
+            return this.preparedStatement.getParameterMetaData();
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -511,9 +518,31 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setBigDecimal(final int parameterIndex, final BigDecimal x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setBigDecimal(parameterIndex, x);
+            this.preparedStatement.setBigDecimal(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setBlob(final int parameterIndex, final Blob value) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setBlob(parameterIndex, value);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setBlob(final int parameterIndex, final InputStream value) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setBlob(parameterIndex, value);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -522,9 +551,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setBoolean(final int parameterIndex, final boolean x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setBoolean(parameterIndex, x);
+            this.preparedStatement.setBoolean(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -533,9 +562,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setByte(final int parameterIndex, final byte x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setByte(parameterIndex, x);
+            this.preparedStatement.setByte(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -544,10 +573,23 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setBytes(final int parameterIndex, final byte[] x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setBytes(parameterIndex, x);
+            this.preparedStatement.setBytes(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
+        }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    @Override
+    public void setCharacterStream(final int parameterIndex, final Reader reader, final int length)
+        throws SQLException {
+        try {
+            final String targetString = CharStreams.toString(reader);
+            reader.close();
+            setString(parameterIndex, targetString);
+        } catch (final IOException e) {
+            throw new SQLNonTransientException(e);
         }
     }
 
@@ -555,9 +597,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setDate(final int parameterIndex, final Date x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setDate(parameterIndex, x);
+            this.preparedStatement.setDate(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -566,9 +608,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setDate(final int parameterIndex, final Date x, final Calendar cal) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setDate(parameterIndex, x);
+            this.preparedStatement.setDate(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -577,9 +619,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setDouble(final int parameterIndex, final double x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setDouble(parameterIndex, x);
+            this.preparedStatement.setDouble(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -588,9 +630,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setFloat(final int parameterIndex, final float x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setFloat(parameterIndex, x);
+            this.preparedStatement.setFloat(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -599,9 +641,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setInt(final int parameterIndex, final int x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setInt(parameterIndex, x);
+            this.preparedStatement.setInt(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -610,9 +652,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setLong(final int parameterIndex, final long x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setLong(parameterIndex, x);
+            this.preparedStatement.setLong(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -621,9 +663,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setNString(final int parameterIndex, final String value) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setNString(parameterIndex, value);
+            this.preparedStatement.setNString(parameterIndex, value);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -632,9 +674,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setNull(final int parameterIndex, final int sqlType) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setNull(parameterIndex, sqlType);
+            this.preparedStatement.setNull(parameterIndex, sqlType);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -643,9 +685,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setNull(final int parameterIndex, final int sqlType, final String typeName) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setNull(parameterIndex, sqlType, typeName);
+            this.preparedStatement.setNull(parameterIndex, sqlType, typeName);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -654,9 +696,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setObject(final int parameterIndex, final Object x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setObject(parameterIndex, x);
+            this.preparedStatement.setObject(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -665,9 +707,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setObject(final int parameterIndex, final Object x, final int targetSqlType) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setObject(parameterIndex, x, targetSqlType);
+            this.preparedStatement.setObject(parameterIndex, x, targetSqlType);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -677,9 +719,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
                           final int scaleOrLength) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setObject(parameterIndex, x, targetSqlType, scaleOrLength);
+            this.preparedStatement.setObject(parameterIndex, x, targetSqlType, scaleOrLength);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -688,9 +730,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setRowId(final int parameterIndex, final RowId x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setRowId(parameterIndex, x);
+            this.preparedStatement.setRowId(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -699,9 +741,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setShort(final int parameterIndex, final short x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setShort(parameterIndex, x);
+            this.preparedStatement.setShort(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -710,9 +752,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setString(final int parameterIndex, final String x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setString(parameterIndex, x);
+            this.preparedStatement.setString(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -721,9 +763,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setTime(final int parameterIndex, final Time x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setTime(parameterIndex, x);
+            this.preparedStatement.setTime(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -732,9 +774,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setTime(final int parameterIndex, final Time x, final Calendar cal) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setTime(parameterIndex, x, cal);
+            this.preparedStatement.setTime(parameterIndex, x, cal);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -743,9 +785,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setTimestamp(final int parameterIndex, final Timestamp x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setTimestamp(parameterIndex, x);
+            this.preparedStatement.setTimestamp(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -754,9 +796,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setTimestamp(final int parameterIndex, final Timestamp x, final Calendar cal) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setTimestamp(parameterIndex, x, cal);
+            this.preparedStatement.setTimestamp(parameterIndex, x, cal);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
@@ -765,45 +807,11 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     public void setURL(final int parameterIndex, final URL x) throws SQLException {
         checkNotClosed();
         try {
-            preparedStatement.setURL(parameterIndex, x);
+            this.preparedStatement.setURL(parameterIndex, x);
         } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
         }
     }
 
-    @Override
-    public void setBlob(final int parameterIndex, final Blob value) throws SQLException {
-        checkNotClosed();
-        try {
-            preparedStatement.setBlob(parameterIndex, value);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public void setBlob(final int parameterIndex, final InputStream value) throws SQLException {
-        checkNotClosed();
-        try {
-            preparedStatement.setBlob(parameterIndex, value);
-        } catch (final SQLException sqlException) {
-            pooledCassandraConnection.statementErrorOccurred(preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public void setCharacterStream(final int parameterIndex, final Reader reader, final int length)
-        throws SQLException {
-        try {
-            final String targetString = CharStreams.toString(reader);
-            reader.close();
-
-            setString(parameterIndex, targetString);
-        } catch (final IOException e) {
-            throw new SQLNonTransientException(e);
-        }
-    }
 }

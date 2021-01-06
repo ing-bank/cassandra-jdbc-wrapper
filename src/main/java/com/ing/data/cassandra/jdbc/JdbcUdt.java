@@ -15,10 +15,18 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of a CQL user-defined type (corresponding Java type: {@link UdtValue}).
+ */
 public class JdbcUdt extends AbstractJdbcType<UdtValue> {
+
+    /**
+     * Gets a {@code JdbcUdt} instance.
+     */
     public static final JdbcUdt instance = new JdbcUdt();
 
     JdbcUdt() {
@@ -64,18 +72,15 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
         return value;
     }
 
-    @Override
     public int getScale(final UdtValue obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
-    @Override
     public int getPrecision(final UdtValue obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
-    @Override
-    public String toString(final UdtValue obj) {
+    public String toString(@NonNull final UdtValue obj) {
         return obj.toString();
     }
 

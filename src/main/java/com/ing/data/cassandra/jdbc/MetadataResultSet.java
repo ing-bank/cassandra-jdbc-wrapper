@@ -14,17 +14,18 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
-import com.datastax.oss.driver.api.core.cql.Row;
-import com.google.common.util.concurrent.ListenableFuture;
-
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
+/**
+ * A simple metadata result set made of {@link MetadataRow} objects.
+ *
+ * @see MetadataResultSets
+ */
 public class MetadataResultSet {
 
     private ArrayList<MetadataRow> rows;
+    private ColumnDefinitions columnDefinitions;
 
     /**
      * Constructor.
@@ -32,53 +33,38 @@ public class MetadataResultSet {
     public MetadataResultSet() {
     }
 
-    public MetadataResultSet setRows(final ArrayList<MetadataRow> schemas) {
-        this.rows = schemas;
+    /**
+     * Add rows to the metadata result set.
+     *
+     * @param metadataRows A list of {@code MetadataRows}.
+     * @return The updated instance of {@code MetadataResultSet}.
+     */
+    public MetadataResultSet setRows(final ArrayList<MetadataRow> metadataRows) {
+        this.rows = metadataRows;
+        // If there is at least one row, use the columns definitions of the first one as columns definitions for all
+        // the rows.
+        if (!metadataRows.isEmpty()) {
+            this.columnDefinitions = metadataRows.get(0).getColumnDefinitions();
+        }
         return this;
     }
 
+    /**
+     * Gets the columns of the metadata result set.
+     *
+     * @return The columns of the metadata result set.
+     */
     public ColumnDefinitions getColumnDefinitions() {
-        return null;
+        return this.columnDefinitions;
     }
 
-    public boolean isExhausted() {
-        return false;
-    }
-
-    public Row one() {
-        return null;
-    }
-
-    public List<MetadataRow> all() {
-        return rows;
-    }
-
+    /**
+     * Gets an iterator over the rows of the metadata result set.
+     *
+     * @return An iterator over the rows of the metadata result set.
+     */
     public Iterator<MetadataRow> iterator() {
-        return rows.iterator();
-    }
-
-    public int getAvailableWithoutFetching() {
-        return 0;
-    }
-
-    public boolean isFullyFetched() {
-        return false;
-    }
-
-    public ListenableFuture<Void> fetchMoreResults() {
-        return null;
-    }
-
-    public ExecutionInfo getExecutionInfo() {
-        return null;
-    }
-
-    public List<ExecutionInfo> getAllExecutionInfo() {
-        return null;
-    }
-
-    public boolean wasApplied() {
-        return false;
+        return this.rows.iterator();
     }
 
 }

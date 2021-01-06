@@ -19,7 +19,18 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code INET} CQL type (corresponding Java type: {@link InetAddress}).
+ * <p>CQL type description: IP address string in IPv4 or IPv6 format, used by the python-cql driver and CQL native
+ * protocols.</p>
+ */
 public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
+
+    private static final int INET_SCALE = 0;
+
+    /**
+     * Gets a {@code JdbcInetAddress} instance.
+     */
     public static final JdbcInetAddress instance = new JdbcInetAddress();
 
     JdbcInetAddress() {
@@ -30,7 +41,7 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
     }
 
     public int getScale(final InetAddress obj) {
-        return 0;
+        return INET_SCALE;
     }
 
     public int getPrecision(final InetAddress obj) {
@@ -76,4 +87,5 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
     public Object decompose(final InetAddress value) {
         return value.getAddress();
     }
+
 }

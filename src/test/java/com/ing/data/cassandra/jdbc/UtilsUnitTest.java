@@ -22,15 +22,24 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.sql.SQLException;
+import java.sql.SQLNonTransientConnectionException;
+import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.Utils.BAD_KEYSPACE;
+import static com.ing.data.cassandra.jdbc.Utils.HOST_IN_URL;
+import static com.ing.data.cassandra.jdbc.Utils.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.Utils.TAG_PORT_NUMBER;
+import static com.ing.data.cassandra.jdbc.Utils.TAG_SERVER_NAME;
+import static com.ing.data.cassandra.jdbc.Utils.URI_IS_SIMPLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UtilsUnitTest {
 
@@ -74,6 +83,22 @@ class UtilsUnitTest {
                     put(Utils.TAG_PORT_NUMBER, "9042");
                     put(Utils.TAG_DATABASE_NAME, "Keyspace1");
                     put(Utils.TAG_LOCAL_DATACENTER, "DC1");
+                }}),
+            Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1&debug=true&primarydc=DC1"
+                    + "&backupdc=DC2&retries=5&loadbalancing=com.company.package.CustomLBPolicy"
+                    + "&retry=com.company.package.CustomRetryPolicy&reconnection=ConstantReconnectionPolicy()",
+                new HashMap<String, String>() {{
+                    put(Utils.TAG_SERVER_NAME, "localhost");
+                    put(Utils.TAG_PORT_NUMBER, "9042");
+                    put(Utils.TAG_DATABASE_NAME, "Keyspace1");
+                    put(Utils.TAG_LOCAL_DATACENTER, "DC1");
+                    put(Utils.TAG_DEBUG, "true");
+                    put(Utils.TAG_PRIMARY_DC, "DC1");
+                    put(Utils.TAG_BACKUP_DC, "DC2");
+                    put(Utils.TAG_CONNECTION_RETRIES, "5");
+                    put(Utils.TAG_LOAD_BALANCING_POLICY, "com.company.package.CustomLBPolicy");
+                    put(Utils.TAG_RETRY_POLICY, "com.company.package.CustomRetryPolicy");
+                    put(Utils.TAG_RECONNECT_POLICY, "ConstantReconnectionPolicy()");
                 }})
         );
     }
@@ -137,4 +162,56 @@ class UtilsUnitTest {
         assertEquals(jdbcUrl, Utils.PROTOCOL + result);
     }
 
+    @Test
+    void testCreateSubNameWithoutParams() throws Exception {
+        final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1";
+        final Properties props = Utils.parseURL(jdbcUrl);
+        final String result = Utils.createSubName(props);
+        assertEquals(jdbcUrl, Utils.PROTOCOL + result);
+    }
+
+    @Test
+    void testInvalidJdbcUrl() {
+        assertThrows(SQLSyntaxErrorException.class, () -> Utils.parseURL("jdbc:cassandra/bad%uri"));
+    }
+
+    @Test
+    void testNullHost() {
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> Utils.parseURL("jdbc:cassandra:"));
+        assertEquals(HOST_IN_URL, exception.getMessage());
+    }
+
+    @Test
+    void testInvalidKeyspaceName() {
+        final String invalidKeyspaceName = "bad-keyspace";
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> Utils.parseURL("jdbc:cassandra://hostname:9042/" + invalidKeyspaceName));
+        assertEquals(String.format(BAD_KEYSPACE, invalidKeyspaceName), exception.getMessage());
+    }
+
+    @Test
+    void testNotNullUserInfo() {
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> Utils.parseURL("jdbc:cassandra://john_doe@hostname:9042/validKeyspace"));
+        assertEquals(URI_IS_SIMPLE, exception.getMessage());
+    }
+
+    @Test
+    void testCreateSubNameWithoutHost() throws Exception {
+        final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1";
+        final Properties props = Utils.parseURL(jdbcUrl);
+        props.remove(TAG_SERVER_NAME);
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> Utils.createSubName(props));
+        assertEquals(HOST_REQUIRED, exception.getMessage());
+    }
+
+    @Test
+    void testCreateSubNameWithInvalidPortNumber() throws Exception {
+        final String jdbcUrl = "jdbc:cassandra://localhost/Keyspace1";
+        final Properties props = Utils.parseURL(jdbcUrl);
+        props.put(TAG_PORT_NUMBER, "-9042");
+        assertThrows(SQLNonTransientConnectionException.class, () -> Utils.createSubName(props));
+    }
 }

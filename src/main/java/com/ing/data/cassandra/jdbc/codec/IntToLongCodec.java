@@ -24,7 +24,10 @@ import org.apache.cassandra.utils.ByteBufferUtil;
 
 import java.nio.ByteBuffer;
 
-public class IntToLongCodec implements TypeCodec<Long> {
+/**
+ * Manages the two-way conversion between the CQL type {@link DataTypes#INT} and the Java type {@link Long}.
+ */
+public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Long> {
 
     public IntToLongCodec() {
     }
@@ -42,31 +45,29 @@ public class IntToLongCodec implements TypeCodec<Long> {
     }
 
     @Override
-    public ByteBuffer encode(final Long paramT, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramT == null) {
+    public ByteBuffer encode(final Long value, @NonNull final ProtocolVersion protocolVersion) {
+        if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(paramT.intValue());
+        return ByteBufferUtil.bytes(value.intValue());
     }
 
     @Override
-    public Long decode(final ByteBuffer paramByteBuffer, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramByteBuffer == null) {
+    public Long decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+        if (bytes == null) {
             return null;
-
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        return ByteBufferUtil.toLong(paramByteBuffer.duplicate());
+        return ByteBufferUtil.toLong(bytes.duplicate());
     }
 
     @Override
-    public Long parse(final String paramString) {
-        return Long.valueOf(paramString);
+    Long parseNonNull(@NonNull final String value) {
+        return Long.valueOf(value);
     }
 
-    @NonNull
     @Override
-    public String format(final Long paramT) {
-        return String.valueOf(paramT);
+    String formatNonNull(@NonNull final Long value) {
+        return String.valueOf(value);
     }
 }

@@ -12,12 +12,12 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.ListType;
 import com.datastax.oss.driver.api.core.type.MapType;
@@ -37,6 +37,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
@@ -78,152 +80,123 @@ import static com.ing.data.cassandra.jdbc.Utils.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RSLT;
+import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
 
 /**
- * A Cassandra result set.
+ * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
  * <p>
- * The Supported Data types in CQL are as follows:
+ *     It also implements {@link CassandraResultSetExtras} interface providing extra methods not defined in JDBC API to
+ *     better handle some CQL data types.
  * </p>
- * <table>
- * <tr>
- * <th>type</th>
- * <th>java type</th>
- * <th>description</th>
- * </tr>
- * <tr>
- * <td>ascii</td>
- * <td>String</td>
- * <td>ASCII character string</td>
- * </tr>
- * <tr>
- * <td>bigint</td>
- * <td>Long</td>
- * <td>64-bit signed long</td>
- * </tr>
- * <tr>
- * <td>blob</td>
- * <td>ByteBuffer</td>
- * <td>Arbitrary bytes (no validation)</td>
- * </tr>
- * <tr>
- * <td>boolean</td>
- * <td>Boolean</td>
- * <td>true or false</td>
- * </tr>
- * <tr>
- * <td>counter</td>
- * <td>Long</td>
- * <td>Counter column (64-bit long)</td>
- * </tr>
- * <tr>
- * <td>decimal</td>
- * <td>BigDecimal</td>
- * <td>Variable-precision decimal</td>
- * </tr>
- * <tr>
- * <td>double</td>
- * <td>Double</td>
- * <td>64-bit IEEE-754 floating point</td>
- * </tr>
- * <tr>
- * <td>float</td>
- * <td>Float</td>
- * <td>32-bit IEEE-754 floating point</td>
- * </tr>
- * <tr>
- * <td>int</td>
- * <td>Integer</td>
- * <td>32-bit signed int</td>
- * </tr>
- * <tr>
- * <td>text</td>
- * <td>String</td>
- * <td>UTF8 encoded string</td>
- * </tr>
- * <tr>
- * <td>timestamp</td>
- * <td>Date</td>
- * <td>A timestamp</td>
- * </tr>
- * <tr>
- * <td>uuid</td>
- * <td>UUID</td>
- * <td>Type 1 or type 4 UUID</td>
- * </tr>
- * <tr>
- * <td>varchar</td>
- * <td>String</td>
- * <td>UTF8 encoded string</td>
- * </tr>
- * <tr>
- * <td>varint</td>
- * <td>BigInteger</td>
- * <td>Arbitrary-precision integer</td>
- * </tr>
- * </table>
+ * <p>
+ *     The supported data types in CQL are:
+ *     <table border="1">
+ *         <tr><th>CQL Type</th><th>Java type</th><th>Description</th></tr>
+ *         <tr><td>ascii</td><td>{@link String}</td><td>US-ASCII character string</td></tr>
+ *         <tr><td>bigint</td><td>{@link Long}</td><td>64-bit signed long</td></tr>
+ *         <tr><td>blob</td><td>{@link ByteBuffer}</td><td>Arbitrary bytes (no validation)</td></tr>
+ *         <tr><td>boolean</td><td>{@link Boolean}</td><td>Boolean value: true or false</td></tr>
+ *         <tr><td>counter</td><td>{@link Long}</td><td>Counter column (64-bit long)</td></tr>
+ *         <tr><td>date</td><td>{@link Date}</td><td>A date with no corresponding time value; encoded date as a 32-bit
+ *         integer representing days since epoch (January 1, 1970)</td></tr>
+ *         <tr><td>decimal</td><td>{@link BigDecimal}</td><td>Variable-precision decimal</td></tr>
+ *         <tr><td>double</td><td>{@link Double}</td><td>64-bit IEEE-754 floating point</td></tr>
+ *         <tr><td>float</td><td>{@link Float}</td><td>32-bit IEEE-754 floating point</td></tr>
+ *         <tr><td>inet</td><td>{@link InetAddress}</td><td>IP address string in IPv4 or IPv6 format</td></tr>
+ *         <tr><td>int</td><td>{@link Integer}</td><td>32-bit signed integer</td></tr>
+ *         <tr><td>list</td><td>{@link List}</td><td>A collection of one or more ordered elements:
+ *         <code>[literal, literal, literal]</code></td></tr>
+ *         <tr><td>map</td><td>{@link Map}</td><td>A JSON-style array of literals:
+ *         <code>{ literal : literal, literal : literal ... }</code></td></tr>
+ *         <tr><td>set</td><td>{@link Set}</td><td>A collection of one or more elements:
+ *         <code>{ literal, literal, literal }</code></td></tr>
+ *         <tr><td>text</td><td>{@link String}</td><td>UTF-8 encoded string</td></tr>
+ *         <tr><td>timestamp</td><td>{@link Date}</td><td>Date and time with millisecond precision, encoded as 8 bytes
+ *         since epoch</td></tr>
+ *         <tr><td>timeuuid</td><td>{@link UUID}</td><td>Version 1 UUID only</td></tr>
+ *         <tr><td>tuple</td><td>{@link TupleValue}</td><td>A group of 2-3 fields</td></tr>
+ *         <tr><td>uuid</td><td>{@link UUID}</td><td>A UUID in standard UUID format</td></tr>
+ *         <tr><td>varchar</td><td>{@link String}</td><td>UTF-8 encoded string</td></tr>
+ *         <tr><td>varint</td><td>{@link BigInteger}</td><td>Arbitrary-precision integer</td></tr>
+ *     </table>
+ *     See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
+ *         CQL data types reference</a>.
+ * </p>
+ *
+ * @see ResultSet
  */
-class CassandraResultSet extends AbstractResultSet implements CassandraResultSetExtras {
-    private static final Logger log = LoggerFactory.getLogger(CassandraResultSet.class);
-
-    public static final int DEFAULT_TYPE = TYPE_FORWARD_ONLY;
-    public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
-    public static final int DEFAULT_HOLDABILITY = HOLD_CURSORS_OVER_COMMIT;
-    private Row currentRow;
+public class CassandraResultSet extends AbstractResultSet implements CassandraResultSetExtras {
 
     /**
-     * The rows iterator.
+     * An empty Cassandra result set. It can be used to provide default implementations to methods returning
+     * {@link ResultSet} objects.
      */
-    private Iterator<Row> rowsIterator;
+    public static final CassandraResultSet EMPTY_RESULT_SET = new CassandraResultSet();
+    /**
+     * Default result set type for Cassandra implementation: {@link #TYPE_FORWARD_ONLY}.
+     */
+    public static final int DEFAULT_TYPE = TYPE_FORWARD_ONLY;
+    /**
+     * Default result set concurrency for Cassandra implementation: {@link #CONCUR_READ_ONLY}.
+     */
+    public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
+    /**
+     * Default result set holdability for Cassandra implementation: {@link #HOLD_CURSORS_OVER_COMMIT}.
+     */
+    public static final int DEFAULT_HOLDABILITY = HOLD_CURSORS_OVER_COMMIT;
 
-    int rowNumber = 0;
-    // the current row key when iterating through results.
-    private final byte[] curRowKey = null;
+    private static final Logger log = LoggerFactory.getLogger(CassandraResultSet.class);
 
-    private final CResultSetMetaData meta;
-
+    // Metadata of this result set.
+    private final CResultSetMetaData metadata;
     private final CassandraStatement statement;
-
+    private Row currentRow;
+    private Iterator<Row> rowsIterator;
     private int resultSetType;
-
     private int fetchDirection;
-
     private int fetchSize;
-
     private boolean wasNull;
-
+    // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
+    int rowNumber = 0;
 
     /**
      * No argument constructor.
      */
     CassandraResultSet() {
-        statement = null;
-        meta = new CResultSetMetaData();
+        this.metadata = new CResultSetMetaData();
+        this.statement = null;
     }
 
     /**
-     * Instantiates a new Cassandra result set from a {@link ResultSet}.
+     * Constructor. It instantiates a new Cassandra result set from a {@link ResultSet}.
+     *
+     * @param statement The statement.
+     * @param resultSet The result set from the Cassandra driver.
      */
     CassandraResultSet(final CassandraStatement statement, final ResultSet resultSet) throws SQLException {
+        this.metadata = new CResultSetMetaData();
         this.statement = statement;
         this.resultSetType = statement.getResultSetType();
         this.fetchDirection = statement.getFetchDirection();
         this.fetchSize = statement.getFetchSize();
         this.driverResultSet = resultSet;
+        this.rowsIterator = resultSet.iterator();
 
-        rowsIterator = resultSet.iterator();
+        // Initialize the column values from the first row.
         if (hasMoreRows()) {
             populateColumns();
         }
-
-        meta = new CResultSetMetaData();
     }
 
     /**
-     * Instantiates a new Cassandra result set from a list of {@link ResultSet}.
+     * Constructor. It instantiates a new Cassandra result set from a list of {@link ResultSet}.
+     *
+     * @param statement     The statement.
+     * @param resultSets    The list of result sets from the Cassandra driver.
      */
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
+        this.metadata = new CResultSetMetaData();
         this.statement = statement;
         this.resultSetType = statement.getResultSetType();
         this.fetchDirection = statement.getFetchDirection();
@@ -232,10 +205,10 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         // We have several result sets, but we will use only the first one for metadata needs.
         this.driverResultSet = resultSets.get(0);
 
-        // Now we concatenate iterators of the different result sets into a single one.
-        rowsIterator = driverResultSet.iterator();
+        // Now, we concatenate iterators of the different result sets into a single one.
+        this.rowsIterator = driverResultSet.iterator();
         for (int i = 1; i < resultSets.size(); i++) {
-            // this leads to StackOverflow exception when there are too many result sets.
+            // This leads to StackOverflowException when there are too many result sets.
             rowsIterator = Iterators.concat(rowsIterator, resultSets.get(i).iterator());
         }
 
@@ -243,26 +216,30 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         if (hasMoreRows()) {
             populateColumns();
         }
-
-        meta = new CResultSetMetaData();
-    }
-
-    private boolean hasMoreRows() {
-        return (rowsIterator != null && (rowsIterator.hasNext() || (rowNumber == 0 && currentRow != null)));
     }
 
     private void populateColumns() {
-        currentRow = rowsIterator.next();
+        this.currentRow = this.rowsIterator.next();
     }
 
     @Override
-    public boolean absolute(final int arg0) throws SQLException {
+    DataType getCqlDataType(final int columnIndex) {
+        return this.currentRow.getColumnDefinitions().get(columnIndex - 1).getType();
+    }
+
+    @Override
+    DataType getCqlDataType(final String columnLabel) {
+        return this.currentRow.getColumnDefinitions().get(columnLabel).getType();
+    }
+
+    @Override
+    public boolean absolute(final int row) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
     public void afterLast() throws SQLException {
-        if (resultSetType == TYPE_FORWARD_ONLY) {
+        if (this.resultSetType == TYPE_FORWARD_ONLY) {
             throw new SQLNonTransientException(FORWARD_ONLY);
         }
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
@@ -270,36 +247,36 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
 
     @Override
     public void beforeFirst() throws SQLException {
-        if (resultSetType == TYPE_FORWARD_ONLY) {
+        if (this.resultSetType == TYPE_FORWARD_ONLY) {
             throw new SQLNonTransientException(FORWARD_ONLY);
         }
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     private void checkIndex(final int index) throws SQLException {
-        if (currentRow != null) {
-            wasNull = currentRow.isNull(index - 1);
-            if (index < 1 || index > currentRow.getColumnDefinitions().size()) {
+        if (this.currentRow != null) {
+            this.wasNull = this.currentRow.isNull(index - 1);
+            if (index < 1 || index > this.currentRow.getColumnDefinitions().size()) {
                 throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
-                    + currentRow.getColumnDefinitions().size());
+                    + this.currentRow.getColumnDefinitions().size());
             }
-        } else if (driverResultSet != null) {
-            if (index < 1 || index > driverResultSet.getColumnDefinitions().size()) {
+        } else if (this.driverResultSet != null) {
+            if (index < 1 || index > this.driverResultSet.getColumnDefinitions().size()) {
                 throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
-                    + driverResultSet.getColumnDefinitions().size());
+                    + this.driverResultSet.getColumnDefinitions().size());
             }
         }
 
     }
 
     private void checkName(final String name) throws SQLException {
-        if (currentRow != null) {
-            wasNull = currentRow.isNull(name);
-            if (!currentRow.getColumnDefinitions().contains(name)) {
+        if (this.currentRow != null) {
+            this.wasNull = this.currentRow.isNull(name);
+            if (!this.currentRow.getColumnDefinitions().contains(name)) {
                 throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
             }
-        } else if (driverResultSet != null) {
-            if (!driverResultSet.getColumnDefinitions().contains(name)) {
+        } else if (this.driverResultSet != null) {
+            if (!this.driverResultSet.getColumnDefinitions().contains(name)) {
                 throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
             }
         }
@@ -307,14 +284,14 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
 
     private void checkNotClosed() throws SQLException {
         if (isClosed()) {
-            throw new SQLRecoverableException(WAS_CLOSED_RSLT);
+            throw new SQLRecoverableException(WAS_CLOSED_RS);
         }
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        // This implementation does not support the collection of warnings so clearing is a no-op
-        // but it is still an exception to call this on a closed connection.
+        // This implementation does not support the collection of warnings so clearing is a no-op but it still throws
+        // an exception when called on a closed result set.
         checkNotClosed();
     }
 
@@ -326,10 +303,10 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public int findColumn(final String name) throws SQLException {
+    public int findColumn(final String columnLabel) throws SQLException {
         checkNotClosed();
-        checkName(name);
-        return currentRow.getColumnDefinitions().firstIndexOf(name);
+        checkName(columnLabel);
+        return this.currentRow.getColumnDefinitions().firstIndexOf(columnLabel);
     }
 
     @Override
@@ -338,106 +315,159 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public BigDecimal getBigDecimal(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getBigDecimal(index - 1);
+    public BigDecimal getBigDecimal(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getBigDecimal(columnIndex - 1);
     }
 
     /**
-     * @deprecated
+     * @deprecated use {@link #getBigDecimal(int)}.
      */
     @Override
     @Deprecated
-    public BigDecimal getBigDecimal(final int index, final int scale) throws SQLException {
-        checkIndex(index);
-        return currentRow.getBigDecimal(index - 1).setScale(scale);
+    public BigDecimal getBigDecimal(final int columnIndex, final int scale) throws SQLException {
+        checkIndex(columnIndex);
+        final BigDecimal decimalValue = this.currentRow.getBigDecimal(columnIndex - 1);
+        if (decimalValue == null) {
+            return null;
+        } else {
+            return decimalValue.setScale(scale, RoundingMode.HALF_UP);
+        }
     }
 
     @Override
-    public BigDecimal getBigDecimal(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getBigDecimal(name);
+    public BigDecimal getBigDecimal(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getBigDecimal(columnLabel);
     }
 
     /**
-     * @deprecated
+     * @deprecated use {@link #getBigDecimal(String)}.
      */
     @Override
     @Deprecated
-    public BigDecimal getBigDecimal(final String name, final int scale) throws SQLException {
-        checkName(name);
-        return currentRow.getBigDecimal(name).setScale(scale);
+    public BigDecimal getBigDecimal(final String columnLabel, final int scale) throws SQLException {
+        checkName(columnLabel);
+        final BigDecimal decimalValue = this.currentRow.getBigDecimal(columnLabel);
+        if (decimalValue == null) {
+            return null;
+        } else {
+            return decimalValue.setScale(scale, RoundingMode.HALF_UP);
+        }
     }
 
     @Override
-    public BigInteger getBigInteger(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getBigInteger(index - 1);
+    public BigInteger getBigInteger(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getBigInteger(columnIndex - 1);
     }
 
     @Override
-    public BigInteger getBigInteger(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getBigInteger(name);
+    public BigInteger getBigInteger(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getBigInteger(columnLabel);
     }
 
     @Override
-    public boolean getBoolean(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getBoolean(index - 1);
+    public InputStream getBinaryStream(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnIndex - 1);
+        if (byteBuffer != null) {
+            final byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes, 0, bytes.length);
+            return new ByteArrayInputStream(bytes);
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public boolean getBoolean(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getBoolean(name);
+    public InputStream getBinaryStream(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnLabel);
+        if (byteBuffer != null) {
+            final byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes, 0, bytes.length);
+            return new ByteArrayInputStream(bytes);
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public byte getByte(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getByte(index - 1);
+    public Blob getBlob(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnIndex - 1);
+        if (byteBuffer != null) {
+            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public byte getByte(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getByte(name);
+    public Blob getBlob(final String columnName) throws SQLException {
+        checkName(columnName);
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnName);
+        if (byteBuffer != null) {
+            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public byte[] getBytes(final int index) {
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(index - 1);
+    public boolean getBoolean(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getBoolean(columnIndex - 1);
+    }
+
+    @Override
+    public boolean getBoolean(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getBoolean(columnLabel);
+    }
+
+    @Override
+    public byte getByte(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getByte(columnIndex - 1);
+    }
+
+    @Override
+    public byte getByte(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getByte(columnLabel);
+    }
+
+    @Override
+    public byte[] getBytes(final int columnIndex) {
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnIndex - 1);
         if (byteBuffer != null) {
             return byteBuffer.array();
         }
-        return new byte[0];
+        return null;
     }
 
     @Override
-    public byte[] getBytes(final String name) {
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(name);
+    public byte[] getBytes(final String columnLabel) {
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnLabel);
         if (byteBuffer != null) {
             return byteBuffer.array();
         }
-        return new byte[0];
+        return null;
     }
 
     @Override
     public int getConcurrency() throws SQLException {
         checkNotClosed();
-        return statement.getResultSetConcurrency();
-    }
-
-    public LocalDate getLocalDate(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getLocalDate(index - 1);
+        return this.statement.getResultSetConcurrency();
     }
 
     @Override
-    public Date getDate(final int index) throws SQLException {
-        checkIndex(index);
-        final LocalDate localDate = currentRow.getLocalDate(index - 1);
+    public Date getDate(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final LocalDate localDate = this.currentRow.getLocalDate(columnIndex - 1);
         if (localDate == null) {
             return null;
         } else {
@@ -446,16 +476,15 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public Date getDate(final int index, final Calendar calendar) throws SQLException {
-        checkIndex(index);
+    public Date getDate(final int columnIndex, final Calendar calendar) throws SQLException {
         // silently ignore the Calendar argument; it's a hint we do not need
-        return getDate(index - 1);
+        return getDate(columnIndex);
     }
 
     @Override
-    public Date getDate(final String name) throws SQLException {
-        checkName(name);
-        final LocalDate localDate = currentRow.getLocalDate(name);
+    public Date getDate(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final LocalDate localDate = this.currentRow.getLocalDate(columnLabel);
         if (localDate == null) {
             return null;
         } else {
@@ -464,279 +493,330 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public Date getDate(final String name, final Calendar calendar) throws SQLException {
-        checkName(name);
+    public Date getDate(final String columnLabel, final Calendar calendar) throws SQLException {
         // silently ignore the Calendar argument; it's a hint we do not need
-        return getDate(name);
+        return getDate(columnLabel);
     }
 
     @Override
-    public double getDouble(final int index) throws SQLException {
-        checkIndex(index);
-        if ("float".equals(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))) {
-            return currentRow.getFloat(index - 1);
+    public double getDouble(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        if (isCqlType(columnIndex, DataTypeEnum.FLOAT)) {
+            return this.currentRow.getFloat(columnIndex - 1);
         }
-        return currentRow.getDouble(index - 1);
+        return this.currentRow.getDouble(columnIndex - 1);
     }
 
     @Override
-    public double getDouble(final String name) throws SQLException {
-        checkName(name);
-        if ("float".equals(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))) {
-            return currentRow.getFloat(name);
+    public double getDouble(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        if (isCqlType(columnLabel, DataTypeEnum.FLOAT)) {
+            return this.currentRow.getFloat(columnLabel);
         }
-        return currentRow.getDouble(name);
+        return this.currentRow.getDouble(columnLabel);
     }
 
     @Override
     public int getFetchDirection() throws SQLException {
         checkNotClosed();
-        return fetchDirection;
+        return this.fetchDirection;
+    }
+
+    @Override
+    public void setFetchDirection(final int direction) throws SQLException {
+        checkNotClosed();
+
+        if (direction == FETCH_FORWARD || direction == FETCH_REVERSE || direction == FETCH_UNKNOWN) {
+            if (getType() == TYPE_FORWARD_ONLY && direction != FETCH_FORWARD) {
+                throw new SQLSyntaxErrorException("attempt to set an illegal direction: " + direction);
+            }
+            this.fetchDirection = direction;
+        }
+        throw new SQLSyntaxErrorException(String.format(BAD_FETCH_DIR, direction));
     }
 
     @Override
     public int getFetchSize() throws SQLException {
         checkNotClosed();
-        return fetchSize;
+        return this.fetchSize;
     }
 
     @Override
-    public float getFloat(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getFloat(index - 1);
+    public void setFetchSize(final int size) throws SQLException {
+        checkNotClosed();
+        if (size < 0) {
+            throw new SQLException(String.format(BAD_FETCH_SIZE, size));
+        }
+        this.fetchSize = size;
     }
 
     @Override
-    public float getFloat(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getFloat(name);
+    public float getFloat(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getFloat(columnIndex - 1);
     }
 
+    @Override
+    public float getFloat(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getFloat(columnLabel);
+    }
+
+    @SuppressWarnings("MagicConstant")
     @Override
     public int getHoldability() throws SQLException {
         checkNotClosed();
-        return statement.getResultSetHoldability();
+        return this.statement.getResultSetHoldability();
     }
 
     @Override
-    public int getInt(final int index) throws SQLException {
-        checkIndex(index);
-        return currentRow.getInt(index - 1);
+    public int getInt(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getInt(columnIndex - 1);
     }
 
     @Override
-    public int getInt(final String name) throws SQLException {
-        checkName(name);
-        return currentRow.getInt(name);
+    public int getInt(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getInt(columnLabel);
     }
 
     @Override
-    public byte[] getKey() {
-        return curRowKey;
-    }
+    public List<?> getList(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final DataType cqlDataType = getCqlDataType(columnIndex);
 
-    @Override
-    public List<?> getList(final int index) throws SQLException {
-        checkIndex(index);
-        if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))
-            .isCollection()) {
+        if (DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false)).isCollection()) {
             try {
-                final ListType listType = (ListType) currentRow.getColumnDefinitions().get(index - 1).getType();
-                return Lists.newArrayList(currentRow.getList(index - 1,
-                    Class.forName(DataTypeEnum.fromCqlTypeName(listType.getElementType().asCql(false, false))
-                        .asJavaClass().getCanonicalName())));
+                final ListType listType = (ListType) cqlDataType;
+                final Class<?> itemsClass = Class.forName(DataTypeEnum.fromCqlTypeName(
+                    listType.getElementType().asCql(false, false)).asJavaClass().getCanonicalName());
+                final List<?> resultList = this.currentRow.getList(columnIndex - 1, itemsClass);
+                if (resultList == null) {
+                    return null;
+                }
+                return Lists.newArrayList(resultList);
             } catch (final ClassNotFoundException e) {
                 log.warn("Error while executing getList()", e);
             }
         }
-        return currentRow.getList(index - 1, String.class);
+        return this.currentRow.getList(columnIndex - 1, String.class);
     }
 
     @Override
-    public List<?> getList(final String name) throws SQLException {
-        checkName(name);
-        if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))
-            .isCollection()) {
+    public List<?> getList(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
             try {
-                final ListType listType = (ListType) currentRow.getColumnDefinitions().get(name).getType();
-                return Lists.newArrayList(currentRow.getList(name,
-                    Class.forName(DataTypeEnum.fromCqlTypeName(listType.getElementType().asCql(false, false))
-                        .asJavaClass().getCanonicalName())));
+                final ListType listType = (ListType) getCqlDataType(columnLabel);
+                final Class<?> itemsClass = Class.forName(DataTypeEnum.fromCqlTypeName(
+                    listType.getElementType().asCql(false, false)).asJavaClass().getCanonicalName());
+                final List<?> resultList = this.currentRow.getList(columnLabel, itemsClass);
+                if (resultList == null) {
+                    return null;
+                }
+                return Lists.newArrayList(resultList);
             } catch (final ClassNotFoundException e) {
                 log.warn("Error while executing getList()", e);
             }
         }
-        return currentRow.getList(name, String.class);
+        return this.currentRow.getList(columnLabel, String.class);
+    }
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link LocalDate}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    public LocalDate getLocalDate(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getLocalDate(columnIndex - 1);
     }
 
     @Override
-    public long getLong(final int index) throws SQLException {
-        checkIndex(index);
-        if ("int".equals(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))) {
-            return currentRow.getInt(index - 1);
-        } else if ("varint".equals(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))) {
-            final BigInteger bigintValue = currentRow.getBigInteger(index - 1);
+    public long getLong(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        if (isCqlType(columnIndex, DataTypeEnum.INT)) {
+            return this.currentRow.getInt(columnIndex - 1);
+        } else if (isCqlType(columnIndex, DataTypeEnum.VARINT)) {
+            final BigInteger bigintValue = currentRow.getBigInteger(columnIndex - 1);
             if (bigintValue != null) {
                 return bigintValue.longValue();
             } else {
                 return Long.MIN_VALUE;
             }
         } else {
-            return currentRow.getLong(index - 1);
+            return this.currentRow.getLong(columnIndex - 1);
         }
     }
 
     @Override
-    public long getLong(final String name) throws SQLException {
-        checkName(name);
-        if ("int".equals(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))) {
-            return currentRow.getInt(name);
-        } else if ("varint".equals(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))) {
-            final BigInteger bigintValue = currentRow.getBigInteger(name);
+    public long getLong(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        if (isCqlType(columnLabel, DataTypeEnum.INT)) {
+            return this.currentRow.getInt(columnLabel);
+        } else if (isCqlType(columnLabel, DataTypeEnum.VARINT)) {
+            final BigInteger bigintValue = currentRow.getBigInteger(columnLabel);
             if (bigintValue != null) {
                 return bigintValue.longValue();
             } else {
                 return Long.MIN_VALUE;
             }
         } else {
-            return currentRow.getLong(name);
+            return this.currentRow.getLong(columnLabel);
         }
     }
 
     @Override
-    public Map<?, ?> getMap(final int index) throws SQLException {
-        checkIndex(index);
-        wasNull = currentRow.isNull(index - 1);
+    public Map<?, ?> getMap(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
 
-        final DefaultMapType mapType = (DefaultMapType) currentRow.getColumnDefinitions().get(index).getType();
+        final DefaultMapType mapType = (DefaultMapType) getCqlDataType(columnIndex);
         final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType().asCql(false, false)).javaType;
         final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType().asCql(false, false)).javaType;
 
-        return currentRow.getMap(index - 1, keysClass, valuesClass);
+        return this.currentRow.getMap(columnIndex - 1, keysClass, valuesClass);
     }
 
     @Override
-    public Map<?, ?> getMap(final String name) throws SQLException {
-        checkName(name);
+    public Map<?, ?> getMap(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
 
-        final DefaultMapType mapType = (DefaultMapType) currentRow.getColumnDefinitions().get(name).getType();
+        final DefaultMapType mapType = (DefaultMapType) getCqlDataType(columnLabel);
         final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType().asCql(false, false)).javaType;
         final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType().asCql(false, false)).javaType;
 
-        return currentRow.getMap(name, keysClass, valuesClass);
+        return this.currentRow.getMap(columnLabel, keysClass, valuesClass);
     }
 
     @Override
     public ResultSetMetaData getMetaData() {
-        return meta;
+        return this.metadata;
     }
 
     @Override
-    @SuppressWarnings({"cast", "boxing"})
-    public Object getObject(final int index) throws SQLException {
-        checkIndex(index);
-        final DataType datatype;
+    public Object getObject(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final DataType cqlDataType = getCqlDataType(columnIndex);
+        final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false));
 
-        if ("udt".equals(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))) {
-            return currentRow.getUdtValue(index - 1);
+        // User-defined types
+        if (isCqlType(columnIndex, DataTypeEnum.UDT)) {
+            return this.currentRow.getUdtValue(columnIndex - 1);
         }
 
-        if ("tuple".equals(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))) {
-            return currentRow.getTupleValue(index - 1);
+        // Tuples
+        if (isCqlType(columnIndex, DataTypeEnum.TUPLE)) {
+            return currentRow.getTupleValue(columnIndex - 1);
         }
 
-        if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false))
-            .isCollection()) {
-            if (currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false).startsWith("set")) {
-                final SetType setType = (SetType) currentRow.getColumnDefinitions().get(index - 1).getType();
-                datatype = setType.getElementType();
+        // Collections: sets, lists & maps
+        if (dataType.isCollection()) {
+            // Sets
+            if (isCqlType(columnIndex, DataTypeEnum.SET)) {
+                final SetType setType = (SetType) cqlDataType;
+                final DataType elementsType = setType.getElementType();
+                final Set<?> resultSet;
 
-                if (datatype instanceof UserDefinedType) {
-                    return Sets.newLinkedHashSet(currentRow.getSet(index - 1, TypesMap.getTypeForComparator("udt")
-                        .getType()));
-                } else if (datatype instanceof TupleType) {
-                    return Sets.newLinkedHashSet(currentRow.getSet(index - 1, TypesMap.getTypeForComparator("tuple")
-                        .getType()));
+                if (elementsType instanceof UserDefinedType) {
+                    resultSet = this.currentRow.getSet(columnIndex - 1, TypesMap.getTypeForComparator("udt").getType());
+                } else if (elementsType instanceof TupleType) {
+                    resultSet = this.currentRow.getSet(columnIndex - 1,
+                        TypesMap.getTypeForComparator("tuple").getType());
                 } else {
-                    return Sets.newLinkedHashSet(currentRow.getSet(index - 1, TypesMap.getTypeForComparator(
-                        datatype.asCql(false, false)).getType()));
+                    resultSet = this.currentRow.getSet(columnIndex - 1,
+                        TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
                 }
-            }
-
-            if (currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false).startsWith("list")) {
-                final ListType setType = (ListType) currentRow.getColumnDefinitions().get(index - 1).getType();
-                datatype = setType.getElementType();
-                if (datatype instanceof TupleType) {
-                    return Lists.newArrayList(currentRow.getList(index - 1, TypesMap.getTypeForComparator("tuple")
-                        .getType()));
-                } else {
-                    return Lists.newArrayList(currentRow.getList(index - 1, TypesMap.getTypeForComparator(
-                        datatype.asCql(false, false)).getType()));
-                }
-            }
-
-            if (currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false).startsWith("map")) {
-                final MapType mapType = (MapType) currentRow.getColumnDefinitions().get(index - 1).getType();
-                final DataType keyDatatype = mapType.getKeyType();
-                final DataType valueDatatype = mapType.getValueType();
-
-                Class<?> keyType = TypesMap.getTypeForComparator(keyDatatype.asCql(false, false)).getType();
-                if (keyDatatype instanceof UserDefinedType) {
-                    keyType = TypesMap.getTypeForComparator("udt").getType();
-                } else if (keyDatatype instanceof TupleType) {
-                    keyType = TypesMap.getTypeForComparator("tuple").getType();
-                }
-
-                Class<?> valueType = TypesMap.getTypeForComparator(valueDatatype.asCql(false, false)).getType();
-                if (valueDatatype instanceof UserDefinedType) {
-                    valueType = TypesMap.getTypeForComparator("udt").getType();
-                } else if (valueDatatype instanceof TupleType) {
-                    valueType = TypesMap.getTypeForComparator("tuple").getType();
-                }
-
-                return Maps.newHashMap(currentRow.getMap(index - 1, keyType, valueType));
-            }
-        } else {
-            final String typeName = currentRow.getColumnDefinitions().get(index - 1).getType().asCql(false, false);
-            if ("varchar".equals(typeName)) {
-                return currentRow.getString(index - 1);
-            } else if ("ascii".equals(typeName)) {
-                return currentRow.getString(index - 1);
-            } else if ("integer".equals(typeName)) {
-                return currentRow.getInt(index - 1);
-            } else if ("bigint".equals(typeName)) {
-                return currentRow.getLong(index - 1);
-            } else if ("blob".equals(typeName)) {
-                return currentRow.getByteBuffer(index - 1);
-            } else if ("boolean".equals(typeName)) {
-                return currentRow.getBoolean(index - 1);
-            } else if ("counter".equals(typeName)) {
-                return currentRow.getLong(index - 1);
-            } else if ("decimal".equals(typeName)) {
-                return currentRow.getBigDecimal(index - 1);
-            } else if ("double".equals(typeName)) {
-                return currentRow.getDouble(index - 1);
-            } else if ("float".equals(typeName)) {
-                return currentRow.getFloat(index - 1);
-            } else if ("inet".equals(typeName)) {
-                return currentRow.getInetAddress(index - 1);
-            } else if ("int".equals(typeName)) {
-                return currentRow.getInt(index - 1);
-            } else if ("text".equals(typeName)) {
-                return currentRow.getString(index - 1);
-            } else if ("timestamp".equals(typeName)) {
-                final Instant instant = currentRow.getInstant(index - 1);
-                if (instant != null) {
-                    return Timestamp.from(instant);
-                } else {
+                if (resultSet == null) {
                     return null;
                 }
-            } else if ("uuid".equals(typeName)) {
-                return currentRow.getUuid(index - 1);
-            } else if ("timeuuid".equals(typeName)) {
-                return currentRow.getUuid(index - 1);
-            } else if ("varint".equals(typeName)) {
-                return currentRow.getInt(index - 1);
+                return Sets.newLinkedHashSet(resultSet);
+            }
+
+            // Lists
+            if (isCqlType(columnIndex, DataTypeEnum.LIST)) {
+                final ListType listType = (ListType) cqlDataType;
+                final DataType elementsType = listType.getElementType();
+                final List<?> resultList;
+
+                if (elementsType instanceof TupleType) {
+                    resultList = this.currentRow.getList(columnIndex - 1,
+                        TypesMap.getTypeForComparator("tuple").getType());
+                } else {
+                    resultList = this.currentRow.getList(columnIndex - 1,
+                        TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
+                }
+                if (resultList == null) {
+                    return null;
+                }
+                return Lists.newArrayList(resultList);
+            }
+
+            // Maps
+            if (isCqlType(columnIndex, DataTypeEnum.MAP)) {
+                final MapType mapType = (MapType) cqlDataType;
+                final DataType keyType = mapType.getKeyType();
+                final DataType valueType = mapType.getValueType();
+
+                Class<?> keyClass = TypesMap.getTypeForComparator(keyType.asCql(false, false)).getType();
+                if (keyType instanceof UserDefinedType) {
+                    keyClass = TypesMap.getTypeForComparator("udt").getType();
+                } else if (keyType instanceof TupleType) {
+                    keyClass = TypesMap.getTypeForComparator("tuple").getType();
+                }
+
+                Class<?> valueClass = TypesMap.getTypeForComparator(valueType.asCql(false, false)).getType();
+                if (valueType instanceof UserDefinedType) {
+                    valueClass = TypesMap.getTypeForComparator("udt").getType();
+                } else if (valueType instanceof TupleType) {
+                    valueClass = TypesMap.getTypeForComparator("tuple").getType();
+                }
+
+                final Map<?, ?> resultMap = this.currentRow.getMap(columnIndex - 1, keyClass, valueClass);
+                if (resultMap == null) {
+                    return null;
+                }
+                return Maps.newHashMap(resultMap);
+            }
+        } else {
+            // Other types.
+            switch (dataType) {
+                case VARCHAR:
+                case ASCII:
+                case TEXT:
+                    return this.currentRow.getString(columnIndex - 1);
+                case INT:
+                case VARINT:
+                    return this.currentRow.getInt(columnIndex - 1);
+                case BIGINT:
+                case COUNTER:
+                    return this.currentRow.getLong(columnIndex - 1);
+                case BLOB:
+                    return this.currentRow.getByteBuffer(columnIndex - 1);
+                case BOOLEAN:
+                    return this.currentRow.getBoolean(columnIndex - 1);
+                case DECIMAL:
+                    return this.currentRow.getBigDecimal(columnIndex - 1);
+                case DOUBLE:
+                    return this.currentRow.getDouble(columnIndex - 1);
+                case FLOAT:
+                    return this.currentRow.getFloat(columnIndex - 1);
+                case INET:
+                    return this.currentRow.getInetAddress(columnIndex - 1);
+                case TIMESTAMP:
+                    final Instant instant = this.currentRow.getInstant(columnIndex - 1);
+                    if (instant != null) {
+                        return Timestamp.from(instant);
+                    } else {
+                        return null;
+                    }
+                case UUID:
+                case TIMEUUID:
+                    return this.currentRow.getUuid(columnIndex - 1);
             }
         }
 
@@ -744,112 +824,124 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    @SuppressWarnings({"cast", "boxing"})
-    public Object getObject(final String name) throws SQLException {
-        checkName(name);
-        final DataType datatype;
+    public Object getObject(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final DataType cqlDataType = getCqlDataType(columnLabel);
+        final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false));
 
-        if ("udt".equals(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))) {
-            return currentRow.getUdtValue(name);
+        // User-defined types
+        if (isCqlType(columnLabel, DataTypeEnum.UDT)) {
+            return this.currentRow.getUdtValue(columnLabel);
         }
 
-        if ("tuple".equals(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))) {
-            return currentRow.getTupleValue(name);
+        // Tuples
+        if (isCqlType(columnLabel, DataTypeEnum.TUPLE)) {
+            return currentRow.getTupleValue(columnLabel);
         }
 
-        if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))
-            .isCollection()) {
-            if (currentRow.getColumnDefinitions().get(name).getType().asCql(false, false).startsWith("set")) {
-                final SetType setType = (SetType) currentRow.getColumnDefinitions().get(name).getType();
-                datatype = setType.getElementType();
+        // Collections: sets, lists & maps
+        if (dataType.isCollection()) {
+            // Sets
+            if (isCqlType(columnLabel, DataTypeEnum.SET)) {
+                final SetType setType = (SetType) cqlDataType;
+                final DataType elementsType = setType.getElementType();
+                final Set<?> resultSet;
 
-                if (datatype instanceof UserDefinedType) {
-                    return Sets.newLinkedHashSet(currentRow.getSet(name, TypesMap.getTypeForComparator("udt")
-                        .getType()));
-                } else if (datatype instanceof TupleType) {
-                    return Sets.newLinkedHashSet(currentRow.getSet(name, TypesMap.getTypeForComparator("tuple")
-                        .getType()));
+                if (elementsType instanceof UserDefinedType) {
+                    resultSet = this.currentRow.getSet(columnLabel, TypesMap.getTypeForComparator("udt").getType());
+                } else if (elementsType instanceof TupleType) {
+                    resultSet = this.currentRow.getSet(columnLabel,
+                        TypesMap.getTypeForComparator("tuple").getType());
                 } else {
-                    return Sets.newLinkedHashSet(currentRow.getSet(name, TypesMap.getTypeForComparator(
-                        datatype.asCql(false, false)).getType()));
+                    resultSet = this.currentRow.getSet(columnLabel,
+                        TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
                 }
-            }
-
-            if (currentRow.getColumnDefinitions().get(name).getType().asCql(false, false).startsWith("list")) {
-                final ListType setType = (ListType) currentRow.getColumnDefinitions().get(name).getType();
-                datatype = setType.getElementType();
-                if (datatype instanceof TupleType) {
-                    return Lists.newArrayList(currentRow.getList(name, TypesMap.getTypeForComparator("tuple")
-                        .getType()));
-                } else {
-                    return Lists.newArrayList(currentRow.getList(name, TypesMap.getTypeForComparator(
-                        datatype.asCql(false, false)).getType()));
-                }
-            }
-
-            if (currentRow.getColumnDefinitions().get(name).getType().asCql(false, false).startsWith("map")) {
-                final MapType mapType = (MapType) currentRow.getColumnDefinitions().get(name).getType();
-                final DataType keyDatatype = mapType.getKeyType();
-                final DataType valueDatatype = mapType.getValueType();
-
-                Class<?> keyType = TypesMap.getTypeForComparator(keyDatatype.asCql(false, false)).getType();
-                if (keyDatatype instanceof UserDefinedType) {
-                    keyType = TypesMap.getTypeForComparator("udt").getType();
-                } else if (keyDatatype instanceof TupleType) {
-                    keyType = TypesMap.getTypeForComparator("tuple").getType();
-                }
-
-                Class<?> valueType = TypesMap.getTypeForComparator(valueDatatype.asCql(false, false)).getType();
-                if (valueDatatype instanceof UserDefinedType) {
-                    valueType = TypesMap.getTypeForComparator("udt").getType();
-                } else if (valueDatatype instanceof TupleType) {
-                    valueType = TypesMap.getTypeForComparator("tuple").getType();
-                }
-
-                return Maps.newHashMap(currentRow.getMap(name, keyType, valueType));
-            }
-        } else {
-            final String typeName = currentRow.getColumnDefinitions().get(name).getType().asCql(false, false);
-
-            if ("varchar".equals(typeName)) {
-                return currentRow.getString(name);
-            } else if ("ascii".equals(typeName)) {
-                return currentRow.getString(name);
-            } else if ("integer".equals(typeName)) {
-                return currentRow.getInt(name);
-            } else if ("bigint".equals(typeName)) {
-                return currentRow.getLong(name);
-            } else if ("blob".equals(typeName)) {
-                return currentRow.getByteBuffer(name);
-            } else if ("boolean".equals(typeName)) {
-                return currentRow.getBoolean(name);
-            } else if ("counter".equals(typeName)) {
-                return currentRow.getLong(name);
-            } else if ("decimal".equals(typeName)) {
-                return currentRow.getBigDecimal(name);
-            } else if ("double".equals(typeName)) {
-                return currentRow.getDouble(name);
-            } else if ("float".equals(typeName)) {
-                return currentRow.getFloat(name);
-            } else if ("inet".equals(typeName)) {
-                return currentRow.getInetAddress(name);
-            } else if ("int".equals(typeName)) {
-                return currentRow.getInt(name);
-            } else if ("text".equals(typeName)) {
-                return currentRow.getString(name);
-            } else if ("timestamp".equals(typeName)) {
-                final Instant instant = currentRow.getInstant(name);
-                if (instant != null) {
-                    return Timestamp.from(instant);
-                } else {
+                if (resultSet == null) {
                     return null;
                 }
-            } else if ("uuid".equals(typeName)) {
-                return currentRow.getUuid(name);
-            } else if ("timeuuid".equals(typeName)) {
-                return currentRow.getUuid(name);
-            } else if ("varint".equals(typeName)) {
-                return currentRow.getInt(name);
+                return Sets.newLinkedHashSet(resultSet);
+            }
+
+            // Lists
+            if (isCqlType(columnLabel, DataTypeEnum.LIST)) {
+                final ListType listType = (ListType) cqlDataType;
+                final DataType elementsType = listType.getElementType();
+                final List<?> resultList;
+
+                if (elementsType instanceof TupleType) {
+                    resultList = this.currentRow.getList(columnLabel,
+                        TypesMap.getTypeForComparator("tuple").getType());
+                } else {
+                    resultList = this.currentRow.getList(columnLabel,
+                        TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
+                }
+                if (resultList == null) {
+                    return null;
+                }
+                return Lists.newArrayList(resultList);
+            }
+
+            // Maps
+            if (isCqlType(columnLabel, DataTypeEnum.MAP)) {
+                final MapType mapType = (MapType) cqlDataType;
+                final DataType keyType = mapType.getKeyType();
+                final DataType valueType = mapType.getValueType();
+
+                Class<?> keyClass = TypesMap.getTypeForComparator(keyType.asCql(false, false)).getType();
+                if (keyType instanceof UserDefinedType) {
+                    keyClass = TypesMap.getTypeForComparator("udt").getType();
+                } else if (keyType instanceof TupleType) {
+                    keyClass = TypesMap.getTypeForComparator("tuple").getType();
+                }
+
+                Class<?> valueClass = TypesMap.getTypeForComparator(valueType.asCql(false, false)).getType();
+                if (valueType instanceof UserDefinedType) {
+                    valueClass = TypesMap.getTypeForComparator("udt").getType();
+                } else if (valueType instanceof TupleType) {
+                    valueClass = TypesMap.getTypeForComparator("tuple").getType();
+                }
+
+                final Map<?, ?> resultMap = this.currentRow.getMap(columnLabel, keyClass, valueClass);
+                if (resultMap == null) {
+                    return null;
+                }
+                return Maps.newHashMap(resultMap);
+            }
+        } else {
+            // Other types.
+            switch (dataType) {
+                case VARCHAR:
+                case ASCII:
+                case TEXT:
+                    return this.currentRow.getString(columnLabel);
+                case INT:
+                case VARINT:
+                    return this.currentRow.getInt(columnLabel);
+                case BIGINT:
+                case COUNTER:
+                    return this.currentRow.getLong(columnLabel);
+                case BLOB:
+                    return this.currentRow.getByteBuffer(columnLabel);
+                case BOOLEAN:
+                    return this.currentRow.getBoolean(columnLabel);
+                case DECIMAL:
+                    return this.currentRow.getBigDecimal(columnLabel);
+                case DOUBLE:
+                    return this.currentRow.getDouble(columnLabel);
+                case FLOAT:
+                    return this.currentRow.getFloat(columnLabel);
+                case INET:
+                    return this.currentRow.getInetAddress(columnLabel);
+                case TIMESTAMP:
+                    final Instant instant = this.currentRow.getInstant(columnLabel);
+                    if (instant != null) {
+                        return Timestamp.from(instant);
+                    } else {
+                        return null;
+                    }
+                case UUID:
+                case TIMEUUID:
+                    return this.currentRow.getUuid(columnLabel);
             }
         }
 
@@ -961,21 +1053,25 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     @Override
     public int getRow() throws SQLException {
         checkNotClosed();
-        return rowNumber;
+        return this.rowNumber;
     }
 
     @Override
-    public short getShort(final int index) throws SQLException {
-        checkIndex(index);
-        return (short) currentRow.getInt(index - 1);
+    public RowId getRowId(final int columnIndex) {
+        return null;
     }
 
     @Override
-    public Set<?> getSet(final int index) throws SQLException {
-        checkIndex(index);
+    public RowId getRowId(final String columnLabel) {
+        return null;
+    }
+
+    @Override
+    public Set<?> getSet(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
         try {
-            final SetType setType = (SetType) currentRow.getColumnDefinitions().get(index - 1).getType();
-            return currentRow.getSet(index - 1,
+            final SetType setType = (SetType) getCqlDataType(columnIndex);
+            return this.currentRow.getSet(columnIndex - 1,
                 Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
                     .getCanonicalName()));
         } catch (ClassNotFoundException e) {
@@ -985,11 +1081,11 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public Set<?> getSet(final String name) throws SQLException {
-        checkName(name);
+    public Set<?> getSet(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
         try {
-            final SetType setType = (SetType) currentRow.getColumnDefinitions().get(name).getType();
-            return currentRow.getSet(name,
+            final SetType setType = (SetType) getCqlDataType(columnLabel);
+            return this.currentRow.getSet(columnLabel,
                 Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
                     .getCanonicalName()));
         } catch (ClassNotFoundException e) {
@@ -999,151 +1095,153 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    public short getShort(final String name) throws SQLException {
-        checkName(name);
-        return (short) currentRow.getInt(name);
+    public short getShort(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return (short) this.currentRow.getInt(columnIndex - 1);
+    }
+
+    @Override
+    public short getShort(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return (short) this.currentRow.getInt(columnLabel);
     }
 
     @Override
     public Statement getStatement() throws SQLException {
         checkNotClosed();
-        return statement;
+        return this.statement;
     }
 
     @Override
-    public String getString(final int index) throws SQLException {
-        checkIndex(index);
+    public String getString(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
         try {
-            if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(index - 1).getType()
-                .asCql(false, false)).isCollection()) {
-                return getObject(index - 1).toString();
+            if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false)).isCollection()) {
+                return getObject(columnIndex).toString();
             }
-            return currentRow.getString(index - 1);
+            return this.currentRow.getString(columnIndex - 1);
         } catch (final Exception e) {
-            return getObject(index).toString();
+            return getObject(columnIndex).toString();
         }
     }
 
     @Override
-    public String getString(final String name) throws SQLException {
-        checkName(name);
+    public String getString(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
         try {
-            if (DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(name).getType().asCql(false, false))
-                .isCollection()) {
-                return getObject(name).toString();
+            if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
+                return getObject(columnLabel).toString();
             }
-            return currentRow.getString(name);
+            return this.currentRow.getString(columnLabel);
         } catch (final Exception e) {
-            return getObject(name).toString();
+            return getObject(columnLabel).toString();
         }
     }
 
     @Override
-    public Time getTime(final int index) throws SQLException {
-        checkIndex(index);
-        final LocalTime localTime = currentRow.getLocalTime(index - 1);
-        if (localTime == null)
+    public Time getTime(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final LocalTime localTime = this.currentRow.getLocalTime(columnIndex - 1);
+        if (localTime == null) {
             return null;
+        }
         return Time.valueOf(localTime);
     }
 
     @Override
-    public Time getTime(final int index, final Calendar calendar) throws SQLException {
-        checkIndex(index);
+    public Time getTime(final int columnIndex, final Calendar calendar) throws SQLException {
         // silently ignore the Calendar argument; it's a hint we do not need
-        final LocalTime localTime = currentRow.getLocalTime(index - 1);
-        if (localTime == null)
-            return null;
-        return getTime(index - 1);
+        return getTime(columnIndex);
     }
 
     @Override
-    public Time getTime(final String name) throws SQLException {
-        checkName(name);
-        final LocalTime localTime = currentRow.getLocalTime(name);
-        if (localTime == null)
+    public Time getTime(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final LocalTime localTime = this.currentRow.getLocalTime(columnLabel);
+        if (localTime == null) {
             return null;
+        }
         return Time.valueOf(localTime);
     }
 
     @Override
-    public Time getTime(final String name, final Calendar calendar) throws SQLException {
-        checkName(name);
-        // silently ignore the Calendar argument; its a hint we do not need
-        return getTime(name);
+    public Time getTime(final String columnLabel, final Calendar calendar) throws SQLException {
+        // silently ignore the Calendar argument; it's a hint we do not need
+        return getTime(columnLabel);
     }
 
     @Override
-    public Timestamp getTimestamp(final int index) throws SQLException {
-        checkIndex(index);
-        final Instant instant = currentRow.getInstant(index - 1);
-        if (instant == null)
+    public Timestamp getTimestamp(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final Instant instant = this.currentRow.getInstant(columnIndex - 1);
+        if (instant == null) {
             return null;
+        }
         return Timestamp.from(instant);
     }
 
     @Override
-    public Timestamp getTimestamp(final int index, final Calendar calendar) throws SQLException {
-        checkIndex(index);
+    public Timestamp getTimestamp(final int columnIndex, final Calendar calendar) throws SQLException {
         // silently ignore the Calendar argument; it's a hint we do not need
-        final Instant instant = currentRow.getInstant(index - 1);
-        if (instant == null)
-            return null;
-        return getTimestamp(index - 1);
+        return getTimestamp(columnIndex);
     }
 
     @Override
-    public Timestamp getTimestamp(final String name) throws SQLException {
-        checkName(name);
-        final Instant instant = currentRow.getInstant(name);
-        if (instant == null)
+    public Timestamp getTimestamp(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final Instant instant = this.currentRow.getInstant(columnLabel);
+        if (instant == null) {
             return null;
+        }
         return Timestamp.from(instant);
     }
 
-    public Timestamp getTimestamp(final String name, final Calendar calendar) throws SQLException {
-        checkName(name);
+    public Timestamp getTimestamp(final String columnLabel, final Calendar calendar) throws SQLException {
         // silently ignore the Calendar argument; it's a hint we do not need
-        return getTimestamp(name);
+        return getTimestamp(columnLabel);
     }
 
     @Override
     public int getType() throws SQLException {
         checkNotClosed();
-        return resultSetType;
+        return this.resultSetType;
     }
 
     @Override
-    public URL getURL(final int arg0) throws SQLException {
-        // URL (awaiting some clarifications as to how it is stored in C* ... just a validated Sting in URL format?
+    public URL getURL(final int columnIndex) throws SQLException {
+        // TODO: Check how it is stored in C*... just a validated String in URL format?
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
-    public URL getURL(final String arg0) throws SQLException {
+    public URL getURL(final String columnLabel) throws SQLException {
+        // TODO: Check how it is stored in C*... just a validated String in URL format?
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
-
-    // The methods below have to be implemented soon.
-    // Each set of methods has a more detailed set of issues that should be considered fully...
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
+        // The rationale is there are no warnings to return in this implementation but it still throws an exception
+        // when called on a closed result set.
         checkNotClosed();
-        // the rationale is there are no warnings to return in this implementation...
         return null;
+    }
+
+    private boolean hasMoreRows() {
+        return (this.rowsIterator != null
+            && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null)));
     }
 
     @Override
     public boolean isAfterLast() throws SQLException {
         checkNotClosed();
-        return rowNumber == Integer.MAX_VALUE;
+        return this.rowNumber == Integer.MAX_VALUE;
     }
 
     @Override
     public boolean isBeforeFirst() throws SQLException {
         checkNotClosed();
-        return rowNumber == 0;
+        return this.rowNumber == 0;
     }
 
     @Override
@@ -1157,13 +1255,13 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     @Override
     public boolean isFirst() throws SQLException {
         checkNotClosed();
-        return rowNumber == 1;
+        return this.rowNumber == 1;
     }
 
     @Override
     public boolean isLast() throws SQLException {
         checkNotClosed();
-        return !rowsIterator.hasNext();
+        return !this.rowsIterator.hasNext();
     }
 
     @Override
@@ -1176,19 +1274,17 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    // Navigation between rows within the returned set of rows
-    // Need to use a list iterator so next() needs completely re-thought
     @Override
     public synchronized boolean next() {
         if (hasMoreRows()) {
-            // populateColumns is called upon init to set up the metadata fields; so skip first call
-            if (rowNumber != 0) {
+            // 'populateColumns()' is called upon init to set up the metadata fields; so skip the first call.
+            if (this.rowNumber != 0) {
                 populateColumns();
             }
-            rowNumber++;
+            this.rowNumber++;
             return true;
         }
-        rowNumber = Integer.MAX_VALUE;
+        this.rowNumber = Integer.MAX_VALUE;
         return false;
     }
 
@@ -1203,57 +1299,40 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
     }
 
     @Override
-    @SuppressWarnings("boxing")
-    public void setFetchDirection(final int direction) throws SQLException {
-        checkNotClosed();
-
-        if (direction == FETCH_FORWARD || direction == FETCH_REVERSE || direction == FETCH_UNKNOWN) {
-            if ((getType() == TYPE_FORWARD_ONLY) && (direction != FETCH_FORWARD)) {
-                throw new SQLSyntaxErrorException("attempt to set an illegal direction : " + direction);
-            }
-            fetchDirection = direction;
-        }
-        throw new SQLSyntaxErrorException(String.format(BAD_FETCH_DIR, direction));
-    }
-
-    @Override
-    @SuppressWarnings("boxing")
-    public void setFetchSize(final int size) throws SQLException {
-        checkNotClosed();
-        if (size < 0) throw new SQLException(String.format(BAD_FETCH_SIZE, size));
-        fetchSize = size;
-    }
-
     @SuppressWarnings("unchecked")
     public <T> T unwrap(final Class<T> iface) throws SQLException {
-        if (iface.equals(CassandraResultSetExtras.class)) return (T) this;
-
+        if (iface.equals(CassandraResultSetExtras.class)) {
+            return (T) this;
+        }
         throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
     public boolean wasNull() {
-        return wasNull;
+        return this.wasNull;
     }
 
     /**
-     * RSMD implementation. The metadata returned refers to the column
-     * values, not the column names.
+     * Implementation class for {@link ResultSetMetaData}. The metadata returned refers to the column values, not the
+     * column names.
      */
     class CResultSetMetaData implements ResultSetMetaData {
         @Override
         public String getCatalogName(final int column) throws SQLException {
+            if (statement == null) {
+                return null;
+            }
             return statement.connection.getCatalog();
         }
 
         @Override
-        public String getColumnClassName(final int column) throws SQLException {
+        public String getColumnClassName(final int column) {
             if (currentRow != null) {
-                return DataTypeEnum.fromCqlTypeName(currentRow.getColumnDefinitions().get(column - 1).getType()
-                    .asCql(false, false)).asJavaClass().getCanonicalName();
+                return DataTypeEnum.fromCqlTypeName(getCqlDataType(column).asCql(false, false)).asJavaClass()
+                    .getCanonicalName();
             }
-            return DataTypeEnum.fromCqlTypeName(driverResultSet.getColumnDefinitions().get(column - 1).getType()
-                .asCql(false, false)).asJavaClass().getCanonicalName();
-
+            return DataTypeEnum.fromCqlTypeName(
+                driverResultSet.getColumnDefinitions().get(column - 1).getType().asCql(false, false)).asJavaClass()
+                .getCanonicalName();
         }
 
         @Override
@@ -1271,28 +1350,30 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         @Override
         @SuppressWarnings("rawtypes")
         public int getColumnDisplaySize(final int column) {
-            final ColumnDefinition col;
-            if (currentRow != null) {
-                col = currentRow.getColumnDefinitions().get(column - 1);
-            } else {
-                col = driverResultSet.getColumnDefinitions().get(column - 1);
-            }
             try {
+                final AbstractJdbcType jdbcEquivalentType;
+                final ColumnDefinition columnDefinition;
+                if (currentRow != null) {
+                    columnDefinition = currentRow.getColumnDefinitions().get(column - 1);
+                } else {
+                    columnDefinition = driverResultSet.getColumnDefinitions().get(column - 1);
+                }
+                jdbcEquivalentType = TypesMap.getTypeForComparator(columnDefinition.getType().toString());
+
                 int length = -1;
-                final AbstractJdbcType jtype = TypesMap.getTypeForComparator(col.getType().toString());
-                if (jtype instanceof JdbcBytes) {
+                if (jdbcEquivalentType instanceof JdbcBytes) {
                     length = Integer.MAX_VALUE / 2;
                 }
-                if (jtype instanceof JdbcAscii || jtype instanceof JdbcUTF8) {
+                if (jdbcEquivalentType instanceof JdbcAscii || jdbcEquivalentType instanceof JdbcUTF8) {
                     length = Integer.MAX_VALUE;
                 }
-                if (jtype instanceof JdbcUUID) {
+                if (jdbcEquivalentType instanceof JdbcUUID) {
                     length = 36;
                 }
-                if (jtype instanceof JdbcInt32) {
+                if (jdbcEquivalentType instanceof JdbcInt32) {
                     length = 4;
                 }
-                if (jtype instanceof JdbcLong) {
+                if (jdbcEquivalentType instanceof JdbcLong) {
                     length = 8;
                 }
 
@@ -1303,7 +1384,7 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         }
 
         @Override
-        public String getColumnLabel(final int column) throws SQLException {
+        public String getColumnLabel(final int column) {
             return getColumnName(column);
         }
 
@@ -1317,48 +1398,61 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
 
         @Override
         public int getColumnType(final int column) {
-            final DataType type;
+            final DataType dataType;
             if (currentRow != null) {
-                type = currentRow.getColumnDefinitions().get(column - 1).getType();
+                dataType = currentRow.getColumnDefinitions().get(column - 1).getType();
             } else {
-                type = driverResultSet.getColumnDefinitions().get(column - 1).getType();
+                dataType = driverResultSet.getColumnDefinitions().get(column - 1).getType();
             }
-            return TypesMap.getTypeForComparator(type.toString()).getJdbcType();
+            return TypesMap.getTypeForComparator(dataType.toString()).getJdbcType();
         }
 
-        /**
-         * Spec says "database specific type name"; for Cassandra this means the AbstractType.
-         */
+        @Override
         public String getColumnTypeName(final int column) {
-            final DataType type;
+            // Specification says "database specific type name"; for Cassandra this means the AbstractType.
+            final DataType dataType;
             if (currentRow != null) {
-                type = currentRow.getColumnDefinitions().get(column - 1).getType();
+                dataType = currentRow.getColumnDefinitions().get(column - 1).getType();
             } else {
-                type = driverResultSet.getColumnDefinitions().get(column - 1).getType();
+                dataType = driverResultSet.getColumnDefinitions().get(column - 1).getType();
             }
-
-            return type.toString();
+            return dataType.toString();
         }
 
+        @Override
         public int getPrecision(final int column) {
+            // TODO: review this implementation
             return 0;
         }
 
+        @Override
         public int getScale(final int column) {
+            // TODO: review this implementation
             return 0;
         }
 
-        /**
-         * return the DEFAULT current Keyspace as the Schema Name
-         */
+        @Override
         public String getSchemaName(final int column) throws SQLException {
-            //checkIndex(column);
+            if (statement == null) {
+                return null;
+            }
             return statement.connection.getSchema();
         }
 
         @Override
+        public String getTableName(final int column) {
+            String tableName;
+            if (currentRow != null) {
+                tableName = currentRow.getColumnDefinitions().get(column - 1).getTable().asInternal();
+            } else {
+                tableName = driverResultSet.getColumnDefinitions().get(column - 1).getTable().asInternal();
+            }
+            return tableName;
+        }
+
+        @Override
         public boolean isAutoIncrement(final int column) {
-            return true;
+            return false;
         }
 
         @Override
@@ -1372,14 +1466,13 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         }
 
         @Override
-        public boolean isDefinitelyWritable(final int column) throws SQLException {
+        public boolean isDefinitelyWritable(final int column) {
             return isWritable(column);
         }
 
-        /**
-         * absence is the equivalent of null in Cassandra
-         */
+        @Override
         public int isNullable(final int column) {
+            // Note: absence is the equivalent of null in Cassandra
             return ResultSetMetaData.columnNullable;
         }
 
@@ -1390,16 +1483,19 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
 
         @Override
         public boolean isSearchable(final int column) {
+            // TODO: implementation to review
             return false;
         }
 
         @Override
         public boolean isSigned(final int column) {
+            // TODO: implementation to review
             return false;
         }
 
         @Override
         public boolean isWrapperFor(final Class<?> iface) {
+            // TODO: implementation to review
             return false;
         }
 
@@ -1411,78 +1507,6 @@ class CassandraResultSet extends AbstractResultSet implements CassandraResultSet
         @Override
         public <T> T unwrap(final Class<T> iface) throws SQLException {
             throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
-        }
-
-        @Override
-        public String getTableName(final int column) {
-            String tableName = StringUtils.EMPTY;
-            if (currentRow != null) {
-                tableName = currentRow.getColumnDefinitions().get(column - 1).getTable().asInternal();
-            } else {
-                tableName = driverResultSet.getColumnDefinitions().get(column - 1).getTable().asInternal();
-            }
-            return tableName;
-        }
-    }
-
-    @Override
-    public RowId getRowId(final int columnIndex) {
-        return null;
-    }
-
-    @Override
-    public RowId getRowId(final String columnLabel) {
-        return null;
-    }
-
-    @Override
-    public InputStream getBinaryStream(final int columnIndex) throws SQLException {
-        checkIndex(columnIndex);
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(columnIndex - 1);
-        if (byteBuffer != null) {
-            final byte[] bytes = new byte[byteBuffer.remaining()];
-            byteBuffer.get(bytes, 0, bytes.length);
-            return new ByteArrayInputStream(bytes);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public InputStream getBinaryStream(final String columnLabel) throws SQLException {
-        checkName(columnLabel);
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(columnLabel);
-        if (byteBuffer != null) {
-            final byte[] bytes = new byte[byteBuffer.remaining()];
-            byteBuffer.get(bytes, 0, bytes.length);
-
-            return new ByteArrayInputStream(bytes);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public Blob getBlob(final int index) throws SQLException {
-        checkIndex(index);
-
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(index - 1);
-        if (byteBuffer != null) {
-            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public Blob getBlob(final String columnName) throws SQLException {
-        checkName(columnName);
-
-        final ByteBuffer byteBuffer = currentRow.getByteBuffer(columnName);
-        if (byteBuffer != null) {
-            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
-        } else {
-            return null;
         }
     }
 

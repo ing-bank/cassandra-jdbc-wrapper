@@ -24,7 +24,10 @@ import org.apache.cassandra.utils.ByteBufferUtil;
 
 import java.nio.ByteBuffer;
 
-public class DecimalToDoubleCodec implements TypeCodec<Double> {
+/**
+ * Manages the two-way conversion between the CQL type {@link DataTypes#DECIMAL} and the Java type {@link Double}.
+ */
+public class DecimalToDoubleCodec extends AbstractCodec<Double> implements TypeCodec<Double> {
 
     public DecimalToDoubleCodec() {
     }
@@ -42,33 +45,30 @@ public class DecimalToDoubleCodec implements TypeCodec<Double> {
     }
 
     @Override
-    public ByteBuffer encode(final Double paramT, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramT == null) {
+    public ByteBuffer encode(final Double value, @NonNull final ProtocolVersion protocolVersion) {
+        if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(paramT);
+        return ByteBufferUtil.bytes(value);
     }
 
     @Override
-    public Double decode(final ByteBuffer paramByteBuffer, @NonNull final ProtocolVersion paramProtocolVersion) {
-        if (paramByteBuffer == null) {
+    public Double decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+        if (bytes == null) {
             return null;
-
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        final float value = ByteBufferUtil.toFloat(paramByteBuffer.duplicate());
-        return (double) value;
+        return ByteBufferUtil.toDouble(bytes.duplicate());
     }
 
     @Override
-    public Double parse(final String paramString) {
-        return Double.valueOf(paramString);
+    Double parseNonNull(@NonNull final String value) {
+        return Double.valueOf(value);
     }
 
-    @NonNull
     @Override
-    public String format(final Double paramT) {
-        return String.valueOf(paramT);
+    String formatNonNull(@NonNull final Double value) {
+        return String.valueOf(value);
     }
 
 }

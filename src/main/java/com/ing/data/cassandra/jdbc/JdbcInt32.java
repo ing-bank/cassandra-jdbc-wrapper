@@ -16,7 +16,17 @@ package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code INT} CQL type (corresponding Java type: {@link Integer}).
+ * <p>CQL type description: 32-bit signed integer.</p>
+ */
 public class JdbcInt32 extends AbstractJdbcType<Integer> {
+
+    private static final int INT_SCALE = 0;
+
+    /**
+     * Gets a {@code JdbcInt32} instance.
+     */
     public static final JdbcInt32 instance = new JdbcInt32();
 
     JdbcInt32() {
@@ -27,7 +37,7 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
     }
 
     public int getScale(final Integer obj) {
-        return 0;
+        return INT_SCALE;
     }
 
     public int getPrecision(final Integer obj) {
@@ -65,4 +75,5 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
     public Object decompose(final Integer value) {
         return value;
     }
+
 }

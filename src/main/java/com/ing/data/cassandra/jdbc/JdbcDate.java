@@ -21,7 +21,17 @@ import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * JDBC description of {@code DATE} CQL type (corresponding Java type: {@link Date}).
+ * <p>CQL type description: a date with no corresponding time value; Cassandra encodes date as a 32-bit integer
+ * representing days since epoch (January 1, 1970). Dates can be represented in queries and inserts as a string,
+ * such as 2015-05-03 (yyyy-mm-dd).</p>
+ */
 public class JdbcDate extends AbstractJdbcType<Date> {
+
+    /**
+     * Valid ISO-8601 patterns for date type.
+     */
     public static final String[] iso8601Patterns = new String[]{
         "yyyy-MM-dd HH:mm",
         "yyyy-MM-dd HH:mm:ss",
@@ -39,10 +49,16 @@ public class JdbcDate extends AbstractJdbcType<Date> {
         "yyyy-MM-dd HH:mm:ss",
         "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
     };
+    /**
+     * Default date format: yyyy-MM-dd HH:mm:ssZ.
+     */
     static final String DEFAULT_FORMAT = iso8601Patterns[3];
     static final ThreadLocal<SimpleDateFormat> FORMATTER = ThreadLocal.withInitial(
         () -> new SimpleDateFormat(DEFAULT_FORMAT));
 
+    /**
+     * Gets a {@code JdbcDate} instance.
+     */
     public static final JdbcDate instance = new JdbcDate();
 
     JdbcDate() {
@@ -53,11 +69,11 @@ public class JdbcDate extends AbstractJdbcType<Date> {
     }
 
     public int getScale(final Date obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final Date obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -81,10 +97,9 @@ public class JdbcDate extends AbstractJdbcType<Date> {
             return StringUtils.EMPTY;
         }
         if (bytes.remaining() != 8) {
-            throw new MarshalException("A date is exactly 8 bytes (stored as a long): " + bytes.remaining());
+            throw new MarshalException("A date is exactly 8 bytes (stored as a long), but found: " + bytes.remaining());
         }
-
-        // uses ISO-8601 formatted string
+        // Use ISO-8601 formatted string.
         return FORMATTER.get().format(new Date(bytes.getLong(bytes.position())));
     }
 

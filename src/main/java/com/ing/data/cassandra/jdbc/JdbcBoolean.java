@@ -17,7 +17,14 @@ package com.ing.data.cassandra.jdbc;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+/**
+ * JDBC description of {@code BOOLEAN} CQL type (corresponding Java type: {@link Boolean}).
+ */
 public class JdbcBoolean extends AbstractJdbcType<Boolean> {
+
+    /**
+     * Gets a {@code JdbcBoolean} instance.
+     */
     public static final JdbcBoolean instance = new JdbcBoolean();
 
     JdbcBoolean() {
@@ -28,11 +35,11 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
     }
 
     public int getScale(final Boolean obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final Boolean obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -56,11 +63,14 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
             return Boolean.FALSE.toString();
         }
         if (bytes.remaining() != 1) {
-            throw new MarshalException("A boolean is stored in exactly 1 byte: " + bytes.remaining());
+            throw new MarshalException("A boolean is stored in exactly 1 byte, but found: " + bytes.remaining());
         }
         final byte value = bytes.get(bytes.position());
-
-        return value == 0 ? Boolean.FALSE.toString() : Boolean.TRUE.toString();
+        if (value == 0) {
+            return Boolean.FALSE.toString();
+        } else {
+            return Boolean.TRUE.toString();
+        }
     }
 
     public Class<Boolean> getType() {
@@ -78,4 +88,5 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
     public Object decompose(final Boolean value) {
         return value;
     }
+
 }

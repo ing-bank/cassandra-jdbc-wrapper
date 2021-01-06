@@ -18,7 +18,17 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
+
+/**
+ * JDBC description of {@code DECIMAL} CQL type (corresponding Java type: {@link BigDecimal}).
+ * <p>CQL type description: variable-precision decimal.</p>
+ */
 public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
+
+    /**
+     * Gets a {@code JdbcDecimal} instance.
+     */
     public static final JdbcDecimal instance = new JdbcDecimal();
 
     JdbcDecimal() {
@@ -54,7 +64,7 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
 
     public String getString(final ByteBuffer bytes) {
         if (bytes == null) {
-            return "null";
+            return NULL_KEYWORD;
         }
         if (bytes.remaining() == 0) {
             return "empty";
@@ -74,11 +84,9 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         return (BigDecimal) value;
     }
 
-    /**
-     * The bytes of the ByteBuffer are made up of 4 bytes of int containing the scale
-     * followed by the n bytes it takes to store a BigInteger.
-     */
     public Object decompose(final BigDecimal value) {
+        // The bytes of the ByteBuffer are made up of 4 bytes of int containing the scale followed by the n bytes it
+        // takes to store a BigInteger.
         return value;
     }
 

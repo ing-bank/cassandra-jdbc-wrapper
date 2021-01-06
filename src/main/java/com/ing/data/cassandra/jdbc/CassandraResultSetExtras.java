@@ -21,27 +21,107 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Extension of {@link ResultSet} interface providing additional methods specific to Cassandra result sets.
+ */
 public interface CassandraResultSetExtras extends ResultSet {
+
     /**
-     * @return the current row key
-     * @throws SQLException
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link BigInteger}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
      */
-    byte[] getKey() throws SQLException;
+    BigInteger getBigInteger(int columnIndex) throws SQLException;
 
-    BigInteger getBigInteger(int i) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link BigInteger}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    BigInteger getBigInteger(String columnLabel) throws SQLException;
 
-    BigInteger getBigInteger(String name) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link List}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    List<?> getList(int columnIndex) throws SQLException;
 
-    List<?> getList(int index) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link List}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    List<?> getList(String columnLabel) throws SQLException;
 
-    List<?> getList(String name) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link Set}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    Set<?> getSet(int columnIndex) throws SQLException;
 
-    Set<?> getSet(int index) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link Set}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    Set<?> getSet(String columnLabel) throws SQLException;
 
-    Set<?> getSet(String name) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link Map}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    Map<?, ?> getMap(int columnIndex) throws SQLException;
 
-    Map<?, ?> getMap(int index) throws SQLException;
-
-    Map<?, ?> getMap(String name) throws SQLException;
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link Map}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * on a closed result set.
+     */
+    Map<?, ?> getMap(String columnLabel) throws SQLException;
 
 }

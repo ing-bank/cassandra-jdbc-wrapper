@@ -55,90 +55,95 @@ import static com.ing.data.cassandra.jdbc.Utils.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CON;
+import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.Utils.createSubName;
 
 /**
- * Implementation class for {@link Connection}.
+ * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra cluster.
  */
 public class CassandraConnection extends AbstractConnection implements Connection {
-    private static final Logger log = LoggerFactory.getLogger(CassandraConnection.class);
 
-    public static volatile int DB_MAJOR_VERSION = 1;
-    public static volatile int DB_MINOR_VERSION = 2;
-    public static volatile int DB_REVISION = 2;
+    /**
+     * The database product name.
+     */
     public static final String DB_PRODUCT_NAME = "Cassandra";
+    /**
+     * The default CQL language version supported by the driver.
+     */
     public static final String DEFAULT_CQL_VERSION = "3.0.0";
-    public ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = Maps.newConcurrentMap();
 
-    private final boolean autoCommit = true;
-
-    private final int transactionIsolation = Connection.TRANSACTION_NONE;
-    private final SessionHolder sessionHolder;
+    // Minimal Apache Cassandra version supported by the DataStax Java Driver for Apache Cassandra on top which this
+    // wrapper is built.
+    /**
+     * Minimal Apache Cassandra major version supported by the DataStax Java Driver for Apache Cassandra.
+     */
+    public static volatile int DB_MAJOR_VERSION = 2;
+    /**
+     * Minimal Apache Cassandra minor version supported by the DataStax Java Driver for Apache Cassandra.
+     */
+    public static volatile int DB_MINOR_VERSION = 1;
+    /**
+     * Minimal Apache Cassandra patch version supported by the DataStax Java Driver for Apache Cassandra.
+     */
+    public static volatile int DB_PATCH_VERSION = 0;
 
     /**
-     * Connection Properties
+     * The username used by the connection.
      */
-    private final Properties connectionProps;
-
-    /**
-     * Client Info Properties (currently unused)
-     */
-    private Properties clientInfo;
-
-    /**
-     * Set of all Statements that have been created by this connection
-     */
-    private final Set<Statement> statements = new ConcurrentSkipListSet<>();
-
-    private final Session cSession;
-
-    protected int numFailures = 0;
     protected String username;
+    /**
+     * The connection URL.
+     */
     protected String url;
-    public String cluster;
-    protected String currentKeyspace;
-    protected TreeSet<String> hostListPrimary;
-    protected TreeSet<String> hostListBackup;
-    int majorCqlVersion;
-    private Metadata metadata;
-    public boolean debugMode;
+
+    private static final Logger log = LoggerFactory.getLogger(CassandraConnection.class);
+    private static final boolean AUTO_COMMIT_DEFAULT = true;
+
+    private final SessionHolder sessionHolder;
+    private final Session cSession;
+    private final Properties connectionProperties;
+    private final Metadata metadata;
+    // Set of all the statements that have been created by this connection.
+    @SuppressWarnings("SortedCollectionWithNonComparableKeys")
+    private final Set<Statement> statements = new ConcurrentSkipListSet<>();
+    private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = Maps.newConcurrentMap();
+    private final ConsistencyLevel defaultConsistencyLevel;
+    private final TreeSet<String> hostListPrimary;
+    private final TreeSet<String> hostListBackup;
+    private String currentKeyspace;
+    private final boolean debugMode;
+    private Properties clientInfo;
     private volatile boolean isClosed;
 
-    public ConsistencyLevel defaultConsistencyLevel;
-
     /**
-     * Instantiates a new CassandraConnection.
+     * Instantiates a new JDBC connection to a Cassandra cluster.
      *
      * @param sessionHolder The session holder.
-     * @throws SQLException
+     * @throws SQLException if something went wrong during the initialisation of the connection.
      */
     public CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;
-        final Properties props = sessionHolder.properties;
+        final Properties sessionProperties = sessionHolder.properties;
+        this.debugMode = Boolean.TRUE.toString().equals(sessionProperties.getProperty(TAG_DEBUG, StringUtils.EMPTY));
+        this.hostListPrimary = new TreeSet<>();
+        this.hostListBackup = new TreeSet<>();
+        this.connectionProperties = (Properties) sessionProperties.clone();
+        this.clientInfo = new Properties();
+        this.url = PROTOCOL.concat(createSubName(sessionProperties));
+        this.currentKeyspace = sessionProperties.getProperty(TAG_DATABASE_NAME);
+        this.username = sessionProperties.getProperty(TAG_USER, StringUtils.EMPTY);
+        final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
+        this.connectionProperties.setProperty(TAG_ACTIVE_CQL_VERSION, cqlVersion);
+        this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
+            sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
+        this.cSession = sessionHolder.session;
+        this.metadata = cSession.getMetadata();
 
-        debugMode = Boolean.TRUE.toString().equals(props.getProperty(TAG_DEBUG, StringUtils.EMPTY));
-        hostListPrimary = new TreeSet<>();
-        hostListBackup = new TreeSet<>();
-        connectionProps = (Properties) props.clone();
-        clientInfo = new Properties();
-        url = PROTOCOL + createSubName(props);
-        currentKeyspace = props.getProperty(TAG_DATABASE_NAME);
-        username = props.getProperty(TAG_USER, StringUtils.EMPTY);
-        final String version = props.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
-        connectionProps.setProperty(TAG_ACTIVE_CQL_VERSION, version);
-        majorCqlVersion = getMajor(version);
-        defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(props.getProperty(TAG_CONSISTENCY_LEVEL,
-            ConsistencyLevel.ONE.name()));
-
-        cSession = sessionHolder.session;
-
-        metadata = cSession.getMetadata();
         log.info(String.format("Connected to cluster: %s, with session: %s", getCatalog(), cSession.getName()));
-        metadata.getNodes().forEach((uuid, node) -> {
-            log.info(String.format("Datacenter: %s; Host: %s; Rack: %s",
-                node.getDatacenter(), node.getEndPoint().resolve(), node.getRack()));
-        });
+        metadata.getNodes().forEach(
+            (uuid, node) -> log.info(String.format("Datacenter: %s; Host: %s; Rack: %s", node.getDatacenter(),
+                node.getEndPoint().resolve(), node.getRack()))
+        );
 
         // TODO this is shared among all Connections, what if they belong to different clusters?
         metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
@@ -146,56 +151,49 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             if (cassandraVersion != null) {
                 CassandraConnection.DB_MAJOR_VERSION = cassandraVersion.getMajor();
                 CassandraConnection.DB_MINOR_VERSION = cassandraVersion.getMinor();
-                CassandraConnection.DB_REVISION = cassandraVersion.getPatch();
+                CassandraConnection.DB_PATCH_VERSION = cassandraVersion.getPatch();
+                log.info(String.format("Node: %s runs Cassandra v.%s", entry.getValue().getEndPoint().resolve(),
+                    cassandraVersion.toString()));
             }
         });
     }
 
-    // get the Major portion of a string like : Major.minor.patch where 2 is the default
-    @SuppressWarnings("boxing")
-    private int getMajor(final String version) {
-        int major = 0;
-        final String[] parts = version.split("\\.");
-        try {
-            major = Integer.parseInt(parts[0]);
-        } catch (final Exception e) {
-            major = 2;
-        }
-        return major;
-    }
-
+    /**
+     * Checks whether the connection is closed.
+     *
+     * @throws SQLException if the connection is closed.
+     */
     private void checkNotClosed() throws SQLException {
-        if (isClosed()) throw new SQLNonTransientConnectionException(WAS_CLOSED_CON);
+        if (isClosed()) {
+            throw new SQLNonTransientConnectionException(WAS_CLOSED_CONN);
+        }
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        // This implementation does not support the collection of warnings so clearing is a no-op
-        // but it is still an exception to call this on a closed connection.
+        // This implementation does not support the collection of warnings so clearing is a no-op but it still throws an
+        // exception when called on a closed connection.
         checkNotClosed();
     }
 
-    /**
-     * On close of connection.
-     */
     @Override
     public void close() throws SQLException {
-        sessionHolder.release();
-        isClosed = true;
+        this.sessionHolder.release();
+        this.isClosed = true;
     }
 
     @Override
     public void commit() throws SQLException {
+        // Note that Cassandra only supports auto-commit mode, so this is a no-op but it still throws an exception when
+        // called on a closed connection.
         checkNotClosed();
-        //throw new SQLFeatureNotSupportedException(ALWAYS_AUTOCOMMIT);
     }
 
     @Override
     public java.sql.Statement createStatement() throws SQLException {
         checkNotClosed();
         final Statement statement = new CassandraStatement(this);
-
-        statements.add(statement);
+        this.statements.add(statement);
         return statement;
     }
 
@@ -203,7 +201,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
         checkNotClosed();
         final Statement statement = new CassandraStatement(this, null, resultSetType, resultSetConcurrency);
-        statements.add(statement);
+        this.statements.add(statement);
         return statement;
     }
 
@@ -213,18 +211,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         checkNotClosed();
         final Statement statement = new CassandraStatement(this, null, resultSetType, resultSetConcurrency,
             resultSetHoldability);
-        statements.add(statement);
+        this.statements.add(statement);
         return statement;
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
         checkNotClosed();
-        return autoCommit;
+        return AUTO_COMMIT_DEFAULT;
     }
 
-    public Properties getConnectionProps() {
-        return connectionProps;
+    @Override
+    public void setAutoCommit(final boolean autoCommit) throws SQLException {
+        // Note that Cassandra only supports auto-commit mode, so this is a no-op but it still throws an exception when
+        // called on a closed connection.
+        checkNotClosed();
     }
 
     @Override
@@ -247,21 +248,33 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
-    public void setSchema(final String schema) throws SQLException {
+    public void setCatalog(final String catalog) throws SQLException {
+        // The rationale is there are no catalog name to set in this implementation, so we are "silently ignoring" the
+        // request but it still throws an exception when called on closed connection.
         checkNotClosed();
-        currentKeyspace = schema;
     }
 
-    @Override
-    public String getSchema() throws SQLException {
-        checkNotClosed();
-        return currentKeyspace;
+    /**
+     * Gets a {@link Properties} object listing the properties of this connection.
+     *
+     * @return The properties of this connection.
+     */
+    public Properties getConnectionProperties() {
+        return this.connectionProperties;
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
         checkNotClosed();
-        return clientInfo;
+        return this.clientInfo;
+    }
+
+    @Override
+    public void setClientInfo(final Properties properties) {
+        // we don't use them but we will happily collect them for now...
+        if (properties != null) {
+            this.clientInfo = properties;
+        }
     }
 
     @Override
@@ -271,10 +284,50 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
+    public void setClientInfo(final String key, final String value) {
+        // we don't use them but we will happily collect them for now...
+        clientInfo.setProperty(key, value);
+    }
+
+    /**
+     * Gets the metadata of the Cassandra cluster used by this connection.
+     *
+     * @return The metadata of the Cassandra cluster used by this connection.
+     */
+    public Metadata getClusterMetadata() {
+        return this.metadata;
+    }
+
+    /**
+     * Gets whether the debug mode is active on this connection.
+     *
+     * @return {@code true} if the debug mode is active on this connection, {@code false} otherwise.
+     */
+    public boolean isDebugMode() {
+        return this.debugMode;
+    }
+
+    /**
+     * Gets the default consistency level applied to this connection.
+     *
+     * @return The default consistency level applied to this connection.
+     */
+    public ConsistencyLevel getDefaultConsistencyLevel() {
+        return this.defaultConsistencyLevel;
+    }
+
+    @Override
     public int getHoldability() throws SQLException {
         checkNotClosed();
-        // the rationale is there are really no commits in Cassandra so no boundary...
+        // The rationale is there are really no commits in Cassandra so no boundary.
         return DEFAULT_HOLDABILITY;
+    }
+
+    @Override
+    public void setHoldability(final int holdability) throws SQLException {
+        // The rationale is there are no holdability to set in this implementation, so we are "silently ignoring" the
+        // request but it still throws an exception when called on closed connection.
+        checkNotClosed();
     }
 
     @Override
@@ -284,27 +337,78 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
+    public String getSchema() throws SQLException {
+        checkNotClosed();
+        return this.currentKeyspace;
+    }
+
+    @Override
+    public void setSchema(final String schema) throws SQLException {
+        checkNotClosed();
+        this.currentKeyspace = schema;
+    }
+
+    /**
+     * Gets the CQL session used to send requests to the Cassandra cluster.
+     *
+     * @return The CQL session.
+     */
+    public Session getSession() {
+        return this.cSession;
+    }
+
+    @Override
     public int getTransactionIsolation() throws SQLException {
         checkNotClosed();
-        return transactionIsolation;
+        return Connection.TRANSACTION_NONE;
+    }
+
+    @Override
+    public void setTransactionIsolation(final int level) throws SQLException {
+        checkNotClosed();
+        if (level != Connection.TRANSACTION_NONE) {
+            throw new SQLFeatureNotSupportedException(NO_TRANSACTIONS);
+        }
+    }
+
+    @Override
+    public Map<String, Class<?>> getTypeMap() throws SQLException {
+        final HashMap<String, Class<?>> typeMap = new HashMap<>();
+        log.info("Current keyspace: " + currentKeyspace);
+        this.metadata.getKeyspace(currentKeyspace)
+            .ifPresent(keyspaceMetadata ->
+                keyspaceMetadata.getUserDefinedTypes().forEach((cqlIdentifier, userDefinedType) ->
+                    typeMap.put(cqlIdentifier.asInternal(), userDefinedType.getClass()))
+            );
+
+        return typeMap;
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
+        // The rationale is there are no warnings to return in this implementation, so we return null or throw an
+        // exception when called on closed connection.
         checkNotClosed();
-        // the rationale is there are no warnings to return in this implementation...
         return null;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return isClosed;
+        return this.isClosed;
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
         checkNotClosed();
+        // All the connections are read/write in the Cassandra implementation, so always return false.
         return false;
+    }
+
+    @Override
+    public void setReadOnly(final boolean readOnly) throws SQLException {
+        // The rationale is all the connections are read/write in the Cassandra implementation, so we are "silently
+        // ignoring" the request but it still throws an exception when called on closed connection.
+        checkNotClosed();
     }
 
     @Override
@@ -325,46 +429,42 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public String nativeSQL(final String sql) throws SQLException {
+        // The rationale is there is no distinction between grammars in this implementation, so we just return the
+        // input argument or throw an exception when called on closed connection.
         checkNotClosed();
-        // the rationale is there are no distinction between grammars in this implementation...
-        // so we are just return the input argument
         return sql;
     }
 
     @Override
     public CassandraPreparedStatement prepareStatement(final String cql) throws SQLException {
-        CassandraPreparedStatement prepStmt = preparedStatements.get(cql);
-        if (prepStmt == null) {
-            // Statement didn't exist
-            prepStmt = preparedStatements.putIfAbsent(cql, prepareStatement(cql, DEFAULT_TYPE, DEFAULT_CONCURRENCY,
-                DEFAULT_HOLDABILITY));
-            if (prepStmt == null) {
-                // Statement has already been created by another thread, so we'll just get it
-                return preparedStatements.get(cql);
+        CassandraPreparedStatement preparedStatement = this.preparedStatements.get(cql);
+        if (preparedStatement == null) {
+            // Statement didn't exist, create it and put it to the map of prepared statements.
+            preparedStatement = this.preparedStatements.putIfAbsent(cql, prepareStatement(cql, DEFAULT_TYPE,
+                DEFAULT_CONCURRENCY, DEFAULT_HOLDABILITY));
+            if (preparedStatement == null) {
+                // Statement has already been created by another thread, so we'll just get it.
+                return this.preparedStatements.get(cql);
             }
         }
 
-        return prepStmt;
+        return preparedStatement;
     }
 
     @Override
-    public CassandraPreparedStatement prepareStatement(final String cql, final int rsType) throws SQLException {
-        return prepareStatement(cql, rsType, DEFAULT_CONCURRENCY, DEFAULT_HOLDABILITY);
+    public CassandraPreparedStatement prepareStatement(final String cql, final int resultSetType,
+                                                       final int resultSetConcurrency) throws SQLException {
+        return prepareStatement(cql, resultSetType, resultSetConcurrency, DEFAULT_HOLDABILITY);
     }
 
     @Override
-    public CassandraPreparedStatement prepareStatement(final String cql, final int rsType, final int rsConcurrency)
-        throws SQLException {
-        return prepareStatement(cql, rsType, rsConcurrency, DEFAULT_HOLDABILITY);
-    }
-
-    @Override
-    public CassandraPreparedStatement prepareStatement(final String cql, final int rsType, final int rsConcurrency,
-                                                       final int rsHoldability) throws SQLException {
+    public CassandraPreparedStatement prepareStatement(final String cql, final int resultSetType,
+                                                       final int resultSetConcurrency,
+                                                       final int resultSetHoldability) throws SQLException {
         checkNotClosed();
-        final CassandraPreparedStatement statement = new CassandraPreparedStatement(this, cql, rsType, rsConcurrency,
-            rsHoldability);
-        statements.add(statement);
+        final CassandraPreparedStatement statement = new CassandraPreparedStatement(this, cql, resultSetType,
+            resultSetConcurrency, resultSetHoldability);
+        this.statements.add(statement);
         return statement;
     }
 
@@ -374,91 +474,24 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         throw new SQLFeatureNotSupportedException(ALWAYS_AUTOCOMMIT);
     }
 
-    @Override
-    public void setAutoCommit(final boolean autoCommit) throws SQLException {
-        checkNotClosed();
-        //if (!autoCommit) throw new SQLFeatureNotSupportedException(ALWAYS_AUTOCOMMIT);
-    }
-
-    @Override
-    public void setCatalog(final String arg0) throws SQLException {
-        checkNotClosed();
-        // the rationale is there are no catalog name to set in this implementation...
-        // so we are "silently ignoring" the request
-    }
-
-    @Override
-    public void setClientInfo(final Properties props) {
-        // we don't use them but we will happily collect them for now...
-        if (props != null) {
-            clientInfo = props;
-        }
-    }
-
-    @Override
-    public void setClientInfo(final String key, final String value) {
-        // we don't use them but we will happily collect them for now...
-        clientInfo.setProperty(key, value);
-    }
-
-    @Override
-    public void setHoldability(final int arg0) throws SQLException {
-        checkNotClosed();
-        // the rationale is there are no holdability to set in this implementation...
-        // so we are "silently ignoring" the request
-    }
-
-    @Override
-    public void setReadOnly(final boolean arg0) throws SQLException {
-        checkNotClosed();
-        // the rationale is all connections are read/write in the Cassandra implementation...
-        // so we are "silently ignoring" the request
-    }
-
-    @Override
-    public void setTransactionIsolation(final int level) throws SQLException {
-        checkNotClosed();
-        if (level != Connection.TRANSACTION_NONE) throw new SQLFeatureNotSupportedException(NO_TRANSACTIONS);
-    }
-
-    @Override
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
-    }
-
     /**
      * Removes a statement from the open statements list.
      *
      * @param statement The statement.
      * @return {@code true} if the statement has successfully been removed, {@code false} otherwise.
      */
+    @SuppressWarnings("UnusedReturnValue")
     protected boolean removeStatement(final Statement statement) {
-        return statements.remove(statement);
+        return this.statements.remove(statement);
     }
 
     public String toString() {
-        return "CassandraConnection [connectionProps=" + connectionProps + "]";
-    }
-
-    public Session getSession() {
-        return this.cSession;
-    }
-
-    public Metadata getClusterMetadata() {
-        return metadata;
+        return "CassandraConnection [connectionProperties=" + connectionProperties + "]";
     }
 
     @Override
-    public Map<String, Class<?>> getTypeMap() {
-        final HashMap<String, Class<?>> typeMap = new HashMap<>();
-        log.info("Current keyspace : " + currentKeyspace);
-        this.metadata.getKeyspace(currentKeyspace).ifPresent(keyspaceMetadata -> {
-            keyspaceMetadata.getUserDefinedTypes().forEach(((cqlIdentifier, userDefinedType) -> {
-                typeMap.put(cqlIdentifier.asInternal(), userDefinedType.getClass());
-            }));
-        });
-
-        return typeMap;
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
 }

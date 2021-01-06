@@ -27,7 +27,12 @@ import java.sql.SQLXML;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 
+/**
+ * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
+ * methods of {@link java.sql.Statement} and {@link java.sql.PreparedStatement} interfaces.
+ */
 abstract class AbstractStatement {
+
     /*
      * From the Statement implementation.
      */
@@ -36,19 +41,19 @@ abstract class AbstractStatement {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public boolean execute(final String arg0, final int[] arg1) throws SQLException {
+    public boolean execute(final String cql, final int[] columnIndexes) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public boolean execute(final String arg0, final String[] arg1) throws SQLException {
+    public boolean execute(final String cql, final String[] columnNames) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public int executeUpdate(final String arg0, final int[] arg1) throws SQLException {
+    public int executeUpdate(final String cql, final int[] columnIndexes) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public int executeUpdate(final String arg0, final String[] arg1) throws SQLException {
+    public int executeUpdate(final String cql, final String[] columnNames) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -56,7 +61,7 @@ abstract class AbstractStatement {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setCursorName(final String arg0) throws SQLException {
+    public void setCursorName(final String name) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

@@ -15,10 +15,19 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.sql.Types;
 
+/**
+ * JDBC description of CQL tuple (corresponding Java type: {@link TupleValue}).
+ * <p>CQL type description: a group of 2-3 fields.</p>
+ */
 public class JdbcTuple extends AbstractJdbcType<TupleValue> {
+
+    /**
+     * Gets a {@code JdbcTuple} instance.
+     */
     public static final JdbcTuple instance = new JdbcTuple();
 
     JdbcTuple() {
@@ -64,18 +73,15 @@ public class JdbcTuple extends AbstractJdbcType<TupleValue> {
         return value;
     }
 
-    @Override
     public int getScale(final TupleValue obj) {
-        return -1;
+        return DEFAULT_SCALE;
     }
 
-    @Override
     public int getPrecision(final TupleValue obj) {
-        return -1;
+        return DEFAULT_PRECISION;
     }
 
-    @Override
-    public String toString(final TupleValue obj) {
+    public String toString(@NonNull final TupleValue obj) {
         return obj.toString();
     }
 
