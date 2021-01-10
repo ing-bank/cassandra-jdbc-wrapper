@@ -815,4 +815,25 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         stmt2.close();
     }
 
+    @Test
+    void testOriginalIssue24() throws Exception {
+        final String insertQuery = "INSERT INTO regressions_test (keyname, bValue, iValue) VALUES('key24-1', true, 1);";
+        final Statement statementInsert = sqlConnection.createStatement();
+        assertFalse(statementInsert.execute(insertQuery));
+        statementInsert.close();
+
+        final String insertPreparedQuery = "INSERT INTO regressions_test (keyname, bValue, iValue) VALUES (?, ?, ?);";
+        final PreparedStatement preparedStatement = sqlConnection.prepareStatement(insertPreparedQuery);
+        preparedStatement.setString(1, "key24-2");
+        preparedStatement.setBoolean(2, false);
+        preparedStatement.setInt(3, 2);
+        assertFalse(preparedStatement.execute());
+        preparedStatement.close();
+
+        final String selectQuery = "SELECT * FROM regressions_test;";
+        final Statement statementSelect = sqlConnection.createStatement();
+        assertTrue(statementSelect.execute(selectQuery));
+        statementSelect.close();
+    }
+
 }

@@ -343,7 +343,9 @@ public class CassandraStatement extends AbstractStatement
     public boolean execute(final String query) throws SQLException {
         checkNotClosed();
         doExecute(query);
-        return this.currentResultSet != null;
+        // Return true if the first result is a non-null ResultSet object; false if the first result is an update count
+        // or there is no result.
+        return this.currentResultSet != null && ((CassandraResultSet) this.currentResultSet).hasMoreRows();
     }
 
     @Override

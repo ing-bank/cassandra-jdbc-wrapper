@@ -1227,7 +1227,12 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         return null;
     }
 
-    private boolean hasMoreRows() {
+    /**
+     * Gets whether this result set has still rows to iterate over.
+     *
+     * @return {@code true} if there is still rows to iterate over, {@code false} otherwise.
+     */
+    protected boolean hasMoreRows() {
         return (this.rowsIterator != null
             && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null)));
     }

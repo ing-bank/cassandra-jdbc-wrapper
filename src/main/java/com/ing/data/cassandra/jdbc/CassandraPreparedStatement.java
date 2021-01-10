@@ -225,7 +225,9 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
     public boolean execute() throws SQLException {
         checkNotClosed();
         doExecute();
-        return this.currentResultSet != null;
+        // Return true if the first result is a non-null ResultSet object; false if the first result is an update count
+        // or there is no result.
+        return this.currentResultSet != null && ((CassandraResultSet) this.currentResultSet).hasMoreRows();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

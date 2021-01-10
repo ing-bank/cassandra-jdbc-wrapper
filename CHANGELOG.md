@@ -13,7 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix values returned by some methods in `CassandraDatabaseMetaData` according to the capabilities described into the
   CQL3 documentation.
-
+- Fix issue [#24](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/24) of the [original project]
+  by correctly implementing JDBC API regarding the result returned by the methods `CassandraStatement.execute(String)`
+  and `CassandraPreparedStatement.execute()`.
+  
 ## 4.4.0 - 2020-12-23
 For this version, the changelog lists the main changes comparatively to the latest version of the [original project].
 ### Changed
