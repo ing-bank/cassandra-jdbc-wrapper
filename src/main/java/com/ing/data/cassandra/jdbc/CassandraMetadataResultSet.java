@@ -259,7 +259,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Deprecated
     public BigDecimal getBigDecimal(final int columnIndex, final int scale) throws SQLException {
         checkIndex(columnIndex);
-        return this.currentRow.getDecimal(columnIndex - 1).setScale(scale, RoundingMode.HALF_UP);
+        final BigDecimal decimalValue = this.currentRow.getDecimal(columnIndex - 1);
+        if (decimalValue == null) {
+            return null;
+        } else {
+            return decimalValue.setScale(scale, RoundingMode.HALF_UP);
+        }
     }
 
     @Override
@@ -275,7 +280,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Deprecated
     public BigDecimal getBigDecimal(final String columnLabel, final int scale) throws SQLException {
         checkName(columnLabel);
-        return this.currentRow.getDecimal(columnLabel).setScale(scale, RoundingMode.HALF_UP);
+        final BigDecimal decimalValue = this.currentRow.getDecimal(columnLabel);
+        if (decimalValue == null) {
+            return null;
+        } else {
+            return decimalValue.setScale(scale, RoundingMode.HALF_UP);
+        }
     }
 
     @Override
@@ -293,29 +303,49 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public InputStream getBinaryStream(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
-        final byte[] bytes = new byte[currentRow.getBytes(columnIndex - 1).remaining()];
-        currentRow.getBytes(columnIndex - 1).get(bytes, 0, bytes.length);
-        return new ByteArrayInputStream(bytes);
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnIndex - 1);
+        if (byteBuffer != null) {
+            final byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes, 0, bytes.length);
+            return new ByteArrayInputStream(bytes);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public InputStream getBinaryStream(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        final byte[] bytes = new byte[currentRow.getBytes(columnLabel).remaining()];
-        currentRow.getBytes(columnLabel).get(bytes, 0, bytes.length);
-        return new ByteArrayInputStream(bytes);
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnLabel);
+        if (byteBuffer != null) {
+            final byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes, 0, bytes.length);
+            return new ByteArrayInputStream(bytes);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Blob getBlob(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
-        return new javax.sql.rowset.serial.SerialBlob(this.currentRow.getBytes(columnIndex - 1).array());
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnIndex - 1);
+        if (byteBuffer != null) {
+            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Blob getBlob(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        return new javax.sql.rowset.serial.SerialBlob(this.currentRow.getBytes(columnLabel).array());
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnLabel);
+        if (byteBuffer != null) {
+            return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -333,25 +363,41 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public byte getByte(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
-        return this.currentRow.getBytes(columnIndex - 1).get();
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnIndex - 1);
+        if (byteBuffer != null) {
+            return byteBuffer.get();
+        }
+        return 0;
     }
 
     @Override
     public byte getByte(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        return this.currentRow.getBytes(columnLabel).get();
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnLabel);
+        if (byteBuffer != null) {
+            return byteBuffer.get();
+        }
+        return 0;
     }
 
     @Override
     public byte[] getBytes(final int columnIndex) throws SQLException {
-        checkIndex(columnIndex - 1);
-        return this.currentRow.getBytes(columnIndex - 1).array();
+        checkIndex(columnIndex);
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnIndex - 1);
+        if (byteBuffer != null) {
+            return byteBuffer.array();
+        }
+        return null;
     }
 
     @Override
     public byte[] getBytes(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        return this.currentRow.getBytes(columnLabel).array();
+        final ByteBuffer byteBuffer = this.currentRow.getBytes(columnLabel);
+        if (byteBuffer != null) {
+            return byteBuffer.array();
+        }
+        return null;
     }
 
     @Override
@@ -652,6 +698,22 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
     }
 
+    private String getObjectAsString(final int columnIndex) throws SQLException {
+        final Object o = getObject(columnIndex);
+        if (o != null) {
+            return String.valueOf(o);
+        }
+        return null;
+    }
+
+    private String getObjectAsString(final String columnLabel) throws SQLException {
+        final Object o = getObject(columnLabel);
+        if (o != null) {
+            return String.valueOf(o);
+        }
+        return null;
+    }
+
     @Override
     public int getRow() throws SQLException {
         checkNotClosed();
@@ -717,11 +779,11 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkIndex(columnIndex);
         try {
             if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false)).isCollection()) {
-                return getObject(columnIndex).toString();
+                return getObjectAsString(columnIndex);
             }
             return this.currentRow.getString(columnIndex - 1);
         } catch (final Exception e) {
-            return getObject(columnIndex).toString();
+            return getObjectAsString(columnIndex);
         }
     }
 
@@ -730,11 +792,11 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkName(columnLabel);
         try {
             if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
-                return getObject(columnLabel).toString();
+                return getObjectAsString(columnLabel);
             }
             return this.currentRow.getString(columnLabel);
         } catch (final Exception e) {
-            return getObject(columnLabel).toString();
+            return getObjectAsString(columnLabel);
         }
     }
 

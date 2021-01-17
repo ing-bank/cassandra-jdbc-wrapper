@@ -16,7 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix issue [#24](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/24) of the [original project]
   by correctly implementing JDBC API regarding the result returned by the methods `CassandraStatement.execute(String)`
   and `CassandraPreparedStatement.execute()`.
-  
+- Fix `CassandraResultSet.getLong(int | String)` implementations to return 0 when the stored value is SQL `NULL`.  
+- Add null-safety into the methods `CassandraResultSet.getString(int | String)`,
+  `CassandraMetadataResultSet.getBigDecimal(int | String, int)`, 
+  `CassandraMetadataResultSet.getBinaryStream(int | String)`, `CassandraMetadataResultSet.getBlob(int | String)`, 
+  `CassandraMetadataResultSet.getByte(int | String)`, `CassandraMetadataResultSet.getBytes(int | String)` and 
+  `CassandraMetadataResultSet.getString(int | String)`.
+- Validate column existence when calling the methods `CassandraResultSet.getBytes(int | String)`.
+
 ## 4.4.0 - 2020-12-23
 For this version, the changelog lists the main changes comparatively to the latest version of the [original project].
 ### Changed

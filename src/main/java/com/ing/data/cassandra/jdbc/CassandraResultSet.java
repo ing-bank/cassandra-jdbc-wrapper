@@ -406,9 +406,9 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     }
 
     @Override
-    public Blob getBlob(final String columnName) throws SQLException {
-        checkName(columnName);
-        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnName);
+    public Blob getBlob(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnLabel);
         if (byteBuffer != null) {
             return new javax.sql.rowset.serial.SerialBlob(byteBuffer.array());
         } else {
@@ -441,7 +441,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     }
 
     @Override
-    public byte[] getBytes(final int columnIndex) {
+    public byte[] getBytes(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
         final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnIndex - 1);
         if (byteBuffer != null) {
             return byteBuffer.array();
@@ -450,7 +451,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     }
 
     @Override
-    public byte[] getBytes(final String columnLabel) {
+    public byte[] getBytes(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
         final ByteBuffer byteBuffer = this.currentRow.getByteBuffer(columnLabel);
         if (byteBuffer != null) {
             return byteBuffer.array();
@@ -647,7 +649,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             if (bigintValue != null) {
                 return bigintValue.longValue();
             } else {
-                return Long.MIN_VALUE;
+                return 0;
             }
         } else {
             return this.currentRow.getLong(columnIndex - 1);
@@ -664,7 +666,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             if (bigintValue != null) {
                 return bigintValue.longValue();
             } else {
-                return Long.MIN_VALUE;
+                return 0;
             }
         } else {
             return this.currentRow.getLong(columnLabel);
@@ -1036,6 +1038,22 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         return type.cast(returnValue);
     }
 
+    private String getObjectAsString(final int columnIndex) throws SQLException {
+        final Object o = getObject(columnIndex);
+        if (o != null) {
+            return String.valueOf(o);
+        }
+        return null;
+    }
+
+    private String getObjectAsString(final String columnLabel) throws SQLException {
+        final Object o = getObject(columnLabel);
+        if (o != null) {
+            return String.valueOf(o);
+        }
+        return null;
+    }
+
     private OffsetDateTime getOffsetDateTime(final Timestamp timestamp) {
         if (timestamp != null) {
             return OffsetDateTime.ofInstant(timestamp.toInstant(), ZoneId.systemDefault());
@@ -1117,11 +1135,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         checkIndex(columnIndex);
         try {
             if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false)).isCollection()) {
-                return getObject(columnIndex).toString();
+                return getObjectAsString(columnIndex);
             }
             return this.currentRow.getString(columnIndex - 1);
         } catch (final Exception e) {
-            return getObject(columnIndex).toString();
+            return getObjectAsString(columnIndex);
         }
     }
 
@@ -1130,11 +1148,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         checkName(columnLabel);
         try {
             if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
-                return getObject(columnLabel).toString();
+                return getObjectAsString(columnLabel);
             }
             return this.currentRow.getString(columnLabel);
         } catch (final Exception e) {
-            return getObject(columnLabel).toString();
+            return getObjectAsString(columnLabel);
         }
     }
 
