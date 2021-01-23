@@ -23,6 +23,8 @@ import java.sql.Types;
 public class JdbcInt32 extends AbstractJdbcType<Integer> {
 
     private static final int INT_SCALE = 0;
+    // The maximal size of a 32-bit signed integer is 11 (length of '-2147483648').
+    private static final int DEFAULT_INT_PRECISION = 11;
 
     /**
      * Gets a {@code JdbcInt32} instance.
@@ -41,7 +43,10 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
     }
 
     public int getPrecision(final Integer obj) {
-        return obj.toString().length();
+        if (obj != null) {
+            return obj.toString().length();
+        }
+        return DEFAULT_INT_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -53,7 +58,11 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
     }
 
     public String toString(final Integer obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {

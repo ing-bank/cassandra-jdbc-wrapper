@@ -197,12 +197,12 @@ class MetadataResultSetsUnitTest extends UsingEmbeddedCassandraServerTest {
         while (result.next()) {
             ++resultSize;
             foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(6)));
+                result.getString(6), result.getString(7)));
         }
         assertEquals(3, resultSize);
-        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;keyname;TEXT"))));
-        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1bvalue;BOOLEAN"))));
-        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1ivalue;INT"))));
+        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;keyname;TEXT;2147483647"))));
+        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1bvalue;BOOLEAN;5"))));
+        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1ivalue;INT;11"))));
     }
 
 

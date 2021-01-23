@@ -24,6 +24,9 @@ import java.util.UUID;
  */
 public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
 
+    // By default, UUID format always contains 32 hexadecimal characters (base-16 digits) and 4 hyphens.
+    private static final int DEFAULT_UUID_PRECISION = 36;
+
     public String toString(@NonNull final UUID obj) {
         return obj.toString();
     }
@@ -37,7 +40,10 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
     }
 
     public int getPrecision(final UUID obj) {
-        return DEFAULT_PRECISION;
+        if (obj != null) {
+            return toString(obj).length();
+        }
+        return DEFAULT_UUID_PRECISION;
     }
 
     public boolean isCurrency() {

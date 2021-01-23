@@ -26,6 +26,9 @@ import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
  */
 public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
 
+    private static final int DEFAULT_DECIMAL_SCALE = 0;
+    private static final int DEFAULT_DECIMAL_PRECISION = 0;
+
     /**
      * Gets a {@code JdbcDecimal} instance.
      */
@@ -39,11 +42,17 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
     }
 
     public int getScale(final BigDecimal obj) {
-        return obj.scale();
+        if (obj != null) {
+            return obj.scale();
+        }
+        return DEFAULT_DECIMAL_SCALE;
     }
 
     public int getPrecision(final BigDecimal obj) {
-        return obj.precision();
+        if (obj != null) {
+            return obj.precision();
+        }
+        return DEFAULT_DECIMAL_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -55,7 +64,11 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
     }
 
     public String toString(final BigDecimal obj) {
-        return obj.toPlainString();
+        if (obj != null) {
+            return obj.toPlainString();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {

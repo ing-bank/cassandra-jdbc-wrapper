@@ -8,8 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add implementations for the methods `getSchema()`, `setSchema(String)` and `getTypeMap()` of the class 
   `ManagedConnection`.
+- Add implementations for the methods `getPrecision(int)` and `getScale(int)` into the implementations of the interface 
+  `ResultSetMetaData` for the classes `CassandraResultSet` and `CassandraMetadataResultSet`.
 ### Changed
 - Improve documentation and code quality (refactoring, removing dead code, adding tests, ...).
+- Improve the implementation of the metadata precision/size for the columns.
 ### Fixed
 - Fix values returned by some methods in `CassandraDatabaseMetaData` according to the capabilities described into the
   CQL3 documentation.

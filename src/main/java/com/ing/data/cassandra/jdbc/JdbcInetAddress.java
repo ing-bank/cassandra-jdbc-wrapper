@@ -27,6 +27,10 @@ import java.sql.Types;
 public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
 
     private static final int INET_SCALE = 0;
+    // The maximal size for IPv4 is 15 characters ('xxx.xxx.xxx.xxx').
+    // The maximal size for IPv4 is 39 characters ('xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx').
+    // 'inet' type accepts either IPv4 (4 bytes long) or IPv6 (16 bytes long).
+    private static final int DEFAULT_INET_PRECISION = 39;
 
     /**
      * Gets a {@code JdbcInetAddress} instance.
@@ -45,7 +49,10 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
     }
 
     public int getPrecision(final InetAddress obj) {
-        return obj.toString().length();
+        if (obj != null) {
+            return obj.toString().length();
+        }
+        return DEFAULT_INET_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -57,7 +64,11 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
     }
 
     public String toString(final InetAddress obj) {
-        return obj.getHostAddress();
+        if (obj != null) {
+            return obj.getHostAddress();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {

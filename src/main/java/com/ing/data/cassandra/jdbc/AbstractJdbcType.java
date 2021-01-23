@@ -21,7 +21,7 @@ package com.ing.data.cassandra.jdbc;
  */
 public abstract class AbstractJdbcType<T> {
 
-    static final int DEFAULT_SCALE = -1;
+    static final int DEFAULT_SCALE = 0;
     static final int DEFAULT_PRECISION = -1;
 
     /**

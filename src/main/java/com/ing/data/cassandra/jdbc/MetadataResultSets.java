@@ -30,6 +30,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
+
 /**
  * Utility class to manage database metadata result sets ({@link CassandraMetadataResultSet} objects).
  */
@@ -351,25 +353,13 @@ public class MetadataResultSets {
                             final ColumnMetadata columnMetadata = column.getValue();
                             if (WILDCARD_CHAR.equals(columnNamePattern) || columnNamePattern == null ||
                                 columnNamePattern.equals(columnMetadata.getName().asInternal())) {
-                                // Define value of COLUMN_SIZE.
-                                int length = -1;
                                 final AbstractJdbcType<?> jdbcEquivalentType =
                                     TypesMap.getTypeForComparator(columnMetadata.getType().toString());
 
-                                if (jdbcEquivalentType instanceof JdbcBytes) {
-                                    length = Integer.MAX_VALUE / 2;
-                                }
-                                if (jdbcEquivalentType instanceof JdbcAscii || jdbcEquivalentType instanceof JdbcUTF8) {
-                                    length = Integer.MAX_VALUE;
-                                }
-                                if (jdbcEquivalentType instanceof JdbcUUID) {
-                                    length = 36;
-                                }
-                                if (jdbcEquivalentType instanceof JdbcInt32) {
-                                    length = 4;
-                                }
-                                if (jdbcEquivalentType instanceof JdbcLong) {
-                                    length = 8;
+                                // Define value of COLUMN_SIZE.
+                                int columnSize = DEFAULT_PRECISION;
+                                if (jdbcEquivalentType != null) {
+                                    columnSize = jdbcEquivalentType.getPrecision(null);
                                 }
 
                                 // Define value of NUM_PREC_RADIX.
@@ -379,9 +369,7 @@ public class MetadataResultSets {
                                     radix = 10;
                                 }
 
-                                // Define value of CHAR_OCTET_LENGTH (when applicable).
-                                final Integer charOctetLen = Integer.MAX_VALUE;
-
+                                // Define value of DATA_TYPE.
                                 int jdbcType = Types.OTHER;
                                 try {
                                     jdbcType = TypesMap.getTypeForComparator(columnMetadata.getType().toString())
@@ -399,7 +387,7 @@ public class MetadataResultSets {
                                     .addEntry(COLUMN_NAME, columnMetadata.getName().asInternal())
                                     .addEntry(DATA_TYPE, String.valueOf(jdbcType))
                                     .addEntry(TYPE_NAME, columnMetadata.getType().toString())
-                                    .addEntry(COLUMN_SIZE, String.valueOf(length))
+                                    .addEntry(COLUMN_SIZE, String.valueOf(columnSize))
                                     .addEntry(BUFFER_LENGTH, String.valueOf(0))
                                     .addEntry(DECIMAL_DIGITS, null)
                                     .addEntry(NUM_PREC_RADIX, String.valueOf(radix))
@@ -408,7 +396,7 @@ public class MetadataResultSets {
                                     .addEntry(COLUMN_DEFAULT, null)
                                     .addEntry(SQL_DATA_TYPE, null)
                                     .addEntry(SQL_DATETIME_SUB, null)
-                                    .addEntry(CHAR_OCTET_LENGTH, String.valueOf(charOctetLen))
+                                    .addEntry(CHAR_OCTET_LENGTH, String.valueOf(Integer.MAX_VALUE))
                                     .addEntry(ORDINAL_POSITION, String.valueOf(columnIndex))
                                     .addEntry(IS_NULLABLE, StringUtils.EMPTY)
                                     .addEntry(SCOPE_CATALOG, null)

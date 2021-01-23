@@ -42,7 +42,10 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
     }
 
     public int getPrecision(final ByteBuffer obj) {
-        return DEFAULT_PRECISION;
+        if (obj != null) {
+            return obj.remaining();
+        }
+        return Integer.MAX_VALUE / 2;
     }
 
     public boolean isCurrency() {

@@ -53,7 +53,11 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
     }
 
     public String getString(final Object obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public Class<UdtValue> getType() {
@@ -81,7 +85,7 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
     }
 
     public String toString(@NonNull final UdtValue obj) {
-        return obj.toString();
+        return getString(obj);
     }
 
 }

@@ -39,7 +39,10 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     }
 
     public int getPrecision(final String obj) {
-        return DEFAULT_PRECISION;
+        if (obj != null) {
+            return obj.length();
+        }
+        return Integer.MAX_VALUE;
     }
 
     public boolean isCurrency() {
@@ -59,7 +62,11 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     }
 
     public String getString(final Object bytes) {
-        return bytes.toString();
+        if (bytes != null) {
+            return bytes.toString();
+        } else {
+            return null;
+        }
     }
 
     public Class<String> getType() {

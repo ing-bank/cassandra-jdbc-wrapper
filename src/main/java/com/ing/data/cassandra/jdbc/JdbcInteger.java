@@ -24,6 +24,8 @@ import java.sql.Types;
 public class JdbcInteger extends AbstractJdbcType<BigInteger> {
 
     private static final int INTEGER_SCALE = 0;
+    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
+    private static final int DEFAULT_INTEGER_PRECISION = 20;
 
     /**
      * Gets a {@code JdbcInteger} instance.
@@ -42,7 +44,10 @@ public class JdbcInteger extends AbstractJdbcType<BigInteger> {
     }
 
     public int getPrecision(final BigInteger obj) {
-        return obj.toString().length();
+        if (obj != null) {
+            return obj.toString().length();
+        }
+        return DEFAULT_INTEGER_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -54,7 +59,11 @@ public class JdbcInteger extends AbstractJdbcType<BigInteger> {
     }
 
     public String toString(final BigInteger obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {

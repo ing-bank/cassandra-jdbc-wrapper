@@ -39,7 +39,10 @@ public class JdbcAscii extends AbstractJdbcType<String> {
     }
 
     public int getPrecision(final String obj) {
-        return DEFAULT_PRECISION;
+        if (obj != null) {
+            return obj.length();
+        }
+        return Integer.MAX_VALUE;
     }
 
     public boolean isCurrency() {
@@ -71,7 +74,11 @@ public class JdbcAscii extends AbstractJdbcType<String> {
     }
 
     public String compose(final Object obj) {
-        return obj.toString();
+        if (obj == null) {
+            return null;
+        } else {
+            return obj.toString();
+        }
     }
 
     public Object decompose(final String value) {

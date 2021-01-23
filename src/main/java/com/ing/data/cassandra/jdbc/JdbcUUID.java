@@ -35,6 +35,9 @@ public class JdbcUUID extends AbstractJdbcUUID {
     }
 
     public UUID compose(ByteBuffer bytes) {
+        if (bytes == null) {
+            return null;
+        }
         bytes = bytes.slice();
         if (bytes.remaining() < 16) {
             return new UUID(0, 0);
@@ -43,8 +46,8 @@ public class JdbcUUID extends AbstractJdbcUUID {
     }
 
     public String getString(final ByteBuffer bytes) {
-        if (bytes.remaining() == 0) {
-            return StringUtils.EMPTY;
+        if (bytes == null || !bytes.hasRemaining()) {
+            return null;
         }
         if (bytes.remaining() != 16) {
             throw new MarshalException("UUIDs must be exactly 16 bytes, but found: " + bytes.remaining());

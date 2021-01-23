@@ -58,7 +58,11 @@ public class JdbcOther extends AbstractJdbcType<String> {
     }
 
     public String getString(final Object obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public Class<String> getType() {
@@ -70,7 +74,7 @@ public class JdbcOther extends AbstractJdbcType<String> {
     }
 
     public String compose(final Object obj) {
-        return obj.toString();
+        return getString(obj);
     }
 
     public Object decompose(final String value) {

@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.type.MapType;
 import com.datastax.oss.driver.api.core.type.SetType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -52,6 +51,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.Utils.FORWARD_ONLY;
@@ -1028,10 +1029,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        @SuppressWarnings("rawtypes")
         public int getColumnDisplaySize(final int column) {
             try {
-                final AbstractJdbcType jdbcEquivalentType;
+                final AbstractJdbcType<?> jdbcEquivalentType;
                 final ColumnDefinitions.Definition columnDefinition;
                 if (currentRow != null) {
                     columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
@@ -1040,26 +1040,13 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 }
                 jdbcEquivalentType = TypesMap.getTypeForComparator(columnDefinition.getType().toString());
 
-                int length = -1;
-                if (jdbcEquivalentType instanceof JdbcBytes) {
-                    length = Integer.MAX_VALUE / 2;
+                int length = DEFAULT_PRECISION;
+                if (jdbcEquivalentType != null) {
+                    length = jdbcEquivalentType.getPrecision(null);
                 }
-                if (jdbcEquivalentType instanceof JdbcAscii || jdbcEquivalentType instanceof JdbcUTF8) {
-                    length = Integer.MAX_VALUE;
-                }
-                if (jdbcEquivalentType instanceof JdbcUUID) {
-                    length = 36;
-                }
-                if (jdbcEquivalentType instanceof JdbcInt32) {
-                    length = 4;
-                }
-                if (jdbcEquivalentType instanceof JdbcLong) {
-                    length = 8;
-                }
-
                 return length;
             } catch (final Exception e) {
-                return -1;
+                return DEFAULT_PRECISION;
             }
         }
 
@@ -1092,14 +1079,29 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
         @Override
         public int getPrecision(final int column) {
-            // TODO: review this implementation
-            return 0;
+            return Math.max(getColumnDisplaySize(column), 0);
         }
 
         @Override
         public int getScale(final int column) {
-            // TODO: review this implementation
-            return 0;
+            try {
+                final AbstractJdbcType<?> jdbcEquivalentType;
+                final ColumnDefinitions.Definition columnDefinition;
+                if (currentRow != null) {
+                    columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
+                } else {
+                    columnDefinition = driverResultSet.getColumnDefinitions().asList().get(column - 1);
+                }
+                jdbcEquivalentType = TypesMap.getTypeForComparator(columnDefinition.getType().toString());
+
+                int scale = DEFAULT_SCALE;
+                if (jdbcEquivalentType != null) {
+                    scale = jdbcEquivalentType.getScale(null);
+                }
+                return scale;
+            } catch (final Exception e) {
+                return DEFAULT_SCALE;
+            }
         }
 
         @Override

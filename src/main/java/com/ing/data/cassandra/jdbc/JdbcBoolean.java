@@ -22,6 +22,9 @@ import java.sql.Types;
  */
 public class JdbcBoolean extends AbstractJdbcType<Boolean> {
 
+    // Since a boolean is either 'true' or 'false', the maximal length of a boolean is 5 characters ('false').
+    private static final int BOOLEAN_PRECISION = 5;
+
     /**
      * Gets a {@code JdbcBoolean} instance.
      */
@@ -39,7 +42,7 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
     }
 
     public int getPrecision(final Boolean obj) {
-        return DEFAULT_PRECISION;
+        return BOOLEAN_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -51,7 +54,11 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
     }
 
     public String toString(final Boolean obj) {
-        return obj.toString();
+        if (obj == null) {
+            return null;
+        } else {
+            return obj.toString();
+        }
     }
 
     public boolean needsQuotes() {

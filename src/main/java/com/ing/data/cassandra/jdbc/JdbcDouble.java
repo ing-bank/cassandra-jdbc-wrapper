@@ -54,7 +54,11 @@ public class JdbcDouble extends AbstractJdbcType<Double> {
     }
 
     public String toString(final Double obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {

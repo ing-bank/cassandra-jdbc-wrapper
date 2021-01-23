@@ -26,6 +26,8 @@ import java.sql.Types;
 public class JdbcLong extends AbstractJdbcType<Long> {
 
     private static final int LONG_SCALE = 0;
+    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
+    private static final int DEFAULT_LONG_PRECISION = 20;
 
     /**
      * Gets a {@code JdbcLong} instance.
@@ -44,7 +46,10 @@ public class JdbcLong extends AbstractJdbcType<Long> {
     }
 
     public int getPrecision(final Long obj) {
-        return obj.toString().length();
+        if (obj != null) {
+            return obj.toString().length();
+        }
+        return DEFAULT_LONG_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -56,7 +61,11 @@ public class JdbcLong extends AbstractJdbcType<Long> {
     }
 
     public String toString(final Long obj) {
-        return obj.toString();
+        if (obj != null) {
+            return obj.toString();
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {
