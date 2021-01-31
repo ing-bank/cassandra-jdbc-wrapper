@@ -197,8 +197,13 @@ CREATE TABLE table1 (
     float_col float, 
     inet_col inet, 
     int_col int,
+    smallint_col smallint,
     text_col text, 
     timestamp_col timestamp, 
+    time_col time, 
+    date_col date, 
+    tinyint_col tinyint,
+    duration_col duration,
     uuid_col uuid,
     timeuuid_col timeuuid, 
     varchar_col varchar, 
@@ -210,46 +215,61 @@ CREATE TABLE table1 (
 ```
 
 To insert a record into "table1" using a prepared statement:
+
 ```java
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+
+import java.io.ByteArrayInputStream;
+import java.sql.Date;
+
 public class HelloCassandra {
-    public void insertRecordToCassandraTable(final Connection connection) {
-        final Statement statement = connection.createStatement();
-        final String insertCql = "INSERT INTO table1 (bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
-                            + "double_col, float_col, inet_col, int_col, text_col, timestamp_col, uuid_col, " +
-                            + "timeuuid_col, varchar_col, varint_col, string_set_col, string_list_col, string_map_col) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?);";
-        final PreparedStatement preparedStatement = connection.prepareStatement(insert);
-        preparedStatement.setObject(1, 1L);                     // bigint
-        preparedStatement.setObject(2, "test");                 // ascii
-        preparedStatement.setObject(3, new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))); // blob
-        preparedStatement.setObject(4, true);                   // boolean
-        preparedStatement.setObject(5, new BigDecimal(5.1));    // decimal
-        preparedStatement.setObject(6, (double)5.1);            // double
-        preparedStatement.setObject(7, (float)5.1);             // float
-        final InetAddress inet = InetAddress.getLocalHost();
-        preparedStatement.setObject(8, inet);                   // inet
-        preparedStatement.setObject(9, 1);                      // int
-        preparedStatement.setObject(10, "test");                // text
-        preparedStatement.setObject(11, new Timestamp(now.getTime()));  // timestamp
-        final UUID uuid = UUID.randomUUID();
-        preparedStatement.setObject(12, uuid);                  // uuid
-        preparedStatement.setObject(13, "test");                // varchar
-        preparedStatement.setObject(14, 1);                     // varint
-        final HashSet<String> sampleSet = new HashSet<String>();          
-        sampleSet.add("test1");
-        sampleSet.add("test2");
-        preparedStatement.setObject(15, sampleSet);             // set
-        ArrayList<String> sampleList = new ArrayList<String>();     
-        sampleList.add("test1");
-        sampleList.add("test2");
-        preparedStatement.setObject(16, sampleList);            // list
-        HashMap<String,String> sampleMap = new HashMap<String, String>(); 
-        sampleMap.put("1","test1");
-        sampleMap.put("2","test2");
-        preparedStatement.setObject(17, sampleMap);             // map
-        // Execute the prepare statement.
-        preparedStatement.execute();
-    }
+  public void insertRecordToCassandraTable(final Connection connection) {
+    final Statement statement = connection.createStatement();
+    final String insertCql = "INSERT INTO table1 (bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
+      + "double_col, float_col, inet_col, int_col, smallint_col, text_col, timestamp_col, time_col, date_col, "
+      + "tinyint_col, duration_col, uuid_col, timeuuid_col, varchar_col, varint_col, string_set_col, "
+      + "string_list_col, string_map_col) "
+      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?);";
+    final PreparedStatement preparedStatement = connection.prepareStatement(insert);
+    preparedStatement.setObject(1, 1L);                             // bigint
+    preparedStatement.setObject(2, "test");                         // ascii
+    final ByteArrayInputStream baInputStream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8));
+    preparedStatement.setObject(3, baInputStream);                  // blob
+    preparedStatement.setObject(4, true);                           // boolean
+    preparedStatement.setObject(5, new BigDecimal(5.1));            // decimal
+    preparedStatement.setObject(6, (double) 5.1);                   // double
+    preparedStatement.setObject(7, (float) 5.1);                    // float
+    final InetAddress inet = InetAddress.getLocalHost();
+    preparedStatement.setObject(8, inet);                           // inet
+    preparedStatement.setObject(9, 1);                              // int
+    preparedStatement.setObject(10, 1);                             // smallint
+    preparedStatement.setObject(11, "test");                        // text
+    final long now = OffsetDateTime.now().toEpochSecond() * 1_000;
+    preparedStatement.setObject(12, new Timestamp(now));            // timestamp
+    preparedStatement.setObject(13, new Time(now));                 // time
+    preparedStatement.setObject(14, new Date(now));                 // date
+    preparedStatement.setObject(15, 1);                             // tinyint
+    final CqlDuration duration = CqlDuration.from("12h30m15s");
+    preparedStatement.setObject(16, duration);                      // duration
+    final UUID uuid = UUID.randomUUID();
+    preparedStatement.setObject(17, uuid);                          // uuid
+    preparedStatement.setObject(18, "test");                        // varchar
+    preparedStatement.setObject(19, 1);                             // varint
+    final HashSet<String> sampleSet = new HashSet<String>();
+    sampleSet.add("test1");
+    sampleSet.add("test2");
+    preparedStatement.setObject(20, sampleSet);                     // set
+    ArrayList<String> sampleList = new ArrayList<String>();
+    sampleList.add("test1");
+    sampleList.add("test2");
+    preparedStatement.setObject(21, sampleList);                    // list
+    HashMap<String, String> sampleMap = new HashMap<String, String>();
+    sampleMap.put("1", "test1");
+    sampleMap.put("2", "test2");
+    preparedStatement.setObject(22, sampleMap);                     // map
+    // Execute the prepare statement.
+    preparedStatement.execute();
+  }
 }
 ```
 
@@ -355,7 +375,7 @@ public class HelloCassandra {
     public void insertTuples(final Connection connection) {
         final Statement statement = connection.createStatement();
         final String createUDT = "CREATE TYPE IF NOT EXISTS fieldmap (key text, value text)";
-        final String createCF = "CREATE COLUMNFAMILY t_udt (id bigint PRIMARY KEY, field_values frozen<fieldmap>, " 
+        final String createTbl = "CREATE TABLE t_udt (id bigint PRIMARY KEY, field_values frozen<fieldmap>, " 
                                 + "the_tuple frozen<tuple<int, text, float>>, " 
                                 + "the_other_tuple frozen<tuple<int, text, float>>);";
         statement.execute(createUDT);
@@ -389,7 +409,7 @@ public class HelloCassandra {
     public void insertCollectionsOfUDT(final Connection connection) {
         final Statement statement = connection.createStatement();
         final String createUDT = "CREATE TYPE IF NOT EXISTS fieldmap (key text, value text)";
-        final String createCF = "CREATE COLUMNFAMILY t_udt_tuple_coll (id bigint PRIMARY KEY, "
+        final String createTbl = "CREATE TABLE t_udt_tuple_coll (id bigint PRIMARY KEY, "
                                 + "field_values set<frozen<fieldmap>>, "
                                 + "the_tuple list<frozen<tuple<int, text, float>>>, "
                                 + "field_values_map map<text,frozen<fieldmap>>, "

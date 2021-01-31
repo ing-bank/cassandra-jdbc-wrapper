@@ -17,46 +17,49 @@ package com.ing.data.cassandra.jdbc;
 import java.sql.Types;
 
 /**
- * JDBC description of {@code INT} CQL type (corresponding Java type: {@link Integer}).
- * <p>CQL type description: 32-bit signed integer.</p>
+ * JDBC description of {@code TINYINT} CQL type (corresponding Java type: {@link Byte}).
+ * <p>CQL type description: 1 byte signed integer.</p>
  */
-public class JdbcInt32 extends AbstractJdbcType<Integer> {
+public class JdbcByte extends AbstractJdbcType<Byte> {
 
-    // The maximal size of a 32-bit signed integer is 11 (length of '-2147483648').
-    private static final int DEFAULT_INT_PRECISION = 11;
+    // The maximal size of a 1-bit signed integer is 4 (length of '-128').
+    private static final int DEFAULT_TINYINT_PRECISION = 4;
 
     /**
-     * Gets a {@code JdbcInt32} instance.
+     * Gets a {@code JdbcByte} instance.
      */
-    public static final JdbcInt32 instance = new JdbcInt32();
+    public static final JdbcByte instance = new JdbcByte();
 
-    JdbcInt32() {
-    }
-
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
-    public int getScale(final Integer obj) {
+    @Override
+    public int getScale(final Byte obj) {
         return DEFAULT_SCALE;
     }
 
-    public int getPrecision(final Integer obj) {
+    @Override
+    public int getPrecision(final Byte obj) {
         if (obj != null) {
             return obj.toString().length();
         }
-        return DEFAULT_INT_PRECISION;
+        return DEFAULT_TINYINT_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
-    public String toString(final Integer obj) {
+    @Override
+    public String toString(final Byte obj) {
         if (obj != null) {
             return obj.toString();
         } else {
@@ -64,23 +67,28 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
-    public Class<Integer> getType() {
-        return Integer.class;
+    @Override
+    public Class<Byte> getType() {
+        return Byte.class;
     }
 
+    @Override
     public int getJdbcType() {
-        return Types.INTEGER;
+        return Types.TINYINT;
     }
 
-    public Integer compose(final Object value) {
-        return (Integer) value;
+    @Override
+    public Byte compose(final Object value) {
+        return (Byte) value;
     }
 
-    public Object decompose(final Integer value) {
+    @Override
+    public Object decompose(final Byte value) {
         return value;
     }
 

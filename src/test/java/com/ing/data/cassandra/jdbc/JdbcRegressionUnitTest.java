@@ -15,6 +15,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,17 +26,21 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.InetAddress;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLTransientException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -409,17 +414,20 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         assertTrue(result.next());
     }
 
+    // About "OverwrittenKey" warning suppression: we voluntarily use duplicate keys in this test.
+    @SuppressWarnings({"OverwrittenKey", "ResultOfMethodCallIgnored"})
     @Test
     void testIssue80() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
-        final java.util.Date now = new java.util.Date();
+        final long now = OffsetDateTime.now().toEpochSecond() * 1_000;
 
-        // Create the target column family with each basic data type available on Cassandra.
-        final String createTableQuery = "CREATE COLUMNFAMILY t80 (bigint_col bigint PRIMARY KEY, ascii_col ascii, " +
-            "blob_col blob, boolean_col boolean, decimal_col decimal, double_col double, " +
-            "float_col float, inet_col inet, int_col int, text_col text, timestamp_col timestamp, uuid_col uuid," +
-            "timeuuid_col timeuuid, varchar_col varchar, varint_col varint, string_set_col set<text>," +
-            "string_list_col list<text>, string_map_col map<text,text>);";
+        // Create the target table with each basic data type available on Cassandra.
+        final String createTableQuery = "CREATE TABLE t80 (bigint_col bigint PRIMARY KEY, ascii_col ascii, "
+            + "blob_col blob, boolean_col boolean, decimal_col decimal, double_col double, "
+            + "float_col float, inet_col inet, int_col int, text_col text, timestamp_col timestamp, uuid_col uuid, "
+            + "timeuuid_col timeuuid, varchar_col varchar, varint_col varint, string_set_col set<text>, "
+            + "string_list_col list<text>, string_map_col map<text,text>, date_col date, time_col time, "
+            + "smallint_col smallint, tinyint_col tinyint, duration_col duration, url_col text);";
 
         stmt.execute(createTableQuery);
         stmt.close();
@@ -431,21 +439,22 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
 
         final String insertQuery = "INSERT INTO t80(bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
             + "double_col, float_col, inet_col, int_col, text_col, timestamp_col, uuid_col, timeuuid_col, varchar_col, "
-            + "varint_col, string_set_col, string_list_col, string_map_col) "
-            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?);";
+            + "varint_col, string_set_col, string_list_col, string_map_col, date_col, time_col, smallint_col, "
+            + "tinyint_col, duration_col, url_col) "
+            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
         stmt2.setObject(1, 1L);
         stmt2.setObject(2, "test");
         stmt2.setObject(3, new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8)));
         stmt2.setObject(4, true);
-        stmt2.setObject(5, new BigDecimal(5.1));
+        stmt2.setObject(5, new BigDecimal("5.1"));
         stmt2.setObject(6, 5.1);
         stmt2.setObject(7, (float) 5.1);
         final InetAddress inet = InetAddress.getLocalHost();
         stmt2.setObject(8, inet);
         stmt2.setObject(9, 1);
         stmt2.setObject(10, "test");
-        stmt2.setObject(11, new Timestamp(now.getTime()));
+        stmt2.setObject(11, new Timestamp(now));
         final UUID uuid = UUID.randomUUID();
         stmt2.setObject(12, uuid);
         stmt2.setObject(13, "test");
@@ -462,25 +471,40 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         testMap.put("1", "test");
         testMap.put("2", "test");
         stmt2.setObject(17, testMap);
+        stmt2.setObject(18, new Date(now));
+        stmt2.setObject(19, new Time(now));
+        stmt2.setObject(20, (short) 1);
+        stmt2.setObject(21, (byte) 1);
+        final CqlDuration testDuration1 = CqlDuration.from("10h15m25s");
+        stmt2.setObject(22, testDuration1);
+        stmt2.setObject(23, "https://ing.com");
         stmt2.execute();
 
         stmt2.setLong(1, 2L);
         stmt2.setString(2, "test");
         stmt2.setObject(3, new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8)));
         stmt2.setBoolean(4, true);
-        stmt2.setBigDecimal(5, new BigDecimal(5.1));
+        stmt2.setBigDecimal(5, new BigDecimal("5.1"));
         stmt2.setDouble(6, 5.1);
         stmt2.setFloat(7, (float) 5.1);
         stmt2.setObject(8, inet);
         stmt2.setInt(9, 1);
         stmt2.setString(10, "test");
-        stmt2.setTimestamp(11, new Timestamp(now.getTime()));
+        stmt2.setTimestamp(11, new Timestamp(now));
         stmt2.setObject(12, uuid);
         stmt2.setString(13, "test");
         stmt2.setInt(14, 1);
         stmt2.setObject(15, testSet);
         stmt2.setObject(16, testList);
         stmt2.setObject(17, testMap);
+        stmt2.setDate(18, new Date(now));
+        stmt2.setTime(19, new Time(now));
+        stmt2.setShort(20, (short) 10);
+        stmt2.setByte(21, (byte) 2);
+        final CqlDuration testDuration2 = CqlDuration.from("9d20h30m11s");
+        ((CassandraPreparedStatement) stmt2).setDuration(22, testDuration2);
+        final URL testUrl = new URL("https://ing.com");
+        stmt2.setURL(23, testUrl);
         stmt2.execute();
 
         final Statement stmt3 = sqlConnection.createStatement();
@@ -492,13 +516,13 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         result.getBinaryStream("blob_col").read(array);
         assertEquals("test", new String(array, StandardCharsets.UTF_8));
         assertTrue(result.getBoolean("boolean_col"));
-        assertEquals(new BigDecimal(5.1), result.getBigDecimal("decimal_col"));
+        assertEquals(new BigDecimal("5.1"), result.getBigDecimal("decimal_col"));
         assertEquals(5.1, result.getDouble("double_col"), 0);
         assertEquals((float) 5.1, result.getFloat("float_col"), 0);
         assertEquals(InetAddress.getLocalHost(), result.getObject("inet_col"));
         assertEquals(1, result.getInt("int_col"));
         assertEquals("test", result.getString("text_col"));
-        assertEquals(new Timestamp(now.getTime()), result.getTimestamp("timestamp_col"));
+        assertEquals(new Timestamp(now), result.getTimestamp("timestamp_col"));
         // 12 - cannot test timeuuid as it is generated by the server
         assertEquals(uuid, result.getObject("uuid_col"));
         assertEquals("test", result.getString("varchar_col"));
@@ -512,6 +536,12 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         Map<?, ?> retMap = ((CassandraResultSet) result).getMap("string_map_col");
         assertTrue(retMap instanceof HashMap);
         assertEquals(2, retMap.keySet().size());
+        assertEquals(new Date(now).toString(), result.getDate("date_col").toString());
+        assertEquals(new Time(now).toString(), result.getTime("time_col").toString());
+        assertEquals(1, result.getShort("smallint_col"));
+        assertEquals(1, result.getByte("tinyint_col"));
+        assertEquals(testDuration1, ((CassandraResultSet) result).getDuration("duration_col"));
+        assertEquals(testUrl, result.getURL("url_col"));
 
         result = stmt3.executeQuery("SELECT * FROM t80 where bigint_col = 2;");
         assertTrue(result.next());
@@ -521,15 +551,15 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         result.getBinaryStream("blob_col").read(array);
         assertEquals("test", new String(array, StandardCharsets.UTF_8));
         assertTrue(result.getBoolean("boolean_col"));
-        assertEquals(new BigDecimal(5.1), result.getBigDecimal("decimal_col"));
+        assertEquals(new BigDecimal("5.1"), result.getBigDecimal("decimal_col"));
         assertEquals(5.1, result.getDouble("double_col"), 0);
         assertEquals((float) 5.1, result.getFloat("float_col"), 0);
         assertEquals(InetAddress.getLocalHost(), result.getObject("inet_col"));
         assertEquals(1, result.getInt("int_col"));
         assertEquals("test", result.getString("text_col"));
-        assertEquals(new Timestamp(now.getTime()), result.getTimestamp("timestamp_col"));
+        assertEquals(new Timestamp(now), result.getTimestamp("timestamp_col"));
         // 12 - cannot test timeuuid as it is generated by the server
-        assertEquals(uuid, (UUID) result.getObject("uuid_col"));
+        assertEquals(uuid, result.getObject("uuid_col"));
         assertEquals("test", result.getString("varchar_col"));
         assertEquals(1, result.getLong("varint_col"));
         retSet = ((CassandraResultSet) result).getSet("string_set_col");
@@ -541,11 +571,16 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         retMap = ((CassandraResultSet) result).getMap("string_map_col");
         assertTrue(retMap instanceof HashMap);
         assertEquals(2, retMap.keySet().size());
+        assertEquals(new Date(now).toString(), result.getDate("date_col").toString());
+        assertEquals(new Time(now).toString(), result.getTime("time_col").toString());
+        assertEquals(10, result.getShort("smallint_col"));
+        assertEquals(2, result.getByte("tinyint_col"));
+        assertEquals(testDuration2, result.getObject("duration_col", CqlDuration.class));
+        assertEquals(testUrl, result.getObject("url_col", URL.class));
 
         stmt2.close();
         stmt3.close();
     }
-
 
     @Test
     void testIssue102() throws Exception {

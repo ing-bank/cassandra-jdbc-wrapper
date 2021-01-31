@@ -26,7 +26,6 @@ import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
  */
 public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
 
-    private static final int DEFAULT_DECIMAL_SCALE = 0;
     private static final int DEFAULT_DECIMAL_PRECISION = 0;
 
     /**
@@ -45,7 +44,7 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         if (obj != null) {
             return obj.scale();
         }
-        return DEFAULT_DECIMAL_SCALE;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final BigDecimal obj) {

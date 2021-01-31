@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## Next release
 ### Added
-- Add implementations for the methods `getSchema()`, `setSchema(String)` and `getTypeMap()` of the class 
-  `ManagedConnection`.
-- Add implementations for the methods `getPrecision(int)` and `getScale(int)` into the implementations of the interface 
+- Manage additional CQL types: `duration`, `smallint` and `tinyint`.
+- Implement the methods `getSchema()`, `setSchema(String)` and `getTypeMap()` in the class `ManagedConnection`.
+- Implement the methods `getPrecision(int)` and `getScale(int)` into the implementations of the interface 
   `ResultSetMetaData` for the classes `CassandraResultSet` and `CassandraMetadataResultSet`.
+- Implement the methods `getURL(int|String)` in the classes `CassandraResultSet` and `CassandraMetadataResultSet`. The 
+  URL values are handled as `String` values.
 ### Changed
 - Improve documentation and code quality (refactoring, removing dead code, adding tests, ...).
 - Improve the implementation of the metadata precision/size for the columns.

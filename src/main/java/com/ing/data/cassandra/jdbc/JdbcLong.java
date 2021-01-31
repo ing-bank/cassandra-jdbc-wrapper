@@ -25,7 +25,6 @@ import java.sql.Types;
  */
 public class JdbcLong extends AbstractJdbcType<Long> {
 
-    private static final int LONG_SCALE = 0;
     // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
     private static final int DEFAULT_LONG_PRECISION = 20;
 
@@ -42,7 +41,7 @@ public class JdbcLong extends AbstractJdbcType<Long> {
     }
 
     public int getScale(final Long obj) {
-        return LONG_SCALE;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final Long obj) {

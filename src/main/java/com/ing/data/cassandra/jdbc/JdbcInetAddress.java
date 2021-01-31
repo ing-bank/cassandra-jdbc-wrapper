@@ -26,7 +26,6 @@ import java.sql.Types;
  */
 public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
 
-    private static final int INET_SCALE = 0;
     // The maximal size for IPv4 is 15 characters ('xxx.xxx.xxx.xxx').
     // The maximal size for IPv4 is 39 characters ('xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx').
     // 'inet' type accepts either IPv4 (4 bytes long) or IPv6 (16 bytes long).
@@ -45,7 +44,7 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
     }
 
     public int getScale(final InetAddress obj) {
-        return INET_SCALE;
+        return DEFAULT_SCALE;
     }
 
     public int getPrecision(final InetAddress obj) {

@@ -14,6 +14,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
@@ -26,8 +27,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.util.Date;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,28 +45,28 @@ public enum DataTypeEnum {
     BLOB(DataType.BLOB, ByteBuffer.class, cqlName(DataTypes.BLOB)),
     BOOLEAN(DataType.BOOLEAN, Boolean.class, cqlName(DataTypes.BOOLEAN)),
     COUNTER(DataType.COUNTER, Long.class, cqlName(DataTypes.COUNTER)),
+    CUSTOM(DataType.CUSTOM, ByteBuffer.class, "CUSTOM"),
+    DATE(DataType.DATE, Date.class, cqlName(DataTypes.DATE)),
     DECIMAL(DataType.DECIMAL, BigDecimal.class, cqlName(DataTypes.DECIMAL)),
     DOUBLE(DataType.DOUBLE, Double.class, cqlName(DataTypes.DOUBLE)),
+    DURATION(DataType.DURATION, CqlDuration.class, cqlName(DataTypes.DURATION)),
     FLOAT(DataType.FLOAT, Float.class, cqlName(DataTypes.FLOAT)),
     INET(DataType.INET, InetAddress.class, cqlName(DataTypes.INET)),
     INT(DataType.INT, Integer.class, cqlName(DataTypes.INT)),
+    LIST(DataType.LIST, List.class, CollectionType.Kind.LIST.name().toLowerCase()),
+    MAP(DataType.MAP, Map.class, CollectionType.Kind.MAP.name().toLowerCase()),
+    SET(DataType.SET, Set.class, CollectionType.Kind.SET.name().toLowerCase()),
+    SMALLINT(DataType.SMALLINT, Short.class, cqlName(DataTypes.SMALLINT)),
     TEXT(DataType.VARCHAR, String.class, cqlName(DataTypes.TEXT)),
-    TIMESTAMP(DataType.TIMESTAMP, Date.class, cqlName(DataTypes.TIMESTAMP)),
+    TIME(DataType.TIME, Time.class, cqlName(DataTypes.TIME)),
+    TIMESTAMP(DataType.TIMESTAMP, Timestamp.class, cqlName(DataTypes.TIMESTAMP)),
+    TIMEUUID(DataType.TIMEUUID, UUID.class, cqlName(DataTypes.TIMEUUID)),
+    TINYINT(DataType.TINYINT, Byte.class, cqlName(DataTypes.TINYINT)),
+    TUPLE(DataType.TUPLE, TupleValue.class, "TUPLE"),
+    UDT(DataType.UDT, UdtValue.class, "UDT"),
     UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
-    VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT)),
-    TIMEUUID(DataType.TIMEUUID, UUID.class, cqlName(DataTypes.TIMEUUID)),
-    LIST(DataType.LIST, List.class, CollectionType.Kind.LIST.name().toLowerCase()),
-    SET(DataType.SET, Set.class, CollectionType.Kind.SET.name().toLowerCase()),
-    MAP(DataType.MAP, Map.class, CollectionType.Kind.MAP.name().toLowerCase()),
-    UDT(DataType.UDT, UdtValue.class, "UDT"),
-    TUPLE(DataType.TUPLE, TupleValue.class, "TUPLE"),
-    CUSTOM(DataType.CUSTOM, ByteBuffer.class, "CUSTOM"),
-    SMALLINT(DataType.SMALLINT, Integer.class, cqlName(DataTypes.SMALLINT)),     // TODO: use Short.class
-    TINYINT(DataType.TINYINT, Integer.class, cqlName(DataTypes.TINYINT)),        // TODO: use Byte.class
-    DATE(DataType.DATE, Date.class, cqlName(DataTypes.DATE)),
-    TIME(DataType.TIME, Date.class, cqlName(DataTypes.TIME)),                    // TODO: use Time.class
-    DURATION(DataType.DURATION, Duration.class, cqlName(DataTypes.DURATION));
+    VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT));
 
     final int protocolId;
     final Class<?> javaType;
@@ -137,27 +139,32 @@ public enum DataTypeEnum {
      * <tr><td>BOOLEAN       </td><td>{@link Boolean}</td></tr>
      * <tr><td>COUNTER       </td><td>{@link Long}</td></tr>
      * <tr><td>CUSTOM        </td><td>{@link ByteBuffer}</td></tr>
+     * <tr><td>DATE          </td><td>{@link Date}</td></tr>
      * <tr><td>DECIMAL       </td><td>{@link BigDecimal}</td></tr>
      * <tr><td>DOUBLE        </td><td>{@link Double}</td></tr>
-     * <tr><td>DURATION      </td><td>{@link Duration}</td></tr>
+     * <tr><td>DURATION      </td><td>{@link CqlDuration}(*)</td></tr>
      * <tr><td>FLOAT         </td><td>{@link Float}</td></tr>
      * <tr><td>INET          </td><td>{@link InetAddress}</td></tr>
      * <tr><td>INT           </td><td>{@link Integer}</td></tr>
      * <tr><td>LIST          </td><td>{@link List}</td></tr>
      * <tr><td>MAP           </td><td>{@link Map}</td></tr>
      * <tr><td>SET           </td><td>{@link Set}</td></tr>
-     * <tr><td>SMALLINT      </td><td>{@link Integer}</td></tr>
+     * <tr><td>SMALLINT      </td><td>{@link Short}</td></tr>
      * <tr><td>TEXT          </td><td>{@link String}</td></tr>
-     * <tr><td>TIME          </td><td>{@link Date}</td></tr>
-     * <tr><td>TIMESTAMP     </td><td>{@link Date}</td></tr>
+     * <tr><td>TIME          </td><td>{@link Time}</td></tr>
+     * <tr><td>TIMESTAMP     </td><td>{@link Timestamp}</td></tr>
      * <tr><td>TIMEUUID      </td><td>{@link UUID}</td></tr>
-     * <tr><td>TINYINT       </td><td>{@link Integer}</td></tr>
+     * <tr><td>TINYINT       </td><td>{@link Byte}</td></tr>
      * <tr><td>TUPLE         </td><td>{@link TupleValue}</td></tr>
      * <tr><td>UDT           </td><td>{@link UdtValue}</td></tr>
      * <tr><td>UUID          </td><td>{@link UUID}</td></tr>
      * <tr><td>VARCHAR       </td><td>{@link String}</td></tr>
      * <tr><td>VARINT        </td><td>{@link BigInteger}</td></tr>
      * </table>
+     * <p>
+     *     (*) See <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
+     *         temporal types documentation</a> about the management of CQL durations in Java.
+     * </p>
      *
      * @return the Java class corresponding to this CQL type name.
      */

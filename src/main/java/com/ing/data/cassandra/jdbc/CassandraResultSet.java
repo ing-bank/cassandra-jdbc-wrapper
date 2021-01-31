@@ -17,7 +17,9 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.ListType;
 import com.datastax.oss.driver.api.core.type.MapType;
@@ -39,6 +41,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
@@ -90,39 +93,47 @@ import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
  *     It also implements {@link CassandraResultSetExtras} interface providing extra methods not defined in JDBC API to
  *     better handle some CQL data types.
  * </p>
- * <p>
  *     The supported data types in CQL are:
  *     <table border="1">
- *         <tr><th>CQL Type</th><th>Java type</th><th>Description</th></tr>
- *         <tr><td>ascii</td><td>{@link String}</td><td>US-ASCII character string</td></tr>
- *         <tr><td>bigint</td><td>{@link Long}</td><td>64-bit signed long</td></tr>
- *         <tr><td>blob</td><td>{@link ByteBuffer}</td><td>Arbitrary bytes (no validation)</td></tr>
- *         <tr><td>boolean</td><td>{@link Boolean}</td><td>Boolean value: true or false</td></tr>
- *         <tr><td>counter</td><td>{@link Long}</td><td>Counter column (64-bit long)</td></tr>
- *         <tr><td>date</td><td>{@link Date}</td><td>A date with no corresponding time value; encoded date as a 32-bit
- *         integer representing days since epoch (January 1, 1970)</td></tr>
- *         <tr><td>decimal</td><td>{@link BigDecimal}</td><td>Variable-precision decimal</td></tr>
- *         <tr><td>double</td><td>{@link Double}</td><td>64-bit IEEE-754 floating point</td></tr>
- *         <tr><td>float</td><td>{@link Float}</td><td>32-bit IEEE-754 floating point</td></tr>
- *         <tr><td>inet</td><td>{@link InetAddress}</td><td>IP address string in IPv4 or IPv6 format</td></tr>
- *         <tr><td>int</td><td>{@link Integer}</td><td>32-bit signed integer</td></tr>
- *         <tr><td>list</td><td>{@link List}</td><td>A collection of one or more ordered elements:
+ *         <tr><th>CQL Type </th><th>Java type          </th><th>Description</th></tr>
+ *         <tr><td>ascii    </td><td>{@link String}     </td><td>US-ASCII character string</td></tr>
+ *         <tr><td>bigint   </td><td>{@link Long}       </td><td>64-bit signed long</td></tr>
+ *         <tr><td>blob     </td><td>{@link ByteBuffer} </td><td>Arbitrary bytes (no validation)</td></tr>
+ *         <tr><td>boolean  </td><td>{@link Boolean}    </td><td>Boolean value: true or false</td></tr>
+ *         <tr><td>counter  </td><td>{@link Long}       </td><td>Counter column (64-bit long)</td></tr>
+ *         <tr><td>date     </td><td>{@link Date}       </td><td>A date with no corresponding time value; encoded date
+ *         as a 32-bit integer representing days since epoch (January 1, 1970)</td></tr>
+ *         <tr><td>decimal  </td><td>{@link BigDecimal} </td><td>Variable-precision decimal</td></tr>
+ *         <tr><td>double   </td><td>{@link Double}     </td><td>64-bit IEEE-754 floating point</td></tr>
+ *         <tr><td>duration </td><td>{@link CqlDuration}</td><td>A duration with nanosecond precision</td></tr>
+ *         <tr><td>float    </td><td>{@link Float}      </td><td>32-bit IEEE-754 floating point</td></tr>
+ *         <tr><td>inet     </td><td>{@link InetAddress}</td><td>IP address string in IPv4 or IPv6 format</td></tr>
+ *         <tr><td>int      </td><td>{@link Integer}    </td><td>32-bit signed integer</td></tr>
+ *         <tr><td>list     </td><td>{@link List}       </td><td>A collection of one or more ordered elements:
  *         <code>[literal, literal, literal]</code></td></tr>
- *         <tr><td>map</td><td>{@link Map}</td><td>A JSON-style array of literals:
+ *         <tr><td>map      </td><td>{@link Map}        </td><td>A JSON-style array of literals:
  *         <code>{ literal : literal, literal : literal ... }</code></td></tr>
- *         <tr><td>set</td><td>{@link Set}</td><td>A collection of one or more elements:
+ *         <tr><td>set      </td><td>{@link Set}        </td><td>A collection of one or more elements:
  *         <code>{ literal, literal, literal }</code></td></tr>
- *         <tr><td>text</td><td>{@link String}</td><td>UTF-8 encoded string</td></tr>
- *         <tr><td>timestamp</td><td>{@link Date}</td><td>Date and time with millisecond precision, encoded as 8 bytes
- *         since epoch</td></tr>
- *         <tr><td>timeuuid</td><td>{@link UUID}</td><td>Version 1 UUID only</td></tr>
- *         <tr><td>tuple</td><td>{@link TupleValue}</td><td>A group of 2-3 fields</td></tr>
- *         <tr><td>uuid</td><td>{@link UUID}</td><td>A UUID in standard UUID format</td></tr>
- *         <tr><td>varchar</td><td>{@link String}</td><td>UTF-8 encoded string</td></tr>
- *         <tr><td>varint</td><td>{@link BigInteger}</td><td>Arbitrary-precision integer</td></tr>
+ *         <tr><td>smallint </td><td>{@link Short}      </td><td>16-bit signed integer</td></tr>
+ *         <tr><td>text     </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
+ *         <tr><td>time     </td><td>{@link Time}       </td><td>A value encoded as a 64-bit signed integer
+ *         representing the number of nanoseconds since midnight</td></tr>
+ *         <tr><td>timestamp</td><td>{@link Timestamp}  </td><td>Date and time with millisecond precision, encoded as
+ *         8 bytes since epoch</td></tr>
+ *         <tr><td>timeuuid </td><td>{@link UUID}       </td><td>Version 1 UUID only</td></tr>
+ *         <tr><td>tinyint  </td><td>{@link Byte}       </td><td>8-bits signed integer</td></tr>
+ *         <tr><td>tuple    </td><td>{@link TupleValue} </td><td>A group of 2-3 fields</td></tr>
+ *         <tr><td>udt      </td><td>{@link UdtValue}   </td><td>A set of data fields where each field is named and
+ *         typed</td></tr>
+ *         <tr><td>uuid     </td><td>{@link UUID}       </td><td>A UUID in standard UUID format</td></tr>
+ *         <tr><td>varchar  </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
+ *         <tr><td>varint   </td><td>{@link BigInteger} </td><td>Arbitrary-precision integer</td></tr>
  *     </table>
  *     See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
- *         CQL data types reference</a>.
+ *         CQL data types reference</a> and
+ *     <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
+ *         CQL temporal types reference</a>.
  * </p>
  *
  * @see ResultSet
@@ -521,6 +532,18 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     }
 
     @Override
+    public CqlDuration getDuration(int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getCqlDuration(columnIndex - 1);
+    }
+
+    @Override
+    public CqlDuration getDuration(String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getCqlDuration(columnLabel);
+    }
+
+    @Override
     public int getFetchDirection() throws SQLException {
         checkNotClosed();
         return this.fetchDirection;
@@ -796,6 +819,10 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 case INT:
                 case VARINT:
                     return this.currentRow.getInt(columnIndex - 1);
+                case SMALLINT:
+                    return this.currentRow.getShort(columnIndex - 1);
+                case TINYINT:
+                    return this.currentRow.getByte(columnIndex - 1);
                 case BIGINT:
                 case COUNTER:
                     return this.currentRow.getLong(columnIndex - 1);
@@ -811,13 +838,14 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                     return this.currentRow.getFloat(columnIndex - 1);
                 case INET:
                     return this.currentRow.getInetAddress(columnIndex - 1);
+                case DATE:
+                    return getDate(columnIndex);
+                case TIME:
+                    return getTime(columnIndex);
                 case TIMESTAMP:
-                    final Instant instant = this.currentRow.getInstant(columnIndex - 1);
-                    if (instant != null) {
-                        return Timestamp.from(instant);
-                    } else {
-                        return null;
-                    }
+                    return getTimestamp(columnIndex);
+                case DURATION:
+                    return this.currentRow.getCqlDuration(columnIndex - 1);
                 case UUID:
                 case TIMEUUID:
                     return this.currentRow.getUuid(columnIndex - 1);
@@ -921,6 +949,10 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 case INT:
                 case VARINT:
                     return this.currentRow.getInt(columnLabel);
+                case SMALLINT:
+                    return this.currentRow.getShort(columnLabel);
+                case TINYINT:
+                    return this.currentRow.getByte(columnLabel);
                 case BIGINT:
                 case COUNTER:
                     return this.currentRow.getLong(columnLabel);
@@ -936,13 +968,14 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                     return this.currentRow.getFloat(columnLabel);
                 case INET:
                     return this.currentRow.getInetAddress(columnLabel);
+                case DATE:
+                    return getDate(columnLabel);
+                case TIME:
+                    return getTime(columnLabel);
                 case TIMESTAMP:
-                    final Instant instant = this.currentRow.getInstant(columnLabel);
-                    if (instant != null) {
-                        return Timestamp.from(instant);
-                    } else {
-                        return null;
-                    }
+                    return getTimestamp(columnLabel);
+                case DURATION:
+                    return this.currentRow.getCqlDuration(columnLabel);
                 case UUID:
                 case TIMEUUID:
                     return this.currentRow.getUuid(columnLabel);
@@ -1033,6 +1066,10 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         } else if (type == Double.class) {
             final double doubleValue = getDouble(columnIndex);
             returnValue = wasNull() ? null : doubleValue;
+        } else if (type == CqlDuration.class) {
+            returnValue = getDuration(columnIndex);
+        } else if (type == URL.class) {
+            returnValue = getURL(columnIndex);
         } else {
             throw new SQLException(String.format("Conversion to type %s not supported.", type.getSimpleName()));
         }
@@ -1117,13 +1154,13 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     @Override
     public short getShort(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
-        return (short) this.currentRow.getInt(columnIndex - 1);
+        return this.currentRow.getShort(columnIndex - 1);
     }
 
     @Override
     public short getShort(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        return (short) this.currentRow.getInt(columnLabel);
+        return this.currentRow.getShort(columnLabel);
     }
 
     @Override
@@ -1229,14 +1266,34 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
     @Override
     public URL getURL(final int columnIndex) throws SQLException {
-        // TODO: Check how it is stored in C*... just a validated String in URL format?
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        checkIndex(columnIndex);
+        // Handle URL data type as a String.
+        final String storedUrl = this.currentRow.getString(columnIndex - 1);
+        if (storedUrl == null) {
+            return null;
+        } else {
+            try {
+                return new URL(storedUrl);
+            } catch (final MalformedURLException e) {
+                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+            }
+        }
     }
 
     @Override
     public URL getURL(final String columnLabel) throws SQLException {
-        // TODO: Check how it is stored in C*... just a validated String in URL format?
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        checkName(columnLabel);
+        // Handle URL data type as a String.
+        final String storedUrl = this.currentRow.getString(columnLabel);
+        if (storedUrl == null) {
+            return null;
+        } else {
+            try {
+                return new URL(storedUrl);
+            } catch (final MalformedURLException e) {
+                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+            }
+        }
     }
 
     @Override

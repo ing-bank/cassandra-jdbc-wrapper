@@ -17,44 +17,20 @@ package com.ing.data.cassandra.jdbc;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
+import java.sql.Date;
 import java.sql.Types;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 
 /**
  * JDBC description of {@code DATE} CQL type (corresponding Java type: {@link Date}).
  * <p>CQL type description: a date with no corresponding time value; Cassandra encodes date as a 32-bit integer
  * representing days since epoch (January 1, 1970). Dates can be represented in queries and inserts as a string,
- * such as 2015-05-03 (yyyy-mm-dd).</p>
+ * such as 2015-05-03 (yyyy-MM-dd).</p>
  */
 public class JdbcDate extends AbstractJdbcType<Date> {
 
-    /**
-     * Valid ISO-8601 patterns for date type.
-     */
-    public static final String[] iso8601Patterns = new String[]{
-        "yyyy-MM-dd HH:mm",
-        "yyyy-MM-dd HH:mm:ss",
-        "yyyy-MM-dd HH:mmZ",
-        "yyyy-MM-dd HH:mm:ssZ",
-        "yyyy-MM-dd'T'HH:mm",
-        "yyyy-MM-dd'T'HH:mmZ",
-        "yyyy-MM-dd'T'HH:mm:ss",
-        "yyyy-MM-dd'T'HH:mm:ssZ",
-        "yyyy-MM-dd",
-        "yyyy-MM-ddZ",
-        "yyyy-MM-dd'T'HH:mm:ss.SSS",
-        "yyyy-MM-dd'T'HH:mm:ss",
-        "yyyy-MM-dd HH:mm:ss.SSS",
-        "yyyy-MM-dd HH:mm:ss",
-        "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-    };
-    /**
-     * Default date format: yyyy-MM-dd HH:mm:ssZ.
-     */
-    static final String DEFAULT_FORMAT = iso8601Patterns[3];
-    static final ThreadLocal<SimpleDateFormat> FORMATTER = ThreadLocal.withInitial(
-        () -> new SimpleDateFormat(DEFAULT_FORMAT));
+    // The maximal size of date is 10 (for the format 'yyyy-MM-dd').
+    private static final int DEFAULT_DATE_PRECISION = 10;
 
     /**
      * Gets a {@code JdbcDate} instance.
@@ -73,7 +49,7 @@ public class JdbcDate extends AbstractJdbcType<Date> {
     }
 
     public int getPrecision(final Date obj) {
-        return DEFAULT_PRECISION;
+        return DEFAULT_DATE_PRECISION;
     }
 
     public boolean isCurrency() {
@@ -85,7 +61,11 @@ public class JdbcDate extends AbstractJdbcType<Date> {
     }
 
     public String toString(final Date obj) {
-        return FORMATTER.get().format(obj);
+        if (obj != null) {
+            return obj.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        } else {
+            return null;
+        }
     }
 
     public boolean needsQuotes() {
@@ -100,7 +80,7 @@ public class JdbcDate extends AbstractJdbcType<Date> {
             throw new MarshalException("A date is exactly 8 bytes (stored as a long), but found: " + bytes.remaining());
         }
         // Use ISO-8601 formatted string.
-        return FORMATTER.get().format(new Date(bytes.getLong(bytes.position())));
+        return toString(new Date(bytes.getLong(bytes.position())));
     }
 
     public Class<Date> getType() {
@@ -108,7 +88,7 @@ public class JdbcDate extends AbstractJdbcType<Date> {
     }
 
     public int getJdbcType() {
-        return Types.TIMESTAMP;
+        return Types.DATE;
     }
 
     public Date compose(final Object value) {

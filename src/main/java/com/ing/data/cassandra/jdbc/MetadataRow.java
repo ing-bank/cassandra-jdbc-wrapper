@@ -14,6 +14,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -24,6 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -125,6 +127,50 @@ public class MetadataRow {
     }
 
     /**
+     * Retrieves the value of the {@code i}th column of the metadata row as {@code byte}.
+     *
+     * @param i The column index (the first column is 0).
+     * @return The metadata value.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
+     */
+    public byte getByte(final int i) {
+        return (byte) getInt(i);
+    }
+
+    /**
+     * Retrieves the value of the column {@code name} of the metadata row as {@code byte}.
+     *
+     * @param name The column name.
+     * @return The metadata value.
+     * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
+     */
+    public byte getByte(final String name) {
+        return (byte) getInt(getIndex(name));
+    }
+
+    /**
+     * Retrieves the value of the {@code i}th column of the metadata row as {@code short}.
+     *
+     * @param i The column index (the first column is 0).
+     * @return The metadata value.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
+     */
+    public short getShort(final int i) {
+        return (short) getInt(i);
+    }
+
+    /**
+     * Retrieves the value of the column {@code name} of the metadata row as {@code short}.
+     *
+     * @param name The column name.
+     * @return The metadata value.
+     * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
+     */
+    public short getShort(final String name) {
+        return (short) getInt(getIndex(name));
+    }
+
+    /**
      * Retrieves the value of the {@code i}th column of the metadata row as {@code int}.
      *
      * @param i The column index (the first column is 0).
@@ -178,7 +224,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code date} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code date} are managed
      * by this JDBC implementation for now.
      */
     public Date getDate(final int i) {
@@ -191,10 +237,62 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code date} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code date} are managed
      * by this JDBC implementation for now.
      */
     public Date getDate(final String name) {
+        return null;
+    }
+
+    /**
+     * Retrieves the value of the {@code i}th column of the metadata row as {@link Time}.
+     *
+     * @param i The column index (the first column is 0).
+     * @return The metadata value.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code time} are managed
+     * by this JDBC implementation for now.
+     */
+    public Time getTime(final int i) {
+        return null;
+    }
+
+    /**
+     * Retrieves the value of the column {@code name} of the metadata row as {@link Time}.
+     *
+     * @param name The column name.
+     * @return The metadata value.
+     * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code time} are managed
+     * by this JDBC implementation for now.
+     */
+    public Time getTime(final String name) {
+        return null;
+    }
+
+    /**
+     * Retrieves the value of the {@code i}th column of the metadata row as {@link CqlDuration}.
+     *
+     * @param i The column index (the first column is 0).
+     * @return The metadata value.
+     * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code duration} are
+     * managed by this JDBC implementation for now.
+     */
+    public CqlDuration getDuration(final int i) {
+        return null;
+    }
+
+    /**
+     * Retrieves the value of the column {@code name} of the metadata row as {@link CqlDuration}.
+     *
+     * @param name The column name.
+     * @return The metadata value.
+     * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code duration} are
+     * managed by this JDBC implementation for now.
+     */
+    public CqlDuration getDuration(final String name) {
         return null;
     }
 
@@ -204,7 +302,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns 0 since no metadata of type {@code float} is managed by this
+     * @implNote Currently, this method always returns 0 since no metadata of type {@code float} are managed by this
      * JDBC implementation for now.
      */
     public float getFloat(final int i) {
@@ -217,7 +315,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns 0 since no metadata of type {@code float} is managed by this
+     * @implNote Currently, this method always returns 0 since no metadata of type {@code float} are managed by this
      * JDBC implementation for now.
      */
     public float getFloat(final String name) {
@@ -230,7 +328,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns 0 since no metadata of type {@code double} is managed by this
+     * @implNote Currently, this method always returns 0 since no metadata of type {@code double} are managed by this
      * JDBC implementation for now.
      */
     public double getDouble(final int i) {
@@ -243,7 +341,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns 0 since no metadata of type {@code double} is managed by this
+     * @implNote Currently, this method always returns 0 since no metadata of type {@code double} are managed by this
      * JDBC implementation for now.
      */
     public double getDouble(final String name) {
@@ -256,7 +354,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code blob} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code blob} are managed
      * by this JDBC implementation for now.
      */
     public ByteBuffer getBytes(final int i) {
@@ -269,7 +367,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code blob} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code blob} are managed
      * by this JDBC implementation for now.
      */
     public ByteBuffer getBytes(final String name) {
@@ -304,7 +402,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code varint} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code varint} are managed
      * by this JDBC implementation for now.
      */
     public BigInteger getVarint(final int i) {
@@ -317,7 +415,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code varint} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code varint} are managed
      * by this JDBC implementation for now.
      */
     public BigInteger getVarint(final String name) {
@@ -330,8 +428,8 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code decimal} is managed
-     * by this JDBC implementation for now.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code decimal} are
+     * managed by this JDBC implementation for now.
      */
     public BigDecimal getDecimal(final int i) {
         return null;
@@ -343,8 +441,8 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code decimal} is managed
-     * by this JDBC implementation for now.
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code decimal} are
+     * managed by this JDBC implementation for now.
      */
     public BigDecimal getDecimal(final String name) {
         return null;
@@ -356,7 +454,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code uuid} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code uuid} are managed
      * by this JDBC implementation for now.
      */
     public UUID getUUID(final int i) {
@@ -369,7 +467,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code uuid} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code uuid} are managed
      * by this JDBC implementation for now.
      */
     public UUID getUUID(final String name) {
@@ -382,7 +480,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code inet} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code inet} are managed
      * by this JDBC implementation for now.
      */
     public InetAddress getInet(final int i) {
@@ -395,7 +493,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code inet} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code inet} are managed
      * by this JDBC implementation for now.
      */
     public InetAddress getInet(final String name) {
@@ -408,7 +506,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} are managed
      * by this JDBC implementation for now.
      */
     public <T> List<T> getList(final int i, final Class<T> elementsClass) {
@@ -421,7 +519,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} are managed
      * by this JDBC implementation for now.
      */
     public <T> List<T> getList(final String name, final Class<T> elementsClass) {
@@ -434,7 +532,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} are managed
      * by this JDBC implementation for now.
      */
     public <T> Set<T> getSet(final int i, final Class<T> elementsClass) {
@@ -447,7 +545,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} are managed
      * by this JDBC implementation for now.
      */
     public <T> Set<T> getSet(final String name, final Class<T> elementsClass) {
@@ -460,7 +558,7 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} are managed
      * by this JDBC implementation for now.
      */
     public <K, V> Map<K, V> getMap(final int i, final Class<K> keysClass, final Class<V> valuesClass) {
@@ -473,7 +571,7 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} is managed
+     * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} are managed
      * by this JDBC implementation for now.
      */
     public <K, V> Map<K, V> getMap(final String name, final Class<K> keysClass, final Class<V> valuesClass) {

@@ -148,6 +148,7 @@ public final class Utils {
         "Connection url may only include host, port, and keyspace, consistency and version option, e.g. "
             + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
     protected static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
+    protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
 
     static final Logger log = LoggerFactory.getLogger(Utils.class);
 
@@ -348,7 +349,7 @@ public final class Utils {
      * @return A map of {@link DriverOption} values parsed from the givne string.
      */
     public static Map<DriverOption, Object> parseReconnectionPolicy(final String reconnectionPolicyString) {
-        final String policyRegex = "([a-zA-Z\\.]*Policy)(\\()(.*)(\\))";
+        final String policyRegex = "([a-zA-Z.]*Policy)(\\()(.*)(\\))";
         final Pattern policyPattern = Pattern.compile(policyRegex);
         final Matcher policyMatcher = policyPattern.matcher(reconnectionPolicyString);
 
