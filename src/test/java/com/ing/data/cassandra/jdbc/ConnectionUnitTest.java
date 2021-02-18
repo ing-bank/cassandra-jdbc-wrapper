@@ -14,6 +14,8 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
@@ -22,19 +24,35 @@ import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPoli
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
+import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
 import com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy;
+import com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Objects;
 
+import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
 
@@ -165,6 +183,61 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         final Exception thrownException = assertThrows(Exception.class, () ->
             initConnection(KEYSPACE, "debug=true&reconnection=FakeReconnectionPolicy()"));
         assertThat(thrownException.getCause(), instanceOf(IllegalArgumentException.class));
+    }
+
+    @Test
+    void givenDisabledSsl_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        initConnection(KEYSPACE, "enablessl=false");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertFalse(sqlConnection.getSession().getContext().getSslEngineFactory().isPresent());
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenInvalidSslEngineFactory_whenGetConnection_throwsException() {
+        final SQLNonTransientConnectionException thrownException =
+            assertThrows(SQLNonTransientConnectionException.class,
+                () -> initConnection(KEYSPACE, "sslenginefactory=com.ing.data.InvalidSslEngineFactory"));
+        assertThat(thrownException.getCause(), instanceOf(ClassNotFoundException.class));
+        assertThat(thrownException.getMessage(),
+            Matchers.startsWith(SSL_CONFIG_FAILED.substring(0, SSL_CONFIG_FAILED.indexOf(":"))));
+    }
+
+    /*
+     * IMPORTANT NOTE:
+     * The resources 'test_keystore.jks' and 'test_truststore.jks' are provided for testing purpose only. They contain
+     * self-signed certificate to not use in a production context.
+     */
+
+    @Test
+    void givenEnabledSslWithJsse_whenConfigureSsl_addDefaultSslEngineFactoryToSessionBuilder() throws Exception {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        System.setProperty(JSSE_TRUSTSTORE_PROPERTY,
+            Objects.requireNonNull(classLoader.getResource("test_truststore.jks")).getPath());
+        System.setProperty(JSSE_TRUSTSTORE_PASSWORD_PROPERTY, "changeit");
+        System.setProperty(JSSE_KEYSTORE_PROPERTY,
+            Objects.requireNonNull(classLoader.getResource("test_keystore.jks")).getPath());
+        System.setProperty(JSSE_KEYSTORE_PASSWORD_PROPERTY, "changeit");
+
+        // TODO: re-write this test with a connection to an embedded Cassandra server supporting SSL.
+        final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
+            buildJdbcUrl(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE)), null);
+        final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
+        sessionHolder.configureDefaultSslEngineFactory(cqlSessionBuilder, DriverConfigLoader.programmaticBuilder());
+        verify(cqlSessionBuilder).withSslEngineFactory(any(DefaultSslEngineFactory.class));
+    }
+
+    @Test
+    void givenSslEngineFactory_whenConfigureSsl_addGivenSslEngineFactoryToSessionBuilder() throws Exception {
+        // TODO: re-write this test with a connection to an embedded Cassandra server supporting SSL.
+        final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
+            buildJdbcUrl(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE)), null);
+        final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
+        sessionHolder.configureSslEngineFactory(cqlSessionBuilder,
+            "com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
+        verify(cqlSessionBuilder).withSslEngineFactory(any(FakeSslEngineFactory.class));
     }
 
 }

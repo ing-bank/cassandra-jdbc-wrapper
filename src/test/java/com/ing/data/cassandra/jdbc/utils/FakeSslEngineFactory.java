@@ -13,35 +13,28 @@
  */
 package com.ing.data.cassandra.jdbc.utils;
 
-import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
-import com.datastax.oss.driver.api.core.context.DriverContext;
-import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.metadata.EndPoint;
+import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import static org.mockito.Mockito.mock;
+import javax.net.ssl.SSLEngine;
 
-public class FakeReconnectionPolicy implements ReconnectionPolicy {
+public class FakeSslEngineFactory implements SslEngineFactory {
 
-    public FakeReconnectionPolicy(final DriverContext context) {
+    public FakeSslEngineFactory() {
         // Do nothing. For testing purpose only.
     }
 
     @NonNull
     @Override
-    public ReconnectionSchedule newNodeSchedule(@NonNull final Node node) {
+    public SSLEngine newSslEngine(@NonNull EndPoint remoteEndpoint) {
         // Do nothing. For testing purpose only.
-        return mock(ReconnectionSchedule.class);
-    }
-
-    @NonNull
-    @Override
-    public ReconnectionSchedule newControlConnectionSchedule(final boolean isInitialConnection) {
-        // Do nothing. For testing purpose only.
-        return mock(ReconnectionSchedule.class);
+        return null;
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         // Do nothing. For testing purpose only.
     }
+
 }

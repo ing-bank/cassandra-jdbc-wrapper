@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,14 @@ public final class Utils {
      * JDBC URL parameter key for the debug mode.
      */
     public static final String KEY_DEBUG = "debug";
+    /**
+     * JDBC URL parameter key for SSL enabling.
+     */
+    public static final String KEY_ENABLE_SSL = "enablessl";
+    /**
+     * JDBC URL parameter key for the custom SSL engine factory ({@link SslEngineFactory}).
+     */
+    public static final String KEY_SSL_ENGINE_FACTORY = "sslenginefactory";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -106,6 +115,13 @@ public final class Utils {
     public static final String TAG_PRIMARY_DC = "primaryDatacenter";
     public static final String TAG_BACKUP_DC = "backupDatacenter";
     public static final String TAG_CONNECTION_RETRIES = "retries";
+    public static final String TAG_ENABLE_SSL = "enableSsl";
+    public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
+
+    public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
+    public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
+    public static final String JSSE_KEYSTORE_PROPERTY = "javax.net.ssl.keyStore";
+    public static final String JSSE_KEYSTORE_PASSWORD_PROPERTY = "javax.net.ssl.keyStorePassword";
 
     /**
      * {@code NULL} CQL keyword.
@@ -149,6 +165,7 @@ public final class Utils {
             + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
     protected static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
     protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
+    protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
     static final Logger log = LoggerFactory.getLogger(Utils.class);
 
@@ -240,6 +257,12 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_RECONNECT_POLICY)) {
                     props.setProperty(TAG_RECONNECT_POLICY, params.get(KEY_RECONNECT_POLICY));
+                }
+                if (params.containsKey(KEY_ENABLE_SSL)) {
+                    props.setProperty(TAG_ENABLE_SSL, params.get(KEY_ENABLE_SSL));
+                }
+                if (params.containsKey(KEY_SSL_ENGINE_FACTORY)) {
+                    props.setProperty(TAG_SSL_ENGINE_FACTORY, params.get(KEY_SSL_ENGINE_FACTORY));
                 }
             }
         }

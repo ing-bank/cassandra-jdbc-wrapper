@@ -31,11 +31,15 @@ abstract class UsingEmbeddedCassandraServerTest {
 
     static CassandraConnection initConnection(final String host, final int port, final String keyspace,
                                               final String... parameters) throws Exception {
+        return (CassandraConnection) DriverManager.getConnection(buildJdbcUrl(host, port, keyspace, parameters));
+    }
+
+    static String buildJdbcUrl(final String host, final int port, final String keyspace, final String... parameters) {
         String joinedParameters = String.join("&", parameters);
         if (StringUtils.isNotBlank(joinedParameters)) {
             joinedParameters = StringUtils.prependIfMissing(joinedParameters, "?");
         }
-        return (CassandraConnection) DriverManager.getConnection(String.format("jdbc:cassandra://%s:%d/%s%s",
-            host, port, keyspace, joinedParameters));
+
+        return String.format("jdbc:cassandra://%s:%d/%s%s", host, port, keyspace, joinedParameters);
     }
 }

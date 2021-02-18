@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## Next release
 ### Added
 - Manage additional CQL types: `duration`, `smallint` and `tinyint`.
+- Add support for SSL between the driver and the Cassandra cluster.
 - Implement the methods `getSchema()`, `setSchema(String)` and `getTypeMap()` in the class `ManagedConnection`.
 - Implement the methods `getPrecision(int)` and `getScale(int)` into the implementations of the interface 
   `ResultSetMetaData` for the classes `CassandraResultSet` and `CassandraMetadataResultSet`.

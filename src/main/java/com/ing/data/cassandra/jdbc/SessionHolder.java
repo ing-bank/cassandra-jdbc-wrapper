@@ -21,9 +21,14 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
+import com.datastax.oss.driver.api.core.context.DriverContext;
+import com.datastax.oss.driver.api.core.session.ProgrammaticArguments;
 import com.datastax.oss.driver.api.core.session.Session;
+import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
+import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
 import com.google.common.cache.LoadingCache;
 import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
 import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
@@ -48,6 +53,12 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
 
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.
@@ -155,6 +166,11 @@ class SessionHolder {
         final String reconnectPolicy = properties.getProperty(Utils.TAG_RECONNECT_POLICY, StringUtils.EMPTY);
         final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(Utils.TAG_DEBUG,
             StringUtils.EMPTY));
+        final String enableSslValue = properties.getProperty(Utils.TAG_ENABLE_SSL);
+        final String sslEngineFactoryClassName = properties.getProperty(Utils.TAG_SSL_ENGINE_FACTORY,
+            StringUtils.EMPTY);
+        final boolean sslEnabled = Boolean.TRUE.toString().equals(enableSslValue)
+            || (enableSslValue == null && StringUtils.isNotEmpty(sslEngineFactoryClassName));
 
         // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();
@@ -239,6 +255,15 @@ class SessionHolder {
         builder.withKeyspace(keyspace);
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
 
+        // SSL configuration.
+        if (sslEnabled) {
+            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
+                configureSslEngineFactory(builder, sslEngineFactoryClassName);
+            } else {
+                configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
+            }
+        }
+
         try {
             return builder.build();
         } catch (final DriverException e) {
@@ -247,6 +272,34 @@ class SessionHolder {
             }
             throw new SQLNonTransientConnectionException(e);
         }
+    }
+
+    void configureSslEngineFactory(final CqlSessionBuilder builder, final String sslEngineFactoryClassName)
+        throws SQLNonTransientConnectionException {
+        try {
+            final Class<?> sslEngineFactoryClass = Class.forName(sslEngineFactoryClassName);
+            final SslEngineFactory sslEngineFactory =
+                (SslEngineFactory) sslEngineFactoryClass.getConstructor().newInstance();
+            builder.withSslEngineFactory(sslEngineFactory);
+        } catch (final Exception e) {
+            throw new SQLNonTransientConnectionException(String.format(SSL_CONFIG_FAILED, e.getMessage()), e);
+        }
+    }
+
+    void configureDefaultSslEngineFactory(final CqlSessionBuilder builder,
+                                          final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder) {
+        // Get JSSE properties and add them to the driver context in order to use DefaultSslEngineFactory.
+        driverConfigLoaderBuilder.withString(DefaultDriverOption.SSL_TRUSTSTORE_PATH,
+            System.getProperty(JSSE_TRUSTSTORE_PROPERTY));
+        driverConfigLoaderBuilder.withString(DefaultDriverOption.SSL_TRUSTSTORE_PASSWORD,
+            System.getProperty(JSSE_TRUSTSTORE_PASSWORD_PROPERTY));
+        driverConfigLoaderBuilder.withString(DefaultDriverOption.SSL_KEYSTORE_PATH,
+            System.getProperty(JSSE_KEYSTORE_PROPERTY));
+        driverConfigLoaderBuilder.withString(DefaultDriverOption.SSL_KEYSTORE_PASSWORD,
+            System.getProperty(JSSE_KEYSTORE_PASSWORD_PROPERTY));
+        final DriverContext driverContext = new DefaultDriverContext(driverConfigLoaderBuilder.build(),
+            ProgrammaticArguments.builder().build());
+        builder.withSslEngineFactory(new DefaultSslEngineFactory(driverContext));
     }
 
     private void dispose() {
