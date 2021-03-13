@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `ResultSetMetaData` for the classes `CassandraResultSet` and `CassandraMetadataResultSet`.
 - Implement the methods `getURL(int|String)` in the classes `CassandraResultSet` and `CassandraMetadataResultSet`. The 
   URL values are handled as `String` values.
+- Add codecs for conversions between `Integer` and CQL types `varint`, `smallint` and `tinyint`. It also fixes the issue
+  [#33](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/33) of the [original project].
 ### Changed
 - Improve documentation and code quality (refactoring, removing dead code, adding tests, ...).
 - Improve the implementation of the metadata precision/size for the columns.

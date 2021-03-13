@@ -22,7 +22,7 @@ import java.sql.Types;
  */
 public class JdbcShort extends AbstractJdbcType<Short> {
 
-    // The maximal size of a 2-bit signed integer is 6 (length of '-32768').
+    // The maximal size of a 16-bit signed integer is 6 (length of '-32768').
     private static final int DEFAULT_SMALLINT_PRECISION = 6;
 
     /**

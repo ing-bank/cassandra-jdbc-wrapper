@@ -35,7 +35,10 @@ import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
 import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
 import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,6 +253,9 @@ class SessionHolder {
         codecs.add(new BigintToBigDecimalCodec());
         codecs.add(new DecimalToDoubleCodec());
         codecs.add(new FloatToDoubleCodec());
+        codecs.add(new VarintToIntCodec());
+        codecs.add(new SmallintToIntCodec());
+        codecs.add(new TinyintToIntCodec());
         builder.addTypeCodecs(codecs.toArray(new TypeCodec[]{}));
 
         builder.withKeyspace(keyspace);

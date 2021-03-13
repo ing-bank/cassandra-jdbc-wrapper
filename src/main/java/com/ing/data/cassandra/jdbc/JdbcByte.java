@@ -22,7 +22,7 @@ import java.sql.Types;
  */
 public class JdbcByte extends AbstractJdbcType<Byte> {
 
-    // The maximal size of a 1-bit signed integer is 4 (length of '-128').
+    // The maximal size of a 8-bit signed integer is 4 (length of '-128').
     private static final int DEFAULT_TINYINT_PRECISION = 4;
 
     /**
