@@ -57,6 +57,17 @@ INSERT INTO collections_test (keyValue, listValue) VALUES(1, [1, 3, 12345]);
 UPDATE collections_test SET setValue = {'red', 'white', 'blue'} WHERE keyValue = 1;
 UPDATE collections_test SET mapValue = {2.0: true, 4.0: false, 6.0 : true} WHERE keyValue = 1;
 
+/* Init keyspace and tables for BatchStatementsUnitTest */
+DROP KEYSPACE IF EXISTS test_keyspace_batch;
+CREATE KEYSPACE "test_keyspace_batch" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+USE test_keyspace_batch;
+CREATE TABLE collections_test (
+keyValue int PRIMARY KEY,
+listValue list<bigint>,
+mapValue map<double, boolean>,
+setValue set<text>);
+
 /* Init keyspace and tables for JdbcRegressionUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace3;
 CREATE KEYSPACE "test_keyspace3" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};

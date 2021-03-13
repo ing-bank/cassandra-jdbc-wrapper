@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BatchStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
 
-    private static final String KEYSPACE = "test_keyspace_coll";
+    private static final String KEYSPACE = "test_keyspace_batch";
     private static CassandraConnection sqlConnection2 = null;
 
     @BeforeAll
