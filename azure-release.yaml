@@ -120,7 +120,7 @@ steps:
   - task: GitHubRelease@0
     displayName: 'Create GitHub release'
     inputs:
-      gitHubConnection: 'ing-bank'
+      gitHubConnection: 'maximevw'
       repositoryName: $(Build.Repository.Name)
       action: create
       target: $(Build.SourceVersion)
