@@ -11,6 +11,10 @@ pool:
 variables:
   - group: SonatypeCredentials
   - group: GPGKey
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: MAVEN_OPTS
+    value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
 
 steps:
   - task: DownloadSecureFile@1
@@ -42,6 +46,15 @@ steps:
       # Needed for GPG to work on headless Azure agents
       GPG_TTY: /dev/pts/0
 
+  - task: Cache@2
+    displayName: 'Cache Maven repository'
+    inputs:
+      key: 'mvn | "$(Agent.OS)" | **/pom.xml'
+      restoreKeys: |
+        mvn | "$(Agent.OS)"
+        mvn
+      path: $(MAVEN_CACHE_FOLDER)
+
   - task: Maven@3
     displayName: 'Maven package and publish'
     inputs:
@@ -51,6 +64,7 @@ steps:
       jdkArchitectureOption: 'x64'
       publishJUnitResults: false
       goals: 'deploy'
+      mavenOptions: '$(MAVEN_OPTS)'
       options: '-s $(System.DefaultWorkingDirectory)/release-settings.xml -Prelease -Dgpg.passphrase=$(GPG_PASSPHRASE)'
     env:
       # Secrets must be extracted explicitly
@@ -66,3 +80,51 @@ steps:
         rm -rf $(pubring.secureFilePath)
         rm -rf $(secring.secureFilePath)
         rm -rf ~/.gnupg
+
+  - task: Maven@3
+    displayName: 'Retrieve artifact version'
+    inputs:
+      effectivePomSkip: true
+      mavenPomFile: 'pom.xml'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.8'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: false
+      goals: 'help:evaluate'
+      mavenOptions: '$(MAVEN_OPTS)'
+      options: '--log-file $(Pipeline.Workspace)/version.txt -Dexpression=project.version -q -DforceStdout'
+
+  - task: Bash@3
+    displayName: 'Store artifact version into a variable'
+    inputs:
+      targetType: 'inline'
+      workingDirectory: $(Pipeline.Workspace)
+      script: |
+        artifactVersion=$(cat version.txt)
+        echo "##vso[task.setvariable variable=artifactVersion]${artifactVersion}"
+        echo Built version: ${artifactVersion}
+        rm ./version.txt
+
+  - task: Maven@3
+    displayName: 'Maven build bundle'
+    inputs:
+      mavenPomFile: 'pom.xml'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.8'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: false
+      goals: 'clean package'
+      mavenOptions: '$(MAVEN_OPTS)'
+      options: '-Pbundle'
+
+  - task: GitHubRelease@0
+    displayName: 'Create GitHub release'
+    inputs:
+      gitHubConnection: 'ing-bank'
+      repositoryName: $(Build.Repository.Name)
+      action: create
+      target: $(Build.SourceVersion)
+      tagSource: manual
+      tag: 'v$(artifactVersion)'
+      assets: $(Build.ArtifactStagingDirectory)/*-bundle.jar
+      isDraft: true

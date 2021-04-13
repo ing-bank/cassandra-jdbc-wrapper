@@ -8,7 +8,20 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
 steps:
+  - task: Cache@2
+    displayName: 'Cache Maven repository'
+    inputs:
+      key: 'mvn | "$(Agent.OS)" | **/pom.xml'
+      restoreKeys: |
+        mvn | "$(Agent.OS)"
+        mvn
+      path: $(MAVEN_CACHE_FOLDER)
+
   - task: Maven@3
     displayName: 'Maven build'
     inputs:
@@ -18,3 +31,4 @@ steps:
       jdkArchitectureOption: 'x64'
       publishJUnitResults: false
       goals: 'package verify'
+      mavenOptions: '$(MAVEN_OPTS)'

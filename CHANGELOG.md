@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Next release
+## 4.5.0 - 2021-04-13
 ### Added
 - Manage additional CQL types: `duration`, `smallint` and `tinyint`.
 - Add support for SSL between the driver and the Cassandra cluster.
@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add codecs for conversions between `Integer` and CQL types `varint`, `smallint` and `tinyint`. It also fixes the issue
   [#33](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/33) of the [original project].
 ### Changed
+- Update DataStax Java Driver for Apache Cassandra(R) to version 4.10.0.
+- Update `cassandra-all` to version 3.11.9.
 - Improve documentation and code quality (refactoring, removing dead code, adding tests, ...).
 - Improve the implementation of the metadata precision/size for the columns.
 ### Fixed

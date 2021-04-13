@@ -18,7 +18,7 @@ import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.session.Request;
 import com.datastax.oss.driver.api.core.session.Session;
-import com.datastax.oss.driver.internal.core.util.collection.QueryPlan;
+import com.datastax.oss.driver.internal.core.util.collection.SimpleQueryPlan;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -43,7 +43,7 @@ public class FakeLoadBalancingPolicy implements LoadBalancingPolicy {
     @Override
     public Queue<Node> newQueryPlan(@Nullable final Request request, @Nullable final Session session) {
         // Do nothing. For testing purpose only.
-        return new QueryPlan(mock(Node.class));
+        return new SimpleQueryPlan(mock(Node.class));
     }
 
     @Override

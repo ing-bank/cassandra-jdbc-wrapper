@@ -17,5 +17,13 @@ jobs:
         with:
           java-version: 8
 
+      - name: Cache Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: mvn-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            mvn-${{ runner.os }}-
+
       - name: Build with Maven
         run: mvn -B package verify
