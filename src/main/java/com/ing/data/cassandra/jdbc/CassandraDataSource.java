@@ -87,7 +87,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     /**
      * The consistency level.
      * <p>
-     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
+     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.x/cassandra/dml/dmlConfigConsistency.html">
      *     consistency level documentation</a> for further details.
      * </p>
      */

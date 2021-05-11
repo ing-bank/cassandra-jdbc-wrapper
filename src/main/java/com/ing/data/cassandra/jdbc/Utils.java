@@ -98,6 +98,10 @@ public final class Utils {
      * JDBC URL parameter key for the custom SSL engine factory ({@link SslEngineFactory}).
      */
     public static final String KEY_SSL_ENGINE_FACTORY = "sslenginefactory";
+    /**
+     * JDBC URL parameter key for the cloud secure connect bundle.
+     */
+    public static final String KEY_CLOUD_SECURE_CONNECT_BUNDLE = "secureconnectbundle";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -117,6 +121,7 @@ public final class Utils {
     public static final String TAG_CONNECTION_RETRIES = "retries";
     public static final String TAG_ENABLE_SSL = "enableSsl";
     public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
+    public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
     public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
@@ -263,6 +268,15 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_SSL_ENGINE_FACTORY)) {
                     props.setProperty(TAG_SSL_ENGINE_FACTORY, params.get(KEY_SSL_ENGINE_FACTORY));
+                }
+                if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
+                    props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
+                }
+                if (params.containsKey(TAG_USER)) {
+                    props.setProperty(TAG_USER, params.get(TAG_USER));
+                }
+                if (params.containsKey(TAG_PASSWORD)) {
+                    props.setProperty(TAG_PASSWORD, params.get(TAG_PASSWORD));
                 }
             }
         }
