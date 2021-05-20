@@ -162,7 +162,7 @@ jdbc:cassandra://host1--host2--host3:9042/keyspace?consistency=LOCAL_QUORUM
 ```
 
 Consistency level defaults to `ONE` if not specified (see 
-[Consistency levels](https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbInternals/dbIntConfigConsistency.html) 
+[Consistency levels](https://docs.datastax.com/en/dse/6.8/dse-arch/datastax_enterprise/dbInternals/dbIntConfigConsistency.html) 
 documentation for further details about the valid values for this argument).
 
 ### Secure connection with SSL
@@ -182,6 +182,24 @@ The argument `sslEngineFactory` will be ignored if the argument `enableSsl` is `
 
 For further information about custom implementations of `SslEngineFactory`, see 
 [SSL](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/ssl/) documentation.
+
+### Connecting to DBaaS
+
+In order to connect to the cloud [Cassandra DBaaS](www.datastax.com/astra) cluster, one would need to specify:
+* `secureconnectbundle`: the fully qualified path of the cloud secure connect bundle file
+* `keyspace`: the keyspace to connect to
+* `user`: the username
+* `password`: the password
+
+For example,
+
+```
+jdbc:cassandra://localhost:9042/keyspace?consistency=LOCAL_QUORUM&user=user1&password=password1&secureconnectbundle=/path/to/location/secure-connect-bundle-cluster.zip
+```
+
+*Note*: whatever the host(s) given here will be ignored and will be fetched from the cloud secure connect bundle, but it is required to pass in something in here to make this work at the moment.
+
+For further information about connecting to DBaaS, see [cloud documentation](https://docs.datastax.com/en/developer/java-driver/latest/manual/cloud/).
 
 ### Using simple statements
 
@@ -462,6 +480,7 @@ We use [SemVer](http://semver.org/) for versioning.
 ## Authors
 
 * Maxime Wiewiora - **[@maximevw](https://github.com/maximevw)** 
+* Madhavan - **[@msmygit](https://github.com/msmygit)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

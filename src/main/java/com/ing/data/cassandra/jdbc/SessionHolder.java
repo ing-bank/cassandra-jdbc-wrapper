@@ -160,6 +160,7 @@ class SessionHolder {
     private Session createSession(final Properties properties) throws SQLException {
         final String hosts = properties.getProperty(Utils.TAG_SERVER_NAME);
         final int port = Integer.parseInt(properties.getProperty(Utils.TAG_PORT_NUMBER));
+        final String cloudSecureConnectBundle = properties.getProperty(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE);
         final String keyspace = properties.getProperty(Utils.TAG_DATABASE_NAME);
         final String username = properties.getProperty(Utils.TAG_USER, StringUtils.EMPTY);
         final String password = properties.getProperty(Utils.TAG_PASSWORD, StringUtils.EMPTY);
@@ -180,10 +181,17 @@ class SessionHolder {
         final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder =
             DriverConfigLoader.programmaticBuilder();
         driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
-        builder.addContactPoints(Arrays.stream(hosts.split("--"))
-            .map(host -> InetSocketAddress.createUnresolved(host, port))
-            .collect(Collectors.toList())
-        );
+        if(StringUtils.isNotBlank(cloudSecureConnectBundle)) {
+        	driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
+        			cloudSecureConnectBundle);
+        	log.info(String.format("Cloud secure connect bundle used. Host(s) %s will be ignored.",
+        			hosts));
+        } else {
+	        builder.addContactPoints(Arrays.stream(hosts.split("--"))
+	            .map(host -> InetSocketAddress.createUnresolved(host, port))
+	            .collect(Collectors.toList())
+	        );
+        }
 
         // Set credentials when applicable.
         if (username.length() > 0) {
@@ -262,12 +270,17 @@ class SessionHolder {
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
 
         // SSL configuration.
-        if (sslEnabled) {
-            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
-                configureSslEngineFactory(builder, sslEngineFactoryClassName);
-            } else {
-                configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
-            }
+        if(StringUtils.isBlank(cloudSecureConnectBundle)) {
+	        if (sslEnabled) {
+	            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
+	                configureSslEngineFactory(builder, sslEngineFactoryClassName);
+	            } else {
+	                configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
+	            }
+	        }
+        } else {
+        	log.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL"
+        			+ " configuration(s) will be ignored.");
         }
 
         try {

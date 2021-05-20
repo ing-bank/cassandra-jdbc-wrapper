@@ -45,6 +45,15 @@ class UtilsUnitTest {
 
     static Stream<Arguments> buildUrlParsingTestCases() {
         return Stream.of(
+            Arguments.of("jdbc:cassandra://localhost:9042/astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
+                new HashMap<String, String>() {{
+                    put(Utils.TAG_SERVER_NAME, "localhost");
+                    put(Utils.TAG_PORT_NUMBER, "9042");
+                    put(Utils.TAG_DATABASE_NAME, "astra");
+                    put(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE, "/path/to/location/filename.extn");
+                    put(Utils.TAG_USER, "user1");
+                    put(Utils.TAG_PASSWORD, "password1");
+                }}),
             Arguments.of("jdbc:cassandra://localhost:9042/Keyspace1?version=3.0.0&consistency=QUORUM",
                 new HashMap<String, String>() {{
                     put(Utils.TAG_SERVER_NAME, "localhost");
