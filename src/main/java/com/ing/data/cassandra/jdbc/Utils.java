@@ -102,6 +102,14 @@ public final class Utils {
      * JDBC URL parameter key for the cloud secure connect bundle.
      */
     public static final String KEY_CLOUD_SECURE_CONNECT_BUNDLE = "secureconnectbundle";
+    /**
+     * JDBC URL parameter key for the username.
+     */
+    public static final String KEY_USER = "user";
+    /**
+     * JDBC URL parameter key for the user password.
+     */
+    public static final String KEY_PASSWORD = "password";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -272,11 +280,11 @@ public final class Utils {
                 if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
                     props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
                 }
-                if (params.containsKey(TAG_USER)) {
-                    props.setProperty(TAG_USER, params.get(TAG_USER));
+                if (params.containsKey(KEY_USER)) {
+                    props.setProperty(TAG_USER, params.get(KEY_USER));
                 }
-                if (params.containsKey(TAG_PASSWORD)) {
-                    props.setProperty(TAG_PASSWORD, params.get(TAG_PASSWORD));
+                if (params.containsKey(KEY_PASSWORD)) {
+                    props.setProperty(TAG_PASSWORD, params.get(KEY_PASSWORD));
                 }
             }
         }

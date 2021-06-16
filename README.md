@@ -40,7 +40,7 @@ If you are having issues connecting to the cluster (seeing `NoHostAvailableConne
 
 Clone the repository:
 ```bash
-git clone git@github.com:ing-bank/cassandra-jdbc-wrapper.git
+git clone https://github.com/ing-bank/cassandra-jdbc-wrapper.git
 ```
 
 To compile and run tests, execute the following Maven command:
@@ -480,7 +480,7 @@ We use [SemVer](http://semver.org/) for versioning.
 ## Authors
 
 * Maxime Wiewiora - **[@maximevw](https://github.com/maximevw)** 
-* Madhavan - **[@msmygit](https://github.com/msmygit)**
+* Madhavan Sridharan - **[@msmygit](https://github.com/msmygit)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Add support for connecting to Cassandra DBaaS cluster with secure connect bundle. 
+  See the feature request [#1](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/1).
+### Changed
+- Update DataStax Java Driver for Apache Cassandra(R) to version 4.12.0.
+### Fixed
+- User credentials parameters in the connection string were ignored.
+
 ## 4.5.0 - 2021-04-13
 ### Added
 - Manage additional CQL types: `duration`, `smallint` and `tinyint`.

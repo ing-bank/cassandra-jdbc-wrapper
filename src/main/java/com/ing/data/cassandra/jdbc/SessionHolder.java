@@ -181,11 +181,10 @@ class SessionHolder {
         final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder =
             DriverConfigLoader.programmaticBuilder();
         driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
-        if(StringUtils.isNotBlank(cloudSecureConnectBundle)) {
+        if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
         	driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
-        			cloudSecureConnectBundle);
-        	log.info(String.format("Cloud secure connect bundle used. Host(s) %s will be ignored.",
-        			hosts));
+                cloudSecureConnectBundle);
+        	log.info(String.format("Cloud secure connect bundle used. Host(s) %s will be ignored.", hosts));
         } else {
 	        builder.addContactPoints(Arrays.stream(hosts.split("--"))
 	            .map(host -> InetSocketAddress.createUnresolved(host, port))
@@ -270,7 +269,7 @@ class SessionHolder {
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
 
         // SSL configuration.
-        if(StringUtils.isBlank(cloudSecureConnectBundle)) {
+        if (StringUtils.isBlank(cloudSecureConnectBundle)) {
 	        if (sslEnabled) {
 	            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
 	                configureSslEngineFactory(builder, sslEngineFactoryClassName);

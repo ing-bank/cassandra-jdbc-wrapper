@@ -45,6 +45,13 @@
 				<role>developer</role>
 			</roles>
         </contributor>
+        <contributor>
+            <name>Madhavan Sridharan</name>
+            <url>https://github.com/msmygit</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>
@@ -71,7 +78,7 @@
         <!-- Versions for dependencies -->
         <cassandra-all.version>3.11.9</cassandra-all.version>
         <commons-lang3.version>3.11</commons-lang3.version>
-        <datastax.java.driver.version>4.11.1</datastax.java.driver.version>
+        <datastax.java.driver.version>4.12.0</datastax.java.driver.version>
         <libthrift.version>0.13.0</libthrift.version>
         <!-- Versions for test dependencies -->
         <achilles-embedded.version>6.0.4</achilles-embedded.version>
