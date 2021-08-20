@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
 
     private static final int CONNECTION_IS_VALID_DEFAULT_TIMEOUT = 5;
     private static final int MIN_POOL_SIZE = 4;
-    private static final Logger log = LoggerFactory.getLogger(PooledCassandraDataSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PooledCassandraDataSource.class);
 
     private final CassandraDataSource connectionPoolDataSource;
     private final Set<PooledCassandraConnection> freeConnections = new HashSet<>();
@@ -82,7 +83,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                log.error(e.getMessage());
+                LOG.error(e.getMessage());
             }
         }
     }
@@ -95,7 +96,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
                 connection.getConnection().close();
             }
         } catch (final SQLException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         this.usedConnections.remove(connection);
     }
@@ -113,7 +114,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                log.error(e.getMessage());
+                LOG.error(e.getMessage());
             }
         }
     }

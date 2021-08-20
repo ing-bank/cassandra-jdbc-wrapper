@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
@@ -185,7 +186,7 @@ public final class Utils {
     protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
     protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
-    static final Logger log = LoggerFactory.getLogger(Utils.class);
+    static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
         // Private constructor to hide the public one.
@@ -254,7 +255,7 @@ public final class Utils {
             }
 
             final String query = uri.getQuery();
-            if ((query != null) && (!query.isEmpty())) {
+            if (query != null && !query.isEmpty()) {
                 final Map<String, String> params = parseQueryPart(query);
                 if (params.containsKey(KEY_VERSION)) {
                     props.setProperty(TAG_CQL_VERSION, params.get(KEY_VERSION));
@@ -308,8 +309,8 @@ public final class Utils {
             }
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("URL: '{}' parsed to: {}", url, props);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("URL: '{}' parsed to: {}", url, props);
         }
 
         return props;
@@ -346,8 +347,8 @@ public final class Utils {
             throw new SQLNonTransientConnectionException(e);
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Sub-name: '{}' created from: {}", uri.toString(), props);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Sub-name: '{}' created from: {}", uri.toString(), props);
         }
 
         return uri.toString();
@@ -362,8 +363,8 @@ public final class Utils {
      */
     protected static String makeQueryString(final Properties props) {
         final StringBuilder sb = new StringBuilder();
-        final String version = (props.getProperty(TAG_CQL_VERSION));
-        final String consistency = (props.getProperty(TAG_CONSISTENCY_LEVEL));
+        final String version = props.getProperty(TAG_CQL_VERSION);
+        final String consistency = props.getProperty(TAG_CONSISTENCY_LEVEL);
         if (StringUtils.isNotBlank(consistency)) {
             sb.append(KEY_CONSISTENCY).append("=").append(consistency);
         }
@@ -428,14 +429,16 @@ public final class Utils {
         return null;
     }
 
-    private static Map<DriverOption, Object> getReconnectionPolicy(String primaryReconnectionPolicy,
+    private static Map<DriverOption, Object> getReconnectionPolicy(final String primaryReconnectionPolicy,
                                                                    final String parameters) {
         final Map<DriverOption, Object> policyParametersMap = new HashMap<>();
+        String primaryReconnectionPolicyClass = primaryReconnectionPolicy;
         if (!primaryReconnectionPolicy.contains(".")) {
-            primaryReconnectionPolicy = "com.datastax.oss.driver.internal.core.connection." + primaryReconnectionPolicy;
+            primaryReconnectionPolicyClass = "com.datastax.oss.driver.internal.core.connection."
+                + primaryReconnectionPolicy;
         }
 
-        policyParametersMap.put(DefaultDriverOption.RECONNECTION_POLICY_CLASS, primaryReconnectionPolicy);
+        policyParametersMap.put(DefaultDriverOption.RECONNECTION_POLICY_CLASS, primaryReconnectionPolicyClass);
 
         // Parameters have been specified
         if (parameters.length() > 0) {
@@ -455,9 +458,9 @@ public final class Utils {
                             if (argPos == 0) {
                                 policyParametersMap.put(DefaultDriverOption.RECONNECTION_BASE_DELAY,
                                     Duration.ofSeconds(delay));
-                            } else if (argPos == 1 &&
-                                "com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy".equals(
-                                    primaryReconnectionPolicy)) {
+                            } else if (argPos == 1
+                                && "com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy"
+                                .equals(primaryReconnectionPolicyClass)) {
                                 policyParametersMap.put(DefaultDriverOption.RECONNECTION_MAX_DELAY,
                                     Duration.ofSeconds(delay));
                             }

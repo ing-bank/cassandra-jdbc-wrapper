@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.metadata.Metadata;
@@ -138,7 +139,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getCatalogs() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.instance.makeCatalogs(statement);
+        return MetadataResultSets.INSTANCE.makeCatalogs(statement);
     }
 
     @Override
@@ -157,15 +158,16 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getColumns(final String catalog, String schemaPattern, final String tableNamePattern,
+    public ResultSet getColumns(final String catalog, final String schemaPattern, final String tableNamePattern,
                                 final String columnNamePattern) throws SQLException {
         checkStatementClosed();
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
             this.statement.connection = connection;
+            String schemaNamePattern = schemaPattern;
             if (schemaPattern == null) {
-                schemaPattern = this.connection.getSchema(); // limit to current schema if defined.
+                schemaNamePattern = this.connection.getSchema(); // limit to current schema if defined.
             }
-            return MetadataResultSets.instance.makeColumns(statement, schemaPattern, tableNamePattern,
+            return MetadataResultSets.INSTANCE.makeColumns(statement, schemaNamePattern, tableNamePattern,
                 columnNamePattern);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
@@ -211,12 +213,12 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() {
-        return CassandraConnection.DB_MAJOR_VERSION;
+        return CassandraConnection.dbMajorVersion;
     }
 
     @Override
     public int getDatabaseMinorVersion() {
-        return CassandraConnection.DB_MINOR_VERSION;
+        return CassandraConnection.dbMinorVersion;
     }
 
     @Override
@@ -237,8 +239,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      */
     @Override
     public String getDatabaseProductVersion() {
-        return String.format("%d.%d.%d", CassandraConnection.DB_MAJOR_VERSION, CassandraConnection.DB_MINOR_VERSION,
-            CassandraConnection.DB_PATCH_VERSION);
+        return String.format("%d.%d.%d", CassandraConnection.dbMajorVersion, CassandraConnection.dbMinorVersion,
+            CassandraConnection.dbPatchVersion);
     }
 
     @Override
@@ -341,14 +343,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getIndexInfo(final String catalog, String schema, final String table, final boolean unique,
+    public ResultSet getIndexInfo(final String catalog, final String schema, final String table, final boolean unique,
                                   final boolean approximate) throws SQLException {
         checkStatementClosed();
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            String schemaName = schema;
             if (schema == null) {
-                schema = this.connection.getSchema(); // limit to current schema if defined.
+                schemaName = this.connection.getSchema(); // limit to current schema if defined.
             }
-            return MetadataResultSets.instance.makeIndexes(this.statement, schema, table, unique, approximate);
+            return MetadataResultSets.INSTANCE.makeIndexes(this.statement, schemaName, table, unique, approximate);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -471,13 +474,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getPrimaryKeys(final String catalog, String schema, final String table) throws SQLException {
+    public ResultSet getPrimaryKeys(final String catalog, final String schema, final String table) throws SQLException {
         checkStatementClosed();
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            String schemaName = schema;
             if (schema == null) {
-                schema = this.connection.getSchema(); // limit to current schema if defined.
+                schemaName = this.connection.getSchema(); // limit to current schema if defined.
             }
-            return MetadataResultSets.instance.makePrimaryKeys(this.statement, schema, table);
+            return MetadataResultSets.INSTANCE.makePrimaryKeys(this.statement, schemaName, table);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -595,7 +599,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getSchemas() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.instance.makeSchemas(this.statement, null);
+        return MetadataResultSets.INSTANCE.makeSchemas(this.statement, null);
     }
 
     @Override
@@ -605,7 +609,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             throw new SQLSyntaxErrorException("Catalog name must exactly match or be null.");
         }
 
-        return MetadataResultSets.instance.makeSchemas(this.statement, schemaPattern);
+        return MetadataResultSets.INSTANCE.makeSchemas(this.statement, schemaPattern);
     }
 
     @Override
@@ -675,13 +679,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTableTypes() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.instance.makeTableTypes(statement);
+        return MetadataResultSets.INSTANCE.makeTableTypes(statement);
     }
 
     @Override
     public ResultSet getTables(final String catalog, final String schemaPattern, final String tableNamePattern,
                                final String[] types) throws SQLException {
-        boolean askingForTable = (types == null);
+        boolean askingForTable = types == null;
         if (types != null) {
             for (final String typeName : types) {
                 if (MetadataResultSets.TABLE.equals(typeName)) {
@@ -692,7 +696,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         }
         if ((catalog == null || catalog.equals(this.connection.getCatalog())) && askingForTable) {
             checkStatementClosed();
-            return MetadataResultSets.instance.makeTables(this.statement, schemaPattern, tableNamePattern);
+            return MetadataResultSets.INSTANCE.makeTables(this.statement, schemaPattern, tableNamePattern);
         }
 
         return CassandraResultSet.EMPTY_RESULT_SET;

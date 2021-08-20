@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -22,37 +23,43 @@ import java.sql.Types;
  */
 public class JdbcDouble extends AbstractJdbcType<Double> {
 
-    private static final int DOUBLE_SCALE = 300;
-    private static final int DOUBLE_PRECISION = 300;
-
     /**
      * Gets a {@code JdbcDouble} instance.
      */
-    public static final JdbcDouble instance = new JdbcDouble();
+    public static final JdbcDouble INSTANCE = new JdbcDouble();
+
+    private static final int DOUBLE_SCALE = 300;
+    private static final int DOUBLE_PRECISION = 300;
 
     JdbcDouble() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Double obj) {
         return DOUBLE_SCALE;
     }
 
+    @Override
     public int getPrecision(final Double obj) {
         return DOUBLE_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final Double obj) {
         if (obj != null) {
             return obj.toString();
@@ -61,22 +68,27 @@ public class JdbcDouble extends AbstractJdbcType<Double> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
+    @Override
     public Class<Double> getType() {
         return Double.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.DOUBLE;
     }
 
+    @Override
     public Double compose(final Object value) {
         return (Double) value;
     }
 
+    @Override
     public Object decompose(final Double value) {
         return value;
     }

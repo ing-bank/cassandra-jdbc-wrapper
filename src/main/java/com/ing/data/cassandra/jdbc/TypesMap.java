@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.util.HashMap;
@@ -20,57 +21,61 @@ import java.util.Map;
 /**
  * Mapping of Apache Cassandra CQL types to JDBC-equivalent types.
  */
-public class TypesMap {
-    private final static Map<String, AbstractJdbcType<?>> map = new HashMap<>();
+public final class TypesMap {
+    private static final Map<String, AbstractJdbcType<?>> TYPES_MAP = new HashMap<>();
 
     static {
-        map.put("org.apache.cassandra.db.marshal.AsciiType", JdbcAscii.instance);
-        map.put("org.apache.cassandra.db.marshal.BooleanType", JdbcBoolean.instance);
-        map.put("org.apache.cassandra.db.marshal.BytesType", JdbcBytes.instance);
-        map.put("org.apache.cassandra.db.marshal.ByteType", JdbcByte.instance);
-        map.put("org.apache.cassandra.db.marshal.CounterColumnType", JdbcCounterColumn.instance);
-        map.put("org.apache.cassandra.db.marshal.DateType", JdbcDate.instance);
-        map.put("org.apache.cassandra.db.marshal.DecimalType", JdbcDecimal.instance);
-        map.put("org.apache.cassandra.db.marshal.DoubleType", JdbcDouble.instance);
-        map.put("org.apache.cassandra.db.marshal.DurationType", JdbcDuration.instance);
-        map.put("org.apache.cassandra.db.marshal.FloatType", JdbcFloat.instance);
-        map.put("org.apache.cassandra.db.marshal.InetAddressType", JdbcInetAddress.instance);
-        map.put("org.apache.cassandra.db.marshal.IntegerType", JdbcInteger.instance);
-        map.put("org.apache.cassandra.db.marshal.Int32Type", JdbcInt32.instance);
-        map.put("org.apache.cassandra.db.marshal.LexicalUUIDType", JdbcLexicalUUID.instance);
-        map.put("org.apache.cassandra.db.marshal.LongType", JdbcLong.instance);
-        map.put("org.apache.cassandra.db.marshal.ShortType", JdbcShort.instance);
-        map.put("org.apache.cassandra.db.marshal.TimeType", JdbcTime.instance);
-        map.put("org.apache.cassandra.db.marshal.TimestampType", JdbcTimestamp.instance);
-        map.put("org.apache.cassandra.db.marshal.TimeUUIDType", JdbcTimeUUID.instance);
-        map.put("org.apache.cassandra.db.marshal.TupleType", JdbcTuple.instance);
-        map.put("org.apache.cassandra.db.marshal.UserType", JdbcUdt.instance);
-        map.put("org.apache.cassandra.db.marshal.UTF8Type", JdbcUTF8.instance);
-        map.put("org.apache.cassandra.db.marshal.UUIDType", JdbcUUID.instance);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.AsciiType", JdbcAscii.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.BooleanType", JdbcBoolean.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.BytesType", JdbcBytes.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.ByteType", JdbcByte.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.CounterColumnType", JdbcCounterColumn.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.DateType", JdbcDate.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.DecimalType", JdbcDecimal.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.DoubleType", JdbcDouble.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.DurationType", JdbcDuration.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.FloatType", JdbcFloat.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.InetAddressType", JdbcInetAddress.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.IntegerType", JdbcInteger.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.Int32Type", JdbcInt32.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.LexicalUUIDType", JdbcLexicalUUID.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.LongType", JdbcLong.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.ShortType", JdbcShort.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.TimeType", JdbcTime.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.TimestampType", JdbcTimestamp.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.TimeUUIDType", JdbcTimeUUID.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.TupleType", JdbcTuple.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.UserType", JdbcUdt.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.UTF8Type", JdbcUTF8.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.UUIDType", JdbcUUID.INSTANCE);
 
-        map.put("org.apache.cassandra.db.marshal.ascii", JdbcAscii.instance);
-        map.put("org.apache.cassandra.db.marshal.bigint", JdbcLong.instance);
-        map.put("org.apache.cassandra.db.marshal.blob", JdbcBytes.instance);
-        map.put("org.apache.cassandra.db.marshal.boolean", JdbcBoolean.instance);
-        map.put("org.apache.cassandra.db.marshal.counter", JdbcLong.instance);
-        map.put("org.apache.cassandra.db.marshal.date", JdbcDate.instance);
-        map.put("org.apache.cassandra.db.marshal.decimal", JdbcDecimal.instance);
-        map.put("org.apache.cassandra.db.marshal.double", JdbcDouble.instance);
-        map.put("org.apache.cassandra.db.marshal.duration", JdbcDuration.instance);
-        map.put("org.apache.cassandra.db.marshal.float", JdbcFloat.instance);
-        map.put("org.apache.cassandra.db.marshal.inet", JdbcInetAddress.instance);
-        map.put("org.apache.cassandra.db.marshal.int", JdbcInt32.instance);
-        map.put("org.apache.cassandra.db.marshal.smallint", JdbcShort.instance);
-        map.put("org.apache.cassandra.db.marshal.text", JdbcUTF8.instance);
-        map.put("org.apache.cassandra.db.marshal.time", JdbcTime.instance);
-        map.put("org.apache.cassandra.db.marshal.timestamp", JdbcTimestamp.instance);
-        map.put("org.apache.cassandra.db.marshal.timeuuid", JdbcTimeUUID.instance);
-        map.put("org.apache.cassandra.db.marshal.tinyint", JdbcByte.instance);
-        map.put("org.apache.cassandra.db.marshal.tuple", JdbcTuple.instance);
-        map.put("org.apache.cassandra.db.marshal.udt", JdbcUdt.instance);
-        map.put("org.apache.cassandra.db.marshal.uuid", JdbcUUID.instance);
-        map.put("org.apache.cassandra.db.marshal.varchar", JdbcUTF8.instance);
-        map.put("org.apache.cassandra.db.marshal.varint", JdbcInteger.instance);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.ascii", JdbcAscii.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.bigint", JdbcLong.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.blob", JdbcBytes.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.boolean", JdbcBoolean.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.counter", JdbcLong.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.date", JdbcDate.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.decimal", JdbcDecimal.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.double", JdbcDouble.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.duration", JdbcDuration.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.float", JdbcFloat.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.inet", JdbcInetAddress.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.int", JdbcInt32.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.smallint", JdbcShort.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.text", JdbcUTF8.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.time", JdbcTime.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.timestamp", JdbcTimestamp.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.timeuuid", JdbcTimeUUID.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.tinyint", JdbcByte.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.tuple", JdbcTuple.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.udt", JdbcUdt.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.uuid", JdbcUUID.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.varchar", JdbcUTF8.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.varint", JdbcInteger.INSTANCE);
+    }
+
+    private TypesMap() {
+        // Private constructor to hide the public one.
     }
 
     /**
@@ -81,9 +86,10 @@ public class TypesMap {
      */
     public static AbstractJdbcType<?> getTypeForComparator(final String comparator) {
         // If not fully qualified, assume it's the short name for a built-in type.
-        if ((comparator != null) && (!comparator.contains("."))) {
-            return map.getOrDefault("org.apache.cassandra.db.marshal." + comparator.toLowerCase(), JdbcOther.instance);
+        if (comparator != null && !comparator.contains(".")) {
+            return TYPES_MAP.getOrDefault("org.apache.cassandra.db.marshal." + comparator.toLowerCase(),
+                JdbcOther.INSTANCE);
         }
-        return map.getOrDefault(comparator, JdbcOther.instance);
+        return TYPES_MAP.getOrDefault(comparator, JdbcOther.INSTANCE);
     }
 }

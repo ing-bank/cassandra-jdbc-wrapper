@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -27,15 +28,17 @@ public class JdbcLexicalUUID extends AbstractJdbcUUID {
     /**
      * Gets a {@code JdbcLexicalUUID} instance.
      */
-    public static final JdbcLexicalUUID instance = new JdbcLexicalUUID();
+    public static final JdbcLexicalUUID INSTANCE = new JdbcLexicalUUID();
 
-    public JdbcLexicalUUID() {
+    JdbcLexicalUUID() {
     }
 
+    @Override
     public UUID compose(@NonNull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
+    @Override
     public Object decompose(@NonNull final UUID value) {
         return value.toString();
     }

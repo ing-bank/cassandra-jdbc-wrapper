@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -22,37 +23,43 @@ import java.sql.Types;
  */
 public class JdbcFloat extends AbstractJdbcType<Float> {
 
-    private static final int FLOAT_SCALE = 40;
-    private static final int FLOAT_PRECISION = 7;
-
     /**
      * Gets a {@code JdbcFloat} instance.
      */
-    public static final JdbcFloat instance = new JdbcFloat();
+    public static final JdbcFloat INSTANCE = new JdbcFloat();
+
+    private static final int FLOAT_SCALE = 40;
+    private static final int FLOAT_PRECISION = 7;
 
     JdbcFloat() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Float obj) {
         return FLOAT_SCALE;
     }
 
+    @Override
     public int getPrecision(final Float obj) {
         return FLOAT_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final Float obj) {
         if (obj != null) {
             return obj.toString();
@@ -61,22 +68,27 @@ public class JdbcFloat extends AbstractJdbcType<Float> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
+    @Override
     public Class<Float> getType() {
         return Float.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.FLOAT;
     }
 
+    @Override
     public Float compose(final Object value) {
         return (Float) value;
     }
 
+    @Override
     public Object decompose(final Float value) {
         return value;
     }

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
@@ -68,15 +69,15 @@ public enum DataTypeEnum {
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
     VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT));
 
+    private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
     final int protocolId;
     final Class<?> javaType;
     final String cqlType;
 
-    private static final Map<String, DataTypeEnum> cqlDataTypeToDataType;
     static {
-        cqlDataTypeToDataType = Maps.newHashMap();
+        CQL_DATATYPE_TO_DATATYPE = Maps.newHashMap();
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
-            cqlDataTypeToDataType.put(dataType.cqlType, dataType);
+            CQL_DATATYPE_TO_DATATYPE.put(dataType.cqlType, dataType);
         }
     }
 
@@ -101,13 +102,14 @@ public enum DataTypeEnum {
      * @param cqlTypeName The CQL type name.
      * @return The enumeration item corresponding to the given CQL type name.
      */
-    static DataTypeEnum fromCqlTypeName(String cqlTypeName) {
+    static DataTypeEnum fromCqlTypeName(final String cqlTypeName) {
         // Manage collection types (e.g. "list<varchar>")
         final int collectionTypeCharPos = cqlTypeName.indexOf("<");
+        String cqlDataType = cqlTypeName;
         if (collectionTypeCharPos > 0) {
-            cqlTypeName = cqlTypeName.substring(0, collectionTypeCharPos);
+            cqlDataType = cqlTypeName.substring(0, collectionTypeCharPos);
         }
-        return cqlDataTypeToDataType.get(cqlTypeName);
+        return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType);
     }
 
     /**
@@ -170,6 +172,15 @@ public enum DataTypeEnum {
      */
     public Class<?> asJavaClass() {
         return this.javaType;
+    }
+
+    /**
+     * Returns the CQL type name to lower case.
+     *
+     * @return the the CQL type name to lower case.
+     */
+    public String asLowercaseCql() {
+        return this.cqlType.toLowerCase();
     }
 
     @Override

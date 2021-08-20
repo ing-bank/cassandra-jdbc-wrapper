@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Time;
@@ -25,13 +26,13 @@ import java.time.format.DateTimeFormatter;
  */
 public class JdbcTime extends AbstractJdbcType<Time> {
 
-    // The maximal size of time is 18 (for the format 'hh:mm:ss.SSSSSSSSS').
-    private static final int DEFAULT_TIME_PRECISION = 18;
-
     /**
      * Gets a {@code JdbcTime} instance.
      */
-    public static final JdbcTime instance = new JdbcTime();
+    public static final JdbcTime INSTANCE = new JdbcTime();
+
+    // The maximal size of time is 18 (for the format 'hh:mm:ss.SSSSSSSSS').
+    private static final int DEFAULT_TIME_PRECISION = 18;
 
     @Override
     public boolean isCaseSensitive() {
@@ -62,7 +63,7 @@ public class JdbcTime extends AbstractJdbcType<Time> {
     }
 
     @Override
-    public String toString(Time obj) {
+    public String toString(final Time obj) {
         if (obj != null) {
             return obj.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME);
         } else {

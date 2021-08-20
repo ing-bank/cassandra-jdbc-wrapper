@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -55,10 +56,6 @@ import java.sql.SQLTransientException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -78,7 +75,7 @@ import java.util.concurrent.CompletionStage;
  */
 public class CassandraPreparedStatement extends CassandraStatement implements PreparedStatement {
 
-    private static final Logger log = LoggerFactory.getLogger(CassandraPreparedStatement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraPreparedStatement.class);
 
     // The count of bound variable markers ('?') encountered during the parsing of the CQL server-side.
     private final int count;
@@ -117,8 +114,8 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
     CassandraPreparedStatement(final CassandraConnection connection, final String cql, final int resultSetType,
                                final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
         super(connection, cql, resultSetType, resultSetConcurrency, resultSetHoldability);
-        if (log.isTraceEnabled() || connection.isDebugMode()) {
-            log.trace("CQL: " + this.cql);
+        if (LOG.isTraceEnabled() || connection.isDebugMode()) {
+            LOG.trace("CQL: {}", this.cql);
         }
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
@@ -182,7 +179,7 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
         try {
             this.connection.removeStatement(this);
         } catch (final Exception e) {
-            log.warn("Unable to close the prepared statement: " + e.getMessage());
+            LOG.warn("Unable to close the prepared statement: " + e.getMessage());
         }
     }
 
@@ -190,8 +187,8 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
     private void doExecute() throws SQLException {
         try {
             resetResults();
-            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                log.trace("CQL: " + this.cql);
+            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                LOG.trace("CQL: " + this.cql);
             }
             // Force paging to avoid timeout and node harm.
             if (this.boundStatement.getPageSize() == 0) {
@@ -240,8 +237,8 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
         final int[] returnCounts = new int[this.batchStatements.size()];
         try {
             final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                log.trace("CQL statements: " + this.batchStatements.size());
+            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                LOG.trace("CQL statements: " + this.batchStatements.size());
             }
             for (final BoundStatement statement : this.batchStatements) {
                 for (int i = 0; i < statement.getPreparedStatement().getVariableDefinitions().size(); i++) {
@@ -250,8 +247,8 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
                         statement.setToNull(i);
                     }
                 }
-                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                    log.trace("CQL: " + this.cql);
+                if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                    LOG.trace("CQL: " + this.cql);
                 }
                 final BoundStatement boundStatement = statement.setConsistencyLevel(
                     this.connection.getDefaultConsistencyLevel());
@@ -486,7 +483,7 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
 
     @Override
     public void setObject(final int parameterIndex, final Object x) throws SQLException {
-        int targetType;
+        final int targetType;
         if (x.getClass().equals(Long.class)) {
             targetType = Types.BIGINT;
         } else if (x.getClass().equals(ByteArrayInputStream.class)) {
@@ -552,7 +549,7 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
                 try {
                     ((ByteArrayInputStream) x).read(array);
                 } catch (final IOException e) {
-                    log.warn("Exception while setting object of BINARY type.", e);
+                    LOG.warn("Exception while setting object of BINARY type.", e);
                 }
                 this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(array));
                 break;

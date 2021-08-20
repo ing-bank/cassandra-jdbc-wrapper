@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.net.InetAddress;
@@ -26,27 +27,30 @@ import java.sql.Types;
  */
 public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
 
+    /**
+     * Gets a {@code JdbcInetAddress} instance.
+     */
+    public static final JdbcInetAddress INSTANCE = new JdbcInetAddress();
+
     // The maximal size for IPv4 is 15 characters ('xxx.xxx.xxx.xxx').
     // The maximal size for IPv4 is 39 characters ('xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx').
     // 'inet' type accepts either IPv4 (4 bytes long) or IPv6 (16 bytes long).
     private static final int DEFAULT_INET_PRECISION = 39;
 
-    /**
-     * Gets a {@code JdbcInetAddress} instance.
-     */
-    public static final JdbcInetAddress instance = new JdbcInetAddress();
-
     JdbcInetAddress() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final InetAddress obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final InetAddress obj) {
         if (obj != null) {
             return obj.toString().length();
@@ -54,14 +58,17 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
         return DEFAULT_INET_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final InetAddress obj) {
         if (obj != null) {
             return obj.getHostAddress();
@@ -70,6 +77,7 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
@@ -78,14 +86,17 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
         return compose(bytes).getHostAddress();
     }
 
+    @Override
     public Class<InetAddress> getType() {
         return InetAddress.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.OTHER;
     }
 
+    @Override
     public InetAddress compose(final Object value) {
         try {
             return InetAddress.getByName((String) value);
@@ -94,6 +105,7 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
         }
     }
 
+    @Override
     public Object decompose(final InetAddress value) {
         return value.getAddress();
     }

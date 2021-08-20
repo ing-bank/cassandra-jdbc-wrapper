@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,19 +29,22 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
     /**
      * Gets a {@code JdbcBytes} instance.
      */
-    public static final JdbcBytes instance = new JdbcBytes();
+    public static final JdbcBytes INSTANCE = new JdbcBytes();
 
     JdbcBytes() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final ByteBuffer obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final ByteBuffer obj) {
         if (obj != null) {
             return obj.remaining();
@@ -48,41 +52,54 @@ public class JdbcBytes extends AbstractJdbcType<ByteBuffer> {
         return Integer.MAX_VALUE / 2;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final ByteBuffer obj) {
         return StringUtils.EMPTY;
     }
 
+    @Override
     public boolean needsQuotes() {
         return true;
     }
 
+    @Override
     public Class<ByteBuffer> getType() {
         return ByteBuffer.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.BINARY;
     }
 
+    /**
+     * Duplicates the given {@link ByteBuffer}.
+     *
+     * @param bytes The {@link ByteBuffer} instance.
+     * @return A duplicated instance of the given {@link ByteBuffer}.
+     */
     public ByteBuffer compose(final ByteBuffer bytes) {
         return bytes.duplicate();
-    }
-
-    public ByteBuffer decompose(final ByteBuffer value) {
-        return value;
     }
 
     @Override
     public ByteBuffer compose(final Object obj) {
         return null;
+    }
+
+    @Override
+    public ByteBuffer decompose(final ByteBuffer value) {
+        return value;
     }
 
 }

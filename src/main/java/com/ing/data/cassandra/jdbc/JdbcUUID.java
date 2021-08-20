@@ -12,10 +12,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -29,20 +29,31 @@ public class JdbcUUID extends AbstractJdbcUUID {
     /**
      * Gets a {@code JdbcUUID} instance.
      */
-    public static final JdbcUUID instance = new JdbcUUID();
+    public static final JdbcUUID INSTANCE = new JdbcUUID();
 
     JdbcUUID() {
     }
 
-    public UUID compose(ByteBuffer bytes) {
+    /**
+     * Transforms the given {@link ByteBuffer} to an instance of {@link UUID}.
+     *
+     * @param bytes The {@link ByteBuffer} instance to transform.
+     * @return An instance of {@code UUID} from the given {@link ByteBuffer}.
+     */
+    public UUID compose(final ByteBuffer bytes) {
         if (bytes == null) {
             return null;
         }
-        bytes = bytes.slice();
-        if (bytes.remaining() < 16) {
+        final ByteBuffer slicedBytes = bytes.slice();
+        if (slicedBytes.remaining() < 16) {
             return new UUID(0, 0);
         }
-        return new UUID(bytes.getLong(), bytes.getLong());
+        return new UUID(slicedBytes.getLong(), slicedBytes.getLong());
+    }
+
+    @Override
+    public UUID compose(@NonNull final Object obj) {
+        return UUID.fromString(obj.toString());
     }
 
     public String getString(final ByteBuffer bytes) {
@@ -55,10 +66,7 @@ public class JdbcUUID extends AbstractJdbcUUID {
         return compose(bytes).toString();
     }
 
-    public UUID compose(@NonNull final Object obj) {
-        return UUID.fromString(obj.toString());
-    }
-
+    @Override
     public Object decompose(final UUID obj) {
         return obj;
     }

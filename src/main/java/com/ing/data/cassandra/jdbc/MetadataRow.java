@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
@@ -503,7 +504,9 @@ public class MetadataRow {
     /**
      * Retrieves the value of the {@code i}th column of the metadata row as {@link List}.
      *
-     * @param i The column index (the first column is 0).
+     * @param <T>           The type of the list elements.
+     * @param i             The column index (the first column is 0).
+     * @param elementsClass The class of the list elements.
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} are managed
@@ -516,7 +519,9 @@ public class MetadataRow {
     /**
      * Retrieves the value of the column {@code name} of the metadata row as {@link List}.
      *
-     * @param name The column name.
+     * @param <T>           The type of the list elements.
+     * @param name          The column name.
+     * @param elementsClass The class of the list elements.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code list} are managed
@@ -529,7 +534,9 @@ public class MetadataRow {
     /**
      * Retrieves the value of the {@code i}th column of the metadata row as {@link Set}.
      *
-     * @param i The column index (the first column is 0).
+     * @param <T>           The type of the set elements.
+     * @param i             The column index (the first column is 0).
+     * @param elementsClass The class of the set elements.
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} are managed
@@ -542,7 +549,9 @@ public class MetadataRow {
     /**
      * Retrieves the value of the column {@code name} of the metadata row as {@link Set}.
      *
-     * @param name The column name.
+     * @param <T>           The type of the set elements.
+     * @param name          The column name.
+     * @param elementsClass The class of the set elements.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code set} are managed
@@ -555,7 +564,11 @@ public class MetadataRow {
     /**
      * Retrieves the value of the {@code i}th column of the metadata row as {@link Map}.
      *
-     * @param i The column index (the first column is 0).
+     * @param <K>           The type of the map keys.
+     * @param <V>           The type of the map values.
+     * @param i             The column index (the first column is 0).
+     * @param keysClass     The class of the map keys.
+     * @param valuesClass   The class of the map values.
      * @return The metadata value.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} are managed
@@ -568,7 +581,11 @@ public class MetadataRow {
     /**
      * Retrieves the value of the column {@code name} of the metadata row as {@link Map}.
      *
-     * @param name The column name.
+     * @param <K>           The type of the map keys.
+     * @param <V>           The type of the map values.
+     * @param name          The column name.
+     * @param keysClass     The class of the map keys.
+     * @param valuesClass   The class of the map values.
      * @return The metadata value.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      * @implNote Currently, this method always returns {@code null} since no metadata of type {@code map} are managed

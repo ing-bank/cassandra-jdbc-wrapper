@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import org.slf4j.Logger;
@@ -35,13 +36,14 @@ import java.util.Set;
  * a Cassandra cluster.
  */
 public class PooledCassandraConnection implements PooledConnection {
-    private static final Logger log = LoggerFactory.getLogger(PooledCassandraConnection.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PooledCassandraConnection.class);
+
+    volatile Set<ConnectionEventListener> connectionEventListeners = new HashSet<>();
+    volatile Set<StatementEventListener> statementEventListeners = new HashSet<>();
 
     private final CassandraConnection physicalConnection;
     private final Map<String, Set<CassandraPreparedStatement>> freePreparedStatements = new HashMap<>();
     private final Map<String, Set<CassandraPreparedStatement>> usedPreparedStatements = new HashMap<>();
-    volatile Set<ConnectionEventListener> connectionEventListeners = new HashSet<>();
-    volatile Set<StatementEventListener> statementEventListeners = new HashSet<>();
 
     /**
      * Constructor.
@@ -132,7 +134,7 @@ public class PooledCassandraConnection implements PooledConnection {
             preparedStatement.clearParameters();
             freeStatements.add(preparedStatement);
         } catch (final SQLException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.nio.ByteBuffer;
@@ -22,37 +23,43 @@ import java.sql.Types;
  */
 public class JdbcBoolean extends AbstractJdbcType<Boolean> {
 
-    // Since a boolean is either 'true' or 'false', the maximal length of a boolean is 5 characters ('false').
-    private static final int BOOLEAN_PRECISION = 5;
-
     /**
      * Gets a {@code JdbcBoolean} instance.
      */
-    public static final JdbcBoolean instance = new JdbcBoolean();
+    public static final JdbcBoolean INSTANCE = new JdbcBoolean();
+
+    // Since a boolean is either 'true' or 'false', the maximal length of a boolean is 5 characters ('false').
+    private static final int BOOLEAN_PRECISION = 5;
 
     JdbcBoolean() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Boolean obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final Boolean obj) {
         return BOOLEAN_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final Boolean obj) {
         if (obj == null) {
             return null;
@@ -61,6 +68,7 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
@@ -80,18 +88,22 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
         }
     }
 
+    @Override
     public Class<Boolean> getType() {
         return Boolean.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.BOOLEAN;
     }
 
+    @Override
     public Boolean compose(final Object value) {
         return (Boolean) value;
     }
 
+    @Override
     public Object decompose(final Boolean value) {
         return value;
     }

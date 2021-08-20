@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc.codec;
 
 import com.datastax.oss.driver.api.core.ProtocolVersion;
@@ -29,6 +30,9 @@ import java.nio.ByteBuffer;
  */
 public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Long> {
 
+    /**
+     * Constructor for {@code IntToLongCodec}.
+     */
     public IntToLongCodec() {
     }
 

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
@@ -66,7 +67,7 @@ public class CassandraStatement extends AbstractStatement
      */
     protected static final int DEFAULT_FETCH_SIZE = 100;
 
-    private static final Logger log = LoggerFactory.getLogger(CassandraStatement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraStatement.class);
 
     /**
      * The Cassandra connection.
@@ -295,8 +296,8 @@ public class CassandraStatement extends AbstractStatement
                         prevCqlQuery.append(cqlQuery).append(";");
                     } else {
                         prevCqlQuery.append(cqlQuery);
-                        if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                            log.debug("CQL: " + prevCqlQuery.toString());
+                        if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                            LOG.debug("CQL: {}", prevCqlQuery);
                         }
                         final SimpleStatement stmt = SimpleStatement.newInstance(prevCqlQuery.toString())
                             .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
@@ -322,8 +323,8 @@ public class CassandraStatement extends AbstractStatement
                 this.currentResultSet = new CassandraResultSet(this, results);
             } else {
                 // Only one statement to execute, so do it synchronously.
-                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                    log.debug("CQL: " + cql);
+                if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                    LOG.debug("CQL: " + cql);
                 }
                 final SimpleStatement stmt = SimpleStatement.newInstance(cql)
                     .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
@@ -364,13 +365,13 @@ public class CassandraStatement extends AbstractStatement
     public int[] executeBatch() throws SQLException {
         final int[] returnCounts = new int[this.batchQueries.size()];
         final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-        if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-            log.debug("CQL statements: " + this.batchQueries.size());
+        if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+            LOG.debug("CQL statements: " + this.batchQueries.size());
         }
 
         for (final String query : this.batchQueries) {
-            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                log.debug("CQL: " + query);
+            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                LOG.debug("CQL: " + query);
             }
             final SimpleStatement stmt = SimpleStatement.newInstance(query)
                 .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
@@ -519,7 +520,7 @@ public class CassandraStatement extends AbstractStatement
      * @throws SQLException if a database access error occurs or this method is called on a closed {@link Statement}.
      */
     @Override
-    public void setMaxRows(int max) throws SQLException {
+    public void setMaxRows(final int max) throws SQLException {
         checkNotClosed();
     }
 

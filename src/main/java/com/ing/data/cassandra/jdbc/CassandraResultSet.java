@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
@@ -134,7 +135,6 @@ import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
  *         CQL data types reference</a> and
  *     <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
  *         CQL temporal types reference</a>.
- * </p>
  *
  * @see ResultSet
  */
@@ -158,8 +158,9 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
      */
     public static final int DEFAULT_HOLDABILITY = HOLD_CURSORS_OVER_COMMIT;
 
-    private static final Logger log = LoggerFactory.getLogger(CassandraResultSet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraResultSet.class);
 
+    int rowNumber = 0;
     // Metadata of this result set.
     private final CResultSetMetaData metadata;
     private final CassandraStatement statement;
@@ -171,7 +172,6 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     private boolean wasNull;
     // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
-    int rowNumber = 0;
 
     /**
      * No argument constructor.
@@ -186,6 +186,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
      *
      * @param statement The statement.
      * @param resultSet The result set from the Cassandra driver.
+     * @throws SQLException if a database access error occurs or this constructor is called with a closed
+     * {@link Statement}.
      */
     CassandraResultSet(final CassandraStatement statement, final ResultSet resultSet) throws SQLException {
         this.metadata = new CResultSetMetaData();
@@ -207,6 +209,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
      *
      * @param statement     The statement.
      * @param resultSets    The list of result sets from the Cassandra driver.
+     * @throws SQLException if a database access error occurs or this constructor is called with a closed
+     * {@link Statement}.
      */
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
         this.metadata = new CResultSetMetaData();
@@ -532,13 +536,13 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     }
 
     @Override
-    public CqlDuration getDuration(int columnIndex) throws SQLException {
+    public CqlDuration getDuration(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         return this.currentRow.getCqlDuration(columnIndex - 1);
     }
 
     @Override
-    public CqlDuration getDuration(String columnLabel) throws SQLException {
+    public CqlDuration getDuration(final String columnLabel) throws SQLException {
         checkName(columnLabel);
         return this.currentRow.getCqlDuration(columnLabel);
     }
@@ -624,7 +628,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 }
                 return Lists.newArrayList(resultList);
             } catch (final ClassNotFoundException e) {
-                log.warn("Error while executing getList()", e);
+                LOG.warn("Error while executing getList()", e);
             }
         }
         return this.currentRow.getList(columnIndex - 1, String.class);
@@ -644,7 +648,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 }
                 return Lists.newArrayList(resultList);
             } catch (final ClassNotFoundException e) {
-                log.warn("Error while executing getList()", e);
+                LOG.warn("Error while executing getList()", e);
             }
         }
         return this.currentRow.getList(columnLabel, String.class);
@@ -750,10 +754,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 final Set<?> resultSet;
 
                 if (elementsType instanceof UserDefinedType) {
-                    resultSet = this.currentRow.getSet(columnIndex - 1, TypesMap.getTypeForComparator("udt").getType());
+                    resultSet = this.currentRow.getSet(columnIndex - 1,
+                        TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType());
                 } else if (elementsType instanceof TupleType) {
                     resultSet = this.currentRow.getSet(columnIndex - 1,
-                        TypesMap.getTypeForComparator("tuple").getType());
+                        TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
                     resultSet = this.currentRow.getSet(columnIndex - 1,
                         TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -772,7 +777,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
                 if (elementsType instanceof TupleType) {
                     resultList = this.currentRow.getList(columnIndex - 1,
-                        TypesMap.getTypeForComparator("tuple").getType());
+                        TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
                     resultList = this.currentRow.getList(columnIndex - 1,
                         TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -791,16 +796,16 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
                 Class<?> keyClass = TypesMap.getTypeForComparator(keyType.asCql(false, false)).getType();
                 if (keyType instanceof UserDefinedType) {
-                    keyClass = TypesMap.getTypeForComparator("udt").getType();
+                    keyClass = TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType();
                 } else if (keyType instanceof TupleType) {
-                    keyClass = TypesMap.getTypeForComparator("tuple").getType();
+                    keyClass = TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
                 }
 
                 Class<?> valueClass = TypesMap.getTypeForComparator(valueType.asCql(false, false)).getType();
                 if (valueType instanceof UserDefinedType) {
-                    valueClass = TypesMap.getTypeForComparator("udt").getType();
+                    valueClass = TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType();
                 } else if (valueType instanceof TupleType) {
-                    valueClass = TypesMap.getTypeForComparator("tuple").getType();
+                    valueClass = TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
                 }
 
                 final Map<?, ?> resultMap = this.currentRow.getMap(columnIndex - 1, keyClass, valueClass);
@@ -880,10 +885,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 final Set<?> resultSet;
 
                 if (elementsType instanceof UserDefinedType) {
-                    resultSet = this.currentRow.getSet(columnLabel, TypesMap.getTypeForComparator("udt").getType());
+                    resultSet = this.currentRow.getSet(columnLabel,
+                        TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType());
                 } else if (elementsType instanceof TupleType) {
                     resultSet = this.currentRow.getSet(columnLabel,
-                        TypesMap.getTypeForComparator("tuple").getType());
+                        TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
                     resultSet = this.currentRow.getSet(columnLabel,
                         TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -902,7 +908,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
                 if (elementsType instanceof TupleType) {
                     resultList = this.currentRow.getList(columnLabel,
-                        TypesMap.getTypeForComparator("tuple").getType());
+                        TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
                     resultList = this.currentRow.getList(columnLabel,
                         TypesMap.getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -921,16 +927,16 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
                 Class<?> keyClass = TypesMap.getTypeForComparator(keyType.asCql(false, false)).getType();
                 if (keyType instanceof UserDefinedType) {
-                    keyClass = TypesMap.getTypeForComparator("udt").getType();
+                    keyClass = TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType();
                 } else if (keyType instanceof TupleType) {
-                    keyClass = TypesMap.getTypeForComparator("tuple").getType();
+                    keyClass = TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
                 }
 
                 Class<?> valueClass = TypesMap.getTypeForComparator(valueType.asCql(false, false)).getType();
                 if (valueType instanceof UserDefinedType) {
-                    valueClass = TypesMap.getTypeForComparator("udt").getType();
+                    valueClass = TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType();
                 } else if (valueType instanceof TupleType) {
-                    valueClass = TypesMap.getTypeForComparator("tuple").getType();
+                    valueClass = TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
                 }
 
                 final Map<?, ?> resultMap = this.currentRow.getMap(columnLabel, keyClass, valueClass);
@@ -998,21 +1004,21 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             returnValue = getString(columnIndex);
         } else if (type == Byte.class) {
             final byte byteValue = getByte(columnIndex);
-            returnValue = wasNull() ? null : byteValue;
+            returnValue = valueOrNull(byteValue);
         } else if (type == Short.class) {
             final short shortValue = getShort(columnIndex);
-            returnValue = wasNull() ? null : shortValue;
+            returnValue = valueOrNull(shortValue);
         } else if (type == Integer.class) {
             final int intValue = getInt(columnIndex);
-            returnValue = wasNull() ? null : intValue;
+            returnValue = valueOrNull(intValue);
         } else if (type == Long.class) {
             final long longValue = getLong(columnIndex);
-            returnValue = wasNull() ? null : longValue;
+            returnValue = valueOrNull(longValue);
         } else if (type == BigDecimal.class) {
             returnValue = getBigDecimal(columnIndex);
         } else if (type == Boolean.class) {
             final boolean booleanValue = getBoolean(columnIndex);
-            returnValue = wasNull() ? null : booleanValue;
+            returnValue = valueOrNull(booleanValue);
         } else if (type == java.sql.Date.class) {
             returnValue = getDate(columnIndex);
         } else if (type == Time.class) {
@@ -1049,7 +1055,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             }
         } else if (type == UUID.class) {
             final String uuidString = getString(columnIndex);
-            returnValue = wasNull() ? null : UUID.fromString(uuidString);
+            returnValue = valueOrNull(UUID.fromString(uuidString));
         } else if (type == SQLXML.class) {
             returnValue = getSQLXML(columnIndex);
         } else if (type == Blob.class) {
@@ -1062,10 +1068,10 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             returnValue = getBytes(columnIndex);
         } else if (type == Float.class) {
             final float floatValue = getFloat(columnIndex);
-            returnValue = wasNull() ? null : floatValue;
+            returnValue = valueOrNull(floatValue);
         } else if (type == Double.class) {
             final double doubleValue = getDouble(columnIndex);
-            returnValue = wasNull() ? null : doubleValue;
+            returnValue = valueOrNull(doubleValue);
         } else if (type == CqlDuration.class) {
             returnValue = getDuration(columnIndex);
         } else if (type == URL.class) {
@@ -1132,7 +1138,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
                     .getCanonicalName()));
         } catch (ClassNotFoundException e) {
-            log.warn("Error while executing getSet()", e);
+            LOG.warn("Error while executing getSet()", e);
         }
         return null;
     }
@@ -1146,7 +1152,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
                     .getCanonicalName()));
         } catch (ClassNotFoundException e) {
-            log.warn("Error while executing getSet()", e);
+            LOG.warn("Error while executing getSet()", e);
         }
         return null;
     }
@@ -1389,8 +1395,21 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
+    /**
+     * Gets whether a column was a null value.
+     *
+     * @return {@code true} if the column contained a {@code null} value, {@code false} otherwise.
+     */
     public boolean wasNull() {
         return this.wasNull;
+    }
+
+    private <T> T valueOrNull(final T value) {
+        if (wasNull()) {
+            return null;
+        } else {
+            return value;
+        }
     }
 
     /**
@@ -1524,7 +1543,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
 
         @Override
         public String getTableName(final int column) {
-            String tableName;
+            final String tableName;
             if (currentRow != null) {
                 tableName = currentRow.getColumnDefinitions().get(column - 1).getTable().asInternal();
             } else {

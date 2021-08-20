@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc.codec;
 
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
@@ -31,6 +32,12 @@ import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
  */
 public abstract class AbstractCodec<JavaTypeT> {
 
+    /**
+     * Parses the given CQL literal into an instance of the Java type handled by this codec.
+     *
+     * @param value The value to parse.
+     * @return The parsed value or {@code null} if the value to parse is {@code NULL} CQL keyword or blank.
+     */
     public JavaTypeT parse(final String value) {
         if (StringUtils.isBlank(value) || NULL_KEYWORD.equals(value)) {
             return null;
@@ -38,8 +45,20 @@ public abstract class AbstractCodec<JavaTypeT> {
         return parseNonNull(value);
     }
 
+    /**
+     * Parses the given non-null CQL literal into an instance of the Java type handled by this codec.
+     *
+     * @param value The value to parse.
+     * @return The parsed value.
+     */
     abstract JavaTypeT parseNonNull(@NonNull String value);
 
+    /**
+     * Formats the given value as a valid CQL literal according to the CQL type handled by this codec.
+     *
+     * @param value The value to format.
+     * @return The formatted value or {@code NULL} CQL keyword if the value to format is {@code null}.
+     */
     @NonNull
     public String format(final JavaTypeT value) {
         if (value == null) {
@@ -48,5 +67,11 @@ public abstract class AbstractCodec<JavaTypeT> {
         return formatNonNull(value);
     }
 
+    /**
+     * Formats the given non-null value as a valid CQL literal according to the CQL type handled by this codec.
+     *
+     * @param value The value to format.
+     * @return The formatted value.
+     */
     abstract String formatNonNull(@NonNull JavaTypeT value);
 }

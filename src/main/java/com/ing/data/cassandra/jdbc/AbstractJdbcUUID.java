@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -27,18 +28,22 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
     // By default, UUID format always contains 32 hexadecimal characters (base-16 digits) and 4 hyphens.
     private static final int DEFAULT_UUID_PRECISION = 36;
 
+    @Override
     public String toString(@NonNull final UUID obj) {
         return obj.toString();
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final UUID obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final UUID obj) {
         if (obj != null) {
             return toString(obj).length();
@@ -46,22 +51,27 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
         return DEFAULT_UUID_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
+    @Override
     public Class<UUID> getType() {
         return UUID.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.OTHER;
     }

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 /**
@@ -23,7 +24,7 @@ public class JdbcCounterColumn extends JdbcLong {
     /**
      * Gets a {@code JdbcCounterColumn} instance.
      */
-    public static final JdbcCounterColumn instance = new JdbcCounterColumn();
+    public static final JdbcCounterColumn INSTANCE = new JdbcCounterColumn();
 
     JdbcCounterColumn() {
     }

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Missing Javadoc (rule 'JavadocVariable') on enumeration values is not required for DataTypeEnum -->
+    <suppress files="[/\\]src[/\\]main[/\\]java[/\\]com[/\\]ing[/\\]data[/\\]cassandra[/\\]jdbc[/\\]DataTypeEnum.java"
+              checks="JavadocVariable"/>
+    <!-- Missing Javadoc (rule 'JavadocVariable') on static constants is not required for Utils class -->
+    <suppress files="[/\\]src[/\\]main[/\\]java[/\\]com[/\\]ing[/\\]data[/\\]cassandra[/\\]jdbc[/\\]Utils.java"
+              checks="JavadocVariable"/>
+</suppressions>

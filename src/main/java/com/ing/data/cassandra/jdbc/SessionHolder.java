@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -74,7 +75,7 @@ import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
 class SessionHolder {
     static final String URL_KEY = "jdbcUrl";
 
-    private static final Logger log = LoggerFactory.getLogger(SessionHolder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SessionHolder.class);
 
     final Session session;
     final Properties properties;
@@ -104,8 +105,8 @@ class SessionHolder {
         params.keySet().stream()
             .filter(key -> !URL_KEY.equals(key))
             .forEach(key -> this.properties.put(key, params.get(key)));
-        if (log.isDebugEnabled()) {
-            log.debug("Final Properties to Connection: {}", this.properties);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Final Properties to Connection: {}", this.properties);
         }
 
         this.session = createSession(this.properties);
@@ -129,10 +130,10 @@ class SessionHolder {
             }
         }
         if (newRef == -1) {
-            log.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
+            LOG.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
             dispose();
         } else {
-            log.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
+            LOG.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
         }
     }
 
@@ -146,11 +147,11 @@ class SessionHolder {
             final int ref = this.references.get();
             if (ref < 0) {
                 // We raced with the release of the last reference, the caller will need to create a new session.
-                log.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
+                LOG.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
                 return false;
             }
             if (this.references.compareAndSet(ref, ref + 1)) {
-                log.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
+                LOG.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
                 return true;
             }
         }
@@ -182,14 +183,14 @@ class SessionHolder {
             DriverConfigLoader.programmaticBuilder();
         driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
         if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
-        	driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
+            driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
                 cloudSecureConnectBundle);
-        	log.info(String.format("Cloud secure connect bundle used. Host(s) %s will be ignored.", hosts));
+            LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.", hosts);
         } else {
-	        builder.addContactPoints(Arrays.stream(hosts.split("--"))
+            builder.addContactPoints(Arrays.stream(hosts.split("--"))
 	            .map(host -> InetSocketAddress.createUnresolved(host, port))
 	            .collect(Collectors.toList())
-	        );
+            );
         }
 
         // Set credentials when applicable.
@@ -209,8 +210,8 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing load balancing policy: " + e.getMessage()
-                    + " / Forcing to DefaultLoadBalancingPolicy...");
+                LOG.warn("Error occurred while parsing load balancing policy: {} / Forcing to "
+                    + "DefaultLoadBalancingPolicy...", e.getMessage());
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     DefaultLoadBalancingPolicy.class.getSimpleName());
             }
@@ -224,7 +225,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing retry policy: " + e.getMessage() + " / skipping...");
+                LOG.warn("Error occurred while parsing retry policy: {} / skipping...", e.getMessage());
             }
         }
 
@@ -248,7 +249,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing reconnection policy: " + e.getMessage() + " / skipping...");
+                LOG.warn("Error occurred while parsing reconnection policy: {} / skipping...", e.getMessage());
             }
         }
 
@@ -270,16 +271,16 @@ class SessionHolder {
 
         // SSL configuration.
         if (StringUtils.isBlank(cloudSecureConnectBundle)) {
-	        if (sslEnabled) {
-	            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
-	                configureSslEngineFactory(builder, sslEngineFactoryClassName);
-	            } else {
-	                configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
-	            }
-	        }
+            if (sslEnabled) {
+                if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
+                    configureSslEngineFactory(builder, sslEngineFactoryClassName);
+                } else {
+                    configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
+                }
+            }
         } else {
-        	log.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL"
-        			+ " configuration(s) will be ignored.");
+            LOG.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL "
+                + "configuration(s) will be ignored.");
         }
 
         try {
