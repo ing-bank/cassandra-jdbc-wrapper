@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for connecting to Cassandra DBaaS cluster with secure connect bundle. 
   See the feature request [#1](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/1).
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.12.0.
+- Update DataStax Java Driver for Apache Cassandra(R) to version 4.13.0.
+- Update Apache Commons Lang to version 3.12.0.
 ### Fixed
 - User credentials parameters in the connection string were ignored.
 

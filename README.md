@@ -64,7 +64,8 @@ You can install it in your application using the following Maven dependency:
 
 Connect to a Cassandra cluster using the following arguments:
 * JDBC driver class: `com.ing.data.cassandra.jdbc.CassandraDriver`
-* JDBC URL: `jdbc:cassandra://host1--host2--host3:9042/keyspace?localdatacenter=DC1`
+* JDBC URL: `jdbc:cassandra://host1--host2--host3:9042/keyspace?localdatacenter=DC1` (to connect to a DBaaS cluster, 
+  please read the section "[Connecting to DBaaS](#connecting-to-dbaas)")
 
 You can give the driver any number of hosts you want separated by "--".
 They will be used as contact points for the driver to discover the entire cluster.
@@ -191,13 +192,12 @@ In order to connect to the cloud [Cassandra DBaaS](www.datastax.com/astra) clust
 * `user`: the username
 * `password`: the password
 
-For example,
-
+For example, using the dedicated protocol `jdbc:cassandra:dbaas:`:
 ```
-jdbc:cassandra://localhost:9042/keyspace?consistency=LOCAL_QUORUM&user=user1&password=password1&secureconnectbundle=/path/to/location/secure-connect-bundle-cluster.zip
+jdbc:cassandra:dbaas:///keyspace?consistency=LOCAL_QUORUM&user=user1&password=password1&secureconnectbundle=/path/to/location/secure-connect-bundle-cluster.zip
 ```
 
-*Note*: whatever the host(s) given here will be ignored and will be fetched from the cloud secure connect bundle, but it is required to pass in something in here to make this work at the moment.
+*Note*: whatever the host(s) given here will be ignored and will be fetched from the cloud secure connect bundle.
 
 For further information about connecting to DBaaS, see [cloud documentation](https://docs.datastax.com/en/developer/java-driver/latest/manual/cloud/).
 

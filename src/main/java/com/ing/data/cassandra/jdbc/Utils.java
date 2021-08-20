@@ -46,6 +46,10 @@ public final class Utils {
      */
     public static final String PROTOCOL = "jdbc:cassandra:";
     /**
+     * JDBC protocol for Cassandra DBaaS connection.
+     */
+    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
+    /**
      * Default Cassandra cluster port.
      */
     public static final int DEFAULT_PORT = 9042;
@@ -176,6 +180,7 @@ public final class Utils {
     protected static final String URI_IS_SIMPLE =
         "Connection url may only include host, port, and keyspace, consistency and version option, e.g. "
             + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
+    protected static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
     protected static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
     protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
     protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
@@ -189,9 +194,11 @@ public final class Utils {
     /**
      * Parses a URL for the Cassandra JDBC Driver.
      * <p>
-     *     The URL must start with the protocol: {@value #PROTOCOL}.
+     *     The URL must start with the protocol {@value #PROTOCOL} or {@value #PROTOCOL_DBAAS} for a connection to a
+     *     cloud database.
      *     The URI part (the "sub-name") must contain a host, an optional port and optional keyspace name, for example:
-     *     "//localhost:9160/Test1".
+     *     "//localhost:9160/Test1", except for a connection to a cloud database, in this case, a simple keyspace with
+     *     a secure connect bundle is sufficient, for example: "///Test1?secureconnectbundle=/path/to/bundle.zip".
      * </p>
      *
      * @param url The full JDBC URL to be parsed.
@@ -203,7 +210,13 @@ public final class Utils {
 
         if (url != null) {
             props.setProperty(TAG_PORT_NUMBER, String.valueOf(DEFAULT_PORT));
-            final String rawUri = url.substring(PROTOCOL.length());
+            boolean isDbaasConnection = false;
+            int uriStartIndex = PROTOCOL.length();
+            if (url.startsWith(PROTOCOL_DBAAS)) {
+                uriStartIndex = PROTOCOL_DBAAS.length();
+                isDbaasConnection = true;
+            }
+            final String rawUri = url.substring(uriStartIndex);
             final URI uri;
             try {
                 uri = new URI(rawUri);
@@ -211,17 +224,19 @@ public final class Utils {
                 throw new SQLSyntaxErrorException(e);
             }
 
-            final String host = uri.getHost();
-            if (host == null) {
-                throw new SQLNonTransientConnectionException(HOST_IN_URL);
-            }
-            props.setProperty(TAG_SERVER_NAME, host);
+            if (!isDbaasConnection) {
+                final String host = uri.getHost();
+                if (host == null) {
+                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                }
+                props.setProperty(TAG_SERVER_NAME, host);
 
-            int port = DEFAULT_PORT;
-            if (uri.getPort() >= 0) {
-                port = uri.getPort();
+                int port = DEFAULT_PORT;
+                if (uri.getPort() >= 0) {
+                    port = uri.getPort();
+                }
+                props.setProperty(TAG_PORT_NUMBER, String.valueOf(port));
             }
-            props.setProperty(TAG_PORT_NUMBER, String.valueOf(port));
 
             String keyspace = uri.getPath();
             if (StringUtils.isNotEmpty(keyspace)) {
@@ -279,6 +294,8 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
                     props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
+                } else if (isDbaasConnection) {
+                    throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
                 }
                 if (params.containsKey(KEY_USER)) {
                     props.setProperty(TAG_USER, params.get(KEY_USER));
@@ -286,6 +303,8 @@ public final class Utils {
                 if (params.containsKey(KEY_PASSWORD)) {
                     props.setProperty(TAG_PASSWORD, params.get(KEY_PASSWORD));
                 }
+            } else if (isDbaasConnection) {
+                throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
             }
         }
 

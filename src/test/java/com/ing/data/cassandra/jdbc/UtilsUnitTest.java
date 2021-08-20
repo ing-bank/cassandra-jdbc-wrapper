@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
@@ -31,8 +32,10 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static com.ing.data.cassandra.jdbc.Utils.BAD_KEYSPACE;
+import static com.ing.data.cassandra.jdbc.Utils.DEFAULT_PORT;
 import static com.ing.data.cassandra.jdbc.Utils.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.Utils.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.Utils.SECURECONENCTBUNDLE_REQUIRED;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_PORT_NUMBER;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_SERVER_NAME;
@@ -49,6 +52,15 @@ class UtilsUnitTest {
                 new HashMap<String, String>() {{
                     put(Utils.TAG_SERVER_NAME, "localhost");
                     put(Utils.TAG_PORT_NUMBER, "9042");
+                    put(Utils.TAG_DATABASE_NAME, "astra");
+                    put(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE, "/path/to/location/filename.extn");
+                    put(Utils.TAG_USER, "user1");
+                    put(Utils.TAG_PASSWORD, "password1");
+                }}),
+            Arguments.of("jdbc:cassandra:dbaas:///astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
+                new HashMap<String, String>() {{
+                    put(Utils.TAG_SERVER_NAME, null);
+                    put(Utils.TAG_PORT_NUMBER, String.valueOf(DEFAULT_PORT));
                     put(Utils.TAG_DATABASE_NAME, "astra");
                     put(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE, "/path/to/location/filename.extn");
                     put(Utils.TAG_USER, "user1");
@@ -222,5 +234,13 @@ class UtilsUnitTest {
         final Properties props = Utils.parseURL(jdbcUrl);
         props.put(TAG_PORT_NUMBER, "-9042");
         assertThrows(SQLNonTransientConnectionException.class, () -> Utils.createSubName(props));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"jdbc:cassandra:dbaas:///astra", "jdbc:cassandra:dbaas:///astra?user=User1"})
+    void testMissingSecureConnectBundleOnDbaasConenctionString(final String jdbcUrl) {
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> Utils.parseURL(jdbcUrl));
+        assertEquals(SECURECONENCTBUNDLE_REQUIRED, exception.getMessage());
     }
 }
