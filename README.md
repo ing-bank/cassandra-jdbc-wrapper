@@ -65,14 +65,15 @@ You can install it in your application using the following Maven dependency:
 Connect to a Cassandra cluster using the following arguments:
 * JDBC driver class: `com.ing.data.cassandra.jdbc.CassandraDriver`
 * JDBC URL: `jdbc:cassandra://host1--host2--host3:9042/keyspace?localdatacenter=DC1` (to connect to a DBaaS cluster, 
-  please read the section "[Connecting to DBaaS](#connecting-to-dbaas)")
+  please read the section "[Connecting to DBaaS](#connecting-to-dbaas)"; to use a configuration file, please read the 
+  section "[Using a configuration file](#using-a-configuration-file)")
 
 You can give the driver any number of hosts you want separated by "--".
 They will be used as contact points for the driver to discover the entire cluster.
 Give enough hosts taking into account that some nodes may be unavailable upon establishing the JDBC connection.
 
 You also have to specify the name of the local data center to use when the default load balancing policy is defined 
-(see paragraph below about load balancing policies). 
+(see paragraph below about load balancing policies) and no configuration file is specified. 
 
 Statements and prepared statements can be executed as with any JDBC driver, but note that queries must be expressed in 
 CQL3.
@@ -86,6 +87,17 @@ public class HelloCassandra {
         final Connection connection = DriverManager.getConnection(url);
     }
 }
+```
+
+### Using a configuration file
+
+If you want to use a 
+[configuration file](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/configuration/reference/),
+specify the location with the query parameter `configfile`. When this parameter is specified, any other configuration
+mentioned into the JDBC URL, except the contact points and the keyspace, will be ignored and overridden by the values
+defined in the configuration file. For example:
+```
+jdbc:cassandra://host1--host2--host3:9042/keyspace?configfile=/path/to/configuration/application.conf
 ```
 
 ### Specifying load balancing policies
@@ -162,7 +174,7 @@ URL:
 jdbc:cassandra://host1--host2--host3:9042/keyspace?consistency=LOCAL_QUORUM
 ```
 
-Consistency level defaults to `ONE` if not specified (see 
+Consistency level defaults to `LOCAL_ONE` as defined in the configuration reference if not specified (see 
 [Consistency levels](https://docs.datastax.com/en/dse/6.8/dse-arch/datastax_enterprise/dbInternals/dbIntConfigConsistency.html) 
 documentation for further details about the valid values for this argument).
 

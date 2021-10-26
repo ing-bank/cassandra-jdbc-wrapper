@@ -14,17 +14,23 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import com.datastax.oss.driver.api.core.retry.RetryPolicy;
+import com.datastax.oss.driver.internal.core.auth.PlainTextAuthProvider;
 import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
+import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
+import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy;
@@ -33,10 +39,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
 import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
@@ -50,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -57,6 +67,70 @@ import static org.mockito.Mockito.verify;
 class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
 
     private static final String KEYSPACE = "system";
+
+    @Test
+    void givenInvalidConfigurationFile_whenGetConnection_createConnectionIgnoringConfigFile() throws Exception {
+        initConnection(KEYSPACE, "configfile=wrong_application.conf", "consistency=LOCAL_QUORUM");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(consistencyLevel);
+        assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistencyLevel);
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenValidConfigurationFile_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        final URL confTestUrl = this.getClass().getClassLoader().getResource("test_application.conf");
+        if (confTestUrl == null) {
+            fail("Unable to find test_application.conf");
+        }
+        initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
+            "user=aTestUser", "password=aTestPassword",
+            "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
+            "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
+            "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
+            "sslenginefactory=com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(consistencyLevel);
+        assertEquals(ConsistencyLevel.TWO, consistencyLevel);
+
+        final String localDC = sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER);
+        assertEquals("DC1", localDC);
+
+        final Optional<AuthProvider> authProvider = sqlConnection.getSession().getContext().getAuthProvider();
+        assertTrue(authProvider.isPresent());
+        assertThat(authProvider.get(), instanceOf(PlainTextAuthProvider.class));
+        assertEquals("testUser", sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME));
+        assertEquals("testPassword", sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_PASSWORD));
+
+        final LoadBalancingPolicy loadBalancingPolicy = sqlConnection.getSession().getContext()
+            .getLoadBalancingPolicy(DriverExecutionProfile.DEFAULT_NAME);
+        assertNotNull(loadBalancingPolicy);
+        assertThat(loadBalancingPolicy, instanceOf(AnotherFakeLoadBalancingPolicy.class));
+
+        final RetryPolicy retryPolicy = sqlConnection.getSession().getContext()
+            .getRetryPolicy(DriverExecutionProfile.DEFAULT_NAME);
+        assertNotNull(retryPolicy);
+        assertThat(retryPolicy, instanceOf(AnotherFakeRetryPolicy.class));
+
+        final ReconnectionPolicy reconnectionPolicy = sqlConnection.getSession().getContext().getReconnectionPolicy();
+        assertNotNull(reconnectionPolicy);
+        assertThat(reconnectionPolicy, instanceOf(ConstantReconnectionPolicy.class));
+        assertEquals(reconnectionPolicy.newControlConnectionSchedule(false).nextDelay(), Duration.ofSeconds(10));
+
+        // Check the not overridden values.
+        assertTrue(sqlConnection.getSession().getKeyspace().isPresent());
+        assertEquals(KEYSPACE, sqlConnection.getSession().getKeyspace().get().asCql(true));
+        sqlConnection.close();
+    }
 
     @Test
     void givenNoLoadBalancingPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {

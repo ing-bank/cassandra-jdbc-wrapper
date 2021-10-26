@@ -44,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
@@ -159,6 +160,26 @@ class SessionHolder {
 
     @SuppressWarnings("resource")
     private Session createSession(final Properties properties) throws SQLException {
+        File configurationFile = null;
+        final String configurationFilePath = properties.getProperty(Utils.TAG_CONFIG_FILE, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(configurationFilePath)) {
+            configurationFile = new File(configurationFilePath);
+            if (configurationFile.exists()) {
+                // We remove some parameters to use the values defined into the specified configuration file
+                // instead.
+                this.properties.remove(Utils.TAG_CONSISTENCY_LEVEL);
+                this.properties.remove(Utils.TAG_LOCAL_DATACENTER);
+                this.properties.remove(Utils.TAG_USER);
+                this.properties.remove(Utils.TAG_PASSWORD);
+                this.properties.remove(Utils.TAG_ENABLE_SSL);
+                this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
+                LOG.info("The configuration file {} will be used and will override the parameters defined into the "
+                    + "JDBC URL except contact points and keyspace.", configurationFilePath);
+            } else {
+                LOG.warn("The configuration file {} cannot be found, it will be ignored.", configurationFilePath);
+            }
+        }
+
         final String hosts = properties.getProperty(Utils.TAG_SERVER_NAME);
         final int port = Integer.parseInt(properties.getProperty(Utils.TAG_PORT_NUMBER));
         final String cloudSecureConnectBundle = properties.getProperty(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE);
@@ -281,6 +302,11 @@ class SessionHolder {
         } else {
             LOG.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL "
                 + "configuration(s) will be ignored.");
+        }
+
+        // Set the configuration from a configuration file if defined.
+        if (configurationFile != null) {
+            builder.withConfigLoader(DriverConfigLoader.fromFile(configurationFile));
         }
 
         try {

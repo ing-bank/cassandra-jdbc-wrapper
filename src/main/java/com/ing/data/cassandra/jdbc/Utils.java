@@ -115,6 +115,10 @@ public final class Utils {
      * JDBC URL parameter key for the user password.
      */
     public static final String KEY_PASSWORD = "password";
+    /**
+     * JDBC URL parameter key for the configuration file.
+     */
+    public static final String KEY_CONFIG_FILE = "configfile";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -135,6 +139,7 @@ public final class Utils {
     public static final String TAG_ENABLE_SSL = "enableSsl";
     public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
     public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
+    public static final String TAG_CONFIG_FILE = "configFile";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
     public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
@@ -303,6 +308,9 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_PASSWORD)) {
                     props.setProperty(TAG_PASSWORD, params.get(KEY_PASSWORD));
+                }
+                if (params.containsKey(KEY_CONFIG_FILE)) {
+                    props.setProperty(TAG_CONFIG_FILE, params.get(KEY_CONFIG_FILE));
                 }
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
