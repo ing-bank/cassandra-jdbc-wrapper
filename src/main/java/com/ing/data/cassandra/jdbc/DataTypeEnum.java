@@ -21,7 +21,6 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.cassandra.db.marshal.CollectionType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -53,9 +52,9 @@ public enum DataTypeEnum {
     FLOAT(DataType.FLOAT, Float.class, cqlName(DataTypes.FLOAT)),
     INET(DataType.INET, InetAddress.class, cqlName(DataTypes.INET)),
     INT(DataType.INT, Integer.class, cqlName(DataTypes.INT)),
-    LIST(DataType.LIST, List.class, CollectionType.Kind.LIST.name().toLowerCase()),
-    MAP(DataType.MAP, Map.class, CollectionType.Kind.MAP.name().toLowerCase()),
-    SET(DataType.SET, Set.class, CollectionType.Kind.SET.name().toLowerCase()),
+    LIST(DataType.LIST, List.class, "list"),
+    MAP(DataType.MAP, Map.class, "map"),
+    SET(DataType.SET, Set.class, "set"),
     SMALLINT(DataType.SMALLINT, Short.class, cqlName(DataTypes.SMALLINT)),
     TEXT(DataType.VARCHAR, String.class, cqlName(DataTypes.TEXT)),
     TIME(DataType.TIME, Time.class, cqlName(DataTypes.TIME)),

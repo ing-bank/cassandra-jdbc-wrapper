@@ -20,7 +20,7 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.cassandra.utils.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.ByteBufferUtil;
 
 import java.nio.ByteBuffer;
 
