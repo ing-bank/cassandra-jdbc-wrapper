@@ -59,7 +59,8 @@ Once your changes and tests are ready for review, submit them:
 
 1. Be sure that your changes are tested.
 
-2. Check your code is documented enough.
+2. Check your code is documented enough and is compliant with the provided Checkstyle rules (you can use an IDE plugin
+   to verify it or simply run `mvn clean install` and check the logs).
 
 3. Rebase your changes: update your local repository with the most recent code from the original repository, and rebase
 your branch on top of the latest `release/next` branch. It is better that your initial changes are squashed into a

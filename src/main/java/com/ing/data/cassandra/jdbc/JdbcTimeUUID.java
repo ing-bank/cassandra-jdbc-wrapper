@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -27,15 +28,17 @@ public class JdbcTimeUUID extends AbstractJdbcUUID {
     /**
      * Gets a {@code JdbcTimeUUID} instance.
      */
-    public static final JdbcTimeUUID instance = new JdbcTimeUUID();
+    public static final JdbcTimeUUID INSTANCE = new JdbcTimeUUID();
 
     JdbcTimeUUID() {
     }
 
+    @Override
     public UUID compose(@NonNull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
+    @Override
     public Object decompose(@NonNull final UUID value) {
         return value.toString();
     }

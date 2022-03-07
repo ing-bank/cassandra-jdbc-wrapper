@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
@@ -27,27 +28,32 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
     /**
      * Gets a {@code JdbcUdt} instance.
      */
-    public static final JdbcUdt instance = new JdbcUdt();
+    public static final JdbcUdt INSTANCE = new JdbcUdt();
 
     JdbcUdt() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return true;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
-    public String toString(final String obj) {
-        return obj;
+    @Override
+    public String toString(@NonNull final UdtValue obj) {
+        return getString(obj);
     }
 
+    @Override
     public boolean needsQuotes() {
         return true;
     }
@@ -60,32 +66,34 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
         }
     }
 
+    @Override
     public Class<UdtValue> getType() {
         return UdtValue.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.OTHER;
     }
 
+    @Override
     public UdtValue compose(final Object obj) {
         return (UdtValue) obj;
     }
 
+    @Override
     public Object decompose(final UdtValue value) {
         return value;
     }
 
+    @Override
     public int getScale(final UdtValue obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final UdtValue obj) {
         return DEFAULT_PRECISION;
-    }
-
-    public String toString(@NonNull final UdtValue obj) {
-        return getString(obj);
     }
 
 }

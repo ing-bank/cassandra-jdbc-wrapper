@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.google.common.cache.CacheBuilder;
@@ -73,12 +74,11 @@ public class CassandraDriver implements Driver {
     // Caching sessions so that multiple CassandraConnections created with the same parameters use the same Session.
     private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = CacheBuilder.newBuilder()
         .build(new CacheLoader<Map<String, String>, SessionHolder>() {
-                   @Override
-                   public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
-                       return new SessionHolder(params, sessionsCache);
-                   }
-               }
-        );
+            @Override
+            public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
+                return new SessionHolder(params, sessionsCache);
+            }
+        });
 
     @Override
     public boolean acceptsURL(final String url) {
@@ -133,16 +133,17 @@ public class CassandraDriver implements Driver {
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(final String url, Properties props) {
+    public DriverPropertyInfo[] getPropertyInfo(final String url, final Properties props) {
+        Properties properties = props;
         if (props == null) {
-            props = new Properties();
+            properties = new Properties();
         }
         final DriverPropertyInfo[] info = new DriverPropertyInfo[2];
 
-        info[0] = new DriverPropertyInfo(TAG_USER, props.getProperty(TAG_USER));
+        info[0] = new DriverPropertyInfo(TAG_USER, properties.getProperty(TAG_USER));
         info[0].description = "The 'user' property";
 
-        info[1] = new DriverPropertyInfo(TAG_PASSWORD, props.getProperty(TAG_PASSWORD));
+        info[1] = new DriverPropertyInfo(TAG_PASSWORD, properties.getProperty(TAG_PASSWORD));
         info[1].description = "The 'password' property";
 
         return info;

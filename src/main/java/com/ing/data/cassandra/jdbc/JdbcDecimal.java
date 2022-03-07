@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.math.BigDecimal;
@@ -26,20 +27,22 @@ import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
  */
 public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
 
-    private static final int DEFAULT_DECIMAL_PRECISION = 0;
-
     /**
      * Gets a {@code JdbcDecimal} instance.
      */
-    public static final JdbcDecimal instance = new JdbcDecimal();
+    public static final JdbcDecimal INSTANCE = new JdbcDecimal();
+
+    private static final int DEFAULT_DECIMAL_PRECISION = 0;
 
     JdbcDecimal() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final BigDecimal obj) {
         if (obj != null) {
             return obj.scale();
@@ -47,6 +50,7 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final BigDecimal obj) {
         if (obj != null) {
             return obj.precision();
@@ -54,14 +58,17 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         return DEFAULT_DECIMAL_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final BigDecimal obj) {
         if (obj != null) {
             return obj.toPlainString();
@@ -70,6 +77,7 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
@@ -84,18 +92,22 @@ public class JdbcDecimal extends AbstractJdbcType<BigDecimal> {
         return compose(bytes).toPlainString();
     }
 
+    @Override
     public Class<BigDecimal> getType() {
         return BigDecimal.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.DECIMAL;
     }
 
+    @Override
     public BigDecimal compose(final Object value) {
         return (BigDecimal) value;
     }
 
+    @Override
     public Object decompose(final BigDecimal value) {
         // The bytes of the ByteBuffer are made up of 4 bytes of int containing the scale followed by the n bytes it
         // takes to store a BigInteger.

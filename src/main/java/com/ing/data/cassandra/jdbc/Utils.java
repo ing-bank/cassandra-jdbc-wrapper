@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
@@ -45,6 +46,10 @@ public final class Utils {
      * JDBC protocol for Cassandra connection.
      */
     public static final String PROTOCOL = "jdbc:cassandra:";
+    /**
+     * JDBC protocol for Cassandra DBaaS connection.
+     */
+    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
     /**
      * Default Cassandra cluster port.
      */
@@ -98,6 +103,22 @@ public final class Utils {
      * JDBC URL parameter key for the custom SSL engine factory ({@link SslEngineFactory}).
      */
     public static final String KEY_SSL_ENGINE_FACTORY = "sslenginefactory";
+    /**
+     * JDBC URL parameter key for the cloud secure connect bundle.
+     */
+    public static final String KEY_CLOUD_SECURE_CONNECT_BUNDLE = "secureconnectbundle";
+    /**
+     * JDBC URL parameter key for the username.
+     */
+    public static final String KEY_USER = "user";
+    /**
+     * JDBC URL parameter key for the user password.
+     */
+    public static final String KEY_PASSWORD = "password";
+    /**
+     * JDBC URL parameter key for the configuration file.
+     */
+    public static final String KEY_CONFIG_FILE = "configfile";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -117,6 +138,8 @@ public final class Utils {
     public static final String TAG_CONNECTION_RETRIES = "retries";
     public static final String TAG_ENABLE_SSL = "enableSsl";
     public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
+    public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
+    public static final String TAG_CONFIG_FILE = "configFile";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
     public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
@@ -163,11 +186,12 @@ public final class Utils {
     protected static final String URI_IS_SIMPLE =
         "Connection url may only include host, port, and keyspace, consistency and version option, e.g. "
             + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
+    protected static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
     protected static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
     protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
     protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
-    static final Logger log = LoggerFactory.getLogger(Utils.class);
+    static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
         // Private constructor to hide the public one.
@@ -176,9 +200,11 @@ public final class Utils {
     /**
      * Parses a URL for the Cassandra JDBC Driver.
      * <p>
-     *     The URL must start with the protocol: {@value #PROTOCOL}.
+     *     The URL must start with the protocol {@value #PROTOCOL} or {@value #PROTOCOL_DBAAS} for a connection to a
+     *     cloud database.
      *     The URI part (the "sub-name") must contain a host, an optional port and optional keyspace name, for example:
-     *     "//localhost:9160/Test1".
+     *     "//localhost:9160/Test1", except for a connection to a cloud database, in this case, a simple keyspace with
+     *     a secure connect bundle is sufficient, for example: "///Test1?secureconnectbundle=/path/to/bundle.zip".
      * </p>
      *
      * @param url The full JDBC URL to be parsed.
@@ -190,7 +216,13 @@ public final class Utils {
 
         if (url != null) {
             props.setProperty(TAG_PORT_NUMBER, String.valueOf(DEFAULT_PORT));
-            final String rawUri = url.substring(PROTOCOL.length());
+            boolean isDbaasConnection = false;
+            int uriStartIndex = PROTOCOL.length();
+            if (url.startsWith(PROTOCOL_DBAAS)) {
+                uriStartIndex = PROTOCOL_DBAAS.length();
+                isDbaasConnection = true;
+            }
+            final String rawUri = url.substring(uriStartIndex);
             final URI uri;
             try {
                 uri = new URI(rawUri);
@@ -198,17 +230,19 @@ public final class Utils {
                 throw new SQLSyntaxErrorException(e);
             }
 
-            final String host = uri.getHost();
-            if (host == null) {
-                throw new SQLNonTransientConnectionException(HOST_IN_URL);
-            }
-            props.setProperty(TAG_SERVER_NAME, host);
+            if (!isDbaasConnection) {
+                final String host = uri.getHost();
+                if (host == null) {
+                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                }
+                props.setProperty(TAG_SERVER_NAME, host);
 
-            int port = DEFAULT_PORT;
-            if (uri.getPort() >= 0) {
-                port = uri.getPort();
+                int port = DEFAULT_PORT;
+                if (uri.getPort() >= 0) {
+                    port = uri.getPort();
+                }
+                props.setProperty(TAG_PORT_NUMBER, String.valueOf(port));
             }
-            props.setProperty(TAG_PORT_NUMBER, String.valueOf(port));
 
             String keyspace = uri.getPath();
             if (StringUtils.isNotEmpty(keyspace)) {
@@ -226,7 +260,7 @@ public final class Utils {
             }
 
             final String query = uri.getQuery();
-            if ((query != null) && (!query.isEmpty())) {
+            if (query != null && !query.isEmpty()) {
                 final Map<String, String> params = parseQueryPart(query);
                 if (params.containsKey(KEY_VERSION)) {
                     props.setProperty(TAG_CQL_VERSION, params.get(KEY_VERSION));
@@ -264,11 +298,27 @@ public final class Utils {
                 if (params.containsKey(KEY_SSL_ENGINE_FACTORY)) {
                     props.setProperty(TAG_SSL_ENGINE_FACTORY, params.get(KEY_SSL_ENGINE_FACTORY));
                 }
+                if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
+                    props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
+                } else if (isDbaasConnection) {
+                    throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
+                }
+                if (params.containsKey(KEY_USER)) {
+                    props.setProperty(TAG_USER, params.get(KEY_USER));
+                }
+                if (params.containsKey(KEY_PASSWORD)) {
+                    props.setProperty(TAG_PASSWORD, params.get(KEY_PASSWORD));
+                }
+                if (params.containsKey(KEY_CONFIG_FILE)) {
+                    props.setProperty(TAG_CONFIG_FILE, params.get(KEY_CONFIG_FILE));
+                }
+            } else if (isDbaasConnection) {
+                throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
             }
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("URL: '{}' parsed to: {}", url, props);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("URL: '{}' parsed to: {}", url, props);
         }
 
         return props;
@@ -305,8 +355,8 @@ public final class Utils {
             throw new SQLNonTransientConnectionException(e);
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Sub-name: '{}' created from: {}", uri.toString(), props);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Sub-name: '{}' created from: {}", uri.toString(), props);
         }
 
         return uri.toString();
@@ -321,8 +371,8 @@ public final class Utils {
      */
     protected static String makeQueryString(final Properties props) {
         final StringBuilder sb = new StringBuilder();
-        final String version = (props.getProperty(TAG_CQL_VERSION));
-        final String consistency = (props.getProperty(TAG_CONSISTENCY_LEVEL));
+        final String version = props.getProperty(TAG_CQL_VERSION);
+        final String consistency = props.getProperty(TAG_CONSISTENCY_LEVEL);
         if (StringUtils.isNotBlank(consistency)) {
             sb.append(KEY_CONSISTENCY).append("=").append(consistency);
         }
@@ -387,14 +437,16 @@ public final class Utils {
         return null;
     }
 
-    private static Map<DriverOption, Object> getReconnectionPolicy(String primaryReconnectionPolicy,
+    private static Map<DriverOption, Object> getReconnectionPolicy(final String primaryReconnectionPolicy,
                                                                    final String parameters) {
         final Map<DriverOption, Object> policyParametersMap = new HashMap<>();
+        String primaryReconnectionPolicyClass = primaryReconnectionPolicy;
         if (!primaryReconnectionPolicy.contains(".")) {
-            primaryReconnectionPolicy = "com.datastax.oss.driver.internal.core.connection." + primaryReconnectionPolicy;
+            primaryReconnectionPolicyClass = "com.datastax.oss.driver.internal.core.connection."
+                + primaryReconnectionPolicy;
         }
 
-        policyParametersMap.put(DefaultDriverOption.RECONNECTION_POLICY_CLASS, primaryReconnectionPolicy);
+        policyParametersMap.put(DefaultDriverOption.RECONNECTION_POLICY_CLASS, primaryReconnectionPolicyClass);
 
         // Parameters have been specified
         if (parameters.length() > 0) {
@@ -414,9 +466,9 @@ public final class Utils {
                             if (argPos == 0) {
                                 policyParametersMap.put(DefaultDriverOption.RECONNECTION_BASE_DELAY,
                                     Duration.ofSeconds(delay));
-                            } else if (argPos == 1 &&
-                                "com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy".equals(
-                                    primaryReconnectionPolicy)) {
+                            } else if (argPos == 1
+                                && "com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy"
+                                .equals(primaryReconnectionPolicyClass)) {
                                 policyParametersMap.put(DefaultDriverOption.RECONNECTION_MAX_DELAY,
                                     Duration.ofSeconds(delay));
                             }

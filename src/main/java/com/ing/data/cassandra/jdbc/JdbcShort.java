@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -22,13 +23,13 @@ import java.sql.Types;
  */
 public class JdbcShort extends AbstractJdbcType<Short> {
 
-    // The maximal size of a 16-bit signed integer is 6 (length of '-32768').
-    private static final int DEFAULT_SMALLINT_PRECISION = 6;
-
     /**
      * Gets a {@code JdbcShort} instance.
      */
-    public static final JdbcShort instance = new JdbcShort();
+    public static final JdbcShort INSTANCE = new JdbcShort();
+
+    // The maximal size of a 16-bit signed integer is 6 (length of '-32768').
+    private static final int DEFAULT_SMALLINT_PRECISION = 6;
 
     @Override
     public boolean isCaseSensitive() {

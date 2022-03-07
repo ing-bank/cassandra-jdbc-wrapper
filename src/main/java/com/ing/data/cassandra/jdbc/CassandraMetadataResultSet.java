@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
@@ -116,6 +117,7 @@ import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
  */
 public class CassandraMetadataResultSet extends AbstractResultSet implements CassandraResultSetExtras {
 
+    int rowNumber = 0;
     // Metadata of this result set.
     private final CResultSetMetaData metadata;
     private final CassandraStatement statement;
@@ -127,7 +129,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     private boolean wasNull;
     // Result set from the Cassandra driver.
     private MetadataResultSet driverResultSet;
-    int rowNumber = 0;
 
     /**
      * No argument constructor.
@@ -142,6 +143,8 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
      *
      * @param statement         The statement.
      * @param metadataResultSet The metadata result set from the Cassandra driver.
+     * @throws SQLException if a database access error occurs or this constructor is called with a closed
+     * {@link Statement}.
      */
     CassandraMetadataResultSet(final CassandraStatement statement, final MetadataResultSet metadataResultSet)
         throws SQLException {
@@ -465,13 +468,13 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    public CqlDuration getDuration(int columnIndex) throws SQLException {
+    public CqlDuration getDuration(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         return this.currentRow.getDuration(columnIndex - 1);
     }
 
     @Override
-    public CqlDuration getDuration(String columnLabel) throws SQLException {
+    public CqlDuration getDuration(final String columnLabel) throws SQLException {
         checkName(columnLabel);
         return this.currentRow.getDuration(columnLabel);
     }
@@ -1161,7 +1164,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
         @Override
         public String getTableName(final int column) {
-            String tableName;
+            final String tableName;
             if (currentRow != null) {
                 tableName = currentRow.getColumnDefinitions().getTable(column - 1);
             } else {

@@ -126,5 +126,5 @@ steps:
       target: $(Build.SourceVersion)
       tagSource: manual
       tag: 'v$(artifactVersion)'
-      assets: $(Build.ArtifactStagingDirectory)/*-bundle.jar
+      assets: $(Build.SourcesDirectory)/target/*-bundle.jar
       isDraft: true

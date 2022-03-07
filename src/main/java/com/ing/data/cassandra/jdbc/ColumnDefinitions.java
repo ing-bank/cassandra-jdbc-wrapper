@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataType;
@@ -236,14 +237,15 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         }
     }
 
-    int[] findAllIdx(String name) {
+    int[] findAllIdx(final String name) {
         boolean caseSensitive = false;
+        String columnName = name;
         if (name.length() >= 2 && name.charAt(0) == '"' && name.charAt(name.length() - 1) == '"') {
-            name = name.substring(1, name.length() - 1);
+            columnName = name.substring(1, name.length() - 1);
             caseSensitive = true;
         }
 
-        final int[] indexes = this.byName.get(name.toLowerCase());
+        final int[] indexes = this.byName.get(columnName.toLowerCase());
         if (!caseSensitive || indexes == null) {
             return indexes;
         }
@@ -251,7 +253,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         // First, optimistic and assume all are matching.
         int nbMatch = 0;
         for (final int index : indexes) {
-            if (name.equals(this.byIdx[index].name)) {
+            if (columnName.equals(this.byIdx[index].name)) {
                 nbMatch++;
             }
         }
@@ -263,7 +265,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
         final int[] result = new int[nbMatch];
         int j = 0;
         for (final int idx : indexes) {
-            if (name.equals(this.byIdx[idx].name)) {
+            if (columnName.equals(this.byIdx[idx].name)) {
                 result[j++] = idx;
             }
         }

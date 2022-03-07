@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -22,13 +23,13 @@ import java.sql.Types;
  */
 public class JdbcByte extends AbstractJdbcType<Byte> {
 
-    // The maximal size of a 8-bit signed integer is 4 (length of '-128').
-    private static final int DEFAULT_TINYINT_PRECISION = 4;
-
     /**
      * Gets a {@code JdbcByte} instance.
      */
-    public static final JdbcByte instance = new JdbcByte();
+    public static final JdbcByte INSTANCE = new JdbcByte();
+
+    // The maximal size of a 8-bit signed integer is 4 (length of '-128').
+    private static final int DEFAULT_TINYINT_PRECISION = 4;
 
     @Override
     public boolean isCaseSensitive() {

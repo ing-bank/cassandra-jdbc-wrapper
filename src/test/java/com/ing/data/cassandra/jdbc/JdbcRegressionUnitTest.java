@@ -313,9 +313,9 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         stmt.execute(createTableQuery);
         stmt.close();
 
-        // At this point consistency level should be set the ONE (default value) in the connection.
+        // At this point consistency level should be set the LOCAL_ONE (default value) in the connection.
         ConsistencyLevel consistencyLevel = statementExtras(stmt).getConsistencyLevel();
-        assertEquals(ConsistencyLevel.ONE, consistencyLevel);
+        assertEquals(ConsistencyLevel.LOCAL_ONE, consistencyLevel);
         sqlConnection.close();
 
         // Open it up again to see the new column family.

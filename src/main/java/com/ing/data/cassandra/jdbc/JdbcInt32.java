@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -22,25 +23,28 @@ import java.sql.Types;
  */
 public class JdbcInt32 extends AbstractJdbcType<Integer> {
 
-    // The maximal size of a 32-bit signed integer is 11 (length of '-2147483648').
-    private static final int DEFAULT_INT_PRECISION = 11;
-
     /**
      * Gets a {@code JdbcInt32} instance.
      */
-    public static final JdbcInt32 instance = new JdbcInt32();
+    public static final JdbcInt32 INSTANCE = new JdbcInt32();
+
+    // The maximal size of a 32-bit signed integer is 11 (length of '-2147483648').
+    private static final int DEFAULT_INT_PRECISION = 11;
 
     JdbcInt32() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Integer obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final Integer obj) {
         if (obj != null) {
             return obj.toString().length();
@@ -48,14 +52,17 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
         return DEFAULT_INT_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final Integer obj) {
         if (obj != null) {
             return obj.toString();
@@ -64,22 +71,27 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
+    @Override
     public Class<Integer> getType() {
         return Integer.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.INTEGER;
     }
 
+    @Override
     public Integer compose(final Object value) {
         return (Integer) value;
     }
 
+    @Override
     public Object decompose(final Integer value) {
         return value;
     }

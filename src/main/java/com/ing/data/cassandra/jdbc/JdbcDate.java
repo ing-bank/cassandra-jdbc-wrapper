@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,37 +30,43 @@ import java.time.format.DateTimeFormatter;
  */
 public class JdbcDate extends AbstractJdbcType<Date> {
 
-    // The maximal size of date is 10 (for the format 'yyyy-MM-dd').
-    private static final int DEFAULT_DATE_PRECISION = 10;
-
     /**
      * Gets a {@code JdbcDate} instance.
      */
-    public static final JdbcDate instance = new JdbcDate();
+    public static final JdbcDate INSTANCE = new JdbcDate();
+
+    // The maximal size of date is 10 (for the format 'yyyy-MM-dd').
+    private static final int DEFAULT_DATE_PRECISION = 10;
 
     JdbcDate() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Date obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final Date obj) {
         return DEFAULT_DATE_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final Date obj) {
         if (obj != null) {
             return obj.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -68,6 +75,7 @@ public class JdbcDate extends AbstractJdbcType<Date> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
@@ -83,18 +91,22 @@ public class JdbcDate extends AbstractJdbcType<Date> {
         return toString(new Date(bytes.getLong(bytes.position())));
     }
 
+    @Override
     public Class<Date> getType() {
         return Date.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.DATE;
     }
 
+    @Override
     public Date compose(final Object value) {
         return (Date) value;
     }
 
+    @Override
     public Object decompose(final Date value) {
         return value;
     }

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -43,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
@@ -74,7 +76,7 @@ import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
 class SessionHolder {
     static final String URL_KEY = "jdbcUrl";
 
-    private static final Logger log = LoggerFactory.getLogger(SessionHolder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SessionHolder.class);
 
     final Session session;
     final Properties properties;
@@ -104,8 +106,8 @@ class SessionHolder {
         params.keySet().stream()
             .filter(key -> !URL_KEY.equals(key))
             .forEach(key -> this.properties.put(key, params.get(key)));
-        if (log.isDebugEnabled()) {
-            log.debug("Final Properties to Connection: {}", this.properties);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Final Properties to Connection: {}", this.properties);
         }
 
         this.session = createSession(this.properties);
@@ -129,10 +131,10 @@ class SessionHolder {
             }
         }
         if (newRef == -1) {
-            log.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
+            LOG.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
             dispose();
         } else {
-            log.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
+            LOG.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
         }
     }
 
@@ -146,11 +148,11 @@ class SessionHolder {
             final int ref = this.references.get();
             if (ref < 0) {
                 // We raced with the release of the last reference, the caller will need to create a new session.
-                log.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
+                LOG.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
                 return false;
             }
             if (this.references.compareAndSet(ref, ref + 1)) {
-                log.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
+                LOG.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
                 return true;
             }
         }
@@ -158,8 +160,29 @@ class SessionHolder {
 
     @SuppressWarnings("resource")
     private Session createSession(final Properties properties) throws SQLException {
+        File configurationFile = null;
+        final String configurationFilePath = properties.getProperty(Utils.TAG_CONFIG_FILE, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(configurationFilePath)) {
+            configurationFile = new File(configurationFilePath);
+            if (configurationFile.exists()) {
+                // We remove some parameters to use the values defined into the specified configuration file
+                // instead.
+                this.properties.remove(Utils.TAG_CONSISTENCY_LEVEL);
+                this.properties.remove(Utils.TAG_LOCAL_DATACENTER);
+                this.properties.remove(Utils.TAG_USER);
+                this.properties.remove(Utils.TAG_PASSWORD);
+                this.properties.remove(Utils.TAG_ENABLE_SSL);
+                this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
+                LOG.info("The configuration file {} will be used and will override the parameters defined into the "
+                    + "JDBC URL except contact points and keyspace.", configurationFilePath);
+            } else {
+                LOG.warn("The configuration file {} cannot be found, it will be ignored.", configurationFilePath);
+            }
+        }
+
         final String hosts = properties.getProperty(Utils.TAG_SERVER_NAME);
         final int port = Integer.parseInt(properties.getProperty(Utils.TAG_PORT_NUMBER));
+        final String cloudSecureConnectBundle = properties.getProperty(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE);
         final String keyspace = properties.getProperty(Utils.TAG_DATABASE_NAME);
         final String username = properties.getProperty(Utils.TAG_USER, StringUtils.EMPTY);
         final String password = properties.getProperty(Utils.TAG_PASSWORD, StringUtils.EMPTY);
@@ -180,10 +203,16 @@ class SessionHolder {
         final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder =
             DriverConfigLoader.programmaticBuilder();
         driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
-        builder.addContactPoints(Arrays.stream(hosts.split("--"))
-            .map(host -> InetSocketAddress.createUnresolved(host, port))
-            .collect(Collectors.toList())
-        );
+        if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
+            driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
+                cloudSecureConnectBundle);
+            LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.", hosts);
+        } else {
+            builder.addContactPoints(Arrays.stream(hosts.split("--"))
+	            .map(host -> InetSocketAddress.createUnresolved(host, port))
+	            .collect(Collectors.toList())
+            );
+        }
 
         // Set credentials when applicable.
         if (username.length() > 0) {
@@ -202,8 +231,8 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing load balancing policy: " + e.getMessage()
-                    + " / Forcing to DefaultLoadBalancingPolicy...");
+                LOG.warn("Error occurred while parsing load balancing policy: {} / Forcing to "
+                    + "DefaultLoadBalancingPolicy...", e.getMessage());
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     DefaultLoadBalancingPolicy.class.getSimpleName());
             }
@@ -217,7 +246,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing retry policy: " + e.getMessage() + " / skipping...");
+                LOG.warn("Error occurred while parsing retry policy: {} / skipping...", e.getMessage());
             }
         }
 
@@ -241,7 +270,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                log.warn("Error occurred while parsing reconnection policy: " + e.getMessage() + " / skipping...");
+                LOG.warn("Error occurred while parsing reconnection policy: {} / skipping...", e.getMessage());
             }
         }
 
@@ -262,12 +291,22 @@ class SessionHolder {
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
 
         // SSL configuration.
-        if (sslEnabled) {
-            if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
-                configureSslEngineFactory(builder, sslEngineFactoryClassName);
-            } else {
-                configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
+        if (StringUtils.isBlank(cloudSecureConnectBundle)) {
+            if (sslEnabled) {
+                if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
+                    configureSslEngineFactory(builder, sslEngineFactoryClassName);
+                } else {
+                    configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
+                }
             }
+        } else {
+            LOG.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL "
+                + "configuration(s) will be ignored.");
+        }
+
+        // Set the configuration from a configuration file if defined.
+        if (configurationFile != null) {
+            builder.withConfigLoader(DriverConfigLoader.fromFile(configurationFile));
         }
 
         try {

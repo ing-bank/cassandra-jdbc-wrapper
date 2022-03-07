@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
@@ -87,7 +88,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     /**
      * The consistency level.
      * <p>
-     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
+     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.x/cassandra/dml/dmlConfigConsistency.html">
      *     consistency level documentation</a> for further details.
      * </p>
      */

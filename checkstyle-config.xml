@@ -1,0 +1,255 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+These rules require Checkstyle 8.29 or higher.
+The rules are applied to Java files only.
+Please check the documentation for further information about the applied rules:
+    https://checkstyle.sourceforge.io/checks.html
+-->
+
+<module name="Checker">
+    <!-- Default severity is set to warning -->
+    <property name="severity" value="warning"/>
+    <!-- Only check Java files -->
+    <property name="fileExtensions" value="java"/>
+
+    <module name="SuppressionFilter">
+        <property name="file" value="checkstyle-suppressions.xml"/>
+        <property name="optional" value="true"/>
+    </module>
+
+    <!-- Files end with a new line character -->
+    <module name="NewlineAtEndOfFile"/>
+
+    <!-- Checks for size violations -->
+    <module name="FileLength">
+        <property name="max" value="2000"/>
+    </module>
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <!-- External links in Javadoc (lines starting with '*') can exceed the limit of 120 characters. -->
+        <property name="ignorePattern" value="^ *.+&lt;a href=.+&gt;"/>
+    </module>
+
+    <!-- Checks on individual Java files -->
+    <module name="TreeWalker">
+        <!-- Checks that the outer type name and the file name match -->
+        <module name="OuterTypeFilename"/>
+
+        <!-- Checks that anonymous classes have 80 lines max -->
+        <module name="AnonInnerLength">
+            <property name="max" value="80"/>
+        </module>
+        <!-- Checks that methods have 80 lines max -->
+        <module name="MethodLength">
+            <property name="max" value="150"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+        <!-- Checks that the number of parameters by method doesn't exceed 16 -->
+        <module name="ParameterNumber">
+            <property name="max" value="16"/>
+        </module>
+
+        <!-- Checks for blocks -->
+        <module name="AvoidNestedBlocks"/>
+        <module name="EmptyBlock"/>
+        <module name="EmptyCatchBlock">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="LeftCurly"/>
+        <module name="NeedBraces">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="RightCurly"/>
+
+        <!-- Checks for class design -->
+        <module name="FinalClass"/>
+        <module name="HideUtilityClassConstructor"/>
+        <module name="InnerTypeLast"/>
+        <module name="InterfaceIsType"/>
+        <module name="OneTopLevelClass"/>
+
+        <!-- Checks that the number of throws doesn't exceed 10 -->
+        <module name="ThrowsCount">
+            <property name="max" value="10"/>
+        </module>
+
+        <!-- Checks for imports -->
+        <module name="AvoidStarImport">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="IllegalImport"/>
+        <module name="RedundantImport">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="UnusedImports"/>
+
+        <!-- Checks for coding style -->
+        <module name="ArrayTypeStyle"/>
+        <module name="AvoidInlineConditionals"/>
+        <module name="CommentsIndentation"/>
+        <module name="DeclarationOrder"/>
+        <module name="DefaultComesLast"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsAvoidNull">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="FallThrough"/>
+        <module name="FinalLocalVariable"/>
+        <module name="FinalParameters"/>
+        <module name="IllegalToken">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="Indentation"/>
+        <module name="InnerAssignment"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="ModifiedControlVariable">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="MultipleStringLiterals">
+            <property name="id" value="multipleStringLiteralsRule"/>
+            <property name="allowedDuplicates" value="4"/>
+        </module>
+        <module name="MultipleVariableDeclarations">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="NestedForDepth">
+            <property name="max" value="2"/>
+        </module>
+        <module name="NestedIfDepth">
+            <property name="max" value="3"/>
+        </module>
+        <module name="NestedTryDepth">
+            <property name="max" value="2"/>
+        </module>
+        <module name="OneStatementPerLine">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="OverloadMethodsDeclarationOrder"/>
+        <module name="PackageDeclaration"/>
+        <module name="ParameterAssignment"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="StringLiteralEquality">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="UnnecessaryParentheses">
+            <property name="severity" value="info"/>
+        </module>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+        <module name="UnnecessarySemicolonInEnumeration"/>
+        <module name="UnnecessarySemicolonInTryWithResources"/>
+        <module name="UpperEll"/>
+
+        <!-- Checks for naming conventions -->
+        <module name="CatchParameterName"/>
+        <module name="ClassTypeParameterName">
+            <property name="format" value="^[A-Z][A-Za-z]*$"/>
+        </module>
+        <module name="ConstantName"/>
+        <module name="InterfaceTypeParameterName"/>
+        <module name="LambdaParameterName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="LocalFinalVariableName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="LocalVariableName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="MemberName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="MethodName"/>
+        <module name="MethodTypeParameterName"/>
+        <module name="PackageName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="ParameterName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="StaticVariableName">
+            <property name="severity" value="error"/>
+        </module>
+        <module name="TypeName">
+            <property name="severity" value="error"/>
+        </module>
+
+        <!-- Checks for modifiers -->
+        <module name="ClassMemberImpliedModifier">
+            <property name="violateImpliedStaticOnNestedEnum" value="false"/>
+        </module>
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier">
+            <property name="tokens" value="METHOD_DEF, VARIABLE_DEF, ANNOTATION_FIELD_DEF, INTERFACE_DEF, CTOR_DEF,
+            CLASS_DEF, ENUM_DEF"/>
+        </module>
+
+        <!-- Checks for whitespaces -->
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true"/>
+        </module>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoLineWrap"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="OperatorWrap"/>
+        <module name="ParenPad"/>
+        <module name="SeparatorWrap">
+            <property name="option" value="eol"/>
+            <property name="tokens" value="COMMA"/>
+        </module>
+        <module name="SeparatorWrap">
+            <property name="option" value="nl"/>
+            <property name="tokens" value="DOT"/>
+        </module>
+        <module name="SingleSpaceSeparator"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
+
+        <!-- Checks for annotations -->
+        <module name="AnnotationLocation">
+            <property name="allowSamelineParameterizedAnnotation" value="false"/>
+        </module>
+        <module name="AnnotationUseStyle"/>
+        <module name="MissingDeprecated"/>
+        <module name="MissingOverride"/>
+
+        <!-- Checks for complexity -->
+        <module name="BooleanExpressionComplexity">
+            <property name="max" value="5"/>
+        </module>
+        <module name="CyclomaticComplexity">
+            <property name="max" value="20"/>
+        </module>
+
+        <!-- Checks for Javadoc -->
+        <module name="AtclauseOrder"/>
+        <module name="NonEmptyAtclauseDescription"/>
+        <module name="InvalidJavadocPosition"/>
+        <module name="JavadocBlockTagLocation"/>
+        <module name="JavadocContentLocationCheck"/>
+        <module name="JavadocMethod">
+            <property name="validateThrows" value="true"/>
+        </module>
+        <module name="JavadocStyle">
+            <property name="endOfSentenceFormat" value="([.?!:][ \t\n\r\f])|([.?!:]$)"/>
+        </module>
+        <module name="JavadocVariable">
+            <property name="scope" value="protected"/>
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="ignoreMethodNamesRegex" value="^[gs]et[A-Z][a-zA-Z0-9]*$"/>
+            <property name="scope" value="protected"/>
+        </module>
+        <module name="MissingJavadocType">
+            <property name="scope" value="public"/>
+        </module>
+        <module name="SingleLineJavadoc"/>
+    </module>
+</module>

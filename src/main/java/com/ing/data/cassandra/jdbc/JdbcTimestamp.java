@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Timestamp;
@@ -25,13 +26,13 @@ import java.time.format.DateTimeFormatter;
  */
 public class JdbcTimestamp extends AbstractJdbcType<Timestamp> {
 
-    // The maximal size of timestamp is 31 (for the format 'yyyy-MM-ddThh:mm:ss.SSSSSS[+-]xxxx').
-    private static final int DEFAULT_TIMESTAMP_PRECISION = 31;
-
     /**
      * Gets a {@code JdbcTimestamp} instance.
      */
-    public static final JdbcTimestamp instance = new JdbcTimestamp();
+    public static final JdbcTimestamp INSTANCE = new JdbcTimestamp();
+
+    // The maximal size of timestamp is 31 (for the format 'yyyy-MM-ddThh:mm:ss.SSSSSS[+-]xxxx').
+    private static final int DEFAULT_TIMESTAMP_PRECISION = 31;
 
     @Override
     public boolean isCaseSensitive() {
@@ -62,7 +63,7 @@ public class JdbcTimestamp extends AbstractJdbcType<Timestamp> {
     }
 
     @Override
-    public String toString(Timestamp obj) {
+    public String toString(final Timestamp obj) {
         if (obj != null) {
             return obj.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } else {

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -25,19 +26,22 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     /**
      * Gets a {@code JdbcUTF8} instance.
      */
-    public static final JdbcUTF8 instance = new JdbcUTF8();
+    public static final JdbcUTF8 INSTANCE = new JdbcUTF8();
 
-    public JdbcUTF8() {
+    JdbcUTF8() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return true;
     }
 
+    @Override
     public int getScale(final String obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final String obj) {
         if (obj != null) {
             return obj.length();
@@ -45,18 +49,22 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
         return Integer.MAX_VALUE;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final String obj) {
         return obj;
     }
 
+    @Override
     public boolean needsQuotes() {
         return true;
     }
@@ -69,18 +77,22 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
         }
     }
 
+    @Override
     public Class<String> getType() {
         return String.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.VARCHAR;
     }
 
+    @Override
     public String compose(final Object obj) {
         return getString(obj);
     }
 
+    @Override
     public Object decompose(final String value) {
         return value;
     }

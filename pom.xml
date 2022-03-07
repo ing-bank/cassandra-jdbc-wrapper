@@ -45,6 +45,13 @@
 				<role>developer</role>
 			</roles>
         </contributor>
+        <contributor>
+            <name>Madhavan Sridharan</name>
+            <url>https://github.com/msmygit</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>
@@ -69,21 +76,22 @@
         <java.version>1.8</java.version>
 
         <!-- Versions for dependencies -->
-        <cassandra-all.version>3.11.12</cassandra-all.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
+        <checkstyle.version>8.45.1</checkstyle.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
         <datastax.java.driver.version>4.13.0</datastax.java.driver.version>
         <libthrift.version>0.13.0</libthrift.version>
         <!-- Versions for test dependencies -->
         <achilles-embedded.version>6.0.4</achilles-embedded.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <junit5.version>5.7.0</junit5.version>
-        <junit-platform.version>1.7.0</junit-platform.version>
-        <mockito.version>3.6.0</mockito.version>
+        <junit5.version>5.8.1</junit5.version>
+        <junit-platform.version>1.8.1</junit-platform.version>
+        <mockito.version>3.12.4</mockito.version>
         <!-- Versions for plugins -->
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
-        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
@@ -235,6 +243,33 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+
+            <!-- Checkstyle -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <configuration>
+                    <configLocation>checkstyle-config.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <!-- Enforce the version of Checkstyle used by the plugin. -->
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
 		</plugins>
 	</build>

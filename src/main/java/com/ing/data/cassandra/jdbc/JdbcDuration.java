@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
@@ -25,7 +26,7 @@ public class JdbcDuration extends JdbcOther {
     /**
      * Gets a {@code JdbcDuration} instance.
      */
-    public static final JdbcDuration instance = new JdbcDuration();
+    public static final JdbcDuration INSTANCE = new JdbcDuration();
 
     @Override
     public boolean isCaseSensitive() {

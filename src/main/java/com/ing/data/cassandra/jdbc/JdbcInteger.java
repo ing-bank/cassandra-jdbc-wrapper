@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.math.BigInteger;
@@ -23,25 +24,28 @@ import java.sql.Types;
  */
 public class JdbcInteger extends AbstractJdbcType<BigInteger> {
 
-    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
-    private static final int DEFAULT_INTEGER_PRECISION = 20;
-
     /**
      * Gets a {@code JdbcInteger} instance.
      */
-    public static final JdbcInteger instance = new JdbcInteger();
+    public static final JdbcInteger INSTANCE = new JdbcInteger();
+
+    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
+    private static final int DEFAULT_INTEGER_PRECISION = 20;
 
     JdbcInteger() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final BigInteger obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final BigInteger obj) {
         if (obj != null) {
             return obj.toString().length();
@@ -49,14 +53,17 @@ public class JdbcInteger extends AbstractJdbcType<BigInteger> {
         return DEFAULT_INTEGER_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final BigInteger obj) {
         if (obj != null) {
             return obj.toString();
@@ -65,22 +72,27 @@ public class JdbcInteger extends AbstractJdbcType<BigInteger> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
 
+    @Override
     public Class<BigInteger> getType() {
         return BigInteger.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.BIGINT;
     }
 
+    @Override
     public BigInteger compose(final Object obj) {
         return (BigInteger) obj;
     }
 
+    @Override
     public Object decompose(final BigInteger value) {
         return value;
     }

@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
@@ -35,16 +36,13 @@ import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
 /**
  * Utility class to manage database metadata result sets ({@link CassandraMetadataResultSet} objects).
  */
-public class MetadataResultSets {
+public final class MetadataResultSets {
     /**
      * Gets an instance of {@code MetadataResultSets}.
      */
-    public static final MetadataResultSets instance = new MetadataResultSets();
-
-    private static final Logger log = LoggerFactory.getLogger(MetadataResultSets.class);
+    public static final MetadataResultSets INSTANCE = new MetadataResultSets();
 
     static final String CQL_OPTION_COMMENT = "comment";
-
     static final String ASC_OR_DESC = "ASC_OR_DESC";
     static final String BUFFER_LENGTH = "BUFFER_LENGTH";
     static final String CARDINALITY = "CARDINALITY";
@@ -87,8 +85,9 @@ public class MetadataResultSets {
     static final String TYPE_CATALOG = "TYPE_CAT";
     static final String TYPE_NAME = "TYPE_NAME";
     static final String TYPE_SCHEMA = "TYPE_SCHEM";
-
     static final String WILDCARD_CHAR = "%";
+
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataResultSets.class);
 
     private MetadataResultSets() {
         // Private constructor to hide the public one.
@@ -155,17 +154,18 @@ public class MetadataResultSets {
      * @return A valid result set for implementation of {@link DatabaseMetaData#getSchemas(String, String)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet makeSchemas(final CassandraStatement statement, String schemaPattern)
+    public CassandraMetadataResultSet makeSchemas(final CassandraStatement statement, final String schemaPattern)
         throws SQLException {
         final ArrayList<MetadataRow> schemas = Lists.newArrayList();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
             final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
+            String schemaNamePattern = schemaPattern;
             if (WILDCARD_CHAR.equals(schemaPattern)) {
-                schemaPattern = keyspaceMetadata.getName().asInternal();
+                schemaNamePattern = keyspaceMetadata.getName().asInternal();
             }
-            if (schemaPattern == null || schemaPattern.equals(keyspaceMetadata.getName().asInternal())) {
+            if (schemaNamePattern == null || schemaNamePattern.equals(keyspaceMetadata.getName().asInternal())) {
                 final MetadataRow row = new MetadataRow()
                     .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
                     .addEntry(TABLE_CATALOG, statement.connection.getCatalog());
@@ -208,23 +208,24 @@ public class MetadataResultSets {
      * {@link DatabaseMetaData#getTables(String, String, String, String[])}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet makeTables(final CassandraStatement statement, String schemaPattern,
+    public CassandraMetadataResultSet makeTables(final CassandraStatement statement, final String schemaPattern,
                                                  final String tableNamePattern) throws SQLException {
         final ArrayList<MetadataRow> schemas = Lists.newArrayList();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
             final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
+            String schemaNamePattern = schemaPattern;
             if (WILDCARD_CHAR.equals(schemaPattern)) {
-                schemaPattern = keyspaceMetadata.getName().asInternal();
+                schemaNamePattern = keyspaceMetadata.getName().asInternal();
             }
-            if (schemaPattern == null || schemaPattern.equals(keyspaceMetadata.getName().asInternal())) {
+            if (schemaNamePattern == null || schemaNamePattern.equals(keyspaceMetadata.getName().asInternal())) {
                 final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
 
                 for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
                     final TableMetadata tableMetadata = table.getValue();
-                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null ||
-                        tableNamePattern.equals(tableMetadata.getName().asInternal())) {
+                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null
+                        || tableNamePattern.equals(tableMetadata.getName().asInternal())) {
                         final MetadataRow row = new MetadataRow()
                             .addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog())
                             .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
@@ -326,33 +327,34 @@ public class MetadataResultSets {
      * {@link DatabaseMetaData#getColumns(String, String, String, String)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet makeColumns(final CassandraStatement statement, String schemaPattern,
+    public CassandraMetadataResultSet makeColumns(final CassandraStatement statement, final String schemaPattern,
                                                   final String tableNamePattern, final String columnNamePattern)
         throws SQLException {
-        final String originalSchemaPattern = schemaPattern;
+        String originalSchemaPattern = schemaPattern;
         final ArrayList<MetadataRow> schemas = Lists.newArrayList();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
             final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            if (WILDCARD_CHAR.equals(originalSchemaPattern)) {
-                schemaPattern = keyspaceMetadata.getName().asInternal();
+            if (WILDCARD_CHAR.equals(schemaPattern)) {
+                originalSchemaPattern = keyspaceMetadata.getName().asInternal();
             }
 
-            if (schemaPattern == null || schemaPattern.equals(keyspaceMetadata.getName().asInternal())) {
+            if (originalSchemaPattern == null
+                || originalSchemaPattern.equals(keyspaceMetadata.getName().asInternal())) {
                 final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
 
                 for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
                     final TableMetadata tableMetadata = table.getValue();
-                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null ||
-                        tableNamePattern.equals(tableMetadata.getName().asInternal())) {
+                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null
+                        || tableNamePattern.equals(tableMetadata.getName().asInternal())) {
                         final Map<CqlIdentifier, ColumnMetadata> columns = tableMetadata.getColumns();
 
                         int columnIndex = 1;
                         for (final Map.Entry<CqlIdentifier, ColumnMetadata> column : columns.entrySet()) {
                             final ColumnMetadata columnMetadata = column.getValue();
-                            if (WILDCARD_CHAR.equals(columnNamePattern) || columnNamePattern == null ||
-                                columnNamePattern.equals(columnMetadata.getName().asInternal())) {
+                            if (WILDCARD_CHAR.equals(columnNamePattern) || columnNamePattern == null
+                                || columnNamePattern.equals(columnMetadata.getName().asInternal())) {
                                 final AbstractJdbcType<?> jdbcEquivalentType =
                                     TypesMap.getTypeForComparator(columnMetadata.getType().toString());
 
@@ -375,8 +377,8 @@ public class MetadataResultSets {
                                     jdbcType = TypesMap.getTypeForComparator(columnMetadata.getType().toString())
                                         .getJdbcType();
                                 } catch (final Exception e) {
-                                    log.warn("Unable to get JDBC type for comparator ["
-                                        + columnMetadata.getType().toString() + "]: " + e.getMessage());
+                                    LOG.warn("Unable to get JDBC type for comparator [{}]: {}",
+                                        columnMetadata.getType(), e.getMessage());
                                 }
 
                                 // Build the metadata row.

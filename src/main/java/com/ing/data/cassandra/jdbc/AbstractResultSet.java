@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataType;
@@ -33,7 +34,6 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Locale;
 import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
@@ -75,7 +75,7 @@ abstract class AbstractResultSet {
      * @param columnIndex The column index (first column is 1).
      * @return The CQL data type of the column.
      */
-    abstract DataType getCqlDataType(final int columnIndex);
+    abstract DataType getCqlDataType(int columnIndex);
 
     /**
      * Gets the CQL type of the column with the given name.
@@ -83,7 +83,7 @@ abstract class AbstractResultSet {
      * @param columnLabel The column name.
      * @return The CQL data type of the column.
      */
-    abstract DataType getCqlDataType(final String columnLabel);
+    abstract DataType getCqlDataType(String columnLabel);
 
     public void cancelRowUpdates() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);

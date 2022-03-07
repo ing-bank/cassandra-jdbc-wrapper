@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import org.apache.commons.lang3.StringUtils;
@@ -25,25 +26,28 @@ import java.sql.Types;
  */
 public class JdbcLong extends AbstractJdbcType<Long> {
 
-    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
-    private static final int DEFAULT_LONG_PRECISION = 20;
-
     /**
      * Gets a {@code JdbcLong} instance.
      */
-    public static final JdbcLong instance = new JdbcLong();
+    public static final JdbcLong INSTANCE = new JdbcLong();
+
+    // The maximal size of a 64-bit signed integer is 20 (length of '-9223372036854775808').
+    private static final int DEFAULT_LONG_PRECISION = 20;
 
     JdbcLong() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return false;
     }
 
+    @Override
     public int getScale(final Long obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final Long obj) {
         if (obj != null) {
             return obj.toString().length();
@@ -51,14 +55,17 @@ public class JdbcLong extends AbstractJdbcType<Long> {
         return DEFAULT_LONG_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return true;
     }
 
+    @Override
     public String toString(final Long obj) {
         if (obj != null) {
             return obj.toString();
@@ -67,6 +74,7 @@ public class JdbcLong extends AbstractJdbcType<Long> {
         }
     }
 
+    @Override
     public boolean needsQuotes() {
         return false;
     }
@@ -81,18 +89,22 @@ public class JdbcLong extends AbstractJdbcType<Long> {
         return String.valueOf(bytes.getLong(bytes.position()));
     }
 
+    @Override
     public Class<Long> getType() {
         return Long.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.BIGINT;
     }
 
+    @Override
     public Long compose(final Object obj) {
         return (Long) obj;
     }
 
+    @Override
     public Object decompose(final Long value) {
         return value;
     }

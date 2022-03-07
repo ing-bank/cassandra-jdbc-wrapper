@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -24,35 +25,42 @@ public class JdbcOther extends AbstractJdbcType<String> {
     /**
      * Gets a {@code JdbcOther} instance.
      */
-    public static final JdbcOther instance = new JdbcOther();
+    public static final JdbcOther INSTANCE = new JdbcOther();
 
     JdbcOther() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return true;
     }
 
+    @Override
     public int getScale(final String obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final String obj) {
         return DEFAULT_PRECISION;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final String obj) {
         return obj;
     }
 
+    @Override
     public boolean needsQuotes() {
         return true;
     }
@@ -65,18 +73,22 @@ public class JdbcOther extends AbstractJdbcType<String> {
         }
     }
 
+    @Override
     public Class<String> getType() {
         return String.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.OTHER;
     }
 
+    @Override
     public String compose(final Object obj) {
         return getString(obj);
     }
 
+    @Override
     public Object decompose(final String value) {
         return value;
     }

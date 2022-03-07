@@ -12,11 +12,14 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.datastax.oss.driver.api.core.Version;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.google.common.collect.Maps;
@@ -33,13 +36,16 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
@@ -77,15 +83,18 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     /**
      * Minimal Apache Cassandra major version supported by the DataStax Java Driver for Apache Cassandra.
      */
-    public static volatile int DB_MAJOR_VERSION = 2;
+    public static volatile int dbMajorVersion = 2;
     /**
      * Minimal Apache Cassandra minor version supported by the DataStax Java Driver for Apache Cassandra.
      */
-    public static volatile int DB_MINOR_VERSION = 1;
+    public static volatile int dbMinorVersion = 1;
     /**
      * Minimal Apache Cassandra patch version supported by the DataStax Java Driver for Apache Cassandra.
      */
-    public static volatile int DB_PATCH_VERSION = 0;
+    public static volatile int dbPatchVersion = 0;
+
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraConnection.class);
+    private static final boolean AUTO_COMMIT_DEFAULT = true;
 
     /**
      * The username used by the connection.
@@ -95,9 +104,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * The connection URL.
      */
     protected String url;
-
-    private static final Logger log = LoggerFactory.getLogger(CassandraConnection.class);
-    private static final boolean AUTO_COMMIT_DEFAULT = true;
 
     private final SessionHolder sessionHolder;
     private final Session cSession;
@@ -124,6 +130,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     public CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;
         final Properties sessionProperties = sessionHolder.properties;
+        final DriverExecutionProfile defaultConfigProfile =
+            sessionHolder.session.getContext().getConfig().getDefaultProfile();
         this.debugMode = Boolean.TRUE.toString().equals(sessionProperties.getProperty(TAG_DEBUG, StringUtils.EMPTY));
         this.hostListPrimary = new TreeSet<>();
         this.hostListBackup = new TreeSet<>();
@@ -131,29 +139,34 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.clientInfo = new Properties();
         this.url = PROTOCOL.concat(createSubName(sessionProperties));
         this.currentKeyspace = sessionProperties.getProperty(TAG_DATABASE_NAME);
-        this.username = sessionProperties.getProperty(TAG_USER, StringUtils.EMPTY);
+        this.username = sessionProperties.getProperty(TAG_USER,
+            defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
         final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
         this.connectionProperties.setProperty(TAG_ACTIVE_CQL_VERSION, cqlVersion);
         this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
-            sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
+            sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
+                defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
+                    ConsistencyLevel.LOCAL_ONE.name())));
         this.cSession = sessionHolder.session;
         this.metadata = cSession.getMetadata();
 
-        log.info(String.format("Connected to cluster: %s, with session: %s", getCatalog(), cSession.getName()));
+        final List<SessionHolder> l = new ArrayList<>();
+        l.stream().map(s -> s.session).collect(Collectors.toList());
+
+        LOG.info("Connected to cluster: {}, with session: {}", getCatalog(), cSession.getName());
         metadata.getNodes().forEach(
-            (uuid, node) -> log.info(String.format("Datacenter: %s; Host: %s; Rack: %s", node.getDatacenter(),
-                node.getEndPoint().resolve(), node.getRack()))
+            (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
+                node.getEndPoint().resolve(), node.getRack())
         );
 
         // TODO this is shared among all Connections, what if they belong to different clusters?
         metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
             final Version cassandraVersion = entry.getValue().getCassandraVersion();
             if (cassandraVersion != null) {
-                CassandraConnection.DB_MAJOR_VERSION = cassandraVersion.getMajor();
-                CassandraConnection.DB_MINOR_VERSION = cassandraVersion.getMinor();
-                CassandraConnection.DB_PATCH_VERSION = cassandraVersion.getPatch();
-                log.info(String.format("Node: %s runs Cassandra v.%s", entry.getValue().getEndPoint().resolve(),
-                    cassandraVersion.toString()));
+                CassandraConnection.dbMajorVersion = cassandraVersion.getMajor();
+                CassandraConnection.dbMinorVersion = cassandraVersion.getMinor();
+                CassandraConnection.dbPatchVersion = cassandraVersion.getPatch();
+                LOG.info("Node: {} runs Cassandra v.{}", entry.getValue().getEndPoint().resolve(), cassandraVersion);
             }
         });
     }
@@ -240,7 +253,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 return rs.getString("cluster_name");
             }
         } catch (final SQLException e) {
-            log.warn("Unable to retrieve the cluster name.", e);
+            LOG.warn("Unable to retrieve the cluster name.", e);
             return null;
         }
 
@@ -270,17 +283,17 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
+    public String getClientInfo(final String label) throws SQLException {
+        checkNotClosed();
+        return clientInfo.getProperty(label);
+    }
+
+    @Override
     public void setClientInfo(final Properties properties) {
         // we don't use them but we will happily collect them for now...
         if (properties != null) {
             this.clientInfo = properties;
         }
-    }
-
-    @Override
-    public String getClientInfo(final String label) throws SQLException {
-        checkNotClosed();
-        return clientInfo.getProperty(label);
     }
 
     @Override
@@ -374,7 +387,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
         final HashMap<String, Class<?>> typeMap = new HashMap<>();
-        log.info("Current keyspace: " + currentKeyspace);
+        LOG.info("Current keyspace: " + currentKeyspace);
         this.metadata.getKeyspace(currentKeyspace)
             .ifPresent(keyspaceMetadata ->
                 keyspaceMetadata.getUserDefinedTypes().forEach((cqlIdentifier, userDefinedType) ->
@@ -485,6 +498,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         return this.statements.remove(statement);
     }
 
+    @Override
     public String toString() {
         return "CassandraConnection [connectionProperties=" + connectionProperties + "]";
     }

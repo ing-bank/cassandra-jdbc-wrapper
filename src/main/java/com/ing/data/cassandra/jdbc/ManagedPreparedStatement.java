@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import com.google.common.io.CharStreams;
@@ -119,6 +120,17 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
+    public void addBatch() throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.addBatch();
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
     public void clearBatch() throws SQLException {
         checkNotClosed();
         try {
@@ -134,6 +146,17 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
         checkNotClosed();
         try {
             this.preparedStatement.clearWarnings();
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public boolean execute() throws SQLException {
+        checkNotClosed();
+        try {
+            return this.preparedStatement.execute();
         } catch (final SQLException sqlException) {
             this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
@@ -174,10 +197,32 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
+    public ResultSet executeQuery() throws SQLException {
+        checkNotClosed();
+        try {
+            return this.preparedStatement.executeQuery();
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
     public ResultSet executeQuery(final String cql) throws SQLException {
         checkNotClosed();
         try {
             return this.preparedStatement.executeQuery(cql);
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public int executeUpdate() throws SQLException {
+        checkNotClosed();
+        try {
+            return this.preparedStatement.executeUpdate();
         } catch (final SQLException sqlException) {
             this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;
@@ -438,54 +483,10 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
-    public void addBatch() throws SQLException {
-        checkNotClosed();
-        try {
-            this.preparedStatement.addBatch();
-        } catch (final SQLException sqlException) {
-            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
     public void clearParameters() throws SQLException {
         checkNotClosed();
         try {
             this.preparedStatement.clearParameters();
-        } catch (final SQLException sqlException) {
-            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public boolean execute() throws SQLException {
-        checkNotClosed();
-        try {
-            return this.preparedStatement.execute();
-        } catch (final SQLException sqlException) {
-            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public ResultSet executeQuery() throws SQLException {
-        checkNotClosed();
-        try {
-            return this.preparedStatement.executeQuery();
-        } catch (final SQLException sqlException) {
-            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
-            throw sqlException;
-        }
-    }
-
-    @Override
-    public int executeUpdate() throws SQLException {
-        checkNotClosed();
-        try {
-            return this.preparedStatement.executeUpdate();
         } catch (final SQLException sqlException) {
             this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;

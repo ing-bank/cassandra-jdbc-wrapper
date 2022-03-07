@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.sql.Types;
@@ -25,19 +26,22 @@ public class JdbcAscii extends AbstractJdbcType<String> {
     /**
      * Gets a {@code JdbcAscii} instance.
      */
-    public static final JdbcAscii instance = new JdbcAscii();
+    public static final JdbcAscii INSTANCE = new JdbcAscii();
 
     JdbcAscii() {
     }
 
+    @Override
     public boolean isCaseSensitive() {
         return true;
     }
 
+    @Override
     public int getScale(final String obj) {
         return DEFAULT_SCALE;
     }
 
+    @Override
     public int getPrecision(final String obj) {
         if (obj != null) {
             return obj.length();
@@ -45,18 +49,22 @@ public class JdbcAscii extends AbstractJdbcType<String> {
         return Integer.MAX_VALUE;
     }
 
+    @Override
     public boolean isCurrency() {
         return false;
     }
 
+    @Override
     public boolean isSigned() {
         return false;
     }
 
+    @Override
     public String toString(final String obj) {
         return obj;
     }
 
+    @Override
     public boolean needsQuotes() {
         return true;
     }
@@ -65,14 +73,17 @@ public class JdbcAscii extends AbstractJdbcType<String> {
         return obj.toString();
     }
 
+    @Override
     public Class<String> getType() {
         return String.class;
     }
 
+    @Override
     public int getJdbcType() {
         return Types.VARCHAR;
     }
 
+    @Override
     public String compose(final Object obj) {
         if (obj == null) {
             return null;
@@ -81,6 +92,7 @@ public class JdbcAscii extends AbstractJdbcType<String> {
         }
     }
 
+    @Override
     public Object decompose(final String value) {
         return value;
     }
