@@ -19,7 +19,18 @@ import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.datastax.oss.driver.api.core.Version;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.google.common.collect.Maps;
+import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
+import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +44,9 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -158,6 +171,30 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         });
     }
 
+    public CassandraConnection(Session cSession, String currentKeyspace, ConsistencyLevel defaultConsistencyLevel, boolean debugMode) {
+        this.sessionHolder = null;
+        this.connectionProperties = new Properties();
+        this.hostListPrimary = new TreeSet<>();
+        this.hostListBackup = new TreeSet<>();
+        this.currentKeyspace = currentKeyspace;
+        this.cSession = cSession;
+        this.metadata = cSession.getMetadata();
+        this.defaultConsistencyLevel = defaultConsistencyLevel;
+        this.debugMode = debugMode;
+        final List<TypeCodec<?>> codecs = new ArrayList<>();
+        codecs.add(new TimestampToLongCodec());
+        codecs.add(new LongToIntCodec());
+        codecs.add(new IntToLongCodec());
+        codecs.add(new BigintToBigDecimalCodec());
+        codecs.add(new DecimalToDoubleCodec());
+        codecs.add(new FloatToDoubleCodec());
+        codecs.add(new VarintToIntCodec());
+        codecs.add(new SmallintToIntCodec());
+        codecs.add(new TinyintToIntCodec());
+
+        codecs.forEach(codec -> ((DefaultCodecRegistry) cSession.getContext().getCodecRegistry()).register(codec));
+    }
+
     /**
      * Checks whether the connection is closed.
      *
@@ -178,7 +215,9 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void close() throws SQLException {
-        this.sessionHolder.release();
+        if (sessionHolder!= null) {
+            this.sessionHolder.release();
+        }
         this.isClosed = true;
     }
 
@@ -231,20 +270,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String getCatalog() throws SQLException {
         checkNotClosed();
-
-        // It requires a query to table system.local since DataStax driver 4+.
-        // If the query fails, return null.
-        try (final Statement stmt = createStatement()) {
-            final ResultSet rs = stmt.executeQuery("SELECT cluster_name FROM system.local");
-            if (rs.next()) {
-                return rs.getString("cluster_name");
-            }
-        } catch (final SQLException e) {
-            log.warn("Unable to retrieve the cluster name.", e);
-            return null;
-        }
-
-        return null;
+        return currentKeyspace;
     }
 
     @Override
