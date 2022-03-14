@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.5.0</version>
+    <version>4.5.1</version>
 	<packaging>jar</packaging>
 
 	<name>Cassandra JDBC Wrapper</name>
@@ -76,10 +76,10 @@
         <java.version>1.8</java.version>
 
         <!-- Versions for dependencies -->
-        <cassandra-all.version>3.11.9</cassandra-all.version>
         <checkstyle.version>8.45.1</checkstyle.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <datastax.java.driver.version>4.13.0</datastax.java.driver.version>
+        <guava-version>18.0</guava-version>
+        <datastax.java.driver.version>4.14.0</datastax.java.driver.version>
         <libthrift.version>0.13.0</libthrift.version>
         <!-- Versions for test dependencies -->
         <achilles-embedded.version>6.0.4</achilles-embedded.version>
@@ -108,23 +108,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.cassandra</groupId>
-            <artifactId>cassandra-all</artifactId>
-            <version>${cassandra-all.version}</version>
-            <!-- Exclude vulnerable dependencies -->
-            <exclusions>
-                <!-- The version of libthrift is overridden below. -->
-                <exclusion>
-                    <groupId>org.apache.thrift</groupId>
-                    <artifactId>libthrift</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- Force the use of a more recent version of libthrift. -->
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <version>${libthrift.version}</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava-version}</version>
         </dependency>
 
         <!-- Apache Commons Lang 3 -->
