@@ -79,7 +79,7 @@
         <checkstyle.version>8.45.1</checkstyle.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <guava-version>18.0</guava-version>
-        <datastax.java.driver.version>4.13.0</datastax.java.driver.version>
+        <datastax.java.driver.version>4.14.0</datastax.java.driver.version>
         <libthrift.version>0.13.0</libthrift.version>
         <!-- Versions for test dependencies -->
         <achilles-embedded.version>6.0.4</achilles-embedded.version>
