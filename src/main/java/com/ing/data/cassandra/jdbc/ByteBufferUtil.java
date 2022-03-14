@@ -12,6 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package com.ing.data.cassandra.jdbc;
 
 import java.nio.ByteBuffer;
@@ -19,66 +20,156 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
- * Partial copy of org.apache.cassandra.utils.ByteBufferUtil
- *
+ * Utility methods for {@link ByteBuffer} manipulation.
+ * <p>
+ *     This class is a partial copy of {@code org.apache.cassandra.utils.ByteBufferUtil} class from
+ *     {@code cassandra-all} library.
+ * </p>
  */
-public class ByteBufferUtil {
-    public static ByteBuffer bytes(String s) {
+public final class ByteBufferUtil {
+
+    private ByteBufferUtil() {
+        // Private constructor to hide the public one.
+    }
+
+    /**
+     * Encodes a {@code String} in a {@code ByteBuffer} using UTF-8.
+     *
+     * @param s The string to encode.
+     * @return The encoded string.
+     */
+    public static ByteBuffer bytes(final String s) {
         return ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8));
     }
 
-
-    public static ByteBuffer bytes(byte b) {
+    /**
+     * Encodes a {@code byte} in a {@code ByteBuffer}.
+     *
+     * @param b The byte to encode.
+     * @return The encoded byte.
+     */
+    public static ByteBuffer bytes(final byte b) {
         return ByteBuffer.allocate(1).put(0, b);
     }
 
-    public static ByteBuffer bytes(short s) {
+    /**
+     * Encodes a {@code short} in a {@code ByteBuffer}.
+     *
+     * @param s The short to encode.
+     * @return The encoded short.
+     */
+    public static ByteBuffer bytes(final short s) {
         return ByteBuffer.allocate(2).putShort(0, s);
     }
 
-    public static ByteBuffer bytes(int i) {
+    /**
+     * Encodes an {@code int} in a {@code ByteBuffer}.
+     *
+     * @param i The int to encode.
+     * @return The encoded int.
+     */
+    public static ByteBuffer bytes(final int i) {
         return ByteBuffer.allocate(4).putInt(0, i);
     }
 
-    public static ByteBuffer bytes(long n) {
+    /**
+     * Encodes a {@code long} in a {@code ByteBuffer}.
+     *
+     * @param n The long to encode.
+     * @return The encoded long.
+     */
+    public static ByteBuffer bytes(final long n) {
         return ByteBuffer.allocate(8).putLong(0, n);
     }
 
-    public static ByteBuffer bytes(float f) {
+    /**
+     * Encodes a {@code float} in a {@code ByteBuffer}.
+     *
+     * @param f The float to encode.
+     * @return The encoded float.
+     */
+    public static ByteBuffer bytes(final float f) {
         return ByteBuffer.allocate(4).putFloat(0, f);
     }
 
-    public static ByteBuffer bytes(double d) {
+    /**
+     * Encodes a {@code double} in a {@code ByteBuffer}.
+     *
+     * @param d The double to encode.
+     * @return The encoded double.
+     */
+    public static ByteBuffer bytes(final double d) {
         return ByteBuffer.allocate(8).putDouble(0, d);
     }
 
-    public static int toInt(ByteBuffer bytes) {
+    /**
+     * Converts a {@code ByteBuffer} to an integer.
+     * Does not change the byte buffer position.
+     *
+     * @param bytes The byte buffer to convert to integer.
+     * @return The integer representation of the byte buffer.
+     */
+    public static int toInt(final ByteBuffer bytes) {
         return bytes.getInt(bytes.position());
     }
 
-    public static short toShort(ByteBuffer bytes) {
+    /**
+     * Converts a {@code ByteBuffer} to a short.
+     * Does not change the byte buffer position.
+     *
+     * @param bytes The byte buffer to convert to short.
+     * @return The short representation of the byte buffer.
+     */
+    public static short toShort(final ByteBuffer bytes) {
         return bytes.getShort(bytes.position());
     }
 
-    public static long toLong(ByteBuffer bytes) {
+    /**
+     * Converts a {@code ByteBuffer} to a long.
+     * Does not change the byte buffer position.
+     *
+     * @param bytes The byte buffer to convert to long.
+     * @return The long representation of the byte buffer.
+     */
+    public static long toLong(final ByteBuffer bytes) {
         return bytes.getLong(bytes.position());
     }
 
-    public static float toFloat(ByteBuffer bytes) {
+    /**
+     * Converts a {@code ByteBuffer} to a float.
+     * Does not change the byte buffer position.
+     *
+     * @param bytes The byte buffer to convert to float.
+     * @return The float representation of the byte buffer.
+     */
+    public static float toFloat(final ByteBuffer bytes) {
         return bytes.getFloat(bytes.position());
     }
 
-    public static double toDouble(ByteBuffer bytes) {
+    /**
+     * Converts a {@code ByteBuffer} to a double.
+     * Does not change the byte buffer position.
+     *
+     * @param bytes The byte buffer to convert to double.
+     * @return The double representation of the byte buffer.
+     */
+    public static double toDouble(final ByteBuffer bytes) {
         return bytes.getDouble(bytes.position());
     }
 
-    public static byte[] getArray(ByteBuffer buffer) {
-        int length = buffer.remaining();
+    /**
+     * Gets a {@code byte} array representation of a {@code ByteBuffer}.
+     *
+     * @param buffer The byte buffer to represent as an array.
+     * @return The array representation of the byte buffer.
+     */
+    public static byte[] getArray(final ByteBuffer buffer) {
+        final int length = buffer.remaining();
         if (buffer.hasArray()) {
-            int boff = buffer.arrayOffset() + buffer.position();
+            final int boff = buffer.arrayOffset() + buffer.position();
             return Arrays.copyOfRange(buffer.array(), boff, boff + length);
         } else {
-            byte[] bytes = new byte[length];
+            final byte[] bytes = new byte[length];
             buffer.duplicate().get(bytes);
             return bytes;
         }

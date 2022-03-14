@@ -493,6 +493,7 @@ We use [SemVer](http://semver.org/) for versioning.
 
 * Maxime Wiewiora - **[@maximevw](https://github.com/maximevw)** 
 * Madhavan Sridharan - **[@msmygit](https://github.com/msmygit)**
+* Marius Jokubauskas - **[@mjok](https://github.com/mjok)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

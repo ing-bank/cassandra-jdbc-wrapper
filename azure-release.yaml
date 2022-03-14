@@ -4,6 +4,8 @@ trigger:
   branches:
     include:
       - master
+# Never trigger a release from a pull request.
+pr: none
 
 pool:
   vmImage: 'ubuntu-latest'
