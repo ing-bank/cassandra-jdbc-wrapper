@@ -86,7 +86,7 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
             fail("Unable to find test_application.conf");
         }
         initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
-            "user=aTestUser", "password=aTestPassword",
+            "user=aTestUser", "password=aTestPassword", "requesttimeout=5000",
             "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
             "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
             "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
@@ -110,6 +110,8 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
             .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME));
         assertEquals("testPassword", sqlConnection.getSession().getContext().getConfig()
             .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_PASSWORD));
+        assertEquals(Duration.ofSeconds(8), sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
 
         final LoadBalancingPolicy loadBalancingPolicy = sqlConnection.getSession().getContext()
             .getLoadBalancingPolicy(DriverExecutionProfile.DEFAULT_NAME);
@@ -129,6 +131,18 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         // Check the not overridden values.
         assertTrue(sqlConnection.getSession().getKeyspace().isPresent());
         assertEquals(KEYSPACE, sqlConnection.getSession().getKeyspace().get().asCql(true));
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenRequestTimeout_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        initConnection(KEYSPACE, "requesttimeout=10000");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertEquals(Duration.ofSeconds(10), sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
         sqlConnection.close();
     }
 

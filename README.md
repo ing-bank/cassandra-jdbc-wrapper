@@ -100,6 +100,18 @@ defined in the configuration file. For example:
 jdbc:cassandra://host1--host2--host3:9042/keyspace?configfile=/path/to/configuration/application.conf
 ```
 
+### Specifying timeout for queries
+
+By default, the timeout for queries is 2 seconds (see the property `basic.request.timeout` in the
+[Configuration reference](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/configuration/reference)
+page).
+
+However, if you want to use a non-default timeout value, add a `requesttimeout` argument to the JDBC URL and give the 
+expected duration in milliseconds. For example, to define a timeout of 5 seconds:
+```
+jdbc:cassandra://host1--host2--host3:9042/keyspace?requesttimeout=5000
+```
+
 ### Specifying load balancing policies
 
 In versions 4+ of DataStax Java driver for Apache Cassandra(R), the load balancing is defined with 
@@ -497,9 +509,6 @@ We use [SemVer](http://semver.org/) for versioning.
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**
-
-See the full list of [contributors](https://github.com/ing-bank/cassandra-jdbc-wrapper/graphs/contributors) who 
-participated in this project.
 
 ## Acknowledgments
 

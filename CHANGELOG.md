@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add support for connecting to Cassandra DBaaS cluster with secure connect bundle. 
   See the feature request [#1](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/1).
-- Add query parameter `configfile` to use a configuration file instead of the settings defined in the JDBC URL.
+- Add query parameter `configfile` to use a configuration file instead of the settings defined in the JDBC URL. 
+- Add query parameter `requesttimeout` to specify a non-default timeout for queries. 
+  See the feature request [#5](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/5).
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.14.0.
 - Update Apache Commons Lang to version 3.12.0.

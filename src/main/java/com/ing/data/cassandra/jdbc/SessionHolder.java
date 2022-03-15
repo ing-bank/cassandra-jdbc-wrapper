@@ -41,6 +41,7 @@ import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -173,6 +175,7 @@ class SessionHolder {
                 this.properties.remove(Utils.TAG_PASSWORD);
                 this.properties.remove(Utils.TAG_ENABLE_SSL);
                 this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
+                this.properties.remove(Utils.TAG_REQUEST_TIMEOUT);
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
@@ -197,6 +200,11 @@ class SessionHolder {
             StringUtils.EMPTY);
         final boolean sslEnabled = Boolean.TRUE.toString().equals(enableSslValue)
             || (enableSslValue == null && StringUtils.isNotEmpty(sslEngineFactoryClassName));
+        final String requestTimeoutRawValue = properties.getProperty(Utils.TAG_REQUEST_TIMEOUT);
+        Integer requestTimeout = null;
+        if (NumberUtils.isParsable(requestTimeoutRawValue)) {
+            requestTimeout = Integer.parseInt(requestTimeoutRawValue);
+        }
 
         // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();
@@ -212,6 +220,12 @@ class SessionHolder {
 	            .map(host -> InetSocketAddress.createUnresolved(host, port))
 	            .collect(Collectors.toList())
             );
+        }
+
+        // Set request timeout (in milliseconds) if defined.
+        if (requestTimeout != null && requestTimeout > 0) {
+            driverConfigLoaderBuilder.withDuration(DefaultDriverOption.REQUEST_TIMEOUT,
+                Duration.of(requestTimeout, ChronoUnit.MILLIS));
         }
 
         // Set credentials when applicable.

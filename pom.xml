@@ -83,12 +83,12 @@
         <java.version>1.8</java.version>
 
         <!-- Versions for dependencies -->
-        <checkstyle.version>8.45.1</checkstyle.version>
+        <checkstyle.version>9.3</checkstyle.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <datastax.java.driver.version>4.14.0</datastax.java.driver.version>
         <guava.version>18.0</guava.version>
         <!-- Versions for test dependencies -->
-        <achilles-embedded.version>6.0.4</achilles-embedded.version>
+        <achilles-embedded.version>6.1.0</achilles-embedded.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit5.version>5.8.2</junit5.version>
         <junit-platform.version>1.8.2</junit-platform.version>
