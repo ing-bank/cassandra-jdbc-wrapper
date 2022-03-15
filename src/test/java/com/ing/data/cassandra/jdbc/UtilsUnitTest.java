@@ -105,8 +105,8 @@ class UtilsUnitTest {
                     put(Utils.TAG_DATABASE_NAME, "Keyspace1");
                     put(Utils.TAG_LOCAL_DATACENTER, "DC1");
                 }}),
-            Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1&debug=true&primarydc=DC1"
-                    + "&backupdc=DC2&retries=5&requesttimeout=3000&loadbalancing=com.company.package.CustomLBPolicy"
+            Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1&debug=true"
+                    + "&retries=5&requesttimeout=3000&loadbalancing=com.company.package.CustomLBPolicy"
                     + "&retry=com.company.package.CustomRetryPolicy&reconnection=ConstantReconnectionPolicy()",
                 new HashMap<String, String>() {{
                     put(Utils.TAG_SERVER_NAME, "localhost");
@@ -114,8 +114,6 @@ class UtilsUnitTest {
                     put(Utils.TAG_DATABASE_NAME, "Keyspace1");
                     put(Utils.TAG_LOCAL_DATACENTER, "DC1");
                     put(Utils.TAG_DEBUG, "true");
-                    put(Utils.TAG_PRIMARY_DC, "DC1");
-                    put(Utils.TAG_BACKUP_DC, "DC2");
                     put(Utils.TAG_CONNECTION_RETRIES, "5");
                     put(Utils.TAG_LOAD_BALANCING_POLICY, "com.company.package.CustomLBPolicy");
                     put(Utils.TAG_RETRY_POLICY, "com.company.package.CustomRetryPolicy");

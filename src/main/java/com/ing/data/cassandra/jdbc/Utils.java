@@ -64,14 +64,6 @@ public final class Utils {
      */
     public static final String KEY_CONSISTENCY = "consistency";
     /**
-     * JDBC URL parameter key for the primary data center.
-     */
-    public static final String KEY_PRIMARY_DC = "primarydc";
-    /**
-     * JDBC URL parameter key for the backup data center.
-     */
-    public static final String KEY_BACKUP_DC = "backupdc";
-    /**
      * JDBC URL parameter key for the connection number of retries.
      */
     public static final String KEY_CONNECTION_RETRIES = "retries";
@@ -137,8 +129,6 @@ public final class Utils {
     public static final String TAG_RETRY_POLICY = "retry";
     public static final String TAG_RECONNECT_POLICY = "reconnection";
     public static final String TAG_DEBUG = "debug";
-    public static final String TAG_PRIMARY_DC = "primaryDatacenter";
-    public static final String TAG_BACKUP_DC = "backupDatacenter";
     public static final String TAG_CONNECTION_RETRIES = "retries";
     public static final String TAG_ENABLE_SSL = "enableSsl";
     public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
@@ -215,6 +205,8 @@ public final class Utils {
      * @param url The full JDBC URL to be parsed.
      * @return A list of properties that were parsed from the "subname".
      * @throws SQLException when something went wrong during the URL parsing.
+     * @throws SQLSyntaxErrorException when the URL syntax is invalid.
+     * @throws SQLNonTransientConnectionException when the host is missing in the URL.
      */
     public static Properties parseURL(final String url) throws SQLException {
         final Properties props = new Properties();
@@ -276,12 +268,6 @@ public final class Utils {
                 if (params.containsKey(KEY_CONSISTENCY)) {
                     props.setProperty(TAG_CONSISTENCY_LEVEL, params.get(KEY_CONSISTENCY));
                 }
-                if (params.containsKey(KEY_PRIMARY_DC)) {
-                    props.setProperty(TAG_PRIMARY_DC, params.get(KEY_PRIMARY_DC));
-                }
-                if (params.containsKey(KEY_BACKUP_DC)) {
-                    props.setProperty(TAG_BACKUP_DC, params.get(KEY_BACKUP_DC));
-                }
                 if (params.containsKey(KEY_CONNECTION_RETRIES)) {
                     props.setProperty(TAG_CONNECTION_RETRIES, params.get(KEY_CONNECTION_RETRIES));
                 }
@@ -338,6 +324,7 @@ public final class Utils {
      * @param props A {@link Properties} instance containing all the properties to be considered.
      * @return A "sub-name" portion of a JDBC URL (for example: //myhost:9160/Test1?version=3.0.0).
      * @throws SQLException when something went wrong during the "sub-name" creation.
+     * @throws SQLNonTransientConnectionException when the host name is missing.
      */
     public static String createSubName(final Properties props) throws SQLException {
         // Make the keyspace always start with a "/" for URI.
@@ -404,6 +391,7 @@ public final class Utils {
      * @param query The query part of the JDBC URL.
      * @return The map of the parsed parameters.
      * @throws SQLException when something went wrong during the parsing.
+     * @throws SQLSyntaxErrorException when the encoding is not supported.
      */
     protected static Map<String, String> parseQueryPart(final String query) throws SQLException {
         final Map<String, String> params = new HashMap<>();

@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
@@ -114,8 +113,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = Maps.newConcurrentMap();
     private final ConsistencyLevel defaultConsistencyLevel;
-    private final TreeSet<String> hostListPrimary;
-    private final TreeSet<String> hostListBackup;
     private String currentKeyspace;
     private final boolean debugMode;
     private Properties clientInfo;
@@ -133,8 +130,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         final DriverExecutionProfile defaultConfigProfile =
             sessionHolder.session.getContext().getConfig().getDefaultProfile();
         this.debugMode = Boolean.TRUE.toString().equals(sessionProperties.getProperty(TAG_DEBUG, StringUtils.EMPTY));
-        this.hostListPrimary = new TreeSet<>();
-        this.hostListBackup = new TreeSet<>();
         this.connectionProperties = (Properties) sessionProperties.clone();
         this.clientInfo = new Properties();
         this.url = PROTOCOL.concat(createSubName(sessionProperties));
@@ -175,6 +170,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * Checks whether the connection is closed.
      *
      * @throws SQLException if the connection is closed.
+     * @throws SQLNonTransientConnectionException if the connection is closed.
      */
     private void checkNotClosed() throws SQLException {
         if (isClosed()) {
