@@ -36,6 +36,8 @@ older version of Cassandra cluster. For more information, please check the
 If you are having issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check the 
 [connection requirements](https://github.com/datastax/java-driver/wiki/Connection-requirements).
 
+This project requires Java 8 JDK (minimum).
+
 ### Installing
 
 Clone the repository:
