@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - 'release/next'
+  pull_request:
+    branches:
+      - 'release/next'
 
 jobs:
   build:
