@@ -16,7 +16,7 @@ package com.ing.data.cassandra.jdbc.codec;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import org.apache.cassandra.utils.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.ByteBufferUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

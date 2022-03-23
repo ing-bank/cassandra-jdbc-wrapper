@@ -36,6 +36,8 @@ older version of Cassandra cluster. For more information, please check the
 If you are having issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check the 
 [connection requirements](https://github.com/datastax/java-driver/wiki/Connection-requirements).
 
+This project requires Java 8 JDK (minimum).
+
 ### Installing
 
 Clone the repository:
@@ -98,6 +100,18 @@ mentioned into the JDBC URL, except the contact points and the keyspace, will be
 defined in the configuration file. For example:
 ```
 jdbc:cassandra://host1--host2--host3:9042/keyspace?configfile=/path/to/configuration/application.conf
+```
+
+### Specifying timeout for queries
+
+By default, the timeout for queries is 2 seconds (see the property `basic.request.timeout` in the
+[Configuration reference](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/configuration/reference)
+page).
+
+However, if you want to use a non-default timeout value, add a `requesttimeout` argument to the JDBC URL and give the 
+expected duration in milliseconds. For example, to define a timeout of 5 seconds:
+```
+jdbc:cassandra://host1--host2--host3:9042/keyspace?requesttimeout=5000
 ```
 
 ### Specifying load balancing policies
@@ -493,12 +507,10 @@ We use [SemVer](http://semver.org/) for versioning.
 
 * Maxime Wiewiora - **[@maximevw](https://github.com/maximevw)** 
 * Madhavan Sridharan - **[@msmygit](https://github.com/msmygit)**
+* Marius Jokubauskas - **[@mjok](https://github.com/mjok)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**
-
-See the full list of [contributors](https://github.com/ing-bank/cassandra-jdbc-wrapper/graphs/contributors) who 
-participated in this project.
 
 ## Acknowledgments
 
