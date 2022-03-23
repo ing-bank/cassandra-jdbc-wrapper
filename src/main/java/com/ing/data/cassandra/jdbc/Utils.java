@@ -135,6 +135,7 @@ public final class Utils {
     public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
     public static final String TAG_CONFIG_FILE = "configFile";
     public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
+    public static final String TAG_COMPLIANCE_MODE = "complianceMode";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
     public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";

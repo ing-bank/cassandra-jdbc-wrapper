@@ -34,13 +34,14 @@ import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
+import com.ing.data.cassandra.jdbc.optionset.Default;
+import com.ing.data.cassandra.jdbc.optionset.OptionSet;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientConnectionException;
@@ -49,9 +50,11 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -66,6 +69,7 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_ACTIVE_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.Utils.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
@@ -128,6 +132,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
+    private OptionSet optionSet;
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster.
@@ -145,6 +150,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.clientInfo = new Properties();
         this.url = PROTOCOL.concat(createSubName(sessionProperties));
         this.currentKeyspace = sessionProperties.getProperty(TAG_DATABASE_NAME);
+        this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
             defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
         final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
@@ -180,8 +186,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     public CassandraConnection(Session cSession, String currentKeyspace, ConsistencyLevel defaultConsistencyLevel, boolean debugMode) {
         this.sessionHolder = null;
         this.connectionProperties = new Properties();
-        this.hostListPrimary = new TreeSet<>();
-        this.hostListBackup = new TreeSet<>();
+        this.optionSet = optionSet == null ? lookupOptionSet(null) : optionSet;
         this.currentKeyspace = currentKeyspace;
         this.cSession = cSession;
         this.metadata = cSession.getMetadata();
@@ -526,6 +531,24 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
         throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
+    }
+
+
+    public OptionSet getOptionSet() {
+        return optionSet;
+    }
+
+    private OptionSet lookupOptionSet(String property) {
+        ServiceLoader<OptionSet> loader = ServiceLoader
+                .load(OptionSet.class);
+        Iterator<OptionSet> iterator = loader.iterator();
+        while (iterator.hasNext()) {
+            OptionSet next = iterator.next();
+            if (next.getClass().getSimpleName().equalsIgnoreCase(property)) {
+                return next;
+            }
+        }
+        return new Default();
     }
 
 }
