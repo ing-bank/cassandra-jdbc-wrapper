@@ -282,7 +282,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String getCatalog() throws SQLException {
         checkNotClosed();
-        return currentKeyspace;
+        return optionSet.getCatalog();
     }
 
     @Override
@@ -543,12 +543,15 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 .load(OptionSet.class);
         Iterator<OptionSet> iterator = loader.iterator();
         while (iterator.hasNext()) {
-            OptionSet next = iterator.next();
-            if (next.getClass().getSimpleName().equalsIgnoreCase(property)) {
-                return next;
+            OptionSet optionSet = iterator.next();
+            if (optionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
+                optionSet.setConnection(this);
+                return optionSet;
             }
         }
-        return new Default();
+        OptionSet optionSet = new Default();
+        optionSet.setConnection(this);
+        return optionSet;
     }
 
 }
