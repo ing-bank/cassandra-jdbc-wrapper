@@ -46,6 +46,8 @@ public interface OptionSet {
 
     /**
      * Get referenced connection. See @{@link AbstractOptionSet}
+     *
+     * @return referenced connection
      */
     CassandraConnection getConnection();
 }

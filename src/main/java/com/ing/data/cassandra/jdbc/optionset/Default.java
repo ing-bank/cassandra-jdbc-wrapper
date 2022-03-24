@@ -22,6 +22,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * Default Option set.
+ */
+
 public class Default extends AbstractOptionSet {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOptionSet.class);
 

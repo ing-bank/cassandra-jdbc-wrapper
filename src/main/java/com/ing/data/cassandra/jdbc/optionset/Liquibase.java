@@ -15,6 +15,9 @@
 
 package com.ing.data.cassandra.jdbc.optionset;
 
+/**
+ * Option Set for liquibase compatability and flavour of JDBC.
+ */
 public class Liquibase extends AbstractOptionSet {
 
 

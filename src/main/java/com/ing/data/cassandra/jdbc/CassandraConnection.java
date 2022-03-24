@@ -191,7 +191,9 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @param debugMode Debug mode flag
      * @param optionSet Compliance mode option set
      */
-    public CassandraConnection(final Session cSession, final String currentKeyspace, final ConsistencyLevel defaultConsistencyLevel, boolean debugMode, final OptionSet optionSet) {
+    public CassandraConnection(final Session cSession, final String currentKeyspace,
+                               final ConsistencyLevel defaultConsistencyLevel,
+                               final boolean debugMode, final OptionSet optionSet) {
         this.sessionHolder = null;
         this.connectionProperties = new Properties();
 

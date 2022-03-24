@@ -17,6 +17,9 @@ package com.ing.data.cassandra.jdbc.optionset;
 
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 
+/**
+ * Abstract option set to set common parameter used by option sets.
+ */
 public abstract class AbstractOptionSet implements OptionSet {
 
     private CassandraConnection connection;
@@ -26,7 +29,7 @@ public abstract class AbstractOptionSet implements OptionSet {
         return connection;
     }
 
-    public void setConnection(CassandraConnection connection) {
+    public void setConnection(final CassandraConnection connection) {
         this.connection = connection;
     }
 }

@@ -116,7 +116,7 @@ public final class Utils {
      */
     public static final String KEY_CONFIG_FILE = "configfile";
     /**
-     * JDBC URL parameter key for the compliance mode
+     * JDBC URL parameter key for the compliance mode.
      */
     public static final String KEY_COMPLIANCE_MODE = "compliancemode";
 
