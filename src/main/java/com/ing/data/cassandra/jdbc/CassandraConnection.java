@@ -241,7 +241,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void close() throws SQLException {
-        if (sessionHolder!= null) {
+        if (sessionHolder != null) {
             this.sessionHolder.release();
         }
         this.isClosed = true;
