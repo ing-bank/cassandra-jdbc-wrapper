@@ -132,7 +132,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
-    private OptionSet optionSet;
+    private final OptionSet optionSet;
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster.
@@ -183,10 +183,24 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         });
     }
 
-    public CassandraConnection(Session cSession, String currentKeyspace, ConsistencyLevel defaultConsistencyLevel, boolean debugMode) {
+    /**
+     * Instantiates a new JDBC connection to a Cassandra cluster using preexisting session.
+     * @param cSession Session to use
+     * @param currentKeyspace Keyspace to use
+     * @param defaultConsistencyLevel Consistency level
+     * @param debugMode Debug mode flag
+     * @param optionSet Compliance mode option set
+     */
+    public CassandraConnection(final Session cSession, final String currentKeyspace, final ConsistencyLevel defaultConsistencyLevel, boolean debugMode, final OptionSet optionSet) {
         this.sessionHolder = null;
         this.connectionProperties = new Properties();
-        this.optionSet = optionSet == null ? lookupOptionSet(null) : optionSet;
+
+        if (optionSet == null) {
+            this.optionSet = lookupOptionSet(null);
+        } else {
+            this.optionSet = optionSet;
+        }
+
         this.currentKeyspace = currentKeyspace;
         this.cSession = cSession;
         this.metadata = cSession.getMetadata();
@@ -538,7 +552,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         return optionSet;
     }
 
-    private OptionSet lookupOptionSet(String property) {
+    private OptionSet lookupOptionSet(final String property) {
         ServiceLoader<OptionSet> loader = ServiceLoader
                 .load(OptionSet.class);
         Iterator<OptionSet> iterator = loader.iterator();
