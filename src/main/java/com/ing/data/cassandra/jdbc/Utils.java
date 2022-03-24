@@ -115,6 +115,10 @@ public final class Utils {
      * JDBC URL parameter key for the configuration file.
      */
     public static final String KEY_CONFIG_FILE = "configfile";
+    /**
+     * JDBC URL parameter key for the compliance mode.
+     */
+    public static final String KEY_COMPLIANCE_MODE = "compliancemode";
 
     public static final String TAG_USER = "user";
     public static final String TAG_PASSWORD = "password";
@@ -135,6 +139,7 @@ public final class Utils {
     public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
     public static final String TAG_CONFIG_FILE = "configFile";
     public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
+    public static final String TAG_COMPLIANCE_MODE = "complianceMode";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
     public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
@@ -305,6 +310,9 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_CONFIG_FILE)) {
                     props.setProperty(TAG_CONFIG_FILE, params.get(KEY_CONFIG_FILE));
+                }
+                if (params.containsKey(KEY_COMPLIANCE_MODE)) {
+                    props.setProperty(TAG_COMPLIANCE_MODE, params.get(KEY_COMPLIANCE_MODE));
                 }
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);

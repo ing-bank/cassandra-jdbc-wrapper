@@ -22,14 +22,26 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.google.common.collect.Maps;
+import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
+import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
+import com.ing.data.cassandra.jdbc.optionset.Default;
+import com.ing.data.cassandra.jdbc.optionset.OptionSet;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientConnectionException;
@@ -38,9 +50,11 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -55,6 +69,7 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_ACTIVE_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.Utils.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
@@ -117,6 +132,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
+    private final OptionSet optionSet;
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster.
@@ -134,6 +150,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.clientInfo = new Properties();
         this.url = PROTOCOL.concat(createSubName(sessionProperties));
         this.currentKeyspace = sessionProperties.getProperty(TAG_DATABASE_NAME);
+        this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
             defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
         final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
@@ -167,6 +184,45 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     /**
+     * Instantiates a new JDBC connection to a Cassandra cluster using preexisting session.
+     * @param cSession Session to use
+     * @param currentKeyspace Keyspace to use
+     * @param defaultConsistencyLevel Consistency level
+     * @param debugMode Debug mode flag
+     * @param optionSet Compliance mode option set
+     */
+    public CassandraConnection(final Session cSession, final String currentKeyspace,
+                               final ConsistencyLevel defaultConsistencyLevel,
+                               final boolean debugMode, final OptionSet optionSet) {
+        this.sessionHolder = null;
+        this.connectionProperties = new Properties();
+
+        if (optionSet == null) {
+            this.optionSet = lookupOptionSet(null);
+        } else {
+            this.optionSet = optionSet;
+        }
+
+        this.currentKeyspace = currentKeyspace;
+        this.cSession = cSession;
+        this.metadata = cSession.getMetadata();
+        this.defaultConsistencyLevel = defaultConsistencyLevel;
+        this.debugMode = debugMode;
+        final List<TypeCodec<?>> codecs = new ArrayList<>();
+        codecs.add(new TimestampToLongCodec());
+        codecs.add(new LongToIntCodec());
+        codecs.add(new IntToLongCodec());
+        codecs.add(new BigintToBigDecimalCodec());
+        codecs.add(new DecimalToDoubleCodec());
+        codecs.add(new FloatToDoubleCodec());
+        codecs.add(new VarintToIntCodec());
+        codecs.add(new SmallintToIntCodec());
+        codecs.add(new TinyintToIntCodec());
+
+        codecs.forEach(codec -> ((DefaultCodecRegistry) cSession.getContext().getCodecRegistry()).register(codec));
+    }
+
+    /**
      * Checks whether the connection is closed.
      *
      * @throws SQLException if the connection is closed.
@@ -187,7 +243,9 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void close() throws SQLException {
-        this.sessionHolder.release();
+        if (sessionHolder != null) {
+            this.sessionHolder.release();
+        }
         this.isClosed = true;
     }
 
@@ -240,20 +298,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String getCatalog() throws SQLException {
         checkNotClosed();
-
-        // It requires a query to table system.local since DataStax driver 4+.
-        // If the query fails, return null.
-        try (final Statement stmt = createStatement()) {
-            final ResultSet rs = stmt.executeQuery("SELECT cluster_name FROM system.local");
-            if (rs.next()) {
-                return rs.getString("cluster_name");
-            }
-        } catch (final SQLException e) {
-            LOG.warn("Unable to retrieve the cluster name.", e);
-            return null;
-        }
-
-        return null;
+        return optionSet.getCatalog();
     }
 
     @Override
@@ -502,6 +547,27 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
         throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
+    }
+
+
+    public OptionSet getOptionSet() {
+        return optionSet;
+    }
+
+    private OptionSet lookupOptionSet(final String property) {
+        final ServiceLoader<OptionSet> loader = ServiceLoader
+                .load(OptionSet.class);
+        final Iterator<OptionSet> iterator = loader.iterator();
+        while (iterator.hasNext()) {
+            final OptionSet optionSet = iterator.next();
+            if (optionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
+                optionSet.setConnection(this);
+                return optionSet;
+            }
+        }
+        final OptionSet optionSet = new Default();
+        optionSet.setConnection(this);
+        return optionSet;
     }
 
 }

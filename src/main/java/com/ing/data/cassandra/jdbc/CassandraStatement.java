@@ -416,8 +416,7 @@ public class CassandraStatement extends AbstractStatement
     public int executeUpdate(final String cql) throws SQLException {
         checkNotClosed();
         doExecute(cql);
-        // There is no updateCount available in Datastax Java driver, so return 0.
-        return 0;
+        return connection.getOptionSet().getSQLUpdateResponse();
     }
 
     @Override

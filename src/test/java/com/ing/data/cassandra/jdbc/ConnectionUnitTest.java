@@ -15,6 +15,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
@@ -29,6 +30,7 @@ import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionP
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
+import com.ing.data.cassandra.jdbc.optionset.Liquibase;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy;
@@ -39,7 +41,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
 import java.net.URL;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
 import java.util.Collections;
@@ -57,6 +62,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -326,6 +332,33 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         sessionHolder.configureSslEngineFactory(cqlSessionBuilder,
             "com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
         verify(cqlSessionBuilder).withSslEngineFactory(any(FakeSslEngineFactory.class));
+    }
+
+    @Test
+    void givenSessionToConnect() throws SQLException {
+        CqlSession session = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress(ConnectionDetails.getHost(), ConnectionDetails.getPort()))
+                .withLocalDatacenter("datacenter1")
+                .build();
+
+        CassandraConnection jdbcConnection = new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null);
+        ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        assertNotNull(resultSet.getString("release_version"));
+        assertEquals(jdbcConnection.getCatalog(), "Test Cluster");
+
+    }
+
+    @Test
+    void givenSessionToConnect_andLiquibaseCompliance() throws SQLException {
+        CqlSession session = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress(ConnectionDetails.getHost(), ConnectionDetails.getPort()))
+                .withLocalDatacenter("datacenter1")
+                .build();
+
+        CassandraConnection jdbcConnection = new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, new Liquibase());
+        ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        assertNotNull(resultSet.getString("release_version"));
+        assertNull(jdbcConnection.getCatalog());
     }
 
 }
