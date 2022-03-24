@@ -553,17 +553,17 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     private OptionSet lookupOptionSet(final String property) {
-        ServiceLoader<OptionSet> loader = ServiceLoader
+        final ServiceLoader<OptionSet> loader = ServiceLoader
                 .load(OptionSet.class);
-        Iterator<OptionSet> iterator = loader.iterator();
+        final Iterator<OptionSet> iterator = loader.iterator();
         while (iterator.hasNext()) {
-            OptionSet optionSet = iterator.next();
+            final OptionSet optionSet = iterator.next();
             if (optionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
                 optionSet.setConnection(this);
                 return optionSet;
             }
         }
-        OptionSet optionSet = new Default();
+        final OptionSet optionSet = new Default();
         optionSet.setConnection(this);
         return optionSet;
     }
