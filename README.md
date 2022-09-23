@@ -91,6 +91,21 @@ public class HelloCassandra {
 }
 ```
 
+If you want to use a pre-existing session, you can directly build a new `CassandraConnection` with the constructor
+`CassandraConnection(Session, String, ConsistencyLevel, debugMode, OptionSet)`. For example:
+
+```java
+public class HelloCassandraWithSession {
+  public static void main(final String[] args) {
+    final CqlSession session = CqlSession.builder()
+      .addContactPoint(new InetSocketAddress("localhost", 9042))
+      .withLocalDatacenter("DC1")
+      .build();
+    final Connection connection = new CassandraConnection(session, "keyspace", ConsistencyLevel.ALL, false, new Default());
+  }
+}
+```
+
 ### Using a configuration file
 
 If you want to use a 
@@ -226,6 +241,23 @@ jdbc:cassandra:dbaas:///keyspace?consistency=LOCAL_QUORUM&user=user1&password=pa
 *Note*: whatever the host(s) given here will be ignored and will be fetched from the cloud secure connect bundle.
 
 For further information about connecting to DBaaS, see [cloud documentation](https://docs.datastax.com/en/developer/java-driver/latest/manual/cloud/).
+
+### Compliance modes
+
+For some specific usages, the default behaviour of some JDBC implementations has to be modified. That's why you can
+use the argument `compliancemode` in the JDBC URL to cutomize the behaviour of some methods.
+
+The values currently allowed for this argument are:
+* `Default`: mode activated by default if not specified in the JDBC URL. It implements the methods detailed below as 
+  defined in the JDBC specification (according to the Cassandra driver capabilities). 
+* `Liquibase`: compliance mode for a usage of the JDBC driver with Liquibase. 
+
+Here are the behaviours defined by the compliance modes listed above:
+
+| Method | Default mode | Liquibase mode |
+|---|---|---|
+| `CassandraConnection.getCatalog()` | returns the result of the query`SELECT cluster_name FROM system.local` or `null` if not available | returns `null` |
+| `CassandraStatement.executeUpdate(String)` | returns 0 | returns -1 |
 
 ### Using simple statements
 

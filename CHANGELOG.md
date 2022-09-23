@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.7.0 - 2022-09-23
+### Added
+- Add a system of compliance mode with the query parameter `compliancemode`: for some usages (for example with 
+  Liquibase), some default behaviours of the JDBC implementation have to be adapted. See the readme file for details 
+  about the overridable behaviours and the available compliance modes. See pull request
+  [#8](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/8).
+- Add an additional `CassandraConnection` constructor using a pre-existing session (see pull request
+  [#8](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/8)).
+### Changed
+- Update DataStax Java Driver for Apache Cassandra(R) to version 4.14.1.
+
 ## 4.6.0 - 2022-03-20
 ### Added
 - Add support for connecting to Cassandra DBaaS cluster with secure connect bundle. 

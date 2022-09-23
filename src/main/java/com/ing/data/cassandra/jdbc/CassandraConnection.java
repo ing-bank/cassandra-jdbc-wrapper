@@ -185,11 +185,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster using preexisting session.
-     * @param cSession Session to use
-     * @param currentKeyspace Keyspace to use
-     * @param defaultConsistencyLevel Consistency level
-     * @param debugMode Debug mode flag
-     * @param optionSet Compliance mode option set
+     *
+     * @param cSession                The session to use.
+     * @param currentKeyspace         The keyspace to use.
+     * @param defaultConsistencyLevel The default consistency level.
+     * @param debugMode               Debug mode flag.
+     * @param optionSet               The compliance mode option set to use.
      */
     public CassandraConnection(final Session cSession, final String currentKeyspace,
                                final ConsistencyLevel defaultConsistencyLevel,
@@ -549,14 +550,17 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
-
+    /**
+     * Gets the compliance mode option set used for the connection.
+     *
+     * @return The compliance mode option set used for the connection.
+     */
     public OptionSet getOptionSet() {
         return optionSet;
     }
 
     private OptionSet lookupOptionSet(final String property) {
-        final ServiceLoader<OptionSet> loader = ServiceLoader
-                .load(OptionSet.class);
+        final ServiceLoader<OptionSet> loader = ServiceLoader.load(OptionSet.class);
         final Iterator<OptionSet> iterator = loader.iterator();
         while (iterator.hasNext()) {
             final OptionSet optionSet = iterator.next();
