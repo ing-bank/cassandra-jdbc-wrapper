@@ -1,9 +1,9 @@
 name: 'Build pipeline'
-trigger:
-  batch: true
-  branches:
-    exclude:
-      - master
+trigger: none
+#  batch: true
+#  branches:
+#    exclude:
+#      - master
 
 pool:
   vmImage: 'ubuntu-latest'
