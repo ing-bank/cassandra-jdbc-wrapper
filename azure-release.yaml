@@ -1,9 +1,9 @@
 name: 'Release pipeline'
-trigger:
-  batch: true
-  branches:
-    include:
-      - master
+trigger: none
+#  batch: true
+#  branches:
+#    include:
+#      - master
 # Never trigger a release from a pull request.
 pr: none
 
