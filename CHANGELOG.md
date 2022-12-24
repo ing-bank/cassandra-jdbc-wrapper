@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- Update DataStax Java Driver for Apache Cassandra(R) to version 4.15.0.
+
 ## 4.7.0 - 2022-09-23
 ### Added
 - Add a system of compliance mode with the query parameter `compliancemode`: for some usages (for example with 
