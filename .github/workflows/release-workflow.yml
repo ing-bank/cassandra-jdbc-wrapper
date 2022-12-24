@@ -42,10 +42,10 @@ jobs:
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1.12.0
-          with:
-            artifacts: "target/cassandra-jdbc-wrapper-${{ env.RELEASE_VERSION }}-bundle.jar"
-            name: "${{ env.RELEASE_VERSION }}"
-            tag: "v${{ env.RELEASE_VERSION }}"
-            body: 'See changes [here](https://github.com/ing-bank/cassandra-jdbc-wrapper/blob/master/CHANGELOG.md#ver---yyyy-MM-dd).'
-            draft: true
-            token: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          artifacts: "target/cassandra-jdbc-wrapper-${{ env.RELEASE_VERSION }}-bundle.jar"
+          name: "${{ env.RELEASE_VERSION }}"
+          tag: "v${{ env.RELEASE_VERSION }}"
+          body: 'See changes [here](https://github.com/ing-bank/cassandra-jdbc-wrapper/blob/master/CHANGELOG.md#ver---yyyy-MM-dd).'
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
