@@ -729,9 +729,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     /**
-     * Retrieves the user name as known to this database.
+     * Retrieves the username as known to this database.
      *
-     * @return The database user name or an empty string if not defined.
+     * @return The database username or an empty string if not defined.
      */
     @Override
     public String getUserName() {

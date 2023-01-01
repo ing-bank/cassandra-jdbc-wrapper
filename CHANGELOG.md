@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Implement the methods `getMetaData()` and `getParameterMetaData()` into the implementation class
+  `CassandraPreparedStatement` of `PreparedStatement` interface. It fixes the issue
+  [#19](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/19) of the [original project].
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.15.0.
 

@@ -176,7 +176,7 @@ public enum DataTypeEnum {
     /**
      * Returns the CQL type name to lower case.
      *
-     * @return the the CQL type name to lower case.
+     * @return The CQL type name to lower case.
      */
     public String asLowercaseCql() {
         return this.cqlType.toLowerCase();

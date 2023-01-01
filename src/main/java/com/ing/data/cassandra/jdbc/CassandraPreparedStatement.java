@@ -302,14 +302,12 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        // TODO: method to implement
-        return null;
+        return this.getResultSet().getMetaData();
     }
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        // TODO: method to implement
-        return null;
+        return new CassandraParameterMetaData(this.boundStatement, this.count);
     }
 
     @Override
