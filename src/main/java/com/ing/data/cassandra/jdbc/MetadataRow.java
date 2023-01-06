@@ -180,6 +180,9 @@ public class MetadataRow {
      * @throws NumberFormatException if the value is not a parsable {@code int} value.
      */
     public int getInt(final int i) {
+        if (isNull(i)) {
+            return 0;
+        }
         return Integer.parseInt(this.entries.get(i));
     }
 
