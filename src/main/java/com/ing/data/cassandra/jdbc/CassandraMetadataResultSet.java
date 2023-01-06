@@ -370,24 +370,36 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public boolean getBoolean(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return false;
+        }
         return this.currentRow.getBool(columnIndex - 1);
     }
 
     @Override
     public boolean getBoolean(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return false;
+        }
         return this.currentRow.getBool(columnLabel);
     }
 
     @Override
     public byte getByte(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return (byte) 0;
+        }
         return this.currentRow.getByte(columnIndex - 1);
     }
 
     @Override
     public byte getByte(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return (byte) 0;
+        }
         return this.currentRow.getByte(columnLabel);
     }
 
@@ -452,6 +464,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public double getDouble(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return (double) 0;
+        }
         if (isCqlType(columnIndex, DataTypeEnum.FLOAT)) {
             return this.currentRow.getFloat(columnIndex - 1);
         }
@@ -461,6 +476,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public double getDouble(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return (double) 0;
+        }
         if (isCqlType(columnLabel, DataTypeEnum.FLOAT)) {
             return this.currentRow.getFloat(columnLabel);
         }
@@ -515,12 +533,18 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public float getFloat(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return (float) 0;
+        }
         return this.currentRow.getFloat(columnIndex - 1);
     }
 
     @Override
     public float getFloat(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return (float) 0;
+        }
         return this.currentRow.getFloat(columnLabel);
     }
 
@@ -534,12 +558,18 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public int getInt(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return 0;
+        }
         return this.currentRow.getInt(columnIndex - 1);
     }
 
     @Override
     public int getInt(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return 0;
+        }
         return this.currentRow.getInt(columnLabel);
     }
 
@@ -582,6 +612,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public long getLong(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return (long) 0;
+        }
         if (isCqlType(columnIndex, DataTypeEnum.INT)) {
             return this.currentRow.getInt(columnIndex - 1);
         } else if (isCqlType(columnIndex, DataTypeEnum.VARINT)) {
@@ -594,6 +627,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public long getLong(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return (long) 0;
+        }
         if (isCqlType(columnLabel, DataTypeEnum.INT)) {
             return this.currentRow.getInt(columnLabel);
         } else if (isCqlType(columnLabel, DataTypeEnum.VARINT)) {
@@ -798,12 +834,18 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public short getShort(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
+        if (wasNull) {
+            return (short) 0;
+        }
         return this.currentRow.getShort(columnIndex - 1);
     }
 
     @Override
     public short getShort(final String columnLabel) throws SQLException {
         checkName(columnLabel);
+        if (wasNull) {
+            return (short) 0;
+        }
         return this.currentRow.getShort(columnLabel);
     }
 

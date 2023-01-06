@@ -871,4 +871,30 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         statementSelect.close();
     }
 
+    @Test
+    void testIngIssue10() throws Exception {
+        final DatabaseMetaData md = sqlConnection.getMetaData();
+
+        final String COLUMN = "keyname";
+
+        ResultSet result;
+
+        result = md.getColumns(sqlConnection.getCatalog(), KEYSPACE, TABLE, null);
+        assertTrue(result.next());
+        assertEquals(TABLE, result.getString("TABLE_NAME"));
+        // Check column names and types.
+        assertEquals(COLUMN, result.getString("COLUMN_NAME"));
+        assertEquals(false, result.wasNull());
+
+        // The underlying value of the DECIMAL_DIGITS field is null, so
+        // getInt should return 0, but wasNull should be true
+        assertEquals(0, result.getInt("DECIMAL_DIGITS"));
+        assertEquals(true, result.wasNull());
+
+        // Get another field to ensure wasNull is reset to false
+        assertEquals(Types.VARCHAR, result.getInt("DATA_TYPE"));
+        assertEquals(false, result.wasNull());
+
+        result.close();
+    }
 }
