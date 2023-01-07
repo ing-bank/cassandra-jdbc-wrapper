@@ -5,9 +5,7 @@ on:
   push:
     branches:
       - 'master'
-  # Never trigger a release from a pull request.
-  pull_request:
-    branches-ignore: '*'
+  # Never trigger a release build from a pull request.
 
 jobs:
   build:
