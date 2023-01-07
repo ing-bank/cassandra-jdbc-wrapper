@@ -41,7 +41,7 @@ public class CassandraParameterMetaData implements ParameterMetaData {
     }
 
     private String getParameterCqlType(final int i) {
-        return DataTypeEnum.cqlName(this.boundStatement.getType(i));
+        return DataTypeEnum.cqlName(this.boundStatement.getType(i - 1));
     }
 
     private AbstractJdbcType<?> getParameterJdbcType(final int i) {

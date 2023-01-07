@@ -79,3 +79,18 @@ bValue boolean,
 iValue int);
 
 CREATE INDEX ON test_keyspace3.regressions_test (iValue);
+
+/* Init keyspaces and tables for PreparedStatementsUnitTest */
+DROP KEYSPACE IF EXISTS test_prep_stmt;
+CREATE KEYSPACE "test_prep_stmt" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+USE test_prep_stmt;
+CREATE COLUMNFAMILY cf_test_ps (
+keyname text PRIMARY KEY,
+t1bValue boolean,
+t1iValue int);
+CREATE INDEX ON test_prep_stmt.cf_test_ps (t1bValue);
+
+INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow1', true, 0);
+INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow2', false, 0);
+INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow3', true, 5);
