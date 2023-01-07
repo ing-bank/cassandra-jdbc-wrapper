@@ -477,6 +477,7 @@ public final class MetadataResultSets {
      * {@link DatabaseMetaData#getIndexInfo(String, String, String, boolean, boolean)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
+    @SuppressWarnings("unused")
     public CassandraMetadataResultSet makeIndexes(final CassandraStatement statement, final String schema,
                                                   final String tableName, final boolean unique,
                                                   final boolean approximate) throws SQLException {

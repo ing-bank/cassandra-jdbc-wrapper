@@ -131,7 +131,7 @@ public class MetadataRow {
      * Retrieves the value of the {@code i}th column of the metadata row as {@code byte}.
      *
      * @param i The column index (the first column is 0).
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public byte getByte(final int i) {
@@ -142,7 +142,7 @@ public class MetadataRow {
      * Retrieves the value of the column {@code name} of the metadata row as {@code byte}.
      *
      * @param name The column name.
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      */
     public byte getByte(final String name) {
@@ -153,7 +153,7 @@ public class MetadataRow {
      * Retrieves the value of the {@code i}th column of the metadata row as {@code short}.
      *
      * @param i The column index (the first column is 0).
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public short getShort(final int i) {
@@ -164,7 +164,7 @@ public class MetadataRow {
      * Retrieves the value of the column {@code name} of the metadata row as {@code short}.
      *
      * @param name The column name.
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      */
     public short getShort(final String name) {
@@ -175,7 +175,7 @@ public class MetadataRow {
      * Retrieves the value of the {@code i}th column of the metadata row as {@code int}.
      *
      * @param i The column index (the first column is 0).
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      * @throws NumberFormatException if the value is not a parsable {@code int} value.
      */
@@ -190,7 +190,7 @@ public class MetadataRow {
      * Retrieves the value of the column {@code name} of the metadata row as {@code int}.
      *
      * @param name The column name.
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      * @throws NumberFormatException if the value is not a parsable {@code int} value.
      */
@@ -202,11 +202,14 @@ public class MetadataRow {
      * Retrieves the value of the {@code i}th column of the metadata row as {@code long}.
      *
      * @param i The column index (the first column is 0).
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      * @throws NumberFormatException if the value is not a parsable {@code long} value.
      */
     public long getLong(final int i) {
+        if (isNull(i)) {
+            return 0;
+        }
         return Long.parseLong(this.entries.get(i));
     }
 
@@ -214,7 +217,7 @@ public class MetadataRow {
      * Retrieves the value of the column {@code name} of the metadata row as {@code long}.
      *
      * @param name The column name.
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      * @throws NumberFormatException if the value is not a parsable {@code long} value.
      */
