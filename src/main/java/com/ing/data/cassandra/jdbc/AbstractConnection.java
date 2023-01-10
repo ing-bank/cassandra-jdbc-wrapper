@@ -26,16 +26,18 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Struct;
+import java.sql.Wrapper;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 
 /**
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
  * methods of {@link java.sql.Connection} interface.
  */
-abstract class AbstractConnection {
+abstract class AbstractConnection implements Wrapper {
     public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -118,4 +120,17 @@ abstract class AbstractConnection {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    @Override
+    public boolean isWrapperFor(final Class<?> iface) {
+        return iface != null && iface.isAssignableFrom(this.getClass());
+    }
+
+    @Override
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
+            return (T) this;
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+        }
+    }
 }

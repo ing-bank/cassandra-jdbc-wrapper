@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -896,5 +897,34 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         assertEquals(false, result.wasNull());
 
         result.close();
+    }
+
+    @Test
+    void testIngIssue13() throws Exception {
+
+        assertTrue(
+            sqlConnection.isWrapperFor(Connection.class),
+            "Cassandra connection can be assigned to Connection");
+        assertTrue(
+            sqlConnection.isWrapperFor(AbstractConnection.class),
+            "Cassandra connection can be assigned to AbstractConnection");
+        assertTrue(
+            sqlConnection.isWrapperFor(CassandraConnection.class),
+            "Cassandra connection can be assigned to CassandraConnection");
+
+        assertFalse(
+            sqlConnection.isWrapperFor(String.class),
+            "Cassandra connection cannot be assigned to String");
+        assertFalse(
+            sqlConnection.isWrapperFor(null),
+            "Type not provided for wrapper check");
+
+        assertEquals(
+            sqlConnection.unwrap(Connection.class),
+            sqlConnection,
+            "Cassandra connection can be assigned to Connection");
+        assertThrows(SQLException.class,
+            ()-> sqlConnection.unwrap(String.class),
+            "Cassandra connection can be assigned to Connection");
     }
 }

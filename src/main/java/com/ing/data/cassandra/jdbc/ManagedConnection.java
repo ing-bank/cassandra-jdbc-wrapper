@@ -328,11 +328,6 @@ class ManagedConnection extends AbstractConnection implements Connection {
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
-        return false;
-    }
-
-    @Override
     public String nativeSQL(final String sql) throws SQLException {
         checkNotClosed();
         try {
@@ -372,11 +367,6 @@ class ManagedConnection extends AbstractConnection implements Connection {
             this.pooledCassandraConnection.connectionErrorOccurred(sqlException);
             throw sqlException;
         }
-    }
-
-    @Override
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        throw new SQLFeatureNotSupportedException(String.format(Utils.NO_INTERFACE, iface.getSimpleName()));
     }
 
 }
