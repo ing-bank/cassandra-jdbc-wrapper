@@ -900,7 +900,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
     }
 
     @Test
-    void testIngIssue13() throws Exception {
+    void testIngIssue13_Connection() throws Exception {
 
         assertTrue(
             sqlConnection.isWrapperFor(Connection.class),
@@ -922,9 +922,44 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         assertEquals(
             sqlConnection.unwrap(Connection.class),
             sqlConnection,
-            "Cassandra connection can be assigned to Connection");
+            "Cassandra connection can be unwrapped to Connection");
         assertThrows(SQLException.class,
             ()-> sqlConnection.unwrap(String.class),
-            "Cassandra connection can be assigned to Connection");
+            "Cassandra connection cannot be unwrapped to String");
+    }
+
+    @Test
+    void testIngIssue13_ResultSet() throws Exception {
+
+        try (final Statement statement = sqlConnection.createStatement();
+            final ResultSet result = statement.executeQuery(
+                    "SELECT bValue, iValue FROM regressions_test " +
+                    "WHERE keyname = 'key0';");) {
+
+            assertTrue(
+                result.isWrapperFor(ResultSet.class),
+                "Cassandra results can be assigned to ResultSet");
+            assertTrue(
+                result.isWrapperFor(AbstractResultSet.class),
+                "Cassandra results can be assigned to AbstractResultSet");
+            assertTrue(
+                result.isWrapperFor(CassandraResultSet.class),
+                "Cassandra results can be assigned to CassandraResultSet");
+
+            assertFalse(
+                result.isWrapperFor(String.class),
+                "Cassandra results cannot be assigned to String");
+            assertFalse(
+                result.isWrapperFor(null),
+                "Type not provided for wrapper check");
+
+            assertEquals(
+                result.unwrap(ResultSet.class),
+                result,
+                "Cassandra results can be unwrapped to ResultSet");
+            assertThrows(SQLException.class,
+                ()-> result.unwrap(String.class),
+                "Cassandra results cannot be unwrapped to String");
+        }
     }
 }

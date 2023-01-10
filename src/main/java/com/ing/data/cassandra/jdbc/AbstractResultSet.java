@@ -34,16 +34,18 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Wrapper;
 import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 
 /**
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
  * methods of {@link java.sql.ResultSet} interface. It also provides helper methods for CQL type management in the
  * implementation of {@link java.sql.ResultSet} interface.
  */
-abstract class AbstractResultSet {
+abstract class AbstractResultSet  implements Wrapper {
 
     /**
      * Checks whether the {@code i}th column has the given CQL data type.
@@ -559,5 +561,19 @@ abstract class AbstractResultSet {
 
     public void updateTimestamp(final String columnLabel, final Timestamp x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    @Override
+    public boolean isWrapperFor(final Class<?> iface) {
+        return iface != null && iface.isAssignableFrom(this.getClass());
+    }
+
+    @Override
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
+            return (T) this;
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+        }
     }
 }
