@@ -25,14 +25,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
+import java.sql.Wrapper;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 
 /**
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
  * methods of {@link java.sql.Statement} and {@link java.sql.PreparedStatement} interfaces.
  */
-abstract class AbstractStatement {
+abstract class AbstractStatement implements Wrapper {
 
     /*
      * From the Statement implementation.
@@ -165,4 +167,18 @@ abstract class AbstractStatement {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+
+    @Override
+    public boolean isWrapperFor(final Class<?> iface)  throws SQLException {
+        return iface != null && iface.isAssignableFrom(this.getClass());
+    }
+
+    @Override
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
+            return (T) this;
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+        }
+    }
 }

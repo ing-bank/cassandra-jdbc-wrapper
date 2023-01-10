@@ -929,6 +929,38 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
     }
 
     @Test
+    void testIngIssue13_Statement() throws Exception {
+
+        try (final Statement statement = sqlConnection.createStatement();) {
+
+            assertTrue(
+                statement.isWrapperFor(Statement.class),
+                "Cassandra statement can be assigned to Statement");
+            assertTrue(
+                statement.isWrapperFor(AbstractStatement.class),
+                "Cassandra statement can be assigned to AbstractStatement");
+            assertTrue(
+                statement.isWrapperFor(CassandraStatement.class),
+                "Cassandra statement can be assigned to CassandraStatement");
+
+            assertFalse(
+                statement.isWrapperFor(String.class),
+                "Cassandra statement cannot be assigned to String");
+            assertFalse(
+                statement.isWrapperFor(null),
+                "Type not provided for wrapper check");
+
+            assertEquals(
+                statement.unwrap(Statement.class),
+                statement,
+                "Cassandra statement can be unwrapped to Statement");
+            assertThrows(SQLException.class,
+                ()-> statement.unwrap(String.class),
+                "Cassandra statement cannot be unwrapped to String");
+        }
+    }
+
+    @Test
     void testIngIssue13_ResultSet() throws Exception {
 
         try (final Statement statement = sqlConnection.createStatement();
