@@ -651,11 +651,6 @@ public class CassandraStatement extends AbstractStatement
         checkNotClosed();
     }
 
-    @Override
-    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
-        return false;
-    }
-
     /**
      * Resets the current result set for this statement.
      */
@@ -669,14 +664,6 @@ public class CassandraStatement extends AbstractStatement
         checkNotClosed();
         // The Cassandra implementation does not currently take this into account.
         this.escapeProcessing = enable;
-    }
-
-    @Override
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        if (iface.isInstance(this)) {
-            return iface.cast(this);
-        }
-        throw new SQLFeatureNotSupportedException(String.format(Utils.NO_INTERFACE, iface.getSimpleName()));
     }
 
 }

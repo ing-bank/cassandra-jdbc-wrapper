@@ -478,11 +478,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> arg0) {
-        return false;
-    }
-
-    @Override
     public String nativeSQL(final String sql) throws SQLException {
         // The rationale is there is no distinction between grammars in this implementation, so we just return the
         // input argument or throw an exception when called on closed connection.
@@ -543,11 +538,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String toString() {
         return "CassandraConnection [connectionProperties=" + connectionProperties + "]";
-    }
-
-    @Override
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
     /**

@@ -979,11 +979,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> iface) {
-        return CassandraResultSetExtras.class.isAssignableFrom(iface);
-    }
-
-    @Override
     public boolean last() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -1010,15 +1005,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public boolean relative(final int arg0) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        if (iface.equals(CassandraResultSetExtras.class)) {
-            return (T) this;
-        }
-        throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
     @Override
