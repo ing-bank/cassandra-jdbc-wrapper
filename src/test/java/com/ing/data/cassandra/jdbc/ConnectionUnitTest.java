@@ -344,8 +344,7 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         CassandraConnection jdbcConnection = new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null);
         ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
-        assertEquals(jdbcConnection.getCatalog(), "Test Cluster");
-
+        assertEquals("Test Cluster", jdbcConnection.getCatalog());
     }
 
     @Test
