@@ -129,7 +129,7 @@ steps:
       tagSource: manual
       tag: 'v$(artifactVersion)'
       title: $(artifactVersion)
-      releaseNotesSource: input  #TODO: improve the generation of the release notes link by using bash to parse changelog.
+      releaseNotesSource: input
       releaseNotes: 'See changes [here](https://github.com/ing-bank/cassandra-jdbc-wrapper/blob/master/CHANGELOG.md#ver---yyyy-MM-dd).'
       assets: $(Build.SourcesDirectory)/target/cassandra-jdbc-wrapper-$(artifactVersion)-bundle.jar
       isDraft: true

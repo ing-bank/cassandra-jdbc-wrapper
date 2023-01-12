@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.7.0</version>
+    <version>4.8.0</version>
 	<packaging>jar</packaging>
 
 	<name>Cassandra JDBC Wrapper</name>
@@ -29,6 +29,7 @@
 	<developers>
         <developer>
 			<id>maximevw</id>
+            <url>https://github.com/maximevw</url>
 			<name>Maxime Wiewiora</name>
 			<roles>
 				<role>developer</role>
@@ -55,6 +56,13 @@
         <contributor>
             <name>Marius Jokubauskas</name>
             <url>https://github.com/mjok</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Sualeh Fatehi</name>
+            <url>https://github.com/sualeh</url>
             <roles>
                 <role>developer</role>
             </roles>

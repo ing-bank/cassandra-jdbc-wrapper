@@ -4,13 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 4.8.0 - Unreleased
+## 4.8.0 - 2023-01-12
 ### Added
 - Implement the methods `getMetaData()` and `getParameterMetaData()` into the implementation class
   `CassandraPreparedStatement` of `PreparedStatement` interface. It fixes the issue
   [#19](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/19) of the [original project].
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.15.0.
+- Fully implement methods from `Wrapper` interface for Cassandra connections, results sets and statements (see pull 
+  request [#14](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/14)).
 ### Fixed
 - Fix the implementations of the methods `getInt(int)` and `getLong(int)` in `MetadataRow` and used in the class
   `CassandraMetadataResultSet` to be compliant with the JDBC API specifications (see pull request
