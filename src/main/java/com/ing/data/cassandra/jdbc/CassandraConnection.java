@@ -65,7 +65,6 @@ import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
 import static com.ing.data.cassandra.jdbc.Utils.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.Utils.BAD_TIMEOUT;
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_ACTIVE_CQL_VERSION;
@@ -77,23 +76,17 @@ import static com.ing.data.cassandra.jdbc.Utils.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
 import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.Utils.createSubName;
+import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
 
 /**
  * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra cluster.
  */
 public class CassandraConnection extends AbstractConnection implements Connection {
 
-    /**
-     * The database product name.
-     */
-    public static final String DB_PRODUCT_NAME = "Cassandra";
-    /**
-     * The default CQL language version supported by the driver.
-     */
-    public static final String DEFAULT_CQL_VERSION = "3.0.0";
-
     // Minimal Apache Cassandra version supported by the DataStax Java Driver for Apache Cassandra on top which this
     // wrapper is built.
+    // If available, the effective version run by the node on which the connection is established will override these
+    // values.
     /**
      * Minimal Apache Cassandra major version supported by the DataStax Java Driver for Apache Cassandra.
      */
@@ -153,7 +146,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
             defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
-        final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION, DEFAULT_CQL_VERSION);
+        final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION,
+            getDriverProperty("database.defaultCqlVersion"));
         this.connectionProperties.setProperty(TAG_ACTIVE_CQL_VERSION, cqlVersion);
         this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,

@@ -46,10 +46,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
-import java.sql.Statement;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
@@ -65,6 +65,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -365,6 +366,34 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
         assertNull(jdbcConnection.getCatalog());
+    }
+
+    @Test
+    void givenConnection_whenGetMetaData_getExpectedResultSet() throws Exception {
+        initConnection(KEYSPACE);
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getMetaData());
+
+        final DatabaseMetaData dbMetadata = sqlConnection.getMetaData();
+        log.debug("====================================================");
+        log.debug("Connection Metadata");
+        log.debug("====================================================");
+        log.debug("Driver name: {}", dbMetadata.getDriverName());
+        log.debug("Driver version: {}", dbMetadata.getDriverVersion());
+        log.debug("DB name: {}", dbMetadata.getDatabaseProductName());
+        log.debug("DB version: {}", dbMetadata.getDatabaseProductVersion());
+        log.debug("JDBC version: {}.{}", dbMetadata.getJDBCMajorVersion(), dbMetadata.getJDBCMinorVersion());
+        log.debug("====================================================");
+
+        assertEquals("Cassandra JDBC Driver", dbMetadata.getDriverName());
+        assertNotEquals(0, dbMetadata.getDriverMajorVersion());
+        assertNotEquals(0, dbMetadata.getDriverMinorVersion());
+        assertEquals(4, dbMetadata.getJDBCMajorVersion());
+        assertEquals(0, dbMetadata.getJDBCMinorVersion());
+        assertEquals("Cassandra", dbMetadata.getDatabaseProductName());
+        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
+        assertThat(dbMetadata.getDatabaseProductVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
+        sqlConnection.close();
     }
 
 }

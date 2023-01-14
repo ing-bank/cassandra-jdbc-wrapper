@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -36,10 +37,11 @@ import static com.ing.data.cassandra.jdbc.Utils.DEFAULT_PORT;
 import static com.ing.data.cassandra.jdbc.Utils.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.Utils.HOST_REQUIRED;
 import static com.ing.data.cassandra.jdbc.Utils.SECURECONENCTBUNDLE_REQUIRED;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_PORT_NUMBER;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_SERVER_NAME;
 import static com.ing.data.cassandra.jdbc.Utils.URI_IS_SIMPLE;
+import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -241,5 +243,22 @@ class UtilsUnitTest {
         final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
             () -> Utils.parseURL(jdbcUrl));
         assertEquals(SECURECONENCTBUNDLE_REQUIRED, exception.getMessage());
+    }
+
+    @Test
+    void testGetDriverProperty() {
+        assertEquals(StringUtils.EMPTY, getDriverProperty("invalidProperty"));
+        assertNotNull(getDriverProperty("driver.name"));
+    }
+
+    @Test
+    void testParseVersion() {
+        assertEquals(0, parseVersion(StringUtils.EMPTY, 0));
+        assertEquals(0, parseVersion("1.0.0", 3));
+        assertEquals(0, parseVersion("1.0.0", -1));
+        assertEquals(1, parseVersion("1.2.3", 0));
+        assertEquals(2, parseVersion("1.2.3", 1));
+        assertEquals(3, parseVersion("1.2.3", 2));
+        assertEquals(0, parseVersion("1.a", 1));
     }
 }

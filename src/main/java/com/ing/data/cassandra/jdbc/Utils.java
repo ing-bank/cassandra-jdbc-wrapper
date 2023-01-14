@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -54,6 +56,11 @@ public final class Utils {
      * Default Cassandra cluster port.
      */
     public static final int DEFAULT_PORT = 9042;
+    /**
+     * Properties file name containing some properties relative to this JDBC wrapper (such as JDBC driver version,
+     * name, etc.).
+     */
+    public static final String JDBC_DRIVER_PROPERTIES_FILE = "jdbc-driver.properties";
 
     /**
      * JDBC URL parameter key for the database version.
@@ -195,6 +202,48 @@ public final class Utils {
 
     private Utils() {
         // Private constructor to hide the public one.
+    }
+
+    /**
+     * Gets a property value from the Cassandra JDBC driver properties file.
+     *
+     * @param name The name of the property.
+     * @return The property value or an empty string the value cannot be retrieved.
+     */
+    public static String getDriverProperty(final String name) {
+        try (final InputStream propertiesFile =
+                 Utils.class.getClassLoader().getResourceAsStream(JDBC_DRIVER_PROPERTIES_FILE)) {
+            final Properties driverProperties = new Properties();
+            driverProperties.load(propertiesFile);
+            return driverProperties.getProperty(name, StringUtils.EMPTY);
+        } catch (IOException ex) {
+            LOG.error("Unable to get JDBC driver property: {}.", name, ex);
+            return StringUtils.EMPTY;
+        }
+    }
+
+    /**
+     * Gets a part of a version string.
+     * <p>
+     *     It uses the dot character as separator to parse the different parts of a version (major, minor, patch).
+     * </p>
+     *
+     * @param version The version string (for example X.Y.Z).
+     * @param part The part of the version to extract (for the semantic versioning, use 0 for the major version, 1 for
+     *             the minor and 2 for the patch).
+     * @return The requested part of the version, or 0 if the requested part cannot be parsed correctly.
+     */
+    public static int parseVersion(final String version, final int part) {
+        if (StringUtils.isBlank(version) || StringUtils.countMatches(version, ".") < part || part < 0 ) {
+            return 0;
+        } else {
+            try {
+                return Integer.parseInt(version.split("\\.")[part]);
+            } catch (final NumberFormatException ex) {
+                LOG.error("Unable to parse version: {}", version);
+                return 0;
+            }
+        }
     }
 
     /**

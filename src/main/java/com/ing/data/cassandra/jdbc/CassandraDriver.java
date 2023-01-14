@@ -37,29 +37,14 @@ import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
+import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
 
 /**
  * The Cassandra driver implementation.
  */
 @SuppressWarnings("UnstableApiUsage")
 public class CassandraDriver implements Driver {
-
-    /**
-     * The JDBC driver major version.
-     */
-    public static final int DRIVER_MAJOR_VERSION = 4;
-    /**
-     * The JDBC driver minor version.
-     */
-    public static final int DRIVER_MINOR_VERSION = 4;
-    /**
-     * The JDBC driver patch version.
-     */
-    public static final int DRIVER_PATCH_VERSION = 0;
-    /**
-     * The JDBC driver name.
-     */
-    public static final String DRIVER_NAME = "Cassandra JDBC Driver";
 
     static {
         // Register the CassandraDriver with DriverManager.
@@ -124,12 +109,12 @@ public class CassandraDriver implements Driver {
 
     @Override
     public int getMajorVersion() {
-        return DRIVER_MAJOR_VERSION;
+        return parseVersion(getDriverProperty("driver.version"), 0);
     }
 
     @Override
     public int getMinorVersion() {
-        return DRIVER_MINOR_VERSION;
+        return parseVersion(getDriverProperty("driver.version"), 1);
     }
 
     @Override

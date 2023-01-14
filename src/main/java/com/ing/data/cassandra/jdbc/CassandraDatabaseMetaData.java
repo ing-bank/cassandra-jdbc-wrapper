@@ -28,14 +28,14 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLSyntaxErrorException;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
 
 /**
  * Cassandra database metadata: implementation class for {@link DatabaseMetaData}.
  */
 public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
-    static final int JDBC_MAJOR_VERSION = 4;
-    static final int JDBC_MINOR_VERSION = 0;
     static final int UNKNOWN_MAX_VALUE = 0;
     static final int KEYSPACE_NAME_MAX_LENGTH = 48;
     static final int TABLE_NAME_MAX_LENGTH = 48;
@@ -223,7 +223,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductName() {
-        return CassandraConnection.DB_PRODUCT_NAME;
+        return getDriverProperty("database.productName");
     }
 
     /**
@@ -250,23 +250,22 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDriverMajorVersion() {
-        return CassandraDriver.DRIVER_MAJOR_VERSION;
+        return parseVersion(getDriverVersion(), 0);
     }
 
     @Override
     public int getDriverMinorVersion() {
-        return CassandraDriver.DRIVER_MINOR_VERSION;
+        return parseVersion(getDriverVersion(), 1);
     }
 
     @Override
     public String getDriverName() {
-        return CassandraDriver.DRIVER_NAME;
+        return getDriverProperty("driver.name");
     }
 
     @Override
     public String getDriverVersion() {
-        return String.format("%d.%d.%d", CassandraDriver.DRIVER_MAJOR_VERSION, CassandraDriver.DRIVER_MINOR_VERSION,
-            CassandraDriver.DRIVER_PATCH_VERSION);
+        return getDriverProperty("driver.version");
     }
 
     /**
@@ -358,12 +357,12 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getJDBCMajorVersion() {
-        return JDBC_MAJOR_VERSION;
+        return parseVersion(getDriverProperty("driver.jdbcVersion"), 0);
     }
 
     @Override
     public int getJDBCMinorVersion() {
-        return JDBC_MINOR_VERSION;
+        return parseVersion(getDriverProperty("driver.jdbcVersion"), 1);
     }
 
     @Override
