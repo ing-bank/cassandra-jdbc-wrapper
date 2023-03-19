@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -43,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Map
  * Set
  */
-class CollectionsUnitTest extends UsingEmbeddedCassandraServerTest {
+class CollectionsUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace_coll";
 

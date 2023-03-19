@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Force to execute tests in a certain order to avoid "NoNodeAvailableException: No node was available to execute the
 // query" if several tests are executed simultaneously.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class BatchStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
+class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace_batch";
     private static CassandraConnection sqlConnection2 = null;
@@ -44,8 +44,7 @@ class BatchStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
-        sqlConnection2 = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE, "version=3.0.0",
-            "localdatacenter=datacenter1");
+        sqlConnection2 = newConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
     }
 
     @AfterAll
@@ -56,7 +55,7 @@ class BatchStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
         if (sqlConnection2 != null) {
             sqlConnection2.close();
         }
-        BuildCassandraServer.stopServer();
+        cassandraContainer.stop();
     }
 
     @Test

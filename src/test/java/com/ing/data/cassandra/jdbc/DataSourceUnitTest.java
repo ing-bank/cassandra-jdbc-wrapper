@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -25,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
+class DataSourceUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace";
     private static final String USER = "testuser";
@@ -35,17 +34,17 @@ class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
-        final CassandraDataSource cds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT,
-            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
-        assertEquals(BuildCassandraServer.HOST, cds.getServerName());
-        assertEquals(BuildCassandraServer.PORT, cds.getPortNumber());
+        final CassandraDataSource cds = new CassandraDataSource(
+            "localhost", 9042, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+        assertEquals("localhost", cds.getServerName());
+        assertEquals(9042, cds.getPortNumber());
         assertEquals(KEYSPACE, cds.getDatabaseName());
         assertEquals(USER, cds.getUser());
         assertEquals(PASSWORD, cds.getPassword());
         assertEquals(VERSION, cds.getVersion());
 
-        final DataSource ds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            USER, PASSWORD, VERSION, CONSISTENCY);
+        final DataSource ds = new CassandraDataSource(cassandraContainer.getContactPoint().getHostName(),
+            cassandraContainer.getContactPoint().getPort(), KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
         assertNotNull(ds);
 
         // null username and password
@@ -65,8 +64,9 @@ class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenCassandraDataSource_whenIsWrapperFor_returnExpectedValue() throws Exception {
-        final DataSource ds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            USER, PASSWORD, VERSION, CONSISTENCY);
+        final DataSource ds = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
 
         // Assert it is a wrapper for DataSource.
         assertTrue(ds.isWrapperFor(DataSource.class));
@@ -77,15 +77,17 @@ class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenCassandraDataSource_whenUnwrap_returnUnwrappedDatasource() throws Exception {
-        final DataSource ds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            USER, PASSWORD, VERSION, CONSISTENCY);
+        final DataSource ds = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
         assertNotNull(ds.unwrap(DataSource.class));
     }
 
     @Test
     void givenCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
-        final DataSource ds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            USER, PASSWORD, VERSION, CONSISTENCY);
+        final DataSource ds = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
         assertThrows(SQLException.class, () -> ds.unwrap(this.getClass()));
     }
 }

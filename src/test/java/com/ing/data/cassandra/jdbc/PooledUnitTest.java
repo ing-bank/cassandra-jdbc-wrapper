@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -29,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
+class PooledUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace_pool";
     private static final String USER = "testuser";
@@ -40,8 +39,9 @@ class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
-            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
 
         for (int i = 0; i < 2_000_000; i++) {
@@ -54,8 +54,9 @@ class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenPooledDataSource_whenExecute5ThousandsPreparedStatements_getExpectedResults() throws Exception {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
-            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
 
@@ -77,8 +78,9 @@ class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenPooledDataSource_whenExecuteStatement_getExpectedResults() throws Exception {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
-            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
         final Statement statement = connection.createStatement();
@@ -94,15 +96,17 @@ class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenPooledCassandraDataSource_whenUnwrap_returnUnwrappedDataSource() throws Exception {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
-            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         assertNotNull(connectionPoolDataSource.unwrap(DataSource.class));
     }
 
     @Test
     void givenPooledCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
-            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         assertThrows(SQLException.class, () -> connectionPoolDataSource.unwrap(this.getClass()));
     }
 }

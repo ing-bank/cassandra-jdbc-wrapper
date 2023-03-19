@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -65,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * These tests of non-regression are those existing in the
  * <a href="https://github.com/adejanovski/cassandra-jdbc-wrapper/">original project from GitHub</a>.
  */
-class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
+class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
     private static final Logger log = LoggerFactory.getLogger(JdbcRegressionUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace3";
@@ -76,13 +75,13 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
 
         // Update cluster name according to the configured name.
-        try (final Statement statement = sqlConnection.createStatement()) {
-            final String configuredClusterName = BuildCassandraServer.server.getNativeCluster().getClusterName();
+       /* try (final Statement statement = sqlConnection.createStatement()) {
+            final String configuredClusterName = cassandraContainer.getEnvMap().get("CASSANDRA_CLUSTER_NAME");
             statement.execute("UPDATE system.local SET cluster_name = '" + configuredClusterName
                 + "' WHERE key = 'local'");
         } catch (final SQLException e) {
             log.error("Cannot update cluster_name in system.local table.", e);
-        }
+        } */
     }
 
     private static CassandraStatementExtras statementExtras(final Statement statement) throws Exception {
@@ -108,8 +107,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
     @Test
     void testIssue18() throws Exception {
         sqlConnection.close();
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
         final Statement statement = sqlConnection.createStatement();
 
         final String truncateQuery = "TRUNCATE regressions_test;";
@@ -163,8 +161,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         // Paraphrase of the snippet from the issue #33 provided test.
         final PreparedStatement stmt2 = sqlConnection.prepareStatement("UPDATE t33 SET col1 = ? WHERE keyValue = 123;");
@@ -239,8 +236,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final PreparedStatement stmt2 = sqlConnection.prepareStatement("UPDATE t59 SET col1 = ? WHERE keyValue = 123;",
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -268,8 +264,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final Statement stmt2 = sqlConnection.createStatement();
         final String insertQuery = "INSERT INTO t65 (keyValue, int1, int2, intSet) "
@@ -320,8 +315,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1&consistency=QUORUM");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1&consistency=QUORUM");
 
         // At this point consistency level should be set the QUORUM in the connection.
         stmt = sqlConnection.createStatement();
@@ -343,8 +337,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final String insertQuery = "INSERT INTO t74 (id, col1) VALUES (?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
@@ -435,8 +428,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final String insertQuery = "INSERT INTO t80(bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
             + "double_col, float_col, inet_col, int_col, text_col, timestamp_col, uuid_col, timeuuid_col, varchar_col, "
@@ -588,15 +580,14 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         final Statement stmt = sqlConnection.createStatement();
 
         // Create the target column family.
-        final String createTableQuery = "CREATE COLUMNFAMILY t102 (bigint_col bigint PRIMARY KEY, null_int_col int, " +
-            "null_bigint_col bigint, not_null_int_col int);";
+        final String createTableQuery = "CREATE COLUMNFAMILY t102 (bigint_col bigint PRIMARY KEY, null_int_col int, "
+            + "null_bigint_col bigint, not_null_int_col int);";
         stmt.execute(createTableQuery);
         stmt.close();
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final String insertQuery = "INSERT INTO t102(bigint_col, not_null_int_col) values(?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
@@ -772,7 +763,8 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         stmt.execute(createTableQuery);
         stmt.close();
 
-        final String insertQuery = "INSERT INTO testTimestampToLongCodec (timestamp_col1, timestamp_col2, text_value) " + "VALUES (?, ?, ?);";
+        final String insertQuery = "INSERT INTO testTimestampToLongCodec (timestamp_col1, timestamp_col2, text_value) "
+            + "VALUES (?, ?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
         stmt2.setObject(1, now.getTime()); // timestamp as long
         stmt2.setObject(2, new Timestamp(now.getTime())); // timestamp as timestamp
@@ -827,8 +819,7 @@ class JdbcRegressionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
 
         // Open it up again to see the new column family.
-        sqlConnection = initConnection(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
-            "localdatacenter=datacenter1");
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         final String insertQuery = "INSERT INTO testBlob (id, blob_col1 , blob_col2) VALUES (?, ?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Removed
 - Remove vulnerable Guava compile dependency and replace it by standard Java, Apache Commons libraries and Caffeine
   for sessions caching.
+- Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
 ### Fixed
 - Fix the JDBC driver version returned by the methods of the classes `CassandraDriver` and `CassandraDatabaseMetaData` 
   to be consistent with the version of the JDBC wrapper artifact (see issue 

@@ -159,7 +159,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         final List<SessionHolder> l = new ArrayList<>();
         l.stream().map(s -> s.session).collect(Collectors.toList());
 
-        LOG.info("Connected to cluster: {}, with session: {}", getCatalog(), cSession.getName());
+        LOG.info("Connected to cluster: {}, with session: {}",
+            StringUtils.defaultString(getCatalog(), "<not available>"), cSession.getName());
         metadata.getNodes().forEach(
             (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
                 node.getEndPoint().resolve(), node.getRack())

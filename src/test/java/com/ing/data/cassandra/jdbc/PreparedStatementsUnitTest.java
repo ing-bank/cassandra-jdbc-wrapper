@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -28,7 +27,7 @@ import java.sql.Types;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class PreparedStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
+class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
     private static final Logger log = LoggerFactory.getLogger(PreparedStatementsUnitTest.class);
 
     private static final String KEYSPACE = "test_prep_stmt";
@@ -36,15 +35,6 @@ class PreparedStatementsUnitTest extends UsingEmbeddedCassandraServerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
-
-        // Update cluster name according to the configured name.
-        try (final Statement statement = sqlConnection.createStatement()) {
-            final String configuredClusterName = BuildCassandraServer.server.getNativeCluster().getClusterName();
-            statement.execute("UPDATE system.local SET cluster_name = '" + configuredClusterName
-                + "' WHERE key = 'local'");
-        } catch (final SQLException e) {
-            log.error("Cannot update cluster_name in system.local table.", e);
-        }
     }
 
     @Test

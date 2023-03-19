@@ -1,5 +1,4 @@
 /*
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
@@ -39,12 +38,10 @@ import com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -76,7 +73,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
+class ConnectionUnitTest extends UsingCassandraContainerTest {
     private static final Logger log = LoggerFactory.getLogger(ConnectionUnitTest.class);
 
     private static final String KEYSPACE = "system";
@@ -322,9 +319,9 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
             Objects.requireNonNull(classLoader.getResource("test_keystore.jks")).getPath());
         System.setProperty(JSSE_KEYSTORE_PASSWORD_PROPERTY, "changeit");
 
-        // TODO: re-write this test with a connection to an embedded Cassandra server supporting SSL.
         final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
-            buildJdbcUrl(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE)), null);
+            buildJdbcUrl(cassandraContainer.getContactPoint().getHostName(),
+                cassandraContainer.getContactPoint().getPort(), KEYSPACE)), null);
         final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
         sessionHolder.configureDefaultSslEngineFactory(cqlSessionBuilder, DriverConfigLoader.programmaticBuilder());
         verify(cqlSessionBuilder).withSslEngineFactory(any(DefaultSslEngineFactory.class));
@@ -332,9 +329,9 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenSslEngineFactory_whenConfigureSsl_addGivenSslEngineFactoryToSessionBuilder() throws Exception {
-        // TODO: re-write this test with a connection to an embedded Cassandra server supporting SSL.
         final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
-            buildJdbcUrl(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE)), null);
+            buildJdbcUrl(cassandraContainer.getContactPoint().getHostName(),
+                cassandraContainer.getContactPoint().getPort(), KEYSPACE)), null);
         final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
         sessionHolder.configureSslEngineFactory(cqlSessionBuilder,
             "com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
@@ -342,29 +339,31 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
     }
 
     @Test
-    @Disabled
-    // FIXME: this test now works on local but not on the build pipeline, investigation needed
     void givenSessionToConnect() throws SQLException {
-        CqlSession session = CqlSession.builder()
-                .addContactPoint(new InetSocketAddress(ConnectionDetails.getHost(), ConnectionDetails.getPort()))
-                .withLocalDatacenter("datacenter1")
-                .build();
+        final CqlSession session = CqlSession.builder()
+            .addContactPoint(cassandraContainer.getContactPoint())
+            .withLocalDatacenter("datacenter1")
+            .build();
 
-        CassandraConnection jdbcConnection = new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null);
-        ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        final CassandraConnection jdbcConnection =
+            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null);
+        final ResultSet resultSet = jdbcConnection.createStatement()
+            .executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
-        assertEquals("Test Cluster", jdbcConnection.getCatalog());
+        assertEquals("embedded_test_cluster", jdbcConnection.getCatalog());
     }
 
     @Test
     void givenSessionToConnect_andLiquibaseCompliance() throws SQLException {
-        CqlSession session = CqlSession.builder()
-                .addContactPoint(new InetSocketAddress(ConnectionDetails.getHost(), ConnectionDetails.getPort()))
+        final CqlSession session = CqlSession.builder()
+                .addContactPoint(cassandraContainer.getContactPoint())
                 .withLocalDatacenter("datacenter1")
                 .build();
 
-        CassandraConnection jdbcConnection = new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, new Liquibase());
-        ResultSet resultSet = jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        final CassandraConnection jdbcConnection =
+            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, new Liquibase());
+        final ResultSet resultSet = jdbcConnection.createStatement()
+            .executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
         assertNull(jdbcConnection.getCatalog());
     }
@@ -399,11 +398,14 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
 
     @Test
     void givenCassandraConnection_whenUnwrap_returnUnwrappedConnection() throws Exception {
+        initConnection(KEYSPACE);
         assertNotNull(sqlConnection.unwrap(Connection.class));
     }
 
     @Test
-    void givenCassandraConnection_whenUnwrapToInvalidInterface_throwException() {
+    void givenCassandraConnection_whenUnwrapToInvalidInterface_throwException() throws Exception {
+        initConnection(KEYSPACE);
         assertThrows(SQLException.class, () -> sqlConnection.unwrap(this.getClass()));
     }
+
 }

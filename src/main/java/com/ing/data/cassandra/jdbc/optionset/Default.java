@@ -39,7 +39,7 @@ public class Default extends AbstractOptionSet {
                 return rs.getString("cluster_name");
             }
         } catch (final SQLException e) {
-            LOG.warn("Unable to retrieve the cluster name.", e);
+            LOG.warn("Unable to retrieve the cluster name: {}", e.getMessage());
             return null;
         }
 
