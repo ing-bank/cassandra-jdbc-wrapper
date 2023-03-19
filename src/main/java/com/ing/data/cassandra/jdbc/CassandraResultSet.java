@@ -28,10 +28,7 @@ import com.datastax.oss.driver.api.core.type.SetType;
 import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +67,9 @@ import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -223,11 +222,13 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         this.driverResultSet = resultSets.get(0);
 
         // Now, we concatenate iterators of the different result sets into a single one.
-        this.rowsIterator = driverResultSet.iterator();
+        // This may lead to StackOverflowException when there are too many result sets.
+        final Iterator<Row>[] resultSetsIterators = new Iterator[resultSets.size()];
+        resultSetsIterators[0] = this.driverResultSet.iterator();
         for (int i = 1; i < resultSets.size(); i++) {
-            // This leads to StackOverflowException when there are too many result sets.
-            rowsIterator = Iterators.concat(rowsIterator, resultSets.get(i).iterator());
+            resultSetsIterators[i] = resultSets.get(i).iterator();
         }
+        this.rowsIterator = IteratorUtils.chainedIterator(resultSetsIterators);
 
         // Initialize the column values from the first row.
         if (hasMoreRows()) {
@@ -626,7 +627,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultList == null) {
                     return null;
                 }
-                return Lists.newArrayList(resultList);
+                return new ArrayList<>(resultList);
             } catch (final ClassNotFoundException e) {
                 LOG.warn("Error while executing getList()", e);
             }
@@ -646,7 +647,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultList == null) {
                     return null;
                 }
-                return Lists.newArrayList(resultList);
+                return new ArrayList<>(resultList);
             } catch (final ClassNotFoundException e) {
                 LOG.warn("Error while executing getList()", e);
             }
@@ -766,7 +767,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultSet == null) {
                     return null;
                 }
-                return Sets.newLinkedHashSet(resultSet);
+                return new LinkedHashSet<>(resultSet);
             }
 
             // Lists
@@ -785,7 +786,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultList == null) {
                     return null;
                 }
-                return Lists.newArrayList(resultList);
+                return new ArrayList<>(resultList);
             }
 
             // Maps
@@ -812,7 +813,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultMap == null) {
                     return null;
                 }
-                return Maps.newHashMap(resultMap);
+                return new HashMap<>(resultMap);
             }
         } else {
             // Other types.
@@ -897,7 +898,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultSet == null) {
                     return null;
                 }
-                return Sets.newLinkedHashSet(resultSet);
+                return new LinkedHashSet<>(resultSet);
             }
 
             // Lists
@@ -916,7 +917,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultList == null) {
                     return null;
                 }
-                return Lists.newArrayList(resultList);
+                return new ArrayList<>(resultList);
             }
 
             // Maps
@@ -943,7 +944,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
                 if (resultMap == null) {
                     return null;
                 }
-                return Maps.newHashMap(resultMap);
+                return new HashMap<>(resultMap);
             }
         } else {
             // Other types.

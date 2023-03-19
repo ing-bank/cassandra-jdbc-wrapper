@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +107,7 @@ public final class MetadataResultSets {
      * @throws SQLException when something went wrong during the creation of the result set.
      */
     public CassandraMetadataResultSet makeTableTypes(final CassandraStatement statement) throws SQLException {
-        final ArrayList<MetadataRow> tableTypes = Lists.newArrayList();
+        final ArrayList<MetadataRow> tableTypes = new ArrayList<>();
         final MetadataRow row = new MetadataRow().addEntry(TABLE_TYPE, TABLE);
         tableTypes.add(row);
         return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(tableTypes));
@@ -129,7 +128,7 @@ public final class MetadataResultSets {
      * @throws SQLException when something went wrong during the creation of the result set.
      */
     public CassandraMetadataResultSet makeCatalogs(final CassandraStatement statement) throws SQLException {
-        final ArrayList<MetadataRow> catalog = Lists.newArrayList();
+        final ArrayList<MetadataRow> catalog = new ArrayList<>();
         final MetadataRow row = new MetadataRow().addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog());
         catalog.add(row);
         return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(catalog));
@@ -156,7 +155,7 @@ public final class MetadataResultSets {
      */
     public CassandraMetadataResultSet makeSchemas(final CassandraStatement statement, final String schemaPattern)
         throws SQLException {
-        final ArrayList<MetadataRow> schemas = Lists.newArrayList();
+        final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
@@ -210,7 +209,7 @@ public final class MetadataResultSets {
      */
     public CassandraMetadataResultSet makeTables(final CassandraStatement statement, final String schemaPattern,
                                                  final String tableNamePattern) throws SQLException {
-        final ArrayList<MetadataRow> schemas = Lists.newArrayList();
+        final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
@@ -331,7 +330,7 @@ public final class MetadataResultSets {
                                                   final String tableNamePattern, final String columnNamePattern)
         throws SQLException {
         String originalSchemaPattern = schemaPattern;
-        final ArrayList<MetadataRow> schemas = Lists.newArrayList();
+        final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
@@ -481,7 +480,7 @@ public final class MetadataResultSets {
     public CassandraMetadataResultSet makeIndexes(final CassandraStatement statement, final String schema,
                                                   final String tableName, final boolean unique,
                                                   final boolean approximate) throws SQLException {
-        final ArrayList<MetadataRow> schemas = Lists.newArrayList();
+        final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
@@ -547,7 +546,7 @@ public final class MetadataResultSets {
      */
     public CassandraMetadataResultSet makePrimaryKeys(final CassandraStatement statement, final String schema,
                                                       final String tableName) throws SQLException {
-        final ArrayList<MetadataRow> schemas = Lists.newArrayList();
+        final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
 
         for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {

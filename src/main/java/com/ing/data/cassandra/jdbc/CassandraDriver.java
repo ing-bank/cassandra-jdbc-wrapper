@@ -15,12 +15,10 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableMap;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
-import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -28,10 +26,11 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientConnectionException;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
@@ -43,7 +42,6 @@ import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
 /**
  * The Cassandra driver implementation.
  */
-@SuppressWarnings("UnstableApiUsage")
 public class CassandraDriver implements Driver {
 
     static {
@@ -57,10 +55,10 @@ public class CassandraDriver implements Driver {
     }
 
     // Caching sessions so that multiple CassandraConnections created with the same parameters use the same Session.
-    private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = CacheBuilder.newBuilder()
+    private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = Caffeine.newBuilder()
         .build(new CacheLoader<Map<String, String>, SessionHolder>() {
             @Override
-            public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
+            public SessionHolder load(final Map<String, String> params) throws Exception {
                 return new SessionHolder(params, sessionsCache);
             }
         });
@@ -73,7 +71,7 @@ public class CassandraDriver implements Driver {
     @Override
     public Connection connect(final String url, final Properties properties) throws SQLException {
         if (acceptsURL(url)) {
-            final ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
+            final Map<String, String> params = new HashMap<>();
             final Enumeration<Object> keys = properties.keys();
             while (keys.hasMoreElements()) {
                 final String key = (String) keys.nextElement();
@@ -81,7 +79,7 @@ public class CassandraDriver implements Driver {
             }
             params.put(SessionHolder.URL_KEY, url);
 
-            final Map<String, String> cacheKey = params.build();
+            final Map<String, String> cacheKey = Collections.unmodifiableMap(params);
 
             try {
                 while (true) {
@@ -95,7 +93,7 @@ public class CassandraDriver implements Driver {
                     // to the session (which also removes it from the cache, see SessionHolder class for details).
                     // Loop to try again, that will cause the cache to create a new instance.
                 }
-            } catch (final ExecutionException e) {
+            } catch (final Exception e) {
                 final Throwable cause = e.getCause();
                 if (cause instanceof SQLException) {
                     throw (SQLException) cause;

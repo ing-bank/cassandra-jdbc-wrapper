@@ -15,7 +15,7 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import com.google.common.io.CharStreams;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -581,12 +581,11 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
         }
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     @Override
     public void setCharacterStream(final int parameterIndex, final Reader reader, final int length)
         throws SQLException {
         try {
-            final String targetString = CharStreams.toString(reader);
+            final String targetString = IOUtils.toString(reader);
             reader.close();
             setString(parameterIndex, targetString);
         } catch (final IOException e) {

@@ -17,8 +17,6 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,9 +49,9 @@ public class MetadataRow {
      * Constructor.
      */
     public MetadataRow() {
-        this.entries = Lists.newArrayList();
-        this.names = Maps.newHashMap();
-        this.definitions = Lists.newArrayList();
+        this.entries = new ArrayList<>();
+        this.names = new HashMap<>();
+        this.definitions = new ArrayList<>();
     }
 
     /**

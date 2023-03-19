@@ -22,7 +22,6 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -201,7 +200,7 @@ public class CassandraStatement extends AbstractStatement
                        final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
         this.connection = connection;
         this.cql = cql;
-        this.batchQueries = Lists.newArrayList();
+        this.batchQueries = new ArrayList<>();
         this.consistencyLevel = connection.getDefaultConsistencyLevel();
 
         if (!(resultSetType == ResultSet.TYPE_FORWARD_ONLY
@@ -281,7 +280,7 @@ public class CassandraStatement extends AbstractStatement
                 && cql.toLowerCase().contains("batch") && cql.toLowerCase().contains("apply"))) {
                 // Several statements in the query to execute asynchronously...
 
-                final ArrayList<com.datastax.oss.driver.api.core.cql.ResultSet> results = Lists.newArrayList();
+                final ArrayList<com.datastax.oss.driver.api.core.cql.ResultSet> results = new ArrayList<>();
                 if (cqlQueries.length > MAX_ASYNC_QUERIES * 1.1) {
                     // Protect the cluster from receiving too many queries at once and force the dev to split the load
                     throw new SQLNonTransientException("Too many queries at once (" + cqlQueries.length

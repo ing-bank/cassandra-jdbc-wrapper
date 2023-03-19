@@ -30,7 +30,7 @@ import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
 import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
 import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
@@ -74,7 +74,6 @@ import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
  *     the last {@link CassandraConnection} has been closed, the {@code Session} is closed.
  * </p>
  */
-@SuppressWarnings("UnstableApiUsage")
 class SessionHolder {
     static final String URL_KEY = "jdbcUrl";
 
@@ -160,7 +159,6 @@ class SessionHolder {
         }
     }
 
-    @SuppressWarnings("resource")
     private Session createSession(final Properties properties) throws SQLException {
         File configurationFile = null;
         final String configurationFilePath = properties.getProperty(Utils.TAG_CONFIG_FILE, StringUtils.EMPTY);

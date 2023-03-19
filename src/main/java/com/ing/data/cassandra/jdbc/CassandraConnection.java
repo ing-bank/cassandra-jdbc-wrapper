@@ -24,7 +24,6 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
-import com.google.common.collect.Maps;
 import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
 import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
 import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
@@ -56,6 +55,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
@@ -119,7 +119,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     // Set of all the statements that have been created by this connection.
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
-    private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
     private final ConsistencyLevel defaultConsistencyLevel;
     private String currentKeyspace;
     private final boolean debugMode;

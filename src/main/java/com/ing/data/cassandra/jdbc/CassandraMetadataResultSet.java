@@ -20,8 +20,6 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.ListType;
 import com.datastax.oss.driver.api.core.type.MapType;
 import com.datastax.oss.driver.api.core.type.SetType;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -47,8 +45,10 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -556,7 +556,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             if (resultList == null) {
                 return null;
             }
-            return Lists.newArrayList(resultList);
+            return new ArrayList<>(resultList);
         }
         return this.currentRow.getList(columnIndex - 1, String.class);
     }
@@ -574,7 +574,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             if (resultList == null) {
                 return null;
             }
-            return Lists.newArrayList(resultList);
+            return new ArrayList<>(resultList);
         }
         return this.currentRow.getList(columnLabel, String.class);
     }
@@ -614,7 +614,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 .asCql(false, false)).javaType;
             final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType()
                 .asCql(false, false)).javaType;
-            return Maps.newLinkedHashMap(this.currentRow.getMap(columnIndex - 1, keysClass, valuesClass));
+            return new LinkedHashMap<>(this.currentRow.getMap(columnIndex - 1, keysClass, valuesClass));
         }
         return this.currentRow.getMap(columnIndex - 1, String.class, String.class);
     }
@@ -630,7 +630,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 .asCql(false, false)).javaType;
             final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType()
                 .asCql(false, false)).javaType;
-            return Maps.newLinkedHashMap(this.currentRow.getMap(columnLabel, keysClass, valuesClass));
+            return new LinkedHashMap<>(this.currentRow.getMap(columnLabel, keysClass, valuesClass));
         }
         return this.currentRow.getMap(columnLabel, String.class, String.class);
     }

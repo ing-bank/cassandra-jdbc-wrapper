@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
-import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.math.BigDecimal;
@@ -30,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +74,7 @@ public enum DataTypeEnum {
     final String cqlType;
 
     static {
-        CQL_DATATYPE_TO_DATATYPE = Maps.newHashMap();
+        CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
             CQL_DATATYPE_TO_DATATYPE.put(dataType.cqlType, dataType);
         }

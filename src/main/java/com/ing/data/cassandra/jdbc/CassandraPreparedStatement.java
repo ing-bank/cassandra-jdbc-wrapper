@@ -25,8 +25,7 @@ import com.datastax.oss.driver.internal.core.type.DefaultListType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.datastax.oss.driver.internal.core.type.DefaultSetType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import com.google.common.collect.Lists;
-import com.google.common.io.CharStreams;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +119,7 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
             this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
-            this.batchStatements = Lists.newArrayList();
+            this.batchStatements = new ArrayList<>();
             this.count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
         } catch (final Exception e) {
             throw new SQLTransientException(e);
@@ -264,10 +263,10 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
             }
 
             // Empty the batch statement list after execution.
-            this.batchStatements = Lists.newArrayList();
+            this.batchStatements = new ArrayList<>();
         } catch (final Exception e) {
             // Empty the batch statement list after execution even if it failed.
-            this.batchStatements = Lists.newArrayList();
+            this.batchStatements = new ArrayList<>();
             throw new SQLTransientException(e);
         }
 
@@ -376,12 +375,11 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
         this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(x));
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     @Override
     public void setCharacterStream(final int parameterIndex, final Reader reader, final int length)
         throws SQLException {
         try {
-            final String targetString = CharStreams.toString(reader);
+            final String targetString = IOUtils.toString(reader);
             reader.close();
             setString(parameterIndex, targetString);
         } catch (final IOException e) {
