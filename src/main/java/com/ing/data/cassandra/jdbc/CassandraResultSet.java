@@ -1316,8 +1316,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
      * @return {@code true} if there is still rows to iterate over, {@code false} otherwise.
      */
     protected boolean hasMoreRows() {
-        return (this.rowsIterator != null
-            && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null)));
+        return this.rowsIterator != null
+            && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null));
     }
 
     @Override
@@ -1582,19 +1582,22 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         }
 
         @Override
-        public boolean isWrapperFor(final Class<?> iface) {
-            // TODO: implementation to review
-            return false;
-        }
-
-        @Override
         public boolean isWritable(final int column) {
             return column > 0;
         }
 
         @Override
+        public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+            return iface != null && iface.isAssignableFrom(this.getClass());
+        }
+
+        @Override
         public <T> T unwrap(final Class<T> iface) throws SQLException {
-            throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
+            if (isWrapperFor(iface)) {
+                return iface.cast(this);
+            } else {
+                throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+            }
         }
     }
 

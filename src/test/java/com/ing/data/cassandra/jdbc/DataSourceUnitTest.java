@@ -17,7 +17,7 @@ package com.ing.data.cassandra.jdbc;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
-import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -83,9 +83,9 @@ class DataSourceUnitTest extends UsingEmbeddedCassandraServerTest {
     }
 
     @Test
-    void givenCassandraDataSource_whenUnwrapToInvalidInterface_returnUnwrappedDatasource() {
+    void givenCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
         final DataSource ds = new CassandraDataSource(BuildCassandraServer.HOST, BuildCassandraServer.PORT, KEYSPACE,
             USER, PASSWORD, VERSION, CONSISTENCY);
-        assertThrows(SQLFeatureNotSupportedException.class, () -> ds.unwrap(this.getClass()));
+        assertThrows(SQLException.class, () -> ds.unwrap(this.getClass()));
     }
 }

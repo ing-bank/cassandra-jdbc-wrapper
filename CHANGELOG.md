@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- Harmonize the implementations of `Wrapper` interface.
 ### Fixed
 - Fix the JDBC driver version returned by the methods of the classes `CassandraDriver` and `CassandraDatabaseMetaData` 
   to be consistent with the version of the JDBC wrapper artifact (see issue 

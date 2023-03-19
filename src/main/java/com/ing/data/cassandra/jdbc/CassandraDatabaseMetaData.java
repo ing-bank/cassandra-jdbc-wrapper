@@ -16,7 +16,6 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.metadata.Metadata;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -28,6 +27,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLSyntaxErrorException;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
 
@@ -49,9 +49,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Constructor.
      *
-     * @param connection    The connection to a Cassandra database.
+     * @param connection The connection to a Cassandra database.
      * @throws SQLException when something went wrong during the initialisation of the
-     * {@code CassandraDatabaseMetaData}.
+     *                      {@code CassandraDatabaseMetaData}.
      */
     public CassandraDatabaseMetaData(final CassandraConnection connection) throws SQLException {
         this.connection = connection;
@@ -60,16 +60,17 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public boolean isWrapperFor(@NonNull final Class<?> iface) {
-        return iface.isAssignableFrom(getClass());
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+        return iface != null && iface.isAssignableFrom(this.getClass());
     }
 
     @Override
-    public <T> T unwrap(@NonNull final Class<T> iface) throws SQLException {
-        if (iface.isAssignableFrom(getClass())) {
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
             return iface.cast(this);
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
         }
-        throw new SQLFeatureNotSupportedException(String.format(Utils.NO_INTERFACE, iface.getSimpleName()));
     }
 
     @Override
@@ -182,26 +183,26 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the foreign key columns in the given foreign key table that reference the primary key
      * or the columns representing a unique constraint of the parent table (could be the same or a different table).
      * <p>
-     *     Cassandra database does not support foreign keys, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param parentCatalog     A catalog name; must match the catalog name as it is stored in the database; {@code ""}
-     *                          retrieves those without a catalog; {@code null} means drop catalog name from the
-     *                          selection criteria.
-     * @param parentSchema      A schema name; must match the schema name as it is stored in the database; {@code ""}
-     *                          retrieves those without a schema; {@code null} means drop schema name from the
-     *                          selection criteria.
-     * @param parentTable       The name of the table that exports the key; must match the table name as it is stored
-     *                          in the database.
-     * @param foreignCatalog    A catalog name; must match the catalog name as it is stored in the database; {@code ""}
-     *                          retrieves those without a catalog; {@code null} means drop catalog name from the
-     *                          selection criteria.
-     * @param foreignSchema     A schema name; must match the schema name as it is stored in the database; {@code ""}
-     *                          retrieves those without a schema; null means drop schema name from the selection
-     *                          criteria.
-     * @param foreignTable      The name of the table that imports the key; must match the table name as it is stored
-     *                          in the database.
+     * @param parentCatalog  A catalog name; must match the catalog name as it is stored in the database; {@code ""}
+     *                       retrieves those without a catalog; {@code null} means drop catalog name from the
+     *                       selection criteria.
+     * @param parentSchema   A schema name; must match the schema name as it is stored in the database; {@code ""}
+     *                       retrieves those without a schema; {@code null} means drop schema name from the
+     *                       selection criteria.
+     * @param parentTable    The name of the table that exports the key; must match the table name as it is stored
+     *                       in the database.
+     * @param foreignCatalog A catalog name; must match the catalog name as it is stored in the database; {@code ""}
+     *                       retrieves those without a catalog; {@code null} means drop catalog name from the
+     *                       selection criteria.
+     * @param foreignSchema  A schema name; must match the schema name as it is stored in the database; {@code ""}
+     *                       retrieves those without a schema; null means drop schema name from the selection
+     *                       criteria.
+     * @param foreignTable   The name of the table that imports the key; must match the table name as it is stored
+     *                       in the database.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -229,10 +230,10 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves the version number of this database product.
      * <p>
-     *     The version number returned by this method is the minimal version of Apache Cassandra supported by this JDBC
-     *     implementation (see Datastax Java driver version embedded into this JDBC wrapper and
-     *     <a href="https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html">
-     *         compatibility matrix</a> for furhter details.
+     * The version number returned by this method is the minimal version of Apache Cassandra supported by this JDBC
+     * implementation (see Datastax Java driver version embedded into this JDBC wrapper and
+     * <a href="https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html">
+     * compatibility matrix</a> for furhter details.
      * </p>
      *
      * @return The database version number.
@@ -272,17 +273,17 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the foreign key columns that reference the given table's primary key columns (the
      * foreign keys exported by a table).
      * <p>
-     *     Cassandra database does not support foreign keys, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog   A catalog name; must match the catalog name as it is stored in this database; {@code ""}
-     *                  retrieves those without a catalog; {@code null} means that the catalog name should not be used
-     *                  to narrow the search.
-     * @param schema    A schema name; must match the schema name as it is stored in the database; {@code ""} retrieves
-     *                  those without a schema; {@code null} means that the schema name should not be used to narrow
-     *                  the search.
-     * @param table     A table name; must match the table name as it is stored in this database.
+     * @param catalog A catalog name; must match the catalog name as it is stored in this database; {@code ""}
+     *                retrieves those without a catalog; {@code null} means that the catalog name should not be used
+     *                to narrow the search.
+     * @param schema  A schema name; must match the schema name as it is stored in the database; {@code ""} retrieves
+     *                those without a schema; {@code null} means that the schema name should not be used to narrow
+     *                the search.
+     * @param table   A table name; must match the table name as it is stored in this database.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -322,17 +323,17 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the primary key columns that are referenced by the given table's foreign key columns
      * (the primary keys imported by a table).
      * <p>
-     *     Cassandra database does not support foreign keys, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog   A catalog name; must match the catalog name as it is stored in this database; {@code ""}
-     *                  retrieves those without a catalog; {@code null} means that the catalog name should not be used
-     *                  to narrow the search.
-     * @param schema    A schema name; must match the schema name as it is stored in the database; {@code ""} retrieves
-     *                  those without a schema; {@code null} means that the schema name should not be used to narrow
-     *                  the search.
-     * @param table     A table name; must match the table name as it is stored in this database.
+     * @param catalog A catalog name; must match the catalog name as it is stored in this database; {@code ""}
+     *                retrieves those without a catalog; {@code null} means that the catalog name should not be used
+     *                to narrow the search.
+     * @param schema  A schema name; must match the schema name as it is stored in the database; {@code ""} retrieves
+     *                those without a schema; {@code null} means that the schema name should not be used to narrow
+     *                the search.
+     * @param table   A table name; must match the table name as it is stored in this database.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -488,19 +489,19 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the given catalog's stored procedure parameter and result columns.
      * <p>
-     *     Cassandra database does not support procedures, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support procedures, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog               A catalog name; must match the catalog name as it is stored in the database;
-     *                              {@code ""} retrieves those without a catalog; {@code null} means that the catalog
-     *                              name should not be used to narrow the search.
-     * @param schemaPattern         A schema name pattern; must match the schema name as it is stored in the database;
-     *                              {@code ""} retrieves those without a schema; {@code null} means that the schema
-     *                              name should not be used to narrow the search.
-     * @param procedureNamePattern  A procedure name pattern; must match the procedure name as it is stored in the
-     *                              database.
-     * @param columnNamePattern     A column name pattern; must match the column name as it is stored in the database.
+     * @param catalog              A catalog name; must match the catalog name as it is stored in the database;
+     *                             {@code ""} retrieves those without a catalog; {@code null} means that the catalog
+     *                             name should not be used to narrow the search.
+     * @param schemaPattern        A schema name pattern; must match the schema name as it is stored in the database;
+     *                             {@code ""} retrieves those without a schema; {@code null} means that the schema
+     *                             name should not be used to narrow the search.
+     * @param procedureNamePattern A procedure name pattern; must match the procedure name as it is stored in the
+     *                             database.
+     * @param columnNamePattern    A column name pattern; must match the column name as it is stored in the database.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -524,18 +525,18 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the stored procedures available in the given catalog.
      * <p>
-     *     Cassandra database does not support procedures, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support procedures, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog               A catalog name; must match the catalog name as it is stored in the database;
-     *                              {@code ""} retrieves those without a catalog; {@code null} means that the catalog
-     *                              name should not be used to narrow the search.
-     * @param schemaPattern         A schema name pattern; must match the schema name as it is stored in the database;
-     *                              {@code ""} retrieves those without a schema; {@code null} means that the schema
-     *                              name should not be used to narrow the search.
-     * @param procedureNamePattern  A procedure name pattern; must match the procedure name as it is stored in the
-     *                              database.
+     * @param catalog              A catalog name; must match the catalog name as it is stored in the database;
+     *                             {@code ""} retrieves those without a catalog; {@code null} means that the catalog
+     *                             name should not be used to narrow the search.
+     * @param schemaPattern        A schema name pattern; must match the schema name as it is stored in the database;
+     *                             {@code ""} retrieves those without a schema; {@code null} means that the schema
+     *                             name should not be used to narrow the search.
+     * @param procedureNamePattern A procedure name pattern; must match the procedure name as it is stored in the
+     *                             database.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -548,8 +549,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the pseudo or hidden columns available in a given table within the specified catalog
      * and schema.
      * <p>
-     *     Cassandra database does not support pseudo or hidden columns, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support pseudo or hidden columns, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
      * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
@@ -625,14 +626,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the table hierarchies defined in a particular schema in this database.
      * <p>
-     *     Cassandra database does not support super tables, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support super tables, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog           A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
-     *                          catalog name from the selection criteria.
-     * @param schemaPattern     A schema name pattern; {@code ""} retrieves those without a schema.
-     * @param tableNamePattern  A table name pattern; may be a fully-qualified name.
+     * @param catalog          A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
+     *                         catalog name from the selection criteria.
+     * @param schemaPattern    A schema name pattern; {@code ""} retrieves those without a schema.
+     * @param tableNamePattern A table name pattern; may be a fully-qualified name.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override
@@ -645,14 +646,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the user-defined type (UDT) hierarchies defined in a particular schema in this
      * database.
      * <p>
-     *     Cassandra database does not support super types, so this method will throw a
-     *     {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support super types, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
      * </p>
      *
-     * @param catalog           A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
-     *                          catalog name from the selection criteria.
-     * @param schemaPattern     A schema name pattern; {@code ""} retrieves those without a schema.
-     * @param typeNamePattern   A UDT name pattern; may be a fully-qualified name.
+     * @param catalog         A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
+     *                        catalog name from the selection criteria.
+     * @param schemaPattern   A schema name pattern; {@code ""} retrieves those without a schema.
+     * @param typeNamePattern A UDT name pattern; may be a fully-qualified name.
      * @return Always throw a {@link SQLFeatureNotSupportedException}.
      */
     @Override

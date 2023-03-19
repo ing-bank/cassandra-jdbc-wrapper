@@ -1203,19 +1203,22 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public boolean isWrapperFor(final Class<?> iface) {
-            // TODO: implementation to review
-            return false;
-        }
-
-        @Override
         public boolean isWritable(final int column) {
             return column > 0;
         }
 
         @Override
+        public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+            return iface != null && iface.isAssignableFrom(this.getClass());
+        }
+
+        @Override
         public <T> T unwrap(final Class<T> iface) throws SQLException {
-            throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
+            if (isWrapperFor(iface)) {
+                return iface.cast(this);
+            } else {
+                throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+            }
         }
     }
 

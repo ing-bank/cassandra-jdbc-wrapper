@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MetadataResultSetsUnitTest extends UsingEmbeddedCassandraServerTest {
@@ -278,5 +279,17 @@ class MetadataResultSetsUnitTest extends UsingEmbeddedCassandraServerTest {
         stmt.close();
     }
 
+    @Test
+    void givenCassandraMetadataResultSet_whenUnwrap_returnUnwrappedMetadataResultSet() throws Exception {
+        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
+        assertNotNull(metadataRs.unwrap(ResultSet.class));
+        assertNotNull(metadataRs.unwrap(CassandraResultSetExtras.class));
+    }
+
+    @Test
+    void givenCassandraMetadataResultSet_whenUnwrapToInvalidInterface_throwException() {
+        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
+        assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+    }
 
 }

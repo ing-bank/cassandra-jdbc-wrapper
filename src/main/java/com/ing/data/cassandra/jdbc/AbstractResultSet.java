@@ -45,13 +45,13 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
  * methods of {@link java.sql.ResultSet} interface. It also provides helper methods for CQL type management in the
  * implementation of {@link java.sql.ResultSet} interface.
  */
-abstract class AbstractResultSet  implements Wrapper {
+abstract class AbstractResultSet implements Wrapper {
 
     /**
      * Checks whether the {@code i}th column has the given CQL data type.
      *
-     * @param columnIndex   The column index (first column is 1).
-     * @param type          The data type to check.
+     * @param columnIndex The column index (first column is 1).
+     * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
      */
     boolean isCqlType(final int columnIndex, @NonNull final DataTypeEnum type) {
@@ -62,8 +62,8 @@ abstract class AbstractResultSet  implements Wrapper {
     /**
      * Checks whether the column with the given name has the given CQL data type.
      *
-     * @param columnLabel   The column name.
-     * @param type          The data type to check.
+     * @param columnLabel The column name.
+     * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
      */
     boolean isCqlType(final String columnLabel, @NonNull final DataTypeEnum type) {
@@ -564,14 +564,14 @@ abstract class AbstractResultSet  implements Wrapper {
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> iface) {
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
         return iface != null && iface.isAssignableFrom(this.getClass());
     }
 
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
         if (isWrapperFor(iface)) {
-            return (T) this;
+            return iface.cast(this);
         } else {
             throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
         }

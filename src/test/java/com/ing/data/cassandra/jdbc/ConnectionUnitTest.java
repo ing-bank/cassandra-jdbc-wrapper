@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -396,4 +397,13 @@ class ConnectionUnitTest extends UsingEmbeddedCassandraServerTest {
         sqlConnection.close();
     }
 
+    @Test
+    void givenCassandraConnection_whenUnwrap_returnUnwrappedConnection() throws Exception {
+        assertNotNull(sqlConnection.unwrap(Connection.class));
+    }
+
+    @Test
+    void givenCassandraConnection_whenUnwrapToInvalidInterface_throwException() {
+        assertThrows(SQLException.class, () -> sqlConnection.unwrap(this.getClass()));
+    }
 }

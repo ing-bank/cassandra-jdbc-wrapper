@@ -17,7 +17,6 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
@@ -371,16 +370,17 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     }
 
     @Override
-    public boolean isWrapperFor(@NonNull final Class<?> iface) {
-        return iface.isAssignableFrom(getClass());
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+        return iface != null && iface.isAssignableFrom(this.getClass());
     }
 
     @Override
-    public <T> T unwrap(@NonNull final Class<T> iface) throws SQLException {
-        if (iface.isAssignableFrom(getClass())) {
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
             return iface.cast(this);
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
         }
-        throw new SQLFeatureNotSupportedException(String.format(NO_INTERFACE, iface.getSimpleName()));
     }
 
     @Override

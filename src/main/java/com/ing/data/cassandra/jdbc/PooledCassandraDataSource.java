@@ -140,13 +140,13 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> arg0) {
-        return this.connectionPoolDataSource.isWrapperFor(arg0);
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+        return this.connectionPoolDataSource.isWrapperFor(iface);
     }
 
     @Override
-    public <T> T unwrap(final Class<T> arg0) throws SQLException {
-        return connectionPoolDataSource.unwrap(arg0);
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        return this.connectionPoolDataSource.unwrap(iface);
     }
 
     @Override

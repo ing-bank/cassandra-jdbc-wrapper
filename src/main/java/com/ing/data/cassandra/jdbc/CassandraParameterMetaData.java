@@ -19,7 +19,8 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
+
+import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 
 /**
  * Cassandra parameter metadata: implementation class for {@link ParameterMetaData}.
@@ -64,38 +65,38 @@ public class CassandraParameterMetaData implements ParameterMetaData {
      * this implementation.
      */
     @Override
-    public int isNullable(int i) {
+    public int isNullable(final int i) {
         // Note: absence is the equivalent of null in Cassandra
         return ParameterMetaData.parameterNullable;
     }
 
     @Override
-    public boolean isSigned(int i) throws SQLException {
+    public boolean isSigned(final int i) throws SQLException {
         return getParameterJdbcType(i).isSigned();
     }
 
     @Override
-    public int getPrecision(int i) throws SQLException {
+    public int getPrecision(final int i) throws SQLException {
         return getParameterJdbcType(i).getPrecision(null);
     }
 
     @Override
-    public int getScale(int i) throws SQLException {
+    public int getScale(final int i) throws SQLException {
         return getParameterJdbcType(i).getScale(null);
     }
 
     @Override
-    public int getParameterType(int i) throws SQLException {
+    public int getParameterType(final int i) throws SQLException {
         return getParameterJdbcType(i).getJdbcType();
     }
 
     @Override
-    public String getParameterTypeName(int i) throws SQLException {
+    public String getParameterTypeName(final int i) throws SQLException {
         return getParameterCqlType(i);
     }
 
     @Override
-    public String getParameterClassName(int i) throws SQLException {
+    public String getParameterClassName(final int i) throws SQLException {
         return getParameterJdbcType(i).getType().getName();
     }
 
@@ -110,20 +111,21 @@ public class CassandraParameterMetaData implements ParameterMetaData {
      * @return The mode of the parameter; always {@link ParameterMetaData#parameterModeIn} in this implementation.
      */
     @Override
-    public int getParameterMode(int i) {
+    public int getParameterMode(final int i) {
         return ParameterMetaData.parameterModeIn;
     }
 
     @Override
-    public <T> T unwrap(Class<T> aClass) throws SQLException {
-        if (aClass.isAssignableFrom(getClass())) {
-            return aClass.cast(this);
-        }
-        throw new SQLFeatureNotSupportedException(String.format(Utils.NO_INTERFACE, aClass.getSimpleName()));
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+        return iface != null && iface.isAssignableFrom(this.getClass());
     }
 
     @Override
-    public boolean isWrapperFor(Class<?> aClass) throws SQLException {
-        return aClass.isAssignableFrom(getClass());
+    public <T> T unwrap(final Class<T> iface) throws SQLException {
+        if (isWrapperFor(iface)) {
+            return iface.cast(this);
+        } else {
+            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+        }
     }
 }

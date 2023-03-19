@@ -234,7 +234,7 @@ public final class Utils {
      * @return The requested part of the version, or 0 if the requested part cannot be parsed correctly.
      */
     public static int parseVersion(final String version, final int part) {
-        if (StringUtils.isBlank(version) || StringUtils.countMatches(version, ".") < part || part < 0 ) {
+        if (StringUtils.isBlank(version) || StringUtils.countMatches(version, ".") < part || part < 0) {
             return 0;
         } else {
             try {

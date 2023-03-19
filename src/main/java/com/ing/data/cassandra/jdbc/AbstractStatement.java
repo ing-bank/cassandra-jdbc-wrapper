@@ -167,16 +167,15 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-
     @Override
-    public boolean isWrapperFor(final Class<?> iface)  throws SQLException {
+    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
         return iface != null && iface.isAssignableFrom(this.getClass());
     }
 
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
         if (isWrapperFor(iface)) {
-            return (T) this;
+            return iface.cast(this);
         } else {
             throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
         }

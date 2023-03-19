@@ -20,10 +20,13 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
@@ -87,5 +90,19 @@ class PooledUnitTest extends UsingEmbeddedCassandraServerTest {
         statement.close();
         connection.close();
         assertTrue(statement.isClosed());
+    }
+
+    @Test
+    void givenPooledCassandraDataSource_whenUnwrap_returnUnwrappedDataSource() throws Exception {
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
+            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        assertNotNull(connectionPoolDataSource.unwrap(DataSource.class));
+    }
+
+    @Test
+    void givenPooledCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(BuildCassandraServer.HOST,
+            BuildCassandraServer.PORT, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
+        assertThrows(SQLException.class, () -> connectionPoolDataSource.unwrap(this.getClass()));
     }
 }

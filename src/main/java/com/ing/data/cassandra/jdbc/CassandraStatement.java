@@ -234,6 +234,7 @@ public class CassandraStatement extends AbstractStatement
      * Checks that the statement is not closed.
      *
      * @throws SQLException when something went wrong during the checking of the statement status.
+     * @throws SQLRecoverableException when a method has been called on a closed statement.
      */
     protected final void checkNotClosed() throws SQLException {
         if (isClosed()) {
