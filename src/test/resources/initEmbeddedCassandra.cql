@@ -53,9 +53,29 @@ listValue list<bigint>,
 mapValue map<double, boolean>,
 setValue set<text>);
 
+CREATE TYPE CustomType (
+key int,
+value1 text,
+value2 boolean
+);
+
+CREATE TABLE frozen_test (
+keyValue int PRIMARY KEY,
+frozenList frozen<list<int>>,
+frozenMap frozen<map<text, text>>,
+frozenSet frozen<set<text>>,
+innerTuple list<frozen<tuple<int, text, CustomType>>>,
+innerUdt list<frozen<CustomType>>
+);
+
 INSERT INTO collections_test (keyValue, listValue) VALUES(1, [1, 3, 12345]);
 UPDATE collections_test SET setValue = {'red', 'white', 'blue'} WHERE keyValue = 1;
-UPDATE collections_test SET mapValue = {2.0: true, 4.0: false, 6.0 : true} WHERE keyValue = 1;
+UPDATE collections_test SET mapValue = {2.0: true, 4.0: false, 6.0: true} WHERE keyValue = 1;
+
+INSERT INTO frozen_test (keyValue, frozenList, frozenMap, frozenSet, innerTuple, innerUdt)
+VALUES(1, [1, 3, 123], {'k1': 'v1', 'k2': 'v2'}, {'i1', 'i2', 'i3'},
+[(1, 'val1', {key: 10, value1: 'test', value2: true}), (2, 'val2', {key: 20, value1: 'test2', value2: false})],
+[{key: 1, value1: 'test', value2: true}, {key: 2, value1: 'test2', value2: false}]);
 
 /* Init keyspace and tables for BatchStatementsUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace_batch;

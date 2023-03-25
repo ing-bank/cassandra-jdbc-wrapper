@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix the JDBC driver version returned by the methods of the classes `CassandraDriver` and `CassandraDatabaseMetaData` 
   to be consistent with the version of the JDBC wrapper artifact (see issue 
   [#19](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/19)).
+- Fix an issue on collections of tuples and UDTs that threw `NullPointerException` in result sets.
 
 ## 4.8.0 - 2023-01-12
 ### Added

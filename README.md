@@ -462,7 +462,7 @@ To create a new `Tuple` object in Java (see
 [Tuple](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/tuples/) documentation), use the 
 `TupleType.of().newValue()` method.
 Note that the UDT ([User-Defined Types](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/udts/)) 
-fields cannot be instantiated outside of the Datastax Java driver core. If you want to use prepared statements, you 
+fields cannot be instantiated outside the Datastax Java driver core. If you want to use prepared statements, you 
 must proceed as in the following example:
 ```java
 public class HelloCassandra {

@@ -78,6 +78,8 @@ import java.util.UUID;
 
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
+import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromCqlTypeName;
+import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromDataType;
 import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.Utils.FORWARD_ONLY;
@@ -618,11 +620,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         checkIndex(columnIndex);
         final DataType cqlDataType = getCqlDataType(columnIndex);
 
-        if (DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false)).isCollection()) {
+        if (fromCqlTypeName(cqlDataType.asCql(false, false)).isCollection()) {
             try {
                 final ListType listType = (ListType) cqlDataType;
-                final Class<?> itemsClass = Class.forName(DataTypeEnum.fromCqlTypeName(
-                    listType.getElementType().asCql(false, false)).asJavaClass().getCanonicalName());
+                final Class<?> itemsClass = Class.forName(fromDataType(listType.getElementType())
+                    .asJavaClass().getCanonicalName());
                 final List<?> resultList = this.currentRow.getList(columnIndex - 1, itemsClass);
                 if (resultList == null) {
                     return null;
@@ -638,11 +640,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     @Override
     public List<?> getList(final String columnLabel) throws SQLException {
         checkName(columnLabel);
-        if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
+        if (fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
             try {
                 final ListType listType = (ListType) getCqlDataType(columnLabel);
-                final Class<?> itemsClass = Class.forName(DataTypeEnum.fromCqlTypeName(
-                    listType.getElementType().asCql(false, false)).asJavaClass().getCanonicalName());
+                final Class<?> itemsClass = Class.forName(fromDataType(listType.getElementType())
+                    .asJavaClass().getCanonicalName());
                 final List<?> resultList = this.currentRow.getList(columnLabel, itemsClass);
                 if (resultList == null) {
                     return null;
@@ -708,8 +710,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         checkIndex(columnIndex);
 
         final DefaultMapType mapType = (DefaultMapType) getCqlDataType(columnIndex);
-        final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType().asCql(false, false)).javaType;
-        final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType().asCql(false, false)).javaType;
+        final Class<?> keysClass = fromDataType(mapType.getKeyType()).javaType;
+        final Class<?> valuesClass = fromDataType(mapType.getValueType()).javaType;
 
         return this.currentRow.getMap(columnIndex - 1, keysClass, valuesClass);
     }
@@ -719,8 +721,8 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         checkName(columnLabel);
 
         final DefaultMapType mapType = (DefaultMapType) getCqlDataType(columnLabel);
-        final Class<?> keysClass = DataTypeEnum.fromCqlTypeName(mapType.getKeyType().asCql(false, false)).javaType;
-        final Class<?> valuesClass = DataTypeEnum.fromCqlTypeName(mapType.getValueType().asCql(false, false)).javaType;
+        final Class<?> keysClass = fromDataType(mapType.getKeyType()).javaType;
+        final Class<?> valuesClass = fromDataType(mapType.getValueType()).javaType;
 
         return this.currentRow.getMap(columnLabel, keysClass, valuesClass);
     }
@@ -734,7 +736,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     public Object getObject(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         final DataType cqlDataType = getCqlDataType(columnIndex);
-        final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false));
+        final DataTypeEnum dataType = fromDataType(cqlDataType);
 
         // User-defined types
         if (isCqlType(columnIndex, DataTypeEnum.UDT)) {
@@ -865,7 +867,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     public Object getObject(final String columnLabel) throws SQLException {
         checkName(columnLabel);
         final DataType cqlDataType = getCqlDataType(columnLabel);
-        final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(cqlDataType.asCql(false, false));
+        final DataTypeEnum dataType = fromDataType(cqlDataType);
 
         // User-defined types
         if (isCqlType(columnLabel, DataTypeEnum.UDT)) {
@@ -1136,8 +1138,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         try {
             final SetType setType = (SetType) getCqlDataType(columnIndex);
             return this.currentRow.getSet(columnIndex - 1,
-                Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
-                    .getCanonicalName()));
+                Class.forName(fromDataType(setType.getElementType()).asJavaClass().getCanonicalName()));
         } catch (ClassNotFoundException e) {
             LOG.warn("Error while executing getSet()", e);
         }
@@ -1150,8 +1151,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         try {
             final SetType setType = (SetType) getCqlDataType(columnLabel);
             return this.currentRow.getSet(columnLabel,
-                Class.forName(DataTypeEnum.fromCqlTypeName(setType.getElementType().asCql(false, false)).asJavaClass()
-                    .getCanonicalName()));
+                Class.forName(fromDataType(setType.getElementType()).asJavaClass().getCanonicalName()));
         } catch (ClassNotFoundException e) {
             LOG.warn("Error while executing getSet()", e);
         }
@@ -1180,7 +1180,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     public String getString(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         try {
-            if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false)).isCollection()) {
+            if (fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false)).isCollection()) {
                 return getObjectAsString(columnIndex);
             }
             return this.currentRow.getString(columnIndex - 1);
@@ -1193,7 +1193,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
     public String getString(final String columnLabel) throws SQLException {
         checkName(columnLabel);
         try {
-            if (DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
+            if (fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false)).isCollection()) {
                 return getObjectAsString(columnLabel);
             }
             return this.currentRow.getString(columnLabel);
@@ -1415,12 +1415,11 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
         @Override
         public String getColumnClassName(final int column) {
             if (currentRow != null) {
-                return DataTypeEnum.fromCqlTypeName(getCqlDataType(column).asCql(false, false)).asJavaClass()
-                    .getCanonicalName();
+                return fromCqlTypeName(getCqlDataType(column).asCql(false, false)).asJavaClass().getCanonicalName();
             }
-            return DataTypeEnum.fromCqlTypeName(
-                driverResultSet.getColumnDefinitions().get(column - 1).getType().asCql(false, false)).asJavaClass()
-                .getCanonicalName();
+            return fromCqlTypeName(
+                driverResultSet.getColumnDefinitions().get(column - 1).getType().asCql(false, false))
+                .asJavaClass().getCanonicalName();
         }
 
         @Override

@@ -19,6 +19,7 @@ import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -62,7 +63,7 @@ public enum DataTypeEnum {
     TIMESTAMP(DataType.TIMESTAMP, Timestamp.class, cqlName(DataTypes.TIMESTAMP)),
     TIMEUUID(DataType.TIMEUUID, UUID.class, cqlName(DataTypes.TIMEUUID)),
     TINYINT(DataType.TINYINT, Byte.class, cqlName(DataTypes.TINYINT)),
-    TUPLE(DataType.TUPLE, TupleValue.class, "TUPLE"),
+    TUPLE(DataType.TUPLE, TupleValue.class, "tuple"),
     UDT(DataType.UDT, UdtValue.class, "UDT"),
     UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
@@ -102,6 +103,10 @@ public enum DataTypeEnum {
      * @return The enumeration item corresponding to the given CQL type name.
      */
     static DataTypeEnum fromCqlTypeName(final String cqlTypeName) {
+        // Manage user-defined types (e.g. "UDT(xxx)")
+        if (cqlTypeName.startsWith(UDT.cqlType)) {
+            return UDT;
+        }
         // Manage collection types (e.g. "list<varchar>")
         final int collectionTypeCharPos = cqlTypeName.indexOf("<");
         String cqlDataType = cqlTypeName;
@@ -109,6 +114,19 @@ public enum DataTypeEnum {
             cqlDataType = cqlTypeName.substring(0, collectionTypeCharPos);
         }
         return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType);
+    }
+
+    /**
+     * Gets an enumeration item from a CQL data type.
+     *
+     * @param dataType The CQL data type.
+     * @return The enumeration item corresponding to the given CQL data type.
+     */
+    static DataTypeEnum fromDataType(final com.datastax.oss.driver.api.core.type.DataType dataType) {
+        if (dataType instanceof UserDefinedType) {
+            return UDT;
+        }
+        return fromCqlTypeName(dataType.asCql(false, false));
     }
 
     /**

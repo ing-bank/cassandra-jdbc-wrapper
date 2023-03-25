@@ -13,6 +13,8 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.data.TupleValue;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -285,6 +288,63 @@ class CollectionsUnitTest extends UsingCassandraContainerTest {
         assertFalse(mapObject.containsKey(2.0));
         assertEquals(false, mapObject.get(10.0));
         assertEquals(true, mapObject.get(12.0));
+    }
+
+    @Test
+    void givenFrozenTypesSelectStatement_whenExecute_getExpectedResultSet() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+
+        final ResultSet resultSet = statement.executeQuery("SELECT * FROM frozen_test WHERE keyValue = 1;");
+        resultSet.next();
+
+        assertThat(resultSet, is(instanceOf(CassandraResultSet.class)));
+        assertEquals(1, resultSet.getInt("keyValue"));
+
+        final List<?> listObject = ((CassandraResultSet) resultSet).getList("frozenList");
+        assertThat(listObject, is(instanceOf(ArrayList.class)));
+        assertEquals(3, listObject.size());
+        assertEquals(1, listObject.get(0));
+        assertEquals(3, listObject.get(1));
+        assertEquals(123, listObject.get(2));
+
+        final Map<?, ?> mapObject = ((CassandraResultSet) resultSet).getMap("frozenMap");
+        assertThat(mapObject, is(instanceOf(HashMap.class)));
+        assertEquals(2, mapObject.size());
+        assertTrue(mapObject.containsKey("k1"));
+        assertTrue(mapObject.containsKey("k2"));
+        assertEquals("v1", mapObject.get("k1"));
+        assertEquals("v2", mapObject.get("k2"));
+
+        final Set<?> setObject = ((CassandraResultSet) resultSet).getSet("frozenSet");
+        assertThat(setObject, is(instanceOf(LinkedHashSet.class)));
+        assertEquals(3, setObject.size());
+        assertTrue(setObject.contains("i1"));
+        assertTrue(setObject.contains("i2"));
+        assertTrue(setObject.contains("i3"));
+
+        final List<?> tuplesListObject = ((CassandraResultSet) resultSet).getList("innerTuple");
+        assertThat(tuplesListObject, is(instanceOf(ArrayList.class)));
+        assertEquals(2, tuplesListObject.size());
+        assertThat(tuplesListObject.get(0), is(instanceOf(TupleValue.class)));
+        final TupleValue tupleValue = (TupleValue) tuplesListObject.get(0);
+        assertEquals(1, tupleValue.getInt(0));
+        assertEquals("val1", tupleValue.getString(1));
+        final UdtValue udtValueInTuple = tupleValue.getUdtValue(2);
+        assertNotNull(udtValueInTuple);
+        assertEquals(10, udtValueInTuple.getInt("key"));
+        assertEquals("test", udtValueInTuple.getString("value1"));
+        assertTrue(udtValueInTuple.getBoolean("value2"));
+
+        final List<?> udtListObject = ((CassandraResultSet) resultSet).getList("innerUdt");
+        assertThat(udtListObject, is(instanceOf(ArrayList.class)));
+        assertEquals(2, udtListObject.size());
+        assertThat(udtListObject.get(0), is(instanceOf(UdtValue.class)));
+        final UdtValue udtValue = (UdtValue) udtListObject.get(0);
+        assertEquals(1, udtValue.getInt("key"));
+        assertEquals("test", udtValue.getString("value1"));
+        assertTrue(udtValue.getBoolean("value2"));
+
+        statement.close();
     }
 
 }
