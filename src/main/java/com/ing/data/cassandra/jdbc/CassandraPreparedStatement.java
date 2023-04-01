@@ -636,6 +636,8 @@ public class CassandraPreparedStatement extends CassandraStatement
                         valuesClass);
                 }
                 break;
+            default:
+                throw new SQLException("Unsupported SQL type: " + targetSqlType);
         }
     }
 

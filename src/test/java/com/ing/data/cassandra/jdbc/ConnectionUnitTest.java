@@ -97,6 +97,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         }
         initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
             "user=aTestUser", "password=aTestPassword", "requesttimeout=5000",
+            "connectimeout=8000", "keepalive=false", "tcpnodelay=true",
             "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
             "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
             "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
@@ -104,6 +105,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig().getDefaultProfile());
         assertNotNull(sqlConnection.getDefaultConsistencyLevel());
         final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
         assertNotNull(consistencyLevel);
@@ -136,7 +139,14 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ReconnectionPolicy reconnectionPolicy = sqlConnection.getSession().getContext().getReconnectionPolicy();
         assertNotNull(reconnectionPolicy);
         assertThat(reconnectionPolicy, instanceOf(ConstantReconnectionPolicy.class));
-        assertEquals(reconnectionPolicy.newControlConnectionSchedule(false).nextDelay(), Duration.ofSeconds(10));
+        assertEquals(Duration.ofSeconds(10), reconnectionPolicy.newControlConnectionSchedule(false).nextDelay());
+
+        final DriverExecutionProfile driverConfigDefaultProfile =
+            sqlConnection.getSession().getContext().getConfig().getDefaultProfile();
+        assertEquals(Duration.ofSeconds(15),
+            driverConfigDefaultProfile.getDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT));
+        assertFalse(driverConfigDefaultProfile.getBoolean(DefaultDriverOption.SOCKET_TCP_NODELAY));
+        assertTrue(driverConfigDefaultProfile.getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
 
         // Check the not overridden values.
         assertTrue(sqlConnection.getSession().getKeyspace().isPresent());
@@ -153,6 +163,37 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection.getSession().getContext().getConfig());
         assertEquals(Duration.ofSeconds(10), sqlConnection.getSession().getContext().getConfig()
             .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenConnectTimeout_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        initConnection(KEYSPACE, "connecttimeout=8000");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertEquals(Duration.ofSeconds(8), sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT));
+        // Check that when other socket options are not specified, the default values are used.
+        assertFalse(sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
+        assertTrue(sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getBoolean(DefaultDriverOption.SOCKET_TCP_NODELAY));
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenNonDefaultSocketOptions_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        initConnection(KEYSPACE, "tcpnodelay=false", "keepalive=true");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertTrue(sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
+        assertFalse(sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getBoolean(DefaultDriverOption.SOCKET_TCP_NODELAY));
         sqlConnection.close();
     }
 

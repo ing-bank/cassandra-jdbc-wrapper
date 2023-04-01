@@ -217,6 +217,28 @@ Consistency level defaults to `LOCAL_ONE` as defined in the configuration refere
 [Consistency levels](https://docs.datastax.com/en/dse/6.8/dse-arch/datastax_enterprise/dbInternals/dbIntConfigConsistency.html) 
 documentation for further details about the valid values for this argument).
 
+### Specifying socket options
+
+By default, some socket options are defined as following 
+* Connection timeout (`advanced.connection.connect-timeout`): 5 seconds 
+* [Nagle's algorithm](https://en.wikipedia.org/wiki/Nagle%27s_algorithm) (`advanced.socket.tcp-no-delay`): enabled
+* TCP keep-alive (`advanced.socket.keep-alive`): disabled
+
+For further information, see the properties documentation in the
+[Configuration reference](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/configuration/reference)
+page.
+
+However, if you want to use a non-default value for one (or several) of these options, use the following argument into 
+the JDBC URL and give the expected value (for durations, the value must be given in milliseconds):
+* `connecttimeout`: set a custom connection time-out (in milliseconds)
+* `keepalive`: enable/disable the TCP keep-alive
+* `tcpnodelay`: enable/disable the [Nagle's algorithm](https://en.wikipedia.org/wiki/Nagle%27s_algorithm)
+
+For example, to define a connect timeout of 10 seconds, enable the TCP keep-alive and disable the Nagle's algorithm:
+```
+jdbc:cassandra://host1--host2--host3:9042/keyspace?connecttimeout=10000&keepalive=true&tcpnodelay=false
+```
+
 ### Secure connection with SSL
 
 In order to secure the traffic between the driver and the Cassandra cluster, add at least one of these arguments to the

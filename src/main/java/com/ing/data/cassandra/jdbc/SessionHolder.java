@@ -175,6 +175,9 @@ class SessionHolder {
                 this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
                 this.properties.remove(Utils.TAG_SSL_HOSTNAME_VERIFICATION);
                 this.properties.remove(Utils.TAG_REQUEST_TIMEOUT);
+                this.properties.remove(Utils.TAG_CONNECT_TIMEOUT);
+                this.properties.remove(Utils.TAG_KEEP_ALIVE);
+                this.properties.remove(Utils.TAG_TCP_NO_DELAY);
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
@@ -229,6 +232,9 @@ class SessionHolder {
             driverConfigLoaderBuilder.withDuration(DefaultDriverOption.REQUEST_TIMEOUT,
                 Duration.of(requestTimeout, ChronoUnit.MILLIS));
         }
+
+        // Set socket options if defined.
+        configureSocketOptions(driverConfigLoaderBuilder, properties);
 
         // Set credentials when applicable.
         if (username.length() > 0) {
@@ -335,6 +341,28 @@ class SessionHolder {
             }
             throw new SQLNonTransientConnectionException(e);
         }
+    }
+
+    void configureSocketOptions(final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder,
+                                final Properties properties) {
+        // Parse options received from JDBC URL
+        final String connectTimeoutRawValue = properties.getProperty(Utils.TAG_CONNECT_TIMEOUT);
+        Integer connectTimeout = null;
+        if (NumberUtils.isParsable(connectTimeoutRawValue)) {
+            connectTimeout = Integer.parseInt(connectTimeoutRawValue);
+        }
+        final String enableTcpNoDelay = properties.getProperty(Utils.TAG_TCP_NO_DELAY);
+        final boolean tcpNoDelayEnabled = Boolean.TRUE.toString().equals(enableTcpNoDelay) || enableTcpNoDelay == null;
+        final String enableTcpKeepAlive = properties.getProperty(Utils.TAG_KEEP_ALIVE);
+        final boolean tcpKeepAliveEnabled = Boolean.TRUE.toString().equals(enableTcpKeepAlive);
+
+        // Apply configuration
+        if (connectTimeout != null) {
+            driverConfigLoaderBuilder.withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT,
+                Duration.of(connectTimeout, ChronoUnit.MILLIS));
+        }
+        driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_TCP_NODELAY, tcpNoDelayEnabled);
+        driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, tcpKeepAliveEnabled);
     }
 
     void configureSslEngineFactory(final CqlSessionBuilder builder, final String sslEngineFactoryClassName)

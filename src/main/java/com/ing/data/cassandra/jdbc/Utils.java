@@ -137,6 +137,18 @@ public final class Utils {
      */
     public static final String KEY_REQUEST_TIMEOUT = "requesttimeout";
     /**
+     * JDBC URL parameter key for the connection timeout.
+     */
+    public static final String KEY_CONNECT_TIMEOUT = "connecttimeout";
+    /**
+     * JDBC URL parameter key for the Nagle's algorithm enabling.
+     */
+    public static final String KEY_TCP_NO_DELAY = "tcpnodelay";
+    /**
+     * JDBC URL parameter key for the TCP keep-alive enabling.
+     */
+    public static final String KEY_KEEP_ALIVE = "keepalive";
+    /**
      * JDBC URL parameter key for the configuration file.
      */
     public static final String KEY_CONFIG_FILE = "configfile";
@@ -165,6 +177,9 @@ public final class Utils {
     public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
     public static final String TAG_CONFIG_FILE = "configFile";
     public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
+    public static final String TAG_CONNECT_TIMEOUT = "connectTimeout";
+    public static final String TAG_TCP_NO_DELAY = "tcpNoDelay";
+    public static final String TAG_KEEP_ALIVE = "keepAlive";
     public static final String TAG_COMPLIANCE_MODE = "complianceMode";
 
     public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
@@ -380,6 +395,15 @@ public final class Utils {
                 }
                 if (params.containsKey(KEY_REQUEST_TIMEOUT)) {
                     props.setProperty(TAG_REQUEST_TIMEOUT, params.get(KEY_REQUEST_TIMEOUT));
+                }
+                if (params.containsKey(KEY_CONNECT_TIMEOUT)) {
+                    props.setProperty(TAG_CONNECT_TIMEOUT, params.get(KEY_CONNECT_TIMEOUT));
+                }
+                if (params.containsKey(KEY_TCP_NO_DELAY)) {
+                    props.setProperty(TAG_TCP_NO_DELAY, params.get(KEY_TCP_NO_DELAY));
+                }
+                if (params.containsKey(KEY_KEEP_ALIVE)) {
+                    props.setProperty(TAG_KEEP_ALIVE, params.get(KEY_KEEP_ALIVE));
                 }
                 if (params.containsKey(KEY_CONFIG_FILE)) {
                     props.setProperty(TAG_CONFIG_FILE, params.get(KEY_CONFIG_FILE));

@@ -11,12 +11,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `setJson(int, Object)` in `CassandraPreparedStatement`.
 - Add query parameter `hostnameverification` to specify whether the hostname verification must be enabled or not when 
   SSL connection is used. See the discussion [#20](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/20).
+- Add some socket options thanks to the additional query parameters: `connecttimeout`, `readtimeout`, `tcpnodelay` and
+  `keepalive`. It fixes the issue [#16](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/16) of the 
+  [original project].
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
+- Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
 ### Removed
 - Remove vulnerable Guava compile dependency and replace it by standard Java, Apache Commons libraries and Caffeine
   for sessions caching.
-- Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
 ### Fixed
 - Fix the JDBC driver version returned by the methods of the classes `CassandraDriver` and `CassandraDatabaseMetaData` 
   to be consistent with the version of the JDBC wrapper artifact (see issue 
