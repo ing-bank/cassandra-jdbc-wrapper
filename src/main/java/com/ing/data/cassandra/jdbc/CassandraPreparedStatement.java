@@ -600,15 +600,13 @@ public class CassandraPreparedStatement extends CassandraStatement
                 this.boundStatement.setToNull(parameterIndex - 1);
                 break;
             case Types.OTHER:
-                // TODO: replace x.getClass().equals(T.class) by x instanceof T ?
-                if (x.getClass().equals(TupleValue.class)) {
+                if (x instanceof TupleValue) {
                     this.boundStatement = this.boundStatement.setTupleValue(parameterIndex - 1, (TupleValue) x);
-                } else if (x.getClass().equals(UUID.class)) {
+                } else if (x instanceof UUID) {
                     this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, (UUID) x);
-                } else if (x.getClass().equals(CqlDuration.class)) {
+                } else if (x instanceof CqlDuration) {
                     this.boundStatement = this.boundStatement.setCqlDuration(parameterIndex - 1, (CqlDuration) x);
-                } else if (x.getClass().equals(java.net.InetAddress.class)
-                    || x.getClass().equals(Inet4Address.class)) {
+                } else if (x instanceof java.net.InetAddress) {
                     this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, (InetAddress) x);
                 } else if (List.class.isAssignableFrom(x.getClass())) {
                     final List handledList = handleAsList(x.getClass(), x);

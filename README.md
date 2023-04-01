@@ -496,7 +496,7 @@ Make sure you send select queries that return the exact same columns, or you mig
 
 To create a new `Tuple` object in Java (see 
 [Tuple](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/tuples/) documentation), use the 
-`TupleType.of().newValue()` method.
+`com.datastax.oss.driver.api.core.type.DataTypes.tupleOf(...).newValue()` method.
 Note that the UDT ([User-Defined Types](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/udts/)) 
 fields cannot be instantiated outside the Datastax Java driver core. If you want to use prepared statements, you 
 must proceed as in the following example:
@@ -514,7 +514,7 @@ public class HelloCassandra {
         
         final String insertCql = "INSERT INTO t_udt (id, field_values, the_tuple, the_other_tuple) "
                                  + "VALUES (?, {key : ?, value : ?}, (?, ?, ?), ?);";
-        final TupleValue tuple = TupleType.of(DataType.cint(), DataType.text(), DataType.cfloat()).newValue();
+        final TupleValue tuple = DataTypes.tupleOf(DataTypes.INT, DataTypes.TEXT, DataTypes.FLOAT).newValue();
         tuple.setInt(0, 1).setString(1, "midVal").setFloat(2, (float)2.0);
         
         final PreparedStatement preparedStatement = con.prepareStatement(insertCql);

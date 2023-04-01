@@ -13,16 +13,24 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.TupleValue;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -99,5 +107,30 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         assertEquals("cf_test_ps", rsMetaData.getTableName(2));
         assertEquals("test_prep_stmt", rsMetaData.getSchemaName(2));
         assertEquals("embedded_test_cluster", rsMetaData.getCatalogName(2));
+    }
+
+    @Test
+    void givenPreparedStatement_whenExecute_insertExpectedValues() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        final String insertQuery = "INSERT INTO test_ps_othertypes "
+            + "(col_key, col_tuple, col_inet, col_duration, col_uuid)"
+            + "VALUES (?, ?, ?, ?, ?);";
+        final PreparedStatement preparedStatement = sqlConnection.prepareStatement(insertQuery);
+        preparedStatement.setString(1, "key1");
+        final TupleValue aTuple = DataTypes.tupleOf(DataTypes.TEXT, DataTypes.TEXT).newValue("val1", "val2");
+        preparedStatement.setObject(2, aTuple, Types.OTHER);
+        preparedStatement.setObject(3, InetAddress.getByName("127.0.0.1"), Types.OTHER);
+        preparedStatement.setObject(4, CqlDuration.from("15s"), Types.OTHER);
+        final UUID generatedUuid = UUIDs.random();
+        preparedStatement.setObject(5, generatedUuid, Types.OTHER);
+        preparedStatement.execute();
+
+        final ResultSet resultSet = statement.executeQuery("SELECT * FROM test_ps_othertypes WHERE col_key = 'key1';");
+        resultSet.next();
+
+        assertEquals(aTuple, resultSet.getObject("col_tuple"));
+        assertEquals(InetAddress.getByName("127.0.0.1"), resultSet.getObject("col_inet"));
+        assertEquals(CqlDuration.from("15s"), resultSet.getObject("col_duration"));
+        assertEquals(generatedUuid, resultSet.getObject("col_uuid"));
     }
 }

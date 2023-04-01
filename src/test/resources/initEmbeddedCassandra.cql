@@ -115,6 +115,13 @@ INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow1', true, 0)
 INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow2', false, 0);
 INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow3', true, 5);
 
+CREATE TABLE test_ps_othertypes (
+col_key text PRIMARY KEY,
+col_tuple tuple<text, text>,
+col_inet inet,
+col_duration duration,
+col_uuid uuid);
+
 /* Init keyspaces, UDTs and tables for JsonSupportUnitTest */
 DROP KEYSPACE IF EXISTS test_json_support;
 CREATE KEYSPACE "test_json_support" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
