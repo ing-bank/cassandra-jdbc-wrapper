@@ -42,7 +42,7 @@ someInt int);
 
 UPDATE pooled_test SET someInt = 1 WHERE somekey = 'world';
 
-/* Init keyspace and tables for CollectionsUnitTest */
+/* Init keyspace, UDTs and tables for CollectionsUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace_coll;
 CREATE KEYSPACE "test_keyspace_coll" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
@@ -114,3 +114,65 @@ CREATE INDEX ON test_prep_stmt.cf_test_ps (t1bValue);
 INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow1', true, 0);
 INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow2', false, 0);
 INSERT INTO cf_test_ps (keyname, t1bValue, t1iValue) VALUES('testRow3', true, 5);
+
+/* Init keyspaces, UDTs and tables for JsonSupportUnitTest */
+DROP KEYSPACE IF EXISTS test_json_support;
+CREATE KEYSPACE "test_json_support" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+USE test_json_support;
+CREATE TYPE CustomObject (
+asciiValue ascii,
+bigintValue bigint,
+blobValue blob,
+boolValue boolean,
+dateValue date,
+decimalValue decimal,
+doubleValue double,
+floatValue float,
+inetValue inet,
+intValue int,
+listValue list<int>,
+mapValue map<int, text>,
+smallintValue smallint,
+setValue set<int>,
+textValue text,
+timeValue time,
+tsValue timestamp,
+timeuuidValue timeuuid,
+tinyintValue tinyint,
+tupleValue tuple<int, text>,
+uuidValue uuid,
+varcharValue varchar,
+varintValue varint
+);
+
+CREATE TABLE json_test (
+key int PRIMARY KEY,
+textValue text,
+customObject frozen<CustomObject>);
+
+INSERT INTO json_test (key, textValue, customObject) VALUES(1, 'firstRow', {
+asciiValue: 'ascii text',
+bigintValue: 12345678900000,
+blobValue: textAsBlob('this is a blob'),
+boolValue: true,
+dateValue: '2023-03-25',
+decimalValue: 18.97,
+doubleValue: 2345.6,
+floatValue: 21.3,
+inetValue: '127.0.0.1',
+intValue: 98,
+listValue: [4, 6, 10],
+mapValue: {3: 'three', 8: 'eight'},
+smallintValue: 2,
+setValue: {2, 3, 5},
+textValue: 'simple text',
+timeValue: '12:30:45.789',
+tsValue: '2023-03-25 12:30:45.789',
+timeuuidValue: now(),
+tinyintValue: 12,
+tupleValue: (5, 'five'),
+uuidValue: uuid(),
+varcharValue: 'varchar text',
+varintValue: 4321
+});

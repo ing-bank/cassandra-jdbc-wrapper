@@ -25,6 +25,7 @@ import com.datastax.oss.driver.internal.core.type.DefaultListType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.datastax.oss.driver.internal.core.type.DefaultSetType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -64,15 +65,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
+import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
+
 /**
  * Cassandra prepared statement: implementation class for {@link PreparedStatement}.
  * <p>
- *     It extends {@link CassandraStatement} and thereby also implements {@link CassandraStatementExtras} interface
- *     providing extra methods not defined in JDBC API to manage some properties specific to the Cassandra statements
- *     (e.g. consistency level).
+ *     It extends {@link CassandraStatement} and thereby also implements {@link CassandraStatementExtras} and
+ *     {@link CassandraStatementJsonSupport} interfaces providing extra methods not defined in JDBC API to manage
+ *     some properties specific to the Cassandra statements (e.g. consistency level) and ease usage of JSON features
+ *     {@code INSERT INTO ... JSON} and {@code fromJson()} provided by Cassandra.
  * </p>
  */
-public class CassandraPreparedStatement extends CassandraStatement implements PreparedStatement {
+public class CassandraPreparedStatement extends CassandraStatement
+    implements PreparedStatement, CassandraStatementJsonSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraPreparedStatement.class);
 
@@ -697,6 +702,19 @@ public class CassandraPreparedStatement extends CassandraStatement implements Pr
         // URL data type is handled as a String.
         final String url = value.toString();
         setString(parameterIndex, url);
+    }
+
+    @Override
+    public <T> void setJson(final int parameterIndex, final T x) throws SQLException {
+        checkNotClosed();
+        try {
+            final String json = getObjectMapper().writeValueAsString(x);
+            setString(parameterIndex, json);
+        } catch (final JsonProcessingException e) {
+            throw new SQLException(
+                String.format("Unable to convert the object of type %s to bind the column of index %d",
+                    x.getClass().getName(), parameterIndex));
+        }
     }
 
     @Override

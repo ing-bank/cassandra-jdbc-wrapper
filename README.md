@@ -62,6 +62,14 @@ You can install it in your application using the following Maven dependency:
 </dependency>
 ```
 
+### Integration in Gradle projects
+
+You can install it in your application using the following Gradle dependency:
+
+```
+implementation 'com.ing.data:cassandra-jdbc-wrapper:${cassandra-jdbc-wrapper.version}'
+```
+
 ## Usage
 
 Connect to a Cassandra cluster using the following arguments:
@@ -101,7 +109,9 @@ public class HelloCassandraWithSession {
       .addContactPoint(new InetSocketAddress("localhost", 9042))
       .withLocalDatacenter("DC1")
       .build();
-    final Connection connection = new CassandraConnection(session, "keyspace", ConsistencyLevel.ALL, false, new Default());
+    final Connection connection = new CassandraConnection(
+            session, "keyspace", ConsistencyLevel.ALL, false, new Default()
+    );
   }
 }
 ```
@@ -254,10 +264,10 @@ The values currently allowed for this argument are:
 
 Here are the behaviours defined by the compliance modes listed above:
 
-| Method | Default mode | Liquibase mode |
-|---|---|---|
-| `CassandraConnection.getCatalog()` | returns the result of the query`SELECT cluster_name FROM system.local` or `null` if not available | returns `null` |
-| `CassandraStatement.executeUpdate(String)` | returns 0 | returns -1 |
+| Method                                     | Default mode                                                                                      | Liquibase mode |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------|----------------|
+| `CassandraConnection.getCatalog()`         | returns the result of the query`SELECT cluster_name FROM system.local` or `null` if not available | returns `null` |
+| `CassandraStatement.executeUpdate(String)` | returns 0                                                                                         | returns -1     |
 
 ### Using simple statements
 
@@ -272,16 +282,16 @@ public class HelloCassandra {
         while (result.next()) {
             System.out.println("bValue = " + result.getBoolean("bValue"));
             System.out.println("iValue = " + result.getInt("iValue"));
-        };
+        }
     }
 }
 ```
 
-### Using Prepared statements
+### Using prepared statements
 
 Considering the following table:
-```cql
-CREATE TABLE table1 (
+```
+CREATE TABLE example_table (
     bigint_col bigint PRIMARY KEY, 
     ascii_col ascii, 
     blob_col blob, 
@@ -308,7 +318,7 @@ CREATE TABLE table1 (
 );
 ```
 
-To insert a record into "table1" using a prepared statement:
+To insert a record into `example_table` using a prepared statement:
 
 ```java
 import com.datastax.oss.driver.api.core.data.CqlDuration;
@@ -319,12 +329,12 @@ import java.sql.Date;
 public class HelloCassandra {
   public void insertRecordToCassandraTable(final Connection connection) {
     final Statement statement = connection.createStatement();
-    final String insertCql = "INSERT INTO table1 (bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
+    final String insertCql = "INSERT INTO example_table (bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
       + "double_col, float_col, inet_col, int_col, smallint_col, text_col, timestamp_col, time_col, date_col, "
       + "tinyint_col, duration_col, uuid_col, timeuuid_col, varchar_col, varint_col, string_set_col, "
       + "string_list_col, string_map_col) "
       + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?);";
-    final PreparedStatement preparedStatement = connection.prepareStatement(insert);
+    final PreparedStatement preparedStatement = connection.prepareStatement(insertCql);
     preparedStatement.setObject(1, 1L);                             // bigint
     preparedStatement.setObject(2, "test");                         // ascii
     final ByteArrayInputStream baInputStream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8));
@@ -367,11 +377,11 @@ public class HelloCassandra {
 }
 ```
 
-### Using Async Queries
+### Using asynchronous queries
 
 #### Insert/update
 
-There are 2 ways to insert/update data using asynchronous queries. The first is to use JDBC batches (we're not talking 
+There are two ways to insert/update data using asynchronous queries. The first is to use JDBC batches (we're not talking 
 about Cassandra atomic batches here).
 
 With simple statements:
@@ -398,7 +408,7 @@ public class HelloCassandra {
             "INSERT INTO testCollection (keyValue, lValue) VALUES (?, ?)"
         );
         
-        for(int i = 0; i < 10; i++){
+        for (int i = 0; i < 10; i++) {
             statement.setInt(1, i);
             statement.setObject(2, Arrays.asList(1, 3, 12345));
             statement.addBatch();
@@ -417,7 +427,7 @@ public class HelloCassandra {
         final Statement statement = connection.createStatement();
 
         final StringBuilder queryBuilder = new StringBuilder();
-        for(int i = 0; i < 10; i++){
+        for (int i = 0; i < 10; i++) {
             queryBuilder.append("INSERT INTO testCollection (keyValue, lValue) VALUES(")
                         .append(i)
                         .append(", [1, 3, 12345]);");
@@ -437,7 +447,7 @@ the JDBC driver:
 public class HelloCassandra {
     public void multipleSelectQueries(final Connection connection) {
         final StringBuilder queries = new StringBuilder();
-        for(int i = 0; i < 10; i++){
+        for (int i = 0; i < 10; i++) {
             queries.append("SELECT * FROM testCollection where keyValue = ").append(i).append(";");
         }
 
@@ -454,7 +464,7 @@ public class HelloCassandra {
 }
 ```
 
-Make sure you send select queries that return the exact same columns or you might get pretty unpredictable results.
+Make sure you send select queries that return the exact same columns, or you might get pretty unpredictable results.
 
 ### Working with Tuples and UDTs
 
@@ -473,7 +483,7 @@ public class HelloCassandra {
                                 + "the_tuple frozen<tuple<int, text, float>>, " 
                                 + "the_other_tuple frozen<tuple<int, text, float>>);";
         statement.execute(createUDT);
-        statement.execute(createCF);
+        statement.execute(createTbl);
         statement.close();
         
         final String insertCql = "INSERT INTO t_udt (id, field_values, the_tuple, the_other_tuple) "
@@ -481,7 +491,7 @@ public class HelloCassandra {
         final TupleValue tuple = TupleType.of(DataType.cint(), DataType.text(), DataType.cfloat()).newValue();
         tuple.setInt(0, 1).setString(1, "midVal").setFloat(2, (float)2.0);
         
-        final PreparedStatement preparedStatement = con.prepareStatement(insert);
+        final PreparedStatement preparedStatement = con.prepareStatement(insertCql);
         preparedStatement.setLong(1, 1L);
         preparedStatement.setString(2, "key1");
         preparedStatement.setString(3, "value1");
@@ -509,22 +519,129 @@ public class HelloCassandra {
                                 + "field_values_map map<text,frozen<fieldmap>>, "
                                 + "tuple_map map<text,frozen<tuple<int,int>>>);";
         statement.execute(createUDT);
-        statement.execute(createCF);
+        statement.execute(createTbl);
         statement.close();
         
         final Statement insertStatement = con.createStatement();
         final String insertCql = "INSERT INTO t_udt_tuple_coll "
-                                 + "(id,field_values, the_tuple, field_values_map, tuple_map) "
+                                 + "(id, field_values, the_tuple, field_values_map, tuple_map) "
                                  + "VALUES (1, {{key : 'key1', value : 'value1'}, {key : 'key2', value : 'value2'}}, "
                                  + "[(1, 'midVal1', 1.0), (2, 'midVal2', 2.0)], "
                                  + "{'map_key1' : {key : 'key1', value : 'value1'},"
                                  + "'map_key2' : {key : 'key2', value : 'value2'}}, " 
                                  + "{'tuple1' : (1, 2), 'tuple2' : (2, 3)});";
-        insertStatement.execute(insert);
+        insertStatement.execute(insertCql);
         insertStatement.close();
     }
 }
 ```
+
+### Working with JSON
+
+In order to ease the usage of [JSON features](https://cassandra.apache.org/doc/latest/cassandra/cql/json.html) included
+in Cassandra, some non-JDBC standard functions are included in this wrapper:
+* on the one hand, to deserialize into Java objects the JSON objects returned by Cassandra in `ResultSet`s.
+* on the other hand, to serialize Java objects into JSON objects usable in `PreparedStatement`s sent to Cassandra. 
+
+Considering the following Java classes:
+```java
+public class JsonEntity {
+    @JsonProperty("col_int")
+    private int colInt;
+    @JsonProperty("col_text")
+    private String colText;
+    @JsonProperty("col_udt")
+    private JsonSubEntity colUdt;
+    
+    public JsonEntity (final int colInt, final String colText, final JsonSubEntity colUdt) {
+        this.colInt = colInt;
+        this.colText = colText;
+        this.colUdt = colUdt;
+    }
+}
+
+public class JsonSubEntity {
+    @JsonProperty("text_val")
+    private String textVal;
+    @JsonProperty("bool_val")
+    private boolean boolVal;
+  
+    public JsonSubEntity (final String textVal, final boolean boolVal) {
+        this.textVal = textVal;
+        this.boolVal = boolVal;
+    }
+}
+```
+
+The class `JsonSubEntity` above corresponds to the UDT `subType` in our Cassandra keyspace and the class `JsonEntity`
+matches the columns of the table `t_using_json`:
+```
+CREATE TYPE IF NOT EXISTS subType (text_val text, bool_val boolean);
+CREATE TABLE t_using_json (col_int int PRIMARY KEY, col_text text, col_udt frozen<subType>);
+```
+
+#### JSON support in result sets
+
+In the `CassandraResultSet` returned by select queries, we can use the JSON support of Cassandra and the JDBC wrapper
+to directly map the returned JSON to a Java object as shown below:
+
+```java
+public class HelloCassandra {
+  public void selectJson(final Connection connection) {
+    // Using SELECT JSON syntax
+    final Statement selectStatement1 = sqlConnection.createStatement();
+    final ResultSet resultSet1 = selectStatement1.executeQuery("SELECT JSON * FROM t_using_json WHERE col_int = 1;");
+    resultSet1.next();
+    final CassandraResultSet cassandraResultSet1 = (CassandraResultSet) resultSet1;
+    final JsonEntity jsonEntity = cassandraResultSet1.getObjectFromJson(JsonEntity.class);
+    
+    // Using toJson() function
+    final Statement selectStatement2 = sqlConnection.createStatement();
+    final ResultSet resultSet2 = selectStatement2.executeQuery(
+            "SELECT toJson(col_udt) AS json_udt FROM t_using_json WHERE col_int = 1;"
+    );
+    resultSet2.next();
+    final CassandraResultSet cassandraResultSet2 = (CassandraResultSet) resultSet2;
+    final JsonSubEntity jsonSubEntity = cassandraResultSet2.getObjectFromJson("json_udt", JsonSubEntity.class);
+  }
+}
+```
+
+#### JSON support in prepared statements
+
+In the `CassandraPreparedStatement`, we can use the JSON support of Cassandra and the JDBC wrapper to serialize a Java
+object into JSON to pass to Cassandra as shown below:
+
+```java
+public class HelloCassandra {
+  public void insertJson(final Connection connection) {
+    // Using INSERT INTO ... JSON syntax
+    final CassandraPreparedStatement insertStatement1 = connection.prepareStatement(
+      "INSERT INTO t_using_json JSON ?;");
+    insertStatement1.setJson(1, new JsonEntity(1, "a text value", new JsonSubEntity("1.1", false)));
+    insertStatement1.execute();
+    insertStatement1.close();
+
+    // Using fromJson() function
+    final CassandraPreparedStatement insertStatement2 = connection.prepareStatement(
+      "INSERT INTO t_using_json (col_int, col_text, col_udt) VALUES (?, ?, fromJson(?));");
+    insertStatement2.setInt(1, 2);
+    insertStatement2.setString(2, "another text value");
+    insertStatement2.setInt(3, new JsonSubEntity("2.1", true));
+    insertStatement2.execute();
+    insertStatement2.close();
+  }
+}
+```
+
+#### Important notes about statements using JSON support
+* The serialization/deserialization uses Jackson library.
+* Ensure having a default constructor in the target Java class to avoid deserialization issues.
+* The JSON keys returned by Cassandra are fully lower case. So, if necessary, use `@JsonProperty` Jackson annotation
+  in the target Java class.
+* Each field of the target Java class must use a Java type supported for deserialization of the corresponding CQL type 
+  as listed in the Javadoc of the interface `CassandraResultSetJsonSupport` and for serialization to the corresponding 
+  CQL type as listed in the Javadoc of the interface `CassandraStatementJsonSupport`.
 
 ## Contributing
 

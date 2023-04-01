@@ -27,8 +27,8 @@ public interface CassandraStatementExtras extends Statement {
     /**
      * Sets the consistency level for the statement.
      * <p>
-     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
-     *     consistency level documentation</a> for further details.
+     * See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
+     * consistency level documentation</a> for further details.
      * </p>
      *
      * @param consistencyLevel The consistency level to use for this statement.
@@ -38,8 +38,8 @@ public interface CassandraStatementExtras extends Statement {
     /**
      * Gets the consistency level for the statement.
      * <p>
-     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
-     *     consistency level documentation</a> for further details.
+     * See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">
+     * consistency level documentation</a> for further details.
      * </p>
      *
      * @return The consistency level used for this statement.

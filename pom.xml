@@ -97,10 +97,12 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <datastax.java.driver.version>4.15.0</datastax.java.driver.version>
+        <jackson.version>2.14.2</jackson.version>
         <!-- Versions for test dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit5.version>5.9.2</junit5.version>
         <junit-platform.version>1.9.2</junit-platform.version>
+        <lombok.version>1.18.26</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
         <testcontainers.version>1.17.6</testcontainers.version>
@@ -150,6 +152,23 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
             <version>${caffeine.version}</version>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- Unit tests libraries -->
@@ -219,6 +238,13 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Lombok (used only for some tests) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <scope>test</scope>
         </dependency>
 	</dependencies>

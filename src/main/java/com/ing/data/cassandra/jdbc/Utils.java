@@ -18,6 +18,16 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ing.data.cassandra.jdbc.json.CassandraBlobDeserializer;
+import com.ing.data.cassandra.jdbc.json.CassandraBlobSerializer;
+import com.ing.data.cassandra.jdbc.json.CassandraDateDeserializer;
+import com.ing.data.cassandra.jdbc.json.CassandraDateTimeDeserializer;
+import com.ing.data.cassandra.jdbc.json.CassandraTimeDeserializer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +38,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -199,6 +213,8 @@ public final class Utils {
     protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
     static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+
+    static ObjectMapper objectMapperInstance = null;
 
     private Utils() {
         // Private constructor to hide the public one.
@@ -533,6 +549,31 @@ public final class Utils {
         }
 
         return policyParametersMap;
+    }
+
+    /**
+     * Gets a pre-configured {@link ObjectMapper} for JSON support.
+     *
+     * @return A pre-configured {@link ObjectMapper} for JSON support.
+     */
+    public static ObjectMapper getObjectMapper() {
+        if (objectMapperInstance != null) {
+            return objectMapperInstance;
+        } else {
+            final ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+            objectMapper.registerModule(new JavaTimeModule());
+            final SimpleModule cassandraExtensionsModule = new SimpleModule();
+            cassandraExtensionsModule.addDeserializer(ByteBuffer.class, new CassandraBlobDeserializer());
+            cassandraExtensionsModule.addDeserializer(LocalDate.class, new CassandraDateDeserializer());
+            cassandraExtensionsModule.addDeserializer(LocalTime.class, new CassandraTimeDeserializer());
+            cassandraExtensionsModule.addDeserializer(OffsetDateTime.class, new CassandraDateTimeDeserializer());
+            cassandraExtensionsModule.addSerializer(ByteBuffer.class, new CassandraBlobSerializer());
+            objectMapper.registerModule(cassandraExtensionsModule);
+            objectMapperInstance = objectMapper;
+            return objectMapper;
+        }
     }
 
 }

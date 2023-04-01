@@ -28,6 +28,12 @@ import com.datastax.oss.driver.api.core.type.SetType;
 import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.key.OffsetDateTimeKeyDeserializer;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -88,12 +94,14 @@ import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.Utils.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
 
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
  * <p>
- *     It also implements {@link CassandraResultSetExtras} interface providing extra methods not defined in JDBC API to
- *     better handle some CQL data types.
+ *     It also implements {@link CassandraResultSetExtras} and {@link CassandraResultSetJsonSupport} interfaces
+ *     providing extra methods not defined in JDBC API to better handle some CQL data types and ease usage of JSON
+ *     features {@code SELECT JSON} and {@code toJson()} provided by Cassandra.
  * </p>
  *     The supported data types in CQL are:
  *     <table border="1">
@@ -139,7 +147,8 @@ import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
  *
  * @see ResultSet
  */
-public class CassandraResultSet extends AbstractResultSet implements CassandraResultSetExtras {
+public class CassandraResultSet extends AbstractResultSet
+    implements CassandraResultSetExtras, CassandraResultSetJsonSupport {
 
     /**
      * An empty Cassandra result set. It can be used to provide default implementations to methods returning
@@ -213,6 +222,7 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
      * @throws SQLException if a database access error occurs or this constructor is called with a closed
      * {@link Statement}.
      */
+    @SuppressWarnings("unchecked")
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
         this.metadata = new CResultSetMetaData();
         this.statement = statement;
@@ -1100,6 +1110,31 @@ public class CassandraResultSet extends AbstractResultSet implements CassandraRe
             return String.valueOf(o);
         }
         return null;
+    }
+
+    @Override
+    public <T> T getObjectFromJson(final int columnIndex, final Class<T> type) throws SQLException {
+        final String json = getString(columnIndex);
+        if (json != null) {
+            try {
+                return getObjectMapper().readValue(json, type);
+            } catch (final JsonProcessingException e) {
+                throw new SQLException(String.format("Unable to convert the column of index %d to an instance of %s",
+                    columnIndex, type.getName()), e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public <T> T getObjectFromJson(final String columnLabel, final Class<T> type) throws SQLException {
+        final int index = findColumn(columnLabel);
+        return getObjectFromJson(index + 1, type);
+    }
+
+    @Override
+    public <T> T getObjectFromJson(final Class<T> type) throws SQLException {
+        return getObjectFromJson("[json]", type);
     }
 
     private OffsetDateTime getOffsetDateTime(final Timestamp timestamp) {

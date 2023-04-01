@@ -36,7 +36,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @param columnIndex The column index (the first column is 1).
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     BigInteger getBigInteger(int columnIndex) throws SQLException;
 
@@ -48,7 +48,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     BigInteger getBigInteger(String columnLabel) throws SQLException;
 
@@ -60,7 +60,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     List<?> getList(int columnIndex) throws SQLException;
 
@@ -73,7 +73,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     List<?> getList(String columnLabel) throws SQLException;
 
@@ -85,7 +85,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     Set<?> getSet(int columnIndex) throws SQLException;
 
@@ -98,7 +98,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     Set<?> getSet(String columnLabel) throws SQLException;
 
@@ -110,7 +110,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     Map<?, ?> getMap(int columnIndex) throws SQLException;
 
@@ -123,7 +123,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     Map<?, ?> getMap(String columnLabel) throws SQLException;
 
@@ -134,7 +134,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @param columnIndex The column index (the first column is 1).
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     CqlDuration getDuration(int columnIndex) throws SQLException;
 
@@ -146,7 +146,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     CqlDuration getDuration(String columnLabel) throws SQLException;
 
