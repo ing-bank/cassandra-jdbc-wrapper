@@ -114,6 +114,7 @@ public class CassandraPreparedStatement extends CassandraStatement
      * @param resultSetConcurrency The result set concurrency
      * @param resultSetHoldability The result set holdability.
      * @throws SQLException when something went wrong during the initialisation of the statement.
+     * @throws SQLTransientException when something went wrong during the initialisation of the statement.
      */
     CassandraPreparedStatement(final CassandraConnection connection, final String cql, final int resultSetType,
                                final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {

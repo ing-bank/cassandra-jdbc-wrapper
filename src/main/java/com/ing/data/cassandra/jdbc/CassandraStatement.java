@@ -195,6 +195,7 @@ public class CassandraStatement extends AbstractStatement
      * @param resultSetConcurrency  The result set concurrency.
      * @param resultSetHoldability  The result set holdability.
      * @throws SQLException when something went wrong during the instantiation of the statement.
+     * @throws SQLSyntaxErrorException when an argument for result set configuration is invalid.
      */
     CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
                        final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
@@ -206,19 +207,19 @@ public class CassandraStatement extends AbstractStatement
         if (!(resultSetType == ResultSet.TYPE_FORWARD_ONLY
             || resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
             || resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE)) {
-            throw new SQLSyntaxErrorException(Utils.BAD_TYPE_RS);
+            throw new SQLSyntaxErrorException(String.format(Utils.BAD_TYPE_RS, resultSetType));
         }
         this.resultSetType = resultSetType;
 
         if (!(resultSetConcurrency == ResultSet.CONCUR_READ_ONLY
             || resultSetConcurrency == ResultSet.CONCUR_UPDATABLE)) {
-            throw new SQLSyntaxErrorException(Utils.BAD_CONCURRENCY_RS);
+            throw new SQLSyntaxErrorException(String.format(Utils.BAD_CONCURRENCY_RS, resultSetConcurrency));
         }
         this.resultSetConcurrency = resultSetConcurrency;
 
         if (!(resultSetHoldability == ResultSet.HOLD_CURSORS_OVER_COMMIT
             || resultSetHoldability == ResultSet.CLOSE_CURSORS_AT_COMMIT)) {
-            throw new SQLSyntaxErrorException(Utils.BAD_HOLD_RS);
+            throw new SQLSyntaxErrorException(String.format(Utils.BAD_HOLD_RS, resultSetHoldability));
         }
         this.resultSetHoldability = resultSetHoldability;
     }

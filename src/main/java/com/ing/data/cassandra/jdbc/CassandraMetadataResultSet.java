@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
@@ -1054,14 +1055,10 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
         @Override
         public String getColumnName(final int column) {
-            try {
-                if (currentRow != null) {
-                    return currentRow.getColumnDefinitions().getName(column - 1);
-                }
-                return driverResultSet.getColumnDefinitions().asList().get(column - 1).getName();
-            } catch (final Exception e) {
-                return StringUtils.EMPTY; // TODO: review this exception management
+            if (currentRow != null) {
+                return currentRow.getColumnDefinitions().getName(column - 1);
             }
+            return driverResultSet.getColumnDefinitions().asList().get(column - 1).getName();
         }
 
         @Override
@@ -1101,16 +1098,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         public String getColumnTypeName(final int column) {
             // Specification says "database specific type name"; for Cassandra this means the AbstractType.
             final DataType type;
-            try {
-                if (currentRow != null) {
-                    type = getCqlDataType(column);
-                } else {
-                    type = driverResultSet.getColumnDefinitions().getType(column - 1);
-                }
-                return type.toString();
-            } catch (final Exception e) {
-                return "VARCHAR"; // TODO: review this exception management
+            if (currentRow != null) {
+                type = getCqlDataType(column);
+            } else {
+                type = driverResultSet.getColumnDefinitions().getType(column - 1);
             }
+            return type.toString();
         }
 
         @Override
@@ -1190,16 +1183,52 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             return column == 0;
         }
 
+        /**
+         * Indicates whether the designated column can be used in a where clause.
+         * <p>
+         *    Using Cassandra database, we consider that only the columns in a primary key (partitioning keys and
+         *    clustering columns) or in an index are searchable.<br>
+         *    See: <a href="https://cassandra.apache.org/doc/latest/cassandra/cql/dml.html#where-clause">
+         *        WHERE clause in CQL SELECT statements</a>
+         * </p>
+         *
+         * @param column The column index (the first column is 1, the second is 2, ...).
+         * @return {@code true} if so, {@code false} otherwise.
+         * @throws SQLException if a database access error occurs.
+         */
         @Override
-        public boolean isSearchable(final int column) {
-            // TODO: implementation to review
-            return false;
+        public boolean isSearchable(final int column) throws SQLException {
+            if (statement == null) {
+                return false;
+            }
+            final String columnName = getColumnName(column);
+            final AtomicBoolean searchable = new AtomicBoolean(false);
+            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
+                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+                .ifPresent(tableMetadata -> {
+                    boolean result;
+                    // Check first if the column is a clustering column or in a partitioning key.
+                    result = tableMetadata.getPrimaryKey().stream()
+                        .anyMatch(columnMetadata -> columnMetadata.getName().asInternal().equals(columnName));
+                    // If not, check if the column is used in an index.
+                    if (!result) {
+                        result = tableMetadata.getIndexes().values().stream()
+                            .anyMatch(indexMetadata -> indexMetadata.getTarget().contains(columnName));
+                    }
+                    searchable.set(result);
+                });
+            return searchable.get();
         }
 
         @Override
         public boolean isSigned(final int column) {
-            // TODO: implementation to review
-            return false;
+            final DataType type;
+            if (currentRow != null) {
+                type = getCqlDataType(column);
+            } else {
+                type = driverResultSet.getColumnDefinitions().asList().get(column - 1).getType();
+            }
+            return TypesMap.getTypeForComparator(type.toString()).isSigned();
         }
 
         @Override

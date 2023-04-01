@@ -76,6 +76,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
@@ -94,51 +95,51 @@ import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
  * <p>
- *     It also implements {@link CassandraResultSetExtras} and {@link CassandraResultSetJsonSupport} interfaces
- *     providing extra methods not defined in JDBC API to better handle some CQL data types and ease usage of JSON
- *     features {@code SELECT JSON} and {@code toJson()} provided by Cassandra.
+ * It also implements {@link CassandraResultSetExtras} and {@link CassandraResultSetJsonSupport} interfaces
+ * providing extra methods not defined in JDBC API to better handle some CQL data types and ease usage of JSON
+ * features {@code SELECT JSON} and {@code toJson()} provided by Cassandra.
  * </p>
- *     The supported data types in CQL are:
- *     <table border="1">
- *         <tr><th>CQL Type </th><th>Java type          </th><th>Description</th></tr>
- *         <tr><td>ascii    </td><td>{@link String}     </td><td>US-ASCII character string</td></tr>
- *         <tr><td>bigint   </td><td>{@link Long}       </td><td>64-bit signed long</td></tr>
- *         <tr><td>blob     </td><td>{@link ByteBuffer} </td><td>Arbitrary bytes (no validation)</td></tr>
- *         <tr><td>boolean  </td><td>{@link Boolean}    </td><td>Boolean value: true or false</td></tr>
- *         <tr><td>counter  </td><td>{@link Long}       </td><td>Counter column (64-bit long)</td></tr>
- *         <tr><td>date     </td><td>{@link Date}       </td><td>A date with no corresponding time value; encoded date
- *         as a 32-bit integer representing days since epoch (January 1, 1970)</td></tr>
- *         <tr><td>decimal  </td><td>{@link BigDecimal} </td><td>Variable-precision decimal</td></tr>
- *         <tr><td>double   </td><td>{@link Double}     </td><td>64-bit IEEE-754 floating point</td></tr>
- *         <tr><td>duration </td><td>{@link CqlDuration}</td><td>A duration with nanosecond precision</td></tr>
- *         <tr><td>float    </td><td>{@link Float}      </td><td>32-bit IEEE-754 floating point</td></tr>
- *         <tr><td>inet     </td><td>{@link InetAddress}</td><td>IP address string in IPv4 or IPv6 format</td></tr>
- *         <tr><td>int      </td><td>{@link Integer}    </td><td>32-bit signed integer</td></tr>
- *         <tr><td>list     </td><td>{@link List}       </td><td>A collection of one or more ordered elements:
- *         <code>[literal, literal, literal]</code></td></tr>
- *         <tr><td>map      </td><td>{@link Map}        </td><td>A JSON-style array of literals:
- *         <code>{ literal : literal, literal : literal ... }</code></td></tr>
- *         <tr><td>set      </td><td>{@link Set}        </td><td>A collection of one or more elements:
- *         <code>{ literal, literal, literal }</code></td></tr>
- *         <tr><td>smallint </td><td>{@link Short}      </td><td>16-bit signed integer</td></tr>
- *         <tr><td>text     </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
- *         <tr><td>time     </td><td>{@link Time}       </td><td>A value encoded as a 64-bit signed integer
- *         representing the number of nanoseconds since midnight</td></tr>
- *         <tr><td>timestamp</td><td>{@link Timestamp}  </td><td>Date and time with millisecond precision, encoded as
- *         8 bytes since epoch</td></tr>
- *         <tr><td>timeuuid </td><td>{@link UUID}       </td><td>Version 1 UUID only</td></tr>
- *         <tr><td>tinyint  </td><td>{@link Byte}       </td><td>8-bits signed integer</td></tr>
- *         <tr><td>tuple    </td><td>{@link TupleValue} </td><td>A group of 2-3 fields</td></tr>
- *         <tr><td>udt      </td><td>{@link UdtValue}   </td><td>A set of data fields where each field is named and
- *         typed</td></tr>
- *         <tr><td>uuid     </td><td>{@link UUID}       </td><td>A UUID in standard UUID format</td></tr>
- *         <tr><td>varchar  </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
- *         <tr><td>varint   </td><td>{@link BigInteger} </td><td>Arbitrary-precision integer</td></tr>
- *     </table>
- *     See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
- *         CQL data types reference</a> and
- *     <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
- *         CQL temporal types reference</a>.
+ * The supported data types in CQL are:
+ * <table border="1">
+ *     <tr><th>CQL Type </th><th>Java type          </th><th>Description</th></tr>
+ *     <tr><td>ascii    </td><td>{@link String}     </td><td>US-ASCII character string</td></tr>
+ *     <tr><td>bigint   </td><td>{@link Long}       </td><td>64-bit signed long</td></tr>
+ *     <tr><td>blob     </td><td>{@link ByteBuffer} </td><td>Arbitrary bytes (no validation)</td></tr>
+ *     <tr><td>boolean  </td><td>{@link Boolean}    </td><td>Boolean value: true or false</td></tr>
+ *     <tr><td>counter  </td><td>{@link Long}       </td><td>Counter column (64-bit long)</td></tr>
+ *     <tr><td>date     </td><td>{@link Date}       </td><td>A date with no corresponding time value; encoded date
+ *     as a 32-bit integer representing days since epoch (January 1, 1970)</td></tr>
+ *     <tr><td>decimal  </td><td>{@link BigDecimal} </td><td>Variable-precision decimal</td></tr>
+ *     <tr><td>double   </td><td>{@link Double}     </td><td>64-bit IEEE-754 floating point</td></tr>
+ *     <tr><td>duration </td><td>{@link CqlDuration}</td><td>A duration with nanosecond precision</td></tr>
+ *     <tr><td>float    </td><td>{@link Float}      </td><td>32-bit IEEE-754 floating point</td></tr>
+ *     <tr><td>inet     </td><td>{@link InetAddress}</td><td>IP address string in IPv4 or IPv6 format</td></tr>
+ *     <tr><td>int      </td><td>{@link Integer}    </td><td>32-bit signed integer</td></tr>
+ *     <tr><td>list     </td><td>{@link List}       </td><td>A collection of one or more ordered elements:
+ *     <code>[literal, literal, literal]</code></td></tr>
+ *     <tr><td>map      </td><td>{@link Map}        </td><td>A JSON-style array of literals:
+ *     <code>{ literal : literal, literal : literal ... }</code></td></tr>
+ *     <tr><td>set      </td><td>{@link Set}        </td><td>A collection of one or more elements:
+ *     <code>{ literal, literal, literal }</code></td></tr>
+ *     <tr><td>smallint </td><td>{@link Short}      </td><td>16-bit signed integer</td></tr>
+ *     <tr><td>text     </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
+ *     <tr><td>time     </td><td>{@link Time}       </td><td>A value encoded as a 64-bit signed integer
+ *     representing the number of nanoseconds since midnight</td></tr>
+ *     <tr><td>timestamp</td><td>{@link Timestamp}  </td><td>Date and time with millisecond precision, encoded as
+ *     8 bytes since epoch</td></tr>
+ *     <tr><td>timeuuid </td><td>{@link UUID}       </td><td>Version 1 UUID only</td></tr>
+ *     <tr><td>tinyint  </td><td>{@link Byte}       </td><td>8-bits signed integer</td></tr>
+ *     <tr><td>tuple    </td><td>{@link TupleValue} </td><td>A group of 2-3 fields</td></tr>
+ *     <tr><td>udt      </td><td>{@link UdtValue}   </td><td>A set of data fields where each field is named and
+ *     typed</td></tr>
+ *     <tr><td>uuid     </td><td>{@link UUID}       </td><td>A UUID in standard UUID format</td></tr>
+ *     <tr><td>varchar  </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
+ *     <tr><td>varint   </td><td>{@link BigInteger} </td><td>Arbitrary-precision integer</td></tr>
+ * </table>
+ * See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
+ *     CQL data types reference</a> and
+ * <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
+ *     CQL temporal types reference</a>.
  *
  * @see ResultSet
  */
@@ -192,7 +193,7 @@ public class CassandraResultSet extends AbstractResultSet
      * @param statement The statement.
      * @param resultSet The result set from the Cassandra driver.
      * @throws SQLException if a database access error occurs or this constructor is called with a closed
-     * {@link Statement}.
+     *                      {@link Statement}.
      */
     CassandraResultSet(final CassandraStatement statement, final ResultSet resultSet) throws SQLException {
         this.metadata = new CResultSetMetaData();
@@ -212,10 +213,10 @@ public class CassandraResultSet extends AbstractResultSet
     /**
      * Constructor. It instantiates a new Cassandra result set from a list of {@link ResultSet}.
      *
-     * @param statement     The statement.
-     * @param resultSets    The list of result sets from the Cassandra driver.
+     * @param statement  The statement.
+     * @param resultSets The list of result sets from the Cassandra driver.
      * @throws SQLException if a database access error occurs or this constructor is called with a closed
-     * {@link Statement}.
+     *                      {@link Statement}.
      */
     @SuppressWarnings("unchecked")
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
@@ -669,7 +670,7 @@ public class CassandraResultSet extends AbstractResultSet
      * @param columnIndex The column index (the first column is 1).
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
      * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     * on a closed result set.
+     *                      on a closed result set.
      */
     public LocalDate getLocalDate(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
@@ -1599,16 +1600,52 @@ public class CassandraResultSet extends AbstractResultSet
             return column == 0;
         }
 
+        /**
+         * Indicates whether the designated column can be used in a where clause.
+         * <p>
+         *    Using Cassandra database, we consider that only the columns in a primary key (partitioning keys and
+         *    clustering columns) or in an index are searchable.<br>
+         *    See: <a href="https://cassandra.apache.org/doc/latest/cassandra/cql/dml.html#where-clause">
+         *        WHERE clause in CQL SELECT statements</a>
+         * </p>
+         *
+         * @param column The column index (the first column is 1, the second is 2, ...).
+         * @return {@code true} if so, {@code false} otherwise.
+         * @throws SQLException if a database access error occurs.
+         */
         @Override
-        public boolean isSearchable(final int column) {
-            // TODO: implementation to review
-            return false;
+        public boolean isSearchable(final int column) throws SQLException {
+            if (statement == null) {
+                return false;
+            }
+            final String columnName = getColumnName(column);
+            final AtomicBoolean searchable = new AtomicBoolean(false);
+            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
+                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+                .ifPresent(tableMetadata -> {
+                    boolean result;
+                    // Check first if the column is a clustering column or in a partitioning key.
+                    result = tableMetadata.getPrimaryKey().stream()
+                        .anyMatch(columnMetadata -> columnMetadata.getName().asInternal().equals(columnName));
+                    // If not, check if the column is used in an index.
+                    if (!result) {
+                        result = tableMetadata.getIndexes().values().stream()
+                            .anyMatch(indexMetadata -> indexMetadata.getTarget().contains(columnName));
+                    }
+                    searchable.set(result);
+                });
+            return searchable.get();
         }
 
         @Override
         public boolean isSigned(final int column) {
-            // TODO: implementation to review
-            return false;
+            final DataType dataType;
+            if (currentRow != null) {
+                dataType = currentRow.getColumnDefinitions().get(column - 1).getType();
+            } else {
+                dataType = driverResultSet.getColumnDefinitions().get(column - 1).getType();
+            }
+            return TypesMap.getTypeForComparator(dataType.toString()).isSigned();
         }
 
         @Override

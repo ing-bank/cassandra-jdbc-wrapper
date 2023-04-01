@@ -28,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -197,16 +198,15 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1ivalue;INT;11"))));
     }
 
-
     @Test
     void givenStatement_whenGetResultMetadata_returnExpectedValues() throws Exception {
         final Statement stmtCreateTable = sqlConnection.createStatement();
 
-        // Create the target table with each basic data type available in Cassandra.
         final String createTableQuery = "CREATE TABLE " + KEYSPACE + ".collections_metadata("
             + "part_key text PRIMARY KEY, "
             + "set1 set<text>, "
             + "description text, "
+            + "numeric int, "
             + "map2 map<text,int>, "
             + "list3 list<text>);";
         stmtCreateTable.execute(createTableQuery);
@@ -215,13 +215,13 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         // Insert data in the created table and select them.
         final Statement stmt = sqlConnection.createStatement();
         final String insertQuery = "INSERT INTO " + KEYSPACE
-            + ".collections_metadata(part_key, set1, description, map2, list3) "
-            + "VALUES ('part_key',{'val1','val2','val3'},'desc',{'val1':1,'val2':2},['val1','val2']);";
+            + ".collections_metadata(part_key, set1, description, numeric, map2, list3) "
+            + "VALUES ('part_key',{'val1','val2','val3'},'desc',100,{'val1':1,'val2':2},['val1','val2']);";
         stmt.executeQuery(insertQuery);
         final ResultSet result = stmt.executeQuery("SELECT * FROM " + KEYSPACE + ".collections_metadata");
 
         assertTrue(result.next());
-        assertEquals(5, result.getMetaData().getColumnCount());
+        assertEquals(6, result.getMetaData().getColumnCount());
         for (int i = 1; i <= result.getMetaData().getColumnCount(); i++) {
             log.debug("getColumnName : " + result.getMetaData().getColumnName(i));
             log.debug("getCatalogName : " + result.getMetaData().getCatalogName(i));
@@ -241,31 +241,43 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertEquals("description", result.getMetaData().getColumnName(2));
         assertEquals("list3", result.getMetaData().getColumnName(3));
         assertEquals("map2", result.getMetaData().getColumnName(4));
-        assertEquals("set1", result.getMetaData().getColumnName(5));
+        assertEquals("numeric", result.getMetaData().getColumnName(5));
+        assertEquals("set1", result.getMetaData().getColumnName(6));
 
         assertEquals("part_key", result.getMetaData().getColumnLabel(1));
         assertEquals("description", result.getMetaData().getColumnLabel(2));
         assertEquals("list3", result.getMetaData().getColumnLabel(3));
         assertEquals("map2", result.getMetaData().getColumnLabel(4));
-        assertEquals("set1", result.getMetaData().getColumnLabel(5));
+        assertEquals("numeric", result.getMetaData().getColumnLabel(5));
+        assertEquals("set1", result.getMetaData().getColumnLabel(6));
 
         assertEquals("collections_metadata", result.getMetaData().getTableName(1));
         assertEquals("collections_metadata", result.getMetaData().getTableName(2));
         assertEquals("collections_metadata", result.getMetaData().getTableName(3));
         assertEquals("collections_metadata", result.getMetaData().getTableName(4));
         assertEquals("collections_metadata", result.getMetaData().getTableName(5));
+        assertEquals("collections_metadata", result.getMetaData().getTableName(6));
 
         assertEquals("java.lang.String", result.getMetaData().getColumnClassName(1));
         assertEquals("java.lang.String", result.getMetaData().getColumnClassName(2));
         assertEquals("java.util.List", result.getMetaData().getColumnClassName(3));
         assertEquals("java.util.Map", result.getMetaData().getColumnClassName(4));
-        assertEquals("java.util.Set", result.getMetaData().getColumnClassName(5));
+        assertEquals("java.lang.Integer", result.getMetaData().getColumnClassName(5));
+        assertEquals("java.util.Set", result.getMetaData().getColumnClassName(6));
 
         assertEquals(12, result.getMetaData().getColumnType(1));
         assertEquals(12, result.getMetaData().getColumnType(2));
         assertEquals(1111, result.getMetaData().getColumnType(3));
         assertEquals(1111, result.getMetaData().getColumnType(4));
-        assertEquals(1111, result.getMetaData().getColumnType(5));
+        assertEquals(4, result.getMetaData().getColumnType(5));
+        assertEquals(1111, result.getMetaData().getColumnType(6));
+
+        assertFalse(result.getMetaData().isSigned(1));
+        assertFalse(result.getMetaData().isSigned(2));
+        assertFalse(result.getMetaData().isSigned(3));
+        assertFalse(result.getMetaData().isSigned(4));
+        assertTrue(result.getMetaData().isSigned(5));
+        assertFalse(result.getMetaData().isSigned(6));
 
         stmt.close();
     }
@@ -281,6 +293,41 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     void givenCassandraMetadataResultSet_whenUnwrapToInvalidInterface_throwException() {
         final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
         assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+    }
+
+    @Test
+    void givenStatement_whenGetMetadataIsSearchable_returnExpectedValues() throws Exception {
+        final Statement stmtCreateTable = sqlConnection.createStatement();
+
+        final String createTableQuery = "CREATE TABLE " + KEYSPACE + ".searchable_metadata("
+            + "part_key_1 text, "
+            + "part_key_2 text, "
+            + "clust_col text, "
+            + "text_col text, "
+            + "indexed_col text, "
+            + "PRIMARY KEY ((part_key_1, part_key_2), clust_col));";
+        stmtCreateTable.execute(createTableQuery);
+        final String createIndexQuery = "CREATE INDEX idx_test ON " + KEYSPACE + ".searchable_metadata (indexed_col);";
+        stmtCreateTable.execute(createIndexQuery);
+        stmtCreateTable.close();
+
+        // Insert data in the created table and select them.
+        final Statement stmt = sqlConnection.createStatement();
+        final String insertQuery = "INSERT INTO " + KEYSPACE
+            + ".searchable_metadata(part_key_1, part_key_2, clust_col, text_col, indexed_col) "
+            + "VALUES ('part_key1', 'part_key2', 'clustering_column', 'any text', 'indexed_column');";
+        stmt.executeQuery(insertQuery);
+        final ResultSet result = stmt.executeQuery("SELECT part_key_1, part_key_2, clust_col, text_col, indexed_col "
+            + "FROM " + KEYSPACE + ".searchable_metadata");
+
+        assertTrue(result.next());
+        assertTrue(result.getMetaData().isSearchable(1));
+        assertTrue(result.getMetaData().isSearchable(2));
+        assertTrue(result.getMetaData().isSearchable(3));
+        assertFalse(result.getMetaData().isSearchable(4));
+        assertTrue(result.getMetaData().isSearchable(5));
+
+        stmt.close();
     }
 
 }
