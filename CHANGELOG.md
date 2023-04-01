@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add non-JDBC standard [JSON support](https://cassandra.apache.org/doc/latest/cassandra/cql/json.html) with the 
   methods `getObjectFromJson(int | String, Class)` and `getObjectFromJson(Class)` in `CassandraResultSet` and
   `setJson(int, Object)` in `CassandraPreparedStatement`.
+- Add query parameter `hostnameverification` to specify whether the hostname verification must be enabled or not when 
+  SSL connection is used. See the discussion [#20](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/20).
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
 ### Removed

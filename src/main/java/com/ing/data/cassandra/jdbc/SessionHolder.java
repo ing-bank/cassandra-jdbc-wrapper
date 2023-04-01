@@ -173,6 +173,7 @@ class SessionHolder {
                 this.properties.remove(Utils.TAG_PASSWORD);
                 this.properties.remove(Utils.TAG_ENABLE_SSL);
                 this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
+                this.properties.remove(Utils.TAG_SSL_HOSTNAME_VERIFICATION);
                 this.properties.remove(Utils.TAG_REQUEST_TIMEOUT);
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
@@ -198,6 +199,9 @@ class SessionHolder {
             StringUtils.EMPTY);
         final boolean sslEnabled = Boolean.TRUE.toString().equals(enableSslValue)
             || (enableSslValue == null && StringUtils.isNotEmpty(sslEngineFactoryClassName));
+        final String enableSslHostnameVerification = properties.getProperty(Utils.TAG_SSL_HOSTNAME_VERIFICATION);
+        final boolean sslHostnameVerificationEnabled = Boolean.TRUE.toString().equals(enableSslHostnameVerification)
+            || enableSslHostnameVerification == null;
         final String requestTimeoutRawValue = properties.getProperty(Utils.TAG_REQUEST_TIMEOUT);
         Integer requestTimeout = null;
         if (NumberUtils.isParsable(requestTimeoutRawValue)) {
@@ -308,6 +312,8 @@ class SessionHolder {
                 if (StringUtils.isNotEmpty(sslEngineFactoryClassName)) {
                     configureSslEngineFactory(builder, sslEngineFactoryClassName);
                 } else {
+                    driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SSL_HOSTNAME_VALIDATION,
+                        sslHostnameVerificationEnabled);
                     configureDefaultSslEngineFactory(builder, driverConfigLoaderBuilder);
                 }
             }

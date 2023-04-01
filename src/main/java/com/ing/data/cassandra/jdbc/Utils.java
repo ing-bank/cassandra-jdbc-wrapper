@@ -117,6 +117,10 @@ public final class Utils {
      */
     public static final String KEY_SSL_ENGINE_FACTORY = "sslenginefactory";
     /**
+     * JDBC URL parameter key for SSL hostname verification disabling.
+     */
+    public static final String KEY_SSL_HOSTNAME_VERIFICATION = "hostnameverification";
+    /**
      * JDBC URL parameter key for the cloud secure connect bundle.
      */
     public static final String KEY_CLOUD_SECURE_CONNECT_BUNDLE = "secureconnectbundle";
@@ -157,6 +161,7 @@ public final class Utils {
     public static final String TAG_CONNECTION_RETRIES = "retries";
     public static final String TAG_ENABLE_SSL = "enableSsl";
     public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
+    public static final String TAG_SSL_HOSTNAME_VERIFICATION = "hostnameVerification";
     public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
     public static final String TAG_CONFIG_FILE = "configFile";
     public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
@@ -172,45 +177,45 @@ public final class Utils {
      */
     public static final String NULL_KEYWORD = "NULL";
 
-    protected static final String WAS_CLOSED_CONN = "Method was called on a closed Connection.";
-    protected static final String WAS_CLOSED_STMT = "Method was called on a closed Statement.";
-    protected static final String WAS_CLOSED_RS = "Method was called on a closed ResultSet.";
-    protected static final String NO_INTERFACE = "No object was found that matched the provided interface: %s";
-    protected static final String NO_TRANSACTIONS = "The Cassandra implementation does not support transactions.";
-    protected static final String ALWAYS_AUTOCOMMIT = "The Cassandra implementation is always in auto-commit mode.";
-    protected static final String BAD_TIMEOUT = "The timeout value was less than zero.";
-    protected static final String NOT_SUPPORTED = "The Cassandra implementation does not support this method.";
-    protected static final String NO_GEN_KEYS =
+    static final String WAS_CLOSED_CONN = "Method was called on a closed Connection.";
+    static final String WAS_CLOSED_STMT = "Method was called on a closed Statement.";
+    static final String WAS_CLOSED_RS = "Method was called on a closed ResultSet.";
+    static final String NO_INTERFACE = "No object was found that matched the provided interface: %s";
+    static final String NO_TRANSACTIONS = "The Cassandra implementation does not support transactions.";
+    static final String ALWAYS_AUTOCOMMIT = "The Cassandra implementation is always in auto-commit mode.";
+    static final String BAD_TIMEOUT = "The timeout value was less than zero.";
+    static final String NOT_SUPPORTED = "The Cassandra implementation does not support this method.";
+    static final String NO_GEN_KEYS =
         "The Cassandra implementation does not currently support returning generated keys.";
-    protected static final String NO_MULTIPLE =
+    static final String NO_MULTIPLE =
         "The Cassandra implementation does not currently support multiple open Result Sets.";
-    protected static final String NO_RESULT_SET =
+    static final String NO_RESULT_SET =
         "No ResultSet returned from the CQL statement passed in an 'executeQuery()' method.";
-    protected static final String BAD_KEEP_RS =
+    static final String BAD_KEEP_RS =
         "The argument for keeping the current result set: %s is not a valid value.";
-    protected static final String BAD_TYPE_RS = "The argument for result set type: %s is not a valid value.";
-    protected static final String BAD_CONCURRENCY_RS =
+    static final String BAD_TYPE_RS = "The argument for result set type: %s is not a valid value.";
+    static final String BAD_CONCURRENCY_RS =
         "The argument for result set concurrency: %s is not a valid value.";
-    protected static final String BAD_HOLD_RS =
+    static final String BAD_HOLD_RS =
         "The argument for result set holdability: %s is not a valid value.";
-    protected static final String BAD_FETCH_DIR = "Fetch direction value of: %s is illegal.";
-    protected static final String BAD_AUTO_GEN = "Auto key generation value of: %s is illegal.";
-    protected static final String BAD_FETCH_SIZE = "Fetch size of: %s rows may not be negative.";
-    protected static final String MUST_BE_POSITIVE =
+    static final String BAD_FETCH_DIR = "Fetch direction value of: %s is illegal.";
+    static final String BAD_AUTO_GEN = "Auto key generation value of: %s is illegal.";
+    static final String BAD_FETCH_SIZE = "Fetch size of: %s rows may not be negative.";
+    static final String MUST_BE_POSITIVE =
         "Index must be a positive number less or equal the count of returned columns: %d";
-    protected static final String VALID_LABELS = "Name provided was not in the list of valid column labels: %s";
-    protected static final String HOST_IN_URL =
+    static final String VALID_LABELS = "Name provided was not in the list of valid column labels: %s";
+    static final String HOST_IN_URL =
         "Connection url must specify a host, e.g. jdbc:cassandra://localhost:9042/keyspace";
-    protected static final String HOST_REQUIRED = "A 'host' name is required to build a Connection.";
-    protected static final String BAD_KEYSPACE =
+    static final String HOST_REQUIRED = "A 'host' name is required to build a Connection.";
+    static final String BAD_KEYSPACE =
         "Keyspace names must be composed of alphanumerics and underscores (parsed: '%s').";
-    protected static final String URI_IS_SIMPLE =
+    static final String URI_IS_SIMPLE =
         "Connection url may only include host, port, and keyspace, consistency and version option, e.g. "
             + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
-    protected static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
-    protected static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
-    protected static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
-    protected static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
+    static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
+    static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
+    static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
+    static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
     static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
@@ -359,6 +364,9 @@ public final class Utils {
                 if (params.containsKey(KEY_SSL_ENGINE_FACTORY)) {
                     props.setProperty(TAG_SSL_ENGINE_FACTORY, params.get(KEY_SSL_ENGINE_FACTORY));
                 }
+                if (params.containsKey(KEY_SSL_HOSTNAME_VERIFICATION)) {
+                    props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, params.get(KEY_SSL_HOSTNAME_VERIFICATION));
+                }
                 if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
                     props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
                 } else if (isDbaasConnection) {
@@ -437,7 +445,7 @@ public final class Utils {
      * @return The URI part containing the query parameters (for example: "consistency=ONE&amp;version=3.0.0") or
      * {@code null} if neither version nor consistency are defined in the provided properties.
      */
-    protected static String makeQueryString(final Properties props) {
+    static String makeQueryString(final Properties props) {
         final StringBuilder sb = new StringBuilder();
         final String version = props.getProperty(TAG_CQL_VERSION);
         final String consistency = props.getProperty(TAG_CONSISTENCY_LEVEL);
@@ -466,7 +474,7 @@ public final class Utils {
      * @throws SQLException when something went wrong during the parsing.
      * @throws SQLSyntaxErrorException when the encoding is not supported.
      */
-    protected static Map<String, String> parseQueryPart(final String query) throws SQLException {
+    static Map<String, String> parseQueryPart(final String query) throws SQLException {
         final Map<String, String> params = new HashMap<>();
         for (final String param : query.split("&")) {
             try {

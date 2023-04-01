@@ -232,6 +232,10 @@ JDBC URL:
 The argument `sslEngineFactory` will be ignored if the argument `enableSsl` is `false` but SSL will be enabled if
 `sslEngineFactory` is present even if `enableSsl` is missing.
 
+By default, when the `DefaultSslEngineFactory` is used, the validation of the server certificate's common name against
+the hostname of the server being connected to is required. To disable it, set the argument `hostnameverification=false` 
+in the JDBC URL.
+
 For further information about custom implementations of `SslEngineFactory`, see 
 [SSL](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/ssl/) documentation.
 
