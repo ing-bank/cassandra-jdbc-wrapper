@@ -55,9 +55,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
@@ -463,11 +468,38 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public boolean isValid(final int timeout) throws SQLTimeoutException {
+        // Throw an exception if the timeout value is invalid.
         if (timeout < 0) {
             throw new SQLTimeoutException(BAD_TIMEOUT);
         }
 
-        // TODO: set timeout
+        // Return false if the connection is closed.
+        if (getSession().isClosed()) {
+            return false;
+        }
+
+        try (final CassandraStatement stmt = (CassandraStatement) this.createStatement()) {
+            // Cassandra does not support timeout on queries, so here we simulate the timeout by waiting at most the
+            // defined timeout duration (if requested) for the successful query execution.
+            final ExecutorService stmtExecutor = Executors.newCachedThreadPool();
+            final Callable<Object> callableStmt = () -> stmt.execute("SELECT uuid() FROM system.local");
+            if (timeout != 0) {
+                final Future<Object> futureStmtExecution = stmtExecutor.submit(callableStmt);
+                try {
+                    futureStmtExecution.get(timeout, TimeUnit.SECONDS);
+                } catch (final Exception e) {
+                    return false;
+                } finally {
+                    futureStmtExecution.cancel(true);
+                }
+            } else {
+                // Try to execute the query. If this succeeds, then the connection is valid. If it fails (throws an
+                // exception), then the connection is not valid.
+                callableStmt.call();
+            }
+        } catch (final Exception e) {
+            return false;
+        }
 
         return true;
     }

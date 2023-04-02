@@ -11,10 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `setJson(int, Object)` in `CassandraPreparedStatement`.
 - Add query parameter `hostnameverification` to specify whether the hostname verification must be enabled or not when 
   SSL connection is used. See the discussion [#20](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/20).
-- Add some socket options thanks to the additional query parameters: `connecttimeout`, `readtimeout`, `tcpnodelay` and
-  `keepalive`. It fixes the issue [#16](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/16) of the 
-  [original project].
+- Add some socket options thanks to the additional query parameters: `connecttimeout`, `tcpnodelay` and `keepalive`. 
+  It fixes the issue [#16](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/16) of the [original project].
 - Implement the methods `isSigned()` and `isSearchable()` in the different `ResultSetMetaData` implementations.
+- Implement the method `isValid(int)` in `CassandraConnection`.
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
 - Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix an issue on collections of tuples and UDTs that threw `NullPointerException` in result sets when calling methods
   such as `getList()`, `getSet()` and `getMap()`.
 
-## 4.8.0 - 2023-01-12
+## [4.8.0] - 2023-01-12
 ### Added
 - Implement the methods `getMetaData()` and `getParameterMetaData()` into the implementation class
   `CassandraPreparedStatement` of `PreparedStatement` interface. It fixes the issue
@@ -43,7 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   [#12](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/12), issue 
   [#10](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/10)).
 
-## 4.7.0 - 2022-09-23
+## [4.7.0] - 2022-09-23
 ### Added
 - Add a system of compliance mode with the query parameter `compliancemode`: for some usages (for example with 
   Liquibase), some default behaviours of the JDBC implementation have to be adapted. See the readme file for details 
@@ -54,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.14.1.
 
-## 4.6.0 - 2022-03-20
+## [4.6.0] - 2022-03-20
 ### Added
 - Add support for connecting to Cassandra DBaaS cluster with secure connect bundle. 
   See the feature request [#1](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/1).
@@ -70,7 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - User credentials parameters in the connection string were ignored.
 
-## 4.5.0 - 2021-04-13
+## [4.5.0] - 2021-04-13
 ### Added
 - Manage additional CQL types: `duration`, `smallint` and `tinyint`.
 - Add support for SSL between the driver and the Cassandra cluster.
@@ -115,3 +115,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.8.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.7.0...v4.8.0
+[4.7.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.6.0...v4.7.0
+[4.6.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.5.0...v4.6.0
+[4.5.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.4.0...v4.5.0

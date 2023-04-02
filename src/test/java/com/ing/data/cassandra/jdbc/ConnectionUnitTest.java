@@ -48,12 +48,14 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
+import java.sql.SQLTimeoutException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
+import static com.ing.data.cassandra.jdbc.Utils.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
@@ -70,8 +72,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ConnectionUnitTest extends UsingCassandraContainerTest {
     private static final Logger log = LoggerFactory.getLogger(ConnectionUnitTest.class);
@@ -447,6 +452,54 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     void givenCassandraConnection_whenUnwrapToInvalidInterface_throwException() throws Exception {
         initConnection(KEYSPACE);
         assertThrows(SQLException.class, () -> sqlConnection.unwrap(this.getClass()));
+    }
+
+    @Test
+    void givenCassandraConnectionAndNegativeTimeout_whenIsValid_throwException() throws Exception {
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
+        final SQLTimeoutException sqlTimeoutException = assertThrows(SQLTimeoutException.class,
+            () -> sqlConnection.isValid(-1));
+        assertEquals(BAD_TIMEOUT, sqlTimeoutException.getMessage());
+    }
+
+    @Test
+    void givenOpenCassandraConnection_whenIsValid_returnTrue() throws Exception {
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
+        assertTrue(sqlConnection.isValid(0));
+    }
+
+    @Test
+    void givenClosedCassandraConnection_whenIsValid_returnFalse() throws Exception {
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
+        sqlConnection.close();
+        assertFalse(sqlConnection.isValid(0));
+    }
+
+    @Test
+    void givenCassandraConnectionAndClosedSession_whenIsValid_returnFalse() throws Exception {
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
+        sqlConnection.getSession().close();
+        assertFalse(sqlConnection.isClosed());
+        assertFalse(sqlConnection.isValid(0));
+    }
+
+    @Test
+    void givenOpenCassandraConnectionAndTimedOutQuery_whenIsValid_returnFalse() throws Exception {
+        final CqlSession session = CqlSession.builder()
+            .addContactPoint(cassandraContainer.getContactPoint())
+            .withLocalDatacenter("datacenter1")
+            .build();
+
+        final CassandraConnection jdbcConnection =
+            spy(new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null));
+        final CassandraStatement mockStmt = mock(CassandraStatement.class);
+        when(mockStmt.execute(anyString())).then(invocationOnMock -> {
+            // We test isValid() with a timeout of 1 second, so wait more than 1 second to simulate a query timeout.
+            Thread.sleep(1500);
+            return true;
+        });
+        when(jdbcConnection.createStatement()).thenReturn(mockStmt);
+        assertFalse(jdbcConnection.isValid(1));
     }
 
 }
