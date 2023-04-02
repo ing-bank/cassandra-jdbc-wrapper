@@ -25,6 +25,8 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLSyntaxErrorException;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
@@ -115,7 +117,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public ResultSet getAttributes(final String catalog, final String schemaPattern, final String typeNamePattern,
-                                   final String attributeNamePattern) {
+                                   final String attributeNamePattern) throws SQLException {
         // TODO: method to implement
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -468,8 +470,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public String getNumericFunctions() {
-        // TODO: review implementation of this method
+    public String getNumericFunctions() throws SQLException {
+        checkStatementClosed();
+        // Cassandra does not implement natively numeric functions.
         return StringUtils.EMPTY;
     }
 
@@ -580,10 +583,27 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
+    /**
+     * Retrieves a comma-separated list of all the Cassandra CQL keywords that are NOT also SQL:2003 keywords.
+     *
+     * @return The list of Cassandra's keywords that are not also SQL:2003 keywords.
+     * @throws SQLException if a database access error occurs.
+     */
     @Override
-    public String getSQLKeywords() {
-        // TODO: review implementation of this method
-        return StringUtils.EMPTY;
+    public String getSQLKeywords() throws SQLException {
+        checkStatementClosed();
+        // Cassandra does not use SQL but CQL. Here are list all the keywords used by Cassandra and not in common with
+        // SQL:2003 standard keywords (see: https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#xref-keywords).
+        // The CQL keywords are listed here:
+        // https://cassandra.apache.org/doc/latest/cassandra/cql/appendices.html#appendix-A
+        final List<String> cqlKeywords = Arrays.asList("AGGREGATE", "ALLOW", "APPLY", "ASCII", "AUTHORIZE", "BATCH",
+            "CLUSTERING", "COLUMNFAMILY", "COMPACT", "COUNTER", "CUSTOM", "ENTRIES", "FILTERING", "FINALFUNC", "FROZEN",
+            "FUNCTIONS", "IF", "INDEX", "INET", "INFINITY", "INITCOND", "JSON", "KEYS", "KEYSPACE", "KEYSPACES",
+            "LIMIT", "LIST", "LOGIN", "MODIFY", "NAN", "NOLOGIN", "NORECURSIVE", "NOSUPERUSER", "PASSWORD",
+            "PERMISSION", "PERMISSIONS", "RENAME", "REPLACE", "RETURNS", "ROLES", "SFUNC", "SMALLINT", "STORAGE",
+            "STYPE", "SUPERUSER", "TEXT", "TIMEUUID", "TINYINT", "TOKEN", "TRUNCATE", "TTL", "TUPLE", "UNLOGGED", "USE",
+            "USERS", "UUID", "VARINT", "WRITETIME");
+        return String.join(",", cqlKeywords);
     }
 
     @Override
@@ -618,8 +638,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public String getStringFunctions() {
-        // TODO: review implementation of this method
+    public String getStringFunctions() throws SQLException {
+        checkStatementClosed();
+        // Cassandra does not implement natively string functions.
         return StringUtils.EMPTY;
     }
 
@@ -663,9 +684,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public String getSystemFunctions() {
-        // TODO: review implementation of this method
-        return StringUtils.EMPTY;
+    public String getSystemFunctions() throws SQLException {
+        checkStatementClosed();
+        return "TOKEN,TTL,WRITETIME";
     }
 
     @Override
@@ -703,9 +724,11 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public String getTimeDateFunctions() {
-        // TODO: review implementation of this method
-        return StringUtils.EMPTY;
+    public String getTimeDateFunctions() throws SQLException {
+        checkStatementClosed();
+        // See: https://cassandra.apache.org/doc/latest/cassandra/cql/functions.html
+        return "dateOf,now,minTimeuuid,maxTimeuuid,unixTimestampOf,toDate,toTimestamp,toUnixTimestamp,currenTimestamp,"
+            + "currentDate,currentTime,currentTimeUUID,";
     }
 
     @Override

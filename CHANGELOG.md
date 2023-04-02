@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   It fixes the issue [#16](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/16) of the [original project].
 - Implement the methods `isSigned()` and `isSearchable()` in the different `ResultSetMetaData` implementations.
 - Implement the method `isValid(int)` in `CassandraConnection`.
+- Implement the following methods of `CassandraDatabaseMetaData`: `getNumericFunctions()`, `getSQLKeywords()`, 
+  `getStringFunctions()`, `getSystemFunctions()`, `getTimeDateFunctions()`.
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
 - Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
