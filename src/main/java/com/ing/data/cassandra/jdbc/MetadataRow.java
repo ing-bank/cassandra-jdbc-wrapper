@@ -36,6 +36,7 @@ import java.util.UUID;
 /**
  * The content of a metadata row returned in a {@link CassandraMetadataResultSet}.
  */
+@SuppressWarnings("unused")
 public class MetadataRow {
 
     // The 'entries' contains the ordered list of metadata values.
@@ -605,7 +606,7 @@ public class MetadataRow {
         for (final String entry : this.entries) {
             sb.append(entry).append(" -- ");
         }
-        return "[" + sb.toString() + "]";
+        return "[" + sb + "]";
     }
 
     private Integer getIndex(final String name) {

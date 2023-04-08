@@ -242,7 +242,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
     @Override
     public void clearWarnings() throws SQLException {
-        // This implementation does not support the collection of warnings so clearing is a no-op but it still throws
+        // This implementation does not support the collection of warnings so clearing is a no-op, but it still throws
         // an exception when called on a closed result set.
         checkNotClosed();
     }
@@ -936,7 +936,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        // The rationale is there are no warnings to return in this implementation but it still throws an exception
+        // The rationale is there are no warnings to return in this implementation, but it still throws an exception
         // when called on a closed result set.
         checkNotClosed();
         return null;

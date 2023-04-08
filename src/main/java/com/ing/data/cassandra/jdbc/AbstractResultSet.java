@@ -45,6 +45,7 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
  * methods of {@link java.sql.ResultSet} interface. It also provides helper methods for CQL type management in the
  * implementation of {@link java.sql.ResultSet} interface.
  */
+@SuppressWarnings("unused")
 abstract class AbstractResultSet implements Wrapper {
 
     /**

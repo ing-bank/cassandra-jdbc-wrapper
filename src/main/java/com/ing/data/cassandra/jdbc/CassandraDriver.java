@@ -86,7 +86,7 @@ public class CassandraDriver implements Driver {
                     // Get (or create) the corresponding Session from the cache.
                     final SessionHolder sessionHolder = this.sessionsCache.get(cacheKey);
 
-                    if (sessionHolder.acquire()) {
+                    if (sessionHolder != null && sessionHolder.acquire()) {
                         return new CassandraConnection(sessionHolder);
                     }
                     // If we failed to acquire a connection, it means we raced with the release of the last reference

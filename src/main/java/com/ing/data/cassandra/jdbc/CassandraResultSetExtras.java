@@ -27,6 +27,7 @@ import java.util.Set;
 /**
  * Extension of {@link ResultSet} interface providing additional methods specific to Cassandra result sets.
  */
+@SuppressWarnings("unused")
 public interface CassandraResultSetExtras extends ResultSet {
 
     /**

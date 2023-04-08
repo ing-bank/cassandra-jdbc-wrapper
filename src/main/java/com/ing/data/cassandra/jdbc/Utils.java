@@ -456,7 +456,7 @@ public final class Utils {
         }
 
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Sub-name: '{}' created from: {}", uri.toString(), props);
+            LOG.trace("Sub-name: '{}' created from: {}", uri, props);
         }
 
         return uri.toString();
@@ -491,7 +491,7 @@ public final class Utils {
     }
 
     /**
-     * Parses the query parameters from a the query part of a JDBC URL.
+     * Parses the query parameters from the query part of a JDBC URL.
      *
      * @param query The query part of the JDBC URL.
      * @return The map of the parsed parameters.
@@ -520,7 +520,7 @@ public final class Utils {
      * Parses the reconnection policy from a given string.
      *
      * @param reconnectionPolicyString The string containing the reconnection policy value.
-     * @return A map of {@link DriverOption} values parsed from the givne string.
+     * @return A map of {@link DriverOption} values parsed from the given string.
      */
     public static Map<DriverOption, Object> parseReconnectionPolicy(final String reconnectionPolicyString) {
         final String policyRegex = "([a-zA-Z.]*Policy)(\\()(.*)(\\))";

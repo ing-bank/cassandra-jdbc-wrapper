@@ -37,6 +37,7 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
  * methods of {@link java.sql.Connection} interface.
  */
+@SuppressWarnings("unused")
 abstract class AbstractConnection implements Wrapper {
     public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);

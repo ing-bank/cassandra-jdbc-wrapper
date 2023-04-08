@@ -49,7 +49,6 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -63,7 +62,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
@@ -84,7 +82,8 @@ import static com.ing.data.cassandra.jdbc.Utils.createSubName;
 import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
 
 /**
- * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra cluster.
+ * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra
+ * cluster.
  */
 public class CassandraConnection extends AbstractConnection implements Connection {
 
@@ -159,20 +158,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
                     ConsistencyLevel.LOCAL_ONE.name())));
         this.cSession = sessionHolder.session;
-        this.metadata = cSession.getMetadata();
+        this.metadata = this.cSession.getMetadata();
 
-        final List<SessionHolder> l = new ArrayList<>();
-        l.stream().map(s -> s.session).collect(Collectors.toList());
+        // TODO check if this code should be definitely removed.
+        // final List<SessionHolder> l = new ArrayList<>();
+        // l.stream().map(s -> s.session).collect(Collectors.toList());
 
         LOG.info("Connected to cluster: {}, with session: {}",
-            StringUtils.defaultString(getCatalog(), "<not available>"), cSession.getName());
-        metadata.getNodes().forEach(
+            StringUtils.defaultString(getCatalog(), "<not available>"), this.cSession.getName());
+        this.metadata.getNodes().forEach(
             (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
                 node.getEndPoint().resolve(), node.getRack())
         );
 
         // TODO this is shared among all Connections, what if they belong to different clusters?
-        metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
+        this.metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
             final Version cassandraVersion = entry.getValue().getCassandraVersion();
             if (cassandraVersion != null) {
                 CassandraConnection.dbMajorVersion = cassandraVersion.getMajor();
@@ -237,14 +237,14 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void clearWarnings() throws SQLException {
-        // This implementation does not support the collection of warnings so clearing is a no-op but it still throws an
-        // exception when called on a closed connection.
+        // This implementation does not support the collection of warnings so clearing is a no-op, but it still throws
+        // an exception when called on a closed connection.
         checkNotClosed();
     }
 
     @Override
     public void close() throws SQLException {
-        if (sessionHolder != null) {
+        if (this.sessionHolder != null) {
             this.sessionHolder.release();
         }
         this.isClosed = true;
@@ -252,7 +252,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void commit() throws SQLException {
-        // Note that Cassandra only supports auto-commit mode, so this is a no-op but it still throws an exception when
+        // Note that Cassandra only supports auto-commit mode, so this is a no-op, but it still throws an exception when
         // called on a closed connection.
         checkNotClosed();
     }
@@ -291,7 +291,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void setAutoCommit(final boolean autoCommit) throws SQLException {
-        // Note that Cassandra only supports auto-commit mode, so this is a no-op but it still throws an exception when
+        // Note that Cassandra only supports auto-commit mode, so this is a no-op, but it still throws an exception when
         // called on a closed connection.
         checkNotClosed();
     }
@@ -299,13 +299,13 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String getCatalog() throws SQLException {
         checkNotClosed();
-        return optionSet.getCatalog();
+        return this.optionSet.getCatalog();
     }
 
     @Override
     public void setCatalog(final String catalog) throws SQLException {
         // The rationale is there are no catalog name to set in this implementation, so we are "silently ignoring" the
-        // request but it still throws an exception when called on closed connection.
+        // request, but it still throws an exception when called on closed connection.
         checkNotClosed();
     }
 
@@ -327,12 +327,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public String getClientInfo(final String label) throws SQLException {
         checkNotClosed();
-        return clientInfo.getProperty(label);
+        return this.clientInfo.getProperty(label);
     }
 
     @Override
     public void setClientInfo(final Properties properties) {
-        // we don't use them but we will happily collect them for now...
+        // we don't use them, but we will happily collect them for now...
         if (properties != null) {
             this.clientInfo = properties;
         }
@@ -340,8 +340,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void setClientInfo(final String key, final String value) {
-        // we don't use them but we will happily collect them for now...
-        clientInfo.setProperty(key, value);
+        // we don't use them, but we will happily collect them for now...
+        this.clientInfo.setProperty(key, value);
     }
 
     /**
@@ -381,7 +381,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public void setHoldability(final int holdability) throws SQLException {
         // The rationale is there are no holdability to set in this implementation, so we are "silently ignoring" the
-        // request but it still throws an exception when called on closed connection.
+        // request, but it still throws an exception when called on closed connection.
         checkNotClosed();
     }
 
@@ -429,8 +429,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
         final HashMap<String, Class<?>> typeMap = new HashMap<>();
-        LOG.info("Current keyspace: " + currentKeyspace);
-        this.metadata.getKeyspace(currentKeyspace)
+        LOG.info("Current keyspace: {}", this.currentKeyspace);
+        this.metadata.getKeyspace(this.currentKeyspace)
             .ifPresent(keyspaceMetadata ->
                 keyspaceMetadata.getUserDefinedTypes().forEach((cqlIdentifier, userDefinedType) ->
                     typeMap.put(cqlIdentifier.asInternal(), userDefinedType.getClass()))
@@ -462,7 +462,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public void setReadOnly(final boolean readOnly) throws SQLException {
         // The rationale is all the connections are read/write in the Cassandra implementation, so we are "silently
-        // ignoring" the request but it still throws an exception when called on closed connection.
+        // ignoring" the request, but it still throws an exception when called on closed connection.
         checkNotClosed();
     }
 
@@ -564,7 +564,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public String toString() {
-        return "CassandraConnection [connectionProperties=" + connectionProperties + "]";
+        return "CassandraConnection [connectionProperties=" + this.connectionProperties + "]";
     }
 
     /**
@@ -573,14 +573,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @return The compliance mode option set used for the connection.
      */
     public OptionSet getOptionSet() {
-        return optionSet;
+        return this.optionSet;
     }
 
     private OptionSet lookupOptionSet(final String property) {
         final ServiceLoader<OptionSet> loader = ServiceLoader.load(OptionSet.class);
-        final Iterator<OptionSet> iterator = loader.iterator();
-        while (iterator.hasNext()) {
-            final OptionSet optionSet = iterator.next();
+        for (final OptionSet optionSet : loader) {
             if (optionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
                 optionSet.setConnection(this);
                 return optionSet;

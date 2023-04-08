@@ -50,7 +50,7 @@ public class CassandraParameterMetaData implements ParameterMetaData {
     }
 
     @Override
-    public int getParameterCount() throws SQLException {
+    public int getParameterCount() {
         return this.parametersCount;
     }
 
@@ -86,17 +86,17 @@ public class CassandraParameterMetaData implements ParameterMetaData {
     }
 
     @Override
-    public int getParameterType(final int i) throws SQLException {
+    public int getParameterType(final int i) {
         return getParameterJdbcType(i).getJdbcType();
     }
 
     @Override
-    public String getParameterTypeName(final int i) throws SQLException {
+    public String getParameterTypeName(final int i) {
         return getParameterCqlType(i);
     }
 
     @Override
-    public String getParameterClassName(final int i) throws SQLException {
+    public String getParameterClassName(final int i) {
         return getParameterJdbcType(i).getType().getName();
     }
 

@@ -34,6 +34,7 @@ import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
  * methods of {@link java.sql.Statement} and {@link java.sql.PreparedStatement} interfaces.
  */
+@SuppressWarnings("unused")
 abstract class AbstractStatement implements Wrapper {
 
     /*

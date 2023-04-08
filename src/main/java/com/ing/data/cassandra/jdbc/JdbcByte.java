@@ -28,7 +28,7 @@ public class JdbcByte extends AbstractJdbcType<Byte> {
      */
     public static final JdbcByte INSTANCE = new JdbcByte();
 
-    // The maximal size of a 8-bit signed integer is 4 (length of '-128').
+    // The maximal size of an 8-bit signed integer is 4 (length of '-128').
     private static final int DEFAULT_TINYINT_PRECISION = 4;
 
     @Override

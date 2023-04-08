@@ -15,7 +15,6 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.oss.driver.api.core.metadata.Metadata;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -45,7 +44,6 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     static final String SCHEMA_VENDOR_TERM = "Keyspace";
 
     private final CassandraConnection connection;
-    private final Metadata metadata;
     private CassandraStatement statement;
 
     /**
@@ -58,7 +56,6 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public CassandraDatabaseMetaData(final CassandraConnection connection) throws SQLException {
         this.connection = connection;
         this.statement = new CassandraStatement(this.connection);
-        this.metadata = this.connection.getClusterMetadata();
     }
 
     @Override
@@ -119,13 +116,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getAttributes(final String catalog, final String schemaPattern, final String typeNamePattern,
                                    final String attributeNamePattern) throws SQLException {
         // TODO: method to implement
+        checkStatementClosed();
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
     public ResultSet getBestRowIdentifier(final String catalog, final String schema, final String table,
-                                          final int scope, final boolean nullable) {
+                                          final int scope, final boolean nullable) throws SQLException {
         // TODO: method to implement
+        checkStatementClosed();
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
@@ -147,9 +146,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        // TODO: method to implement
-        checkStatementClosed();
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        // todo: documentation like getPseudoColumns
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -235,7 +233,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * The version number returned by this method is the minimal version of Apache Cassandra supported by this JDBC
      * implementation (see Datastax Java driver version embedded into this JDBC wrapper and
      * <a href="https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html">
-     * compatibility matrix</a> for furhter details.
+     * compatibility matrix</a> for further details.
      * </p>
      *
      * @return The database version number.
@@ -577,6 +575,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return CassandraResultSet.DEFAULT_HOLDABILITY;
     }
 
+
     @Override
     public RowIdLifetime getRowIdLifetime() {
         // ROWID type is not supported by Cassandra.
@@ -727,7 +726,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public String getTimeDateFunctions() throws SQLException {
         checkStatementClosed();
         // See: https://cassandra.apache.org/doc/latest/cassandra/cql/functions.html
-        return "dateOf,now,minTimeuuid,maxTimeuuid,unixTimestampOf,toDate,toTimestamp,toUnixTimestamp,currenTimestamp,"
+        return "dateOf,now,minTimeuuid,maxTimeuuid,unixTimestampOf,toDate,toTimestamp,toUnixTimestamp,currentTimestamp,"
             + "currentDate,currentTime,currentTimeUUID,";
     }
 
@@ -768,9 +767,10 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getVersionColumns(final String catalog, final String schema, final String table)
         throws SQLException {
-        // TODO: method to implement
-        checkStatementClosed();
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        // Cassandra does not support any mechanism of automatic column update when any value in a row is updated, so
+        // this will always return an empty result set.
+        // todo: documentation like getPseudoColumns
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

@@ -148,7 +148,7 @@ public enum DataTypeEnum {
     /**
      * Returns the Java Class corresponding to this CQL type name.
      * <br/>
-     * The correspondence between CQL types and Java ones is as follow:
+     * The correspondence between CQL types and Java ones is as follows:
      * <table border="1">
      * <caption>DataType to Java class correspondence</caption>
      * <tr><th>CQL DataType</th><th>Java class</th></tr>

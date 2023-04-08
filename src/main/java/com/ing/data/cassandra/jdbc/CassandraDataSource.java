@@ -73,7 +73,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     protected String databaseName;
     /**
-     * The user name used to connect to the data source.
+     * The username used to connect to the data source.
      */
     protected String user;
     /**
@@ -103,7 +103,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param host          The host name.
      * @param port          The port.
      * @param keyspace      The keyspace.
-     * @param user          The user name used to connect.
+     * @param user          The username used to connect.
      * @param password      The password used to connect.
      * @param version       The CQL version.
      * @param consistency   The consistency level.
@@ -119,7 +119,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param host              The host name.
      * @param port              The port.
      * @param keyspace          The keyspace.
-     * @param user              The user name used to connect.
+     * @param user              The username used to connect.
      * @param password          The password used to connect.
      * @param version           The CQL version.
      * @param consistency       The consistency level.
@@ -256,18 +256,18 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     }
 
     /**
-     * Gets the user name used to connect to the data source.
+     * Gets the username used to connect to the data source.
      *
-     * @return The user name used to connect to the data source.
+     * @return The username used to connect to the data source.
      */
     public String getUser() {
         return this.user;
     }
 
     /**
-     * Sets the user name used to connect to the data source.
+     * Sets the username used to connect to the data source.
      *
-     * @param user The user name used to connect to the data source.
+     * @param user The username used to connect to the data source.
      */
     public void setUser(final String user) {
         this.user = user;

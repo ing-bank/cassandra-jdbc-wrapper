@@ -22,6 +22,7 @@ import java.sql.Statement;
 /**
  * Extension of {@link Statement} interface providing additional methods specific to Cassandra statements.
  */
+@SuppressWarnings("unused")
 public interface CassandraStatementExtras extends Statement {
 
     /**

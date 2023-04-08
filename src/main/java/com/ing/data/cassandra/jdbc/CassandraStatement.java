@@ -250,7 +250,7 @@ public class CassandraStatement extends AbstractStatement
 
     @Override
     public void clearWarnings() throws SQLException {
-        // This implementation does not support the collection of warnings so clearing is a no-op but it still throws
+        // This implementation does not support the collection of warnings so clearing is a no-op, but it still throws
         // an exception when called on a closed statement.
         checkNotClosed();
     }
@@ -614,7 +614,7 @@ public class CassandraStatement extends AbstractStatement
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        // The rationale is there are no warnings to return in this implementation but it still throws an exception
+        // The rationale is there are no warnings to return in this implementation, but it still throws an exception
         // when called on a closed result set.
         checkNotClosed();
         return null;
@@ -626,7 +626,7 @@ public class CassandraStatement extends AbstractStatement
     }
 
     /**
-     * Returns a value indicating whether the {@link Statement} is poolable or not.
+     * Returns a value indicating whether the {@link Statement} is pool-able or not.
      *
      * @return Always {@code false}.
      * @throws SQLException if this method is called on a closed {@link Statement}.
@@ -640,7 +640,7 @@ public class CassandraStatement extends AbstractStatement
     /**
      * Requests that a {@link Statement} be pooled or not pooled.
      * <p>
-     *     This setting is silently ignored. The {@code CassandraStatement} are never poolable.
+     *     This setting is silently ignored. The {@code CassandraStatement} are never pool-able.
      * </p>
      *
      * @param poolable Requests that the statement be pooled if {@code true} and that the statement not be pooled if
