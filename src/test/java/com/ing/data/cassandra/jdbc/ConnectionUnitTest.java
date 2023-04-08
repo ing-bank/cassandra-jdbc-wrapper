@@ -49,6 +49,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLTimeoutException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
@@ -500,6 +501,23 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         });
         when(jdbcConnection.createStatement()).thenReturn(mockStmt);
         assertFalse(jdbcConnection.isValid(1));
+    }
+
+    @Test
+    void givenCassandraConnection_whenSetQueryTimeout_updateRequestTimeoutAsExpected() throws Exception {
+        initConnection(KEYSPACE, "localdatacenter=datacenter1", "requesttimeout=2000");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig().getDefaultProfile());
+        assertEquals(Duration.ofSeconds(2), sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
+
+        final Statement statement = sqlConnection.createStatement();
+        assertEquals(2, statement.getQueryTimeout());
+        statement.setQueryTimeout(1);
+        assertEquals(1, statement.getQueryTimeout());
     }
 
 }

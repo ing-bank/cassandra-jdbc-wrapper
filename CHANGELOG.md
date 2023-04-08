@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
 - Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
+- Modify the implementation of `setQueryTimeout(int)` and `getQueryTimeout()` in `CassandraStatement` to update the
+  request timeout on a specific statement.
 ### Removed
 - Remove vulnerable Guava compile dependency and replace it by standard Java, Apache Commons libraries and Caffeine
   for sessions caching.

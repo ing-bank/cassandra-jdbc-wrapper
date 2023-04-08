@@ -126,6 +126,8 @@ defined in the configuration file. For example:
 ```
 jdbc:cassandra://host1--host2--host3:9042/keyspace?configfile=/path/to/configuration/application.conf
 ```
+Be careful when using a specific configuration file since this JDBC wrapper currently supports only the default profile
+defined in the driver configuration.
 
 ### Specifying timeout for queries
 

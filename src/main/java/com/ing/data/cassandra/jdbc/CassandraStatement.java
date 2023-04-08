@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
@@ -39,15 +41,18 @@ import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLTransientException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Cassandra statement: implementation class for {@link Statement}.
  * <p>
- *     It also implements {@link CassandraStatementExtras} interface providing extra methods not defined in JDBC API to
- *     manage some properties specific to the Cassandra statements (e.g. consistency level).
+ * It also implements {@link CassandraStatementExtras} interface providing extra methods not defined in JDBC API to
+ * manage some properties specific to the Cassandra statements (e.g. consistency level).
  * </p>
  */
 public class CassandraStatement extends AbstractStatement
@@ -133,13 +138,15 @@ public class CassandraStatement extends AbstractStatement
      */
     protected ConsistencyLevel consistencyLevel;
 
+    private DriverExecutionProfile customTimeoutProfile;
+
     /**
      * Constructor. It instantiates a new Cassandra statement with default values and a {@code null} CQL statement for
      * a {@link CassandraConnection}.
      * <p>
-     *     By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
-     *     {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
-     *     {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
+     * By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
+     * {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
+     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
      * </p>
      *
      * @param connection The Cassandra connection to the database.
@@ -153,9 +160,9 @@ public class CassandraStatement extends AbstractStatement
     /**
      * Constructor. It instantiates a new Cassandra statement with default values for a {@link CassandraConnection}.
      * <p>
-     *     By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
-     *     {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
-     *     {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
+     * By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
+     * {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
+     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
      * </p>
      *
      * @param connection The Cassandra connection to the database.
@@ -171,13 +178,13 @@ public class CassandraStatement extends AbstractStatement
      * Constructor. It instantiates a new Cassandra statement with default holdability and specified result set type
      * and concurrency for a {@link CassandraConnection}.
      * <p>
-     *     By default, the result set holdability is {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
+     * By default, the result set holdability is {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
      * </p>
      *
-     * @param connection            The Cassandra connection to the database.
-     * @param cql                   The CQL statement.
-     * @param resultSetType         The result set type.
-     * @param resultSetConcurrency  The result set concurrency.
+     * @param connection           The Cassandra connection to the database.
+     * @param cql                  The CQL statement.
+     * @param resultSetType        The result set type.
+     * @param resultSetConcurrency The result set concurrency.
      * @throws SQLException when something went wrong during the instantiation of the statement.
      */
     CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
@@ -189,12 +196,12 @@ public class CassandraStatement extends AbstractStatement
      * Constructor. It instantiates a new Cassandra statement with specified result set type, concurrency and
      * holdability for a {@link CassandraConnection}.
      *
-     * @param connection            The Cassandra connection to the database.
-     * @param cql                   The CQL statement.
-     * @param resultSetType         The result set type.
-     * @param resultSetConcurrency  The result set concurrency.
-     * @param resultSetHoldability  The result set holdability.
-     * @throws SQLException when something went wrong during the instantiation of the statement.
+     * @param connection           The Cassandra connection to the database.
+     * @param cql                  The CQL statement.
+     * @param resultSetType        The result set type.
+     * @param resultSetConcurrency The result set concurrency.
+     * @param resultSetHoldability The result set holdability.
+     * @throws SQLException            when something went wrong during the instantiation of the statement.
      * @throws SQLSyntaxErrorException when an argument for result set configuration is invalid.
      */
     CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
@@ -233,7 +240,7 @@ public class CassandraStatement extends AbstractStatement
     /**
      * Checks that the statement is not closed.
      *
-     * @throws SQLException when something went wrong during the checking of the statement status.
+     * @throws SQLException            when something went wrong during the checking of the statement status.
      * @throws SQLRecoverableException when a method has been called on a closed statement.
      */
     protected final void checkNotClosed() throws SQLException {
@@ -300,9 +307,12 @@ public class CassandraStatement extends AbstractStatement
                         if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
                             LOG.debug("CQL: {}", prevCqlQuery);
                         }
-                        final SimpleStatement stmt = SimpleStatement.newInstance(prevCqlQuery.toString())
+                        SimpleStatement stmt = SimpleStatement.newInstance(prevCqlQuery.toString())
                             .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
                             .setPageSize(this.fetchSize);
+                        if (this.customTimeoutProfile != null) {
+                            stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
+                        }
                         final CompletionStage<AsyncResultSet> resultSetFuture =
                             ((CqlSession) this.connection.getSession()).executeAsync(stmt);
                         futures.add(resultSetFuture);
@@ -327,9 +337,12 @@ public class CassandraStatement extends AbstractStatement
                 if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
                     LOG.debug("CQL: " + cql);
                 }
-                final SimpleStatement stmt = SimpleStatement.newInstance(cql)
+                SimpleStatement stmt = SimpleStatement.newInstance(cql)
                     .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
                     .setPageSize(this.fetchSize);
+                if (this.customTimeoutProfile != null) {
+                    stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
+                }
                 this.currentResultSet = new CassandraResultSet(this,
                     ((CqlSession) this.connection.getSession()).execute(stmt));
             }
@@ -374,8 +387,11 @@ public class CassandraStatement extends AbstractStatement
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
                 LOG.debug("CQL: " + query);
             }
-            final SimpleStatement stmt = SimpleStatement.newInstance(query)
+            SimpleStatement stmt = SimpleStatement.newInstance(query)
                 .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+            if (this.customTimeoutProfile != null) {
+                stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
+            }
             final CompletionStage<AsyncResultSet> resultSetFuture =
                 ((CqlSession) this.connection.getSession()).executeAsync(stmt);
             futures.add(resultSetFuture);
@@ -405,11 +421,11 @@ public class CassandraStatement extends AbstractStatement
      * Executes the given CQL statement, which may be an {@code INSERT}, {@code UPDATE}, or {@code DELETE} statement or
      * a CQL statement that returns nothing, such as a CQL DDL statement.
      * <p>
-     *     <b>Note:</b> This method cannot be called on a {@link PreparedStatement} or {@link CallableStatement}.
+     * <b>Note:</b> This method cannot be called on a {@link PreparedStatement} or {@link CallableStatement}.
      * </p>
      *
      * @param cql A CQL Data Manipulation Language (DML) statement, such as {@code INSERT}, {@code UPDATE}, or
-     * {@code DELETE}; or a CQL statement that returns nothing, such as a DDL statement.
+     *            {@code DELETE}; or a CQL statement that returns nothing, such as a DDL statement.
      * @return Always 0, for any statement. The rationale is that Datastax Java driver does not provide update count.
      * @throws SQLException when something went wrong during the execution of the statement.
      */
@@ -491,7 +507,7 @@ public class CassandraStatement extends AbstractStatement
      * Sets the limit for the maximum number of bytes that can be returned for character and binary column values in a
      * {@link ResultSet} object produced by this {@link Statement} object.
      * <p>
-     *     This setting is silently ignored. There is no such limit, so {@link #maxFieldSize} is always 0.
+     * This setting is silently ignored. There is no such limit, so {@link #maxFieldSize} is always 0.
      * </p>
      *
      * @param max The new column size limit in bytes; zero means there is no limit.
@@ -513,7 +529,7 @@ public class CassandraStatement extends AbstractStatement
      * {@link Statement} object can contain to the given number. If the limit is exceeded, the excess rows are silently
      * dropped.
      * <p>
-     *     This setting is silently ignored. There is no such limit, so {@link #maxRows} is always 0.
+     * This setting is silently ignored. There is no such limit, so {@link #maxRows} is always 0.
      * </p>
      *
      * @param max The new max rows limit; zero means there is no limit.
@@ -553,24 +569,29 @@ public class CassandraStatement extends AbstractStatement
     /**
      * Retrieves the number of seconds the driver will wait for a {@link Statement} object to execute. If the limit is
      * exceeded, a {@link SQLException} is thrown.
-     * <p>
-     *     The Cassandra implementation does not support timeouts on queries, so the query timeout is always 0.
-     * </p>
      *
      * @return The current query timeout limit in seconds; zero means there is no limit.
      * @throws SQLException if a database access error occurs or this method is called on a closed {@link Statement}.
      */
     @Override
     public int getQueryTimeout() throws SQLException {
-        return 0;
+        checkNotClosed();
+        DriverExecutionProfile activeProfile =
+            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        if (this.customTimeoutProfile != null) {
+            activeProfile = this.customTimeoutProfile;
+        }
+        return Long.valueOf(Objects.requireNonNull(
+            activeProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ZERO)
+        ).get(ChronoUnit.SECONDS)).intValue();
     }
 
     /**
-     * Sets the number of seconds the driver will wait for a {@link Statement} object to execute to the given number of
-     * seconds.
+     * Sets the number of seconds the driver will wait for a {@link Statement} object to execute.
      * <p>
-     *     This setting is silently ignored. The Cassandra implementation does not support timeouts on queries, so the
-     *     query timeout is always 0.
+     * Modifying this setting will derive the default execution profile of the driver configuration by updating the
+     * parameter {@code basic.request.timeout} and apply this specific execution profile to this statement ONLY. Later
+     * statements will use the request timeout globally configured for the session.
      * </p>
      *
      * @param seconds The new query timeout limit in seconds; zero means there is no limit.
@@ -579,6 +600,10 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public void setQueryTimeout(final int seconds) throws SQLException {
         checkNotClosed();
+        final DriverExecutionProfile defaultProfile =
+            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        this.customTimeoutProfile =
+            defaultProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
     }
 
     @Override
@@ -640,7 +665,7 @@ public class CassandraStatement extends AbstractStatement
     /**
      * Requests that a {@link Statement} be pooled or not pooled.
      * <p>
-     *     This setting is silently ignored. The {@code CassandraStatement} are never pool-able.
+     * This setting is silently ignored. The {@code CassandraStatement} are never pool-able.
      * </p>
      *
      * @param poolable Requests that the statement be pooled if {@code true} and that the statement not be pooled if
