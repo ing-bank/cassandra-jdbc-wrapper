@@ -16,10 +16,12 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +30,12 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
+import static java.sql.Types.JAVA_OBJECT;
 
 /**
  * Utility class to manage database metadata result sets ({@link CassandraMetadataResultSet} objects).
@@ -43,9 +48,11 @@ public final class MetadataResultSets {
 
     static final String CQL_OPTION_COMMENT = "comment";
     static final String ASC_OR_DESC = "ASC_OR_DESC";
+    static final String BASE_TYPE = "BASE_TYPE";
     static final String BUFFER_LENGTH = "BUFFER_LENGTH";
     static final String CARDINALITY = "CARDINALITY";
     static final String CHAR_OCTET_LENGTH = "CHAR_OCTET_LENGTH";
+    static final String CLASS_NAME = "CLASS_NAME";
     static final String COLUMN_DEFAULT = "COLUMN_DEF";
     static final String COLUMN_NAME = "COLUMN_NAME";
     static final String COLUMN_SIZE = "COLUMN_SIZE";
@@ -260,7 +267,7 @@ public final class MetadataResultSets {
      *         member of.</li>
      *         <li><b>TABLE_NAME</b> String => table name.</li>
      *         <li><b>COLUMN_NAME</b> String => column name.</li>
-     *         <li><b>DATA_TYPE</b> int => SQL type from {@link java.sql.Types}.</li>
+     *         <li><b>DATA_TYPE</b> int => SQL type from {@link Types}.</li>
      *         <li><b>TYPE_NAME</b> String => Data source dependent type name, for a UDT the type name is fully
      *         qualified.</li>
      *         <li><b>COLUMN_SIZE</b> int => column size.</li>
@@ -296,7 +303,7 @@ public final class MetadataResultSets {
      *         <li><b>SCOPE_TABLE</b> String => table name that is the scope of a reference attribute
      *         ({@code null} if {@code DATA_TYPE} isn't REF). Always {@code null} here.</li>
      *         <li><b>SOURCE_DATA_TYPE</b> short => source type of a distinct type or user-generated Ref type, SQL type
-     *         from {@link java.sql.Types} ({@code null} if {@code DATA_TYPE} isn't {@code DISTINCT} or user-generated
+     *         from {@link Types} ({@code null} if {@code DATA_TYPE} isn't {@code DISTINCT} or user-generated
      *         {@code REF}). Always {@code null} here.</li>
      *         <li><b>IS_AUTOINCREMENT</b> String => Indicates whether this column is auto-incremented:
      *             <ul>
@@ -417,7 +424,6 @@ public final class MetadataResultSets {
 
         return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
     }
-
 
     /**
      * Builds a valid result set of the description of given table's indices and statistics.
@@ -577,4 +583,92 @@ public final class MetadataResultSets {
         return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
     }
 
+    /**
+     * Builds a valid result set of the description of the user-defined types (UDTs) defined in a particular schema.
+     * This method is used to implement the method {@link DatabaseMetaData#getUDTs(String, String, String, int[])}.
+     * <p>
+     * Schema-specific UDTs in a Cassandra database will be considered as having type {@code JAVA_OBJECT}.
+     * </p>
+     * <p>
+     * Only types matching the catalog, schema, type name and type criteria are returned. They are ordered by
+     * {@code DATA_TYPE}, {@code TYPE_CAT}, {@code TYPE_SCHEM} and {@code TYPE_NAME}. The type name parameter may be
+     * a fully-qualified name (it should respect the format {@code <SCHEMA_NAME>.<TYPE_NAME>}). In this case, the
+     * {@code catalog} and {@code schemaPattern} parameters are ignored.
+     * </p>
+     * <p>
+     * The columns of this result set are:
+     * <ol>
+     *     <li><b>TYPE_CAT</b> String => type's catalog, may be {@code null}: here is the Cassandra cluster name
+     *     (if available).</li>
+     *     <li><b>TYPE_SCHEM</b> String => type's schema, may be {@code null}: here is the keyspace the type is
+     *     member of.</li>
+     *     <li><b>TYPE_NAME</b> String => user-defined type name</li>
+     *     <li><b>CLASS_NAME</b> String => Java class name, always {@link UdtValue} in the current implementation</li>
+     *     <li><b>DATA_TYPE</b> int => type value defined in {@link Types}. One of {@link Types#JAVA_OBJECT},
+     *     {@link Types#STRUCT}, or {@link Types#DISTINCT}. Always {@link Types#JAVA_OBJECT} in the current
+     *     implementation.</li>
+     *     <li><b>REMARKS</b> String => explanatory comment on the type, always empty in the current implementation</li>
+     *     <li><b>BASE_TYPE</b> short => type code of the source type of a {@code DISTINCT} type or the type that
+     *     implements the user-generated reference type of the {@code SELF_REFERENCING_COLUMN} of a structured type
+     *     as defined in {@link Types} ({@code null} if {@code DATA_TYPE} is not {@code DISTINCT} or not
+     *     {@code STRUCT} with {@code REFERENCE_GENERATION = USER_DEFINED}). Always {@code null} in the current
+     *     implementation.</li>
+     * </ol>
+     * </p>
+     *
+     * @param statement       The statement.
+     * @param schemaPattern   A schema pattern name; must match the schema name as it is stored in the database;
+     *                        {@code ""} retrieves those without a schema (will always return an empty set);
+     *                        {@code null} means that the schema name should not be used to narrow the search and in
+     *                        this case the search is restricted to the current schema (if available).
+     * @param typeNamePattern A type name pattern; must match the type name as it is stored in the database (not
+     *                        case-sensitive); may be a fully qualified name.
+     * @param types           A list of user-defined types ({@link Types#JAVA_OBJECT}, {@link Types#STRUCT}, or
+     *                        {@link Types#DISTINCT}) to include; {@code null} returns all types. All the UDTs defined
+     *                        in a Cassandra database are considered as {@link Types#JAVA_OBJECT}, so other values will
+     *                        return an empty result set.
+     * @return A valid result set for implementation of {@link DatabaseMetaData#getUDTs(String, String, String, int[])}.
+     * @throws SQLException when something went wrong during the creation of the result set.
+     */
+    public CassandraMetadataResultSet makeUDTs(final CassandraStatement statement, final String schemaPattern,
+                                               final String typeNamePattern, final int[] types) throws SQLException {
+        final ArrayList<MetadataRow> udtsRows = new ArrayList<>();
+        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
+
+        // Parse the fully-qualified type name, if necessary.
+        String schemaName = schemaPattern;
+        String typeName = typeNamePattern;
+        if (typeNamePattern.contains(".")) {
+            final String[] fullyQualifiedTypeNameParts = typeNamePattern.split("\\.");
+            schemaName = fullyQualifiedTypeNameParts[0];
+            typeName = fullyQualifiedTypeNameParts[1];
+        }
+
+        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
+            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
+            if (StringUtils.isEmpty(schemaName) || schemaName.equals(keyspaceMetadata.getName().asInternal())) {
+                final Map<CqlIdentifier, UserDefinedType> udts = keyspaceMetadata.getUserDefinedTypes();
+
+                for (final Map.Entry<CqlIdentifier, UserDefinedType> udt : udts.entrySet()) {
+                    final UserDefinedType udtMetadata = udt.getValue();
+                    if (typeName.equalsIgnoreCase(udtMetadata.getName().asInternal())
+                        && (types == null || Arrays.stream(types).anyMatch(type -> type == JAVA_OBJECT))) {
+                        final MetadataRow row = new MetadataRow()
+                            .addEntry(TYPE_CATALOG, statement.connection.getCatalog())
+                            .addEntry(TYPE_SCHEMA, keyspaceMetadata.getName().asInternal())
+                            .addEntry(TYPE_NAME, udtMetadata.getName().asInternal())
+                            .addEntry(CLASS_NAME, UdtValue.class.getName())
+                            .addEntry(DATA_TYPE, String.valueOf(JAVA_OBJECT))
+                            .addEntry(REMARKS, StringUtils.EMPTY)
+                            .addEntry(BASE_TYPE, null);
+                        udtsRows.add(row);
+                    }
+                }
+            }
+        }
+        // Results should all have the same DATA_TYPE and TYPE_CAT so just sort them by TYPE_SCHEM then TYPE_NAME.
+        udtsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
+            .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME)));
+        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(udtsRows));
+    }
 }

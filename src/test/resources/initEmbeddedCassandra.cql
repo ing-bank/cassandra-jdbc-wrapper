@@ -18,6 +18,21 @@ t2bValue boolean,
 t2iValue int)
 WITH comment = 'Second table in the keyspace';
 
+CREATE TYPE CustomType1 (
+key1 int,
+value1 text,
+);
+
+CREATE TYPE CustomType2 (
+key2 tinyint,
+value2 boolean,
+);
+
+CREATE TYPE type_in_different_ks (
+t_key int,
+t_value text,
+);
+
 USE test_keyspace2;
 CREATE COLUMNFAMILY cf_test1 (
 keyname text PRIMARY KEY,
@@ -30,6 +45,11 @@ keyname text PRIMARY KEY,
 t2bValue boolean,
 t2iValue int)
 WITH comment = 'Second table in the keyspace';
+
+CREATE TYPE type_in_different_ks (
+t_key int,
+t_value text,
+);
 
 /* Init keyspace and tables for PooledUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace_pool;

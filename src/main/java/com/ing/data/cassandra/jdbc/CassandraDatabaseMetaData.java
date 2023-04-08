@@ -15,6 +15,7 @@
 
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -24,6 +25,7 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLSyntaxErrorException;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 
@@ -144,9 +146,17 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return MetadataResultSets.INSTANCE.makeCatalogs(statement);
     }
 
+    /**
+     * Retrieves a list of the client info properties that the driver supports.
+     * <p>
+     * Cassandra database does not support client info properties, so this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
+     * </p>
+     *
+     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        // todo: documentation like getPseudoColumns
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -737,11 +747,66 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
+    /**
+     * Retrieves a description of the user-defined types (UDTs) defined in a particular schema.
+     * <p>
+     * Schema-specific UDTs in a Cassandra database will be considered as having type {@code JAVA_OBJECT}.
+     * </p>
+     * <p>
+     * Only types matching the catalog, schema, type name and type criteria are returned. They are ordered by
+     * {@code DATA_TYPE}, {@code TYPE_CAT}, {@code TYPE_SCHEM} and {@code TYPE_NAME}. The type name parameter may be
+     * a fully-qualified name (it should respect the format {@code <SCHEMA_NAME>.<TYPE_NAME>}). In this case, the
+     * {@code catalog} and {@code schemaPattern} parameters are ignored.
+     * </p>
+     * <p>Each type description has the following columns:
+     * <ol>
+     *     <li><b>TYPE_CAT</b> String => type's catalog, may be {@code null}: here is the Cassandra cluster name
+     *     (if available).</li>
+     *     <li><b>TYPE_SCHEM</b> String => type's schema, may be {@code null}: here is the keyspace the type is
+     *     member of.</li>
+     *     <li><b>TYPE_NAME</b> String => user-defined type name</li>
+     *     <li><b>CLASS_NAME</b> String => Java class name, always {@link UdtValue} in the current implementation</li>
+     *     <li><b>DATA_TYPE</b> int => type value defined in {@link Types}. One of {@link Types#JAVA_OBJECT},
+     *     {@link Types#STRUCT}, or {@link Types#DISTINCT}. Always {@link Types#JAVA_OBJECT} in the current
+     *     implementation.</li>
+     *     <li><b>REMARKS</b> String => explanatory comment on the type, always empty in the current implementation</li>
+     *     <li><b>BASE_TYPE</b> short => type code of the source type of a {@code DISTINCT} type or the type that
+     *     implements the user-generated reference type of the {@code SELF_REFERENCING_COLUMN} of a structured type
+     *     as defined in {@link Types} ({@code null} if {@code DATA_TYPE} is not {@code DISTINCT} or not
+     *     {@code STRUCT} with {@code REFERENCE_GENERATION = USER_DEFINED}). Always {@code null} in the current
+     *     implementation.</li>
+     * </ol>
+     * </p>
+     *
+     * @param catalog         A catalog name; must match the catalog name as it is stored in the database; {@code ""}
+     *                        retrieves those without a catalog (will always return an empty set); {@code null} means
+     *                        that the catalog name should not be used to narrow the search and in this case the
+     *                        Cassandra cluster of the current connection is used.
+     * @param schemaPattern   A schema pattern name; must match the schema name as it is stored in the database;
+     *                        {@code ""} retrieves those without a schema (will always return an empty set);
+     *                        {@code null} means that the schema name should not be used to narrow the search and in
+     *                        this case the search is restricted to the current schema (if available).
+     * @param typeNamePattern A type name pattern; must match the type name as it is stored in the database (not
+     *                        case-sensitive); may be a fully qualified name.
+     * @param types           A list of user-defined types ({@link Types#JAVA_OBJECT}, {@link Types#STRUCT}, or
+     *                        {@link Types#DISTINCT}) to include; {@code null} returns all types. All the UDTs defined
+     *                        in a Cassandra database are considered as {@link Types#JAVA_OBJECT}, so other values will
+     *                        return an empty result set.
+     * @return {@link ResultSet} object in which each row describes a UDT.
+     * @throws SQLException if a database access error occurs.
+     */
     @Override
     public ResultSet getUDTs(final String catalog, final String schemaPattern, final String typeNamePattern,
                              final int[] types) throws SQLException {
-        // TODO: method to implement
         checkStatementClosed();
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            this.statement.connection = connection;
+            String schemaNamePattern = schemaPattern;
+            if (schemaPattern == null) {
+                schemaNamePattern = this.connection.getSchema(); // limit to current schema if defined.
+            }
+            return MetadataResultSets.INSTANCE.makeUDTs(this.statement, schemaNamePattern, typeNamePattern, types);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
@@ -764,12 +829,25 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         }
     }
 
+    /**
+     * Retrieves a description of a table's columns that are automatically updated when any value in a row is updated.
+     * <p>
+     * Cassandra database does not support any mechanism of automatic column update when any value in a row is updated,
+     * so this method will throw a {@link SQLFeatureNotSupportedException}.
+     * </p>
+     *
+     * @param catalog A catalog name; must match the catalog name as it is stored in the database; {@code ""} retrieves
+     *                those without a catalog; {@code null} means that the catalog name should not be used to narrow
+     *                the search.
+     * @param schema  A schema name; must match the schema name as it is stored in the database; {@code ""} retrieves
+     *                those without a schema; {@code null} means that the schema name should not be used to narrow the
+     *                search.
+     * @param table   A table name; must match the table name as it is stored in the database.
+     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     */
     @Override
     public ResultSet getVersionColumns(final String catalog, final String schema, final String table)
         throws SQLException {
-        // Cassandra does not support any mechanism of automatic column update when any value in a row is updated, so
-        // this will always return an empty result set.
-        // todo: documentation like getPseudoColumns
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

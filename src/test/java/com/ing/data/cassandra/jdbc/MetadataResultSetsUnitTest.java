@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -328,6 +330,66 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertTrue(result.getMetaData().isSearchable(5));
 
         stmt.close();
+    }
+
+    @Test
+    void givenStatement_whenMakeUDTs_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, KEYSPACE, "CustomType1",
+            new int[]{Types.JAVA_OBJECT});
+        assertNotNull(result);
+        assertEquals(7, result.getMetaData().getColumnCount());
+        assertEquals("TYPE_CAT", result.getMetaData().getColumnName(1));
+        assertEquals("TYPE_SCHEM", result.getMetaData().getColumnName(2));
+        assertEquals("TYPE_NAME", result.getMetaData().getColumnName(3));
+        assertEquals("CLASS_NAME", result.getMetaData().getColumnName(4));
+        assertEquals("DATA_TYPE", result.getMetaData().getColumnName(5));
+        assertEquals("REMARKS", result.getMetaData().getColumnName(6));
+        assertEquals("BASE_TYPE", result.getMetaData().getColumnName(7));
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
+                result.getString(5), result.getString(6), result.getString(7)));
+        }
+        assertEquals(1, resultSize);
+        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";customtype1;").concat(UdtValue.class.getName())
+            .concat(";2000;;null"))));
+
+        // Using a fully-qualified type name.
+        final ResultSet resultFullyQualifiedName = MetadataResultSets.INSTANCE.makeUDTs(statement,
+            KEYSPACE, KEYSPACE + ".customtype2", new int[]{Types.JAVA_OBJECT});
+        assertNotNull(resultFullyQualifiedName);
+        assertEquals(7, resultFullyQualifiedName.getMetaData().getColumnCount());
+        assertTrue(resultFullyQualifiedName.next());
+    }
+
+    @Test
+    void givenStatement_whenMakeUDTsWithNonJavaObjectTypes_returnEmptyResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, KEYSPACE, "CustomType1",
+            new int[]{Types.STRUCT, Types.DISTINCT});
+        assertNotNull(result);
+        assertFalse(result.next());
+    }
+
+    @Test
+    void givenStatement_whenMakeUDTsNotSpecifyingSchemaPattern_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, null, "type_in_different_ks",
+            new int[]{Types.JAVA_OBJECT});
+        assertNotNull(result);
+        assertEquals(7, result.getMetaData().getColumnCount());
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3)));
+        }
+        assertEquals(2, resultSize);
+        assertEquals(KEYSPACE.concat(";type_in_different_ks"), foundColumns.get(0));
+        assertEquals(ANOTHER_KEYSPACE.concat(";type_in_different_ks"), foundColumns.get(1));
     }
 
 }
