@@ -709,7 +709,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTableTypes() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.INSTANCE.makeTableTypes(statement);
+        return MetadataResultSets.INSTANCE.makeTableTypes(this.statement);
     }
 
     @Override
@@ -742,9 +742,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        // TODO: method to implement
         checkStatementClosed();
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return MetadataResultSets.INSTANCE.makeTypes(this.statement);
     }
 
     /**
