@@ -27,7 +27,7 @@ import java.sql.DriverManager;
 abstract class UsingCassandraContainerTest {
 
     // For the official Cassandra image, see here: https://hub.docker.com/_/cassandra
-    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:4.1.0");
+    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:4.1.1");
 
     static CassandraConnection sqlConnection = null;
 
@@ -37,8 +37,8 @@ abstract class UsingCassandraContainerTest {
     static final CassandraContainer<?> cassandraContainer = new CassandraContainer<>(CASSANDRA_IMAGE)
         .withEnv("CASSANDRA_DC", "datacenter1")
         .withEnv("CASSANDRA_CLUSTER_NAME", "embedded_test_cluster")
+        .withConfigurationOverride("config_override")
         .withInitScript("initEmbeddedCassandra.cql");
-    // TODO: TLS configuration (using bitnami/cassandra image?)
 
     @BeforeAll
     static void setUpTests() {

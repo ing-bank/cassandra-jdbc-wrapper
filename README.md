@@ -265,7 +265,8 @@ For further information about custom implementations of `SslEngineFactory`, see
 
 ### Connecting to DBaaS
 
-In order to connect to the cloud [Cassandra DBaaS](www.datastax.com/astra) cluster, one would need to specify:
+In order to connect to the cloud [Cassandra-based DBaaS AstraDB](https://www.datastax.com/astra) cluster, one would 
+need to specify:
 * `secureconnectbundle`: the fully qualified path of the cloud secure connect bundle file
 * `keyspace`: the keyspace to connect to
 * `user`: the username

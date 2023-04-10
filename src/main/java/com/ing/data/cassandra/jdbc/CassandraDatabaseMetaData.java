@@ -160,12 +160,29 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    /**
+     * Retrieves a description of the access rights for a table's columns.
+     * <p>
+     * Datastax Java driver for Apache Cassandra(R) currently does not provide information about permissions and only
+     * super users can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
+     * be implemented safely for any connection to the database, that's why this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
+     * </p>
+     *
+     * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
+     *                          {@code ""} retrieves those without a catalog; {@code null} means that the catalog name
+     *                          should not be used to narrow the search.
+     * @param schema            A schema name pattern; must match the schema name as it is stored in the database;
+     *                          {@code ""} retrieves those without a schema; {@code null} means that the schema name
+     *                          should not be used to narrow the search.
+     * @param table             A table name pattern; must match the table name as it is stored in the database.
+     * @param columnNamePattern A column name pattern; must match the column name as it is stored in the database.
+     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     */
     @Override
     public ResultSet getColumnPrivileges(final String catalog, final String schema, final String table,
                                          final String columnNamePattern) throws SQLException {
-        // TODO: method to implement
-        checkStatementClosed();
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -319,8 +336,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getFunctions(final String catalog, final String schemaPattern, final String functionNamePattern)
         throws SQLException {
-        // TODO: method to implement
         checkStatementClosed();
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            String schemaName = schemaPattern;
+            if (schemaPattern == null) {
+                schemaName = this.connection.getSchema(); // limit to current schema if defined.
+            }
+            return MetadataResultSets.INSTANCE.makeFunctions(this.statement, schemaName, functionNamePattern);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
@@ -698,12 +721,28 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return "TOKEN,TTL,WRITETIME";
     }
 
+    /**
+     * Retrieves a description of the access rights for each table available in a catalog (Cassandra cluster).
+     * <p>
+     * Datastax Java driver for Apache Cassandra(R) currently does not provide information about permissions and only
+     * super users can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
+     * be implemented safely for any connection to the database, that's why this method will throw a
+     * {@link SQLFeatureNotSupportedException}.
+     * </p>
+     *
+     * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
+     *                          {@code ""} retrieves those without a catalog; {@code null} means that the catalog name
+     *                          should not be used to narrow the search.
+     * @param schemaPattern     A schema name pattern; must match the schema name as it is stored in the database;
+     *                          {@code ""} retrieves those without a schema; {@code null} means that the schema name
+     *                          should not be used to narrow the search.
+     * @param tableNamePattern  A table name pattern; must match the table name as it is stored in the database.
+     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     */
     @Override
     public ResultSet getTablePrivileges(final String catalog, final String schemaPattern,
                                         final String tableNamePattern) throws SQLException {
-        // TODO: method to implement
-        checkStatementClosed();
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

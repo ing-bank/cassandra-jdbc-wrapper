@@ -33,6 +33,11 @@ t_key int,
 t_value text,
 );
 
+CREATE FUNCTION function_test1 (var1 int)
+RETURNS NULL ON NULL INPUT
+RETURNS int LANGUAGE java AS
+'return 2 * var1;';
+
 USE test_keyspace2;
 CREATE COLUMNFAMILY cf_test1 (
 keyname text PRIMARY KEY,

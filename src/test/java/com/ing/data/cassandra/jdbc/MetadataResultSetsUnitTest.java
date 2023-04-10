@@ -392,4 +392,118 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertEquals(ANOTHER_KEYSPACE.concat(";type_in_different_ks"), foundColumns.get(1));
     }
 
+    @Test
+    void givenStatement_whenMakeTypes_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeTypes(statement);
+        assertNotNull(result);
+        assertEquals(18, result.getMetaData().getColumnCount());
+        assertEquals("TYPE_NAME", result.getMetaData().getColumnName(1));
+        assertEquals("DATA_TYPE", result.getMetaData().getColumnName(2));
+        assertEquals("PRECISION", result.getMetaData().getColumnName(3));
+        assertEquals("LITERAL_PREFIX", result.getMetaData().getColumnName(4));
+        assertEquals("LITERAL_SUFFIX", result.getMetaData().getColumnName(5));
+        assertEquals("CREATE_PARAMS", result.getMetaData().getColumnName(6));
+        assertEquals("NULLABLE", result.getMetaData().getColumnName(7));
+        assertEquals("CASE_SENSITIVE", result.getMetaData().getColumnName(8));
+        assertEquals("SEARCHABLE", result.getMetaData().getColumnName(9));
+        assertEquals("UNSIGNED_ATTRIBUTE", result.getMetaData().getColumnName(10));
+        assertEquals("FIXED_PREC_SCALE", result.getMetaData().getColumnName(11));
+        assertEquals("AUTO_INCREMENT", result.getMetaData().getColumnName(12));
+        assertEquals("LOCAL_TYPE_NAME", result.getMetaData().getColumnName(13));
+        assertEquals("MINIMUM_SCALE", result.getMetaData().getColumnName(14));
+        assertEquals("MAXIMUM_SCALE", result.getMetaData().getColumnName(15));
+        assertEquals("SQL_DATA_TYPE", result.getMetaData().getColumnName(16));
+        assertEquals("SQL_DATETIME_SUB", result.getMetaData().getColumnName(17));
+        assertEquals("NUM_PREC_RADIX", result.getMetaData().getColumnName(18));
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            List<String> results = new ArrayList<>();
+            for (int i = 1; i <= 18; i++) {
+                results.add(result.getString(i));
+            }
+            foundColumns.add(String.join(";", results));
+        }
+        assertEquals(DataTypeEnum.values().length, resultSize);
+        assertEquals("tinyint;-6;4;null;null;null;1;false;2;false;true;false;null;0;0;null;null;4",
+            foundColumns.get(0));
+        assertEquals("bigint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+            foundColumns.get(1));
+        assertEquals("counter;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+            foundColumns.get(2));
+        assertEquals("varint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+            foundColumns.get(3));
+        assertEquals("blob;-2;1073741823;';';null;1;false;2;true;true;false;null;0;0;null;null;1073741823",
+            foundColumns.get(4));
+        assertEquals("decimal;3;0;null;null;null;1;false;2;false;true;false;null;0;0;null;null;0",
+            foundColumns.get(5));
+        assertEquals("int;4;11;null;null;null;1;false;2;false;true;false;null;0;0;null;null;11",
+            foundColumns.get(6));
+        assertEquals("smallint;5;6;null;null;null;1;false;2;false;true;false;null;0;0;null;null;6",
+            foundColumns.get(7));
+        assertEquals("float;6;7;null;null;null;1;false;2;false;true;false;null;0;40;null;null;7",
+            foundColumns.get(8));
+        assertEquals("double;8;300;null;null;null;1;false;2;false;true;false;null;0;300;null;null;300",
+            foundColumns.get(9));
+        assertEquals("ascii;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+            foundColumns.get(10));
+        assertEquals("text;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+            foundColumns.get(11));
+        assertEquals("VARCHAR;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+            foundColumns.get(12));
+        assertEquals("boolean;16;5;null;null;null;1;false;2;true;true;false;null;0;0;null;null;5",
+            foundColumns.get(13));
+        assertEquals("date;91;10;null;null;null;1;false;2;true;true;false;null;0;0;null;null;10",
+            foundColumns.get(14));
+        assertEquals("time;92;18;null;null;null;1;false;2;true;true;false;null;0;0;null;null;18",
+            foundColumns.get(15));
+        assertEquals("timestamp;93;31;null;null;null;1;false;2;true;true;false;null;0;0;null;null;31",
+            foundColumns.get(16));
+        assertEquals("CUSTOM;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(17));
+        assertEquals("duration;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(18));
+        assertEquals("inet;1111;39;null;null;null;1;false;2;false;true;false;null;0;0;null;null;39",
+            foundColumns.get(19));
+        assertEquals("list;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(20));
+        assertEquals("map;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(21));
+        assertEquals("set;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(22));
+        assertEquals("timeuuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
+            foundColumns.get(23));
+        assertEquals("tuple;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(24));
+        assertEquals("UDT;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+            foundColumns.get(25));
+        assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
+            foundColumns.get(26));
+    }
+
+    @Test
+    void givenStatement_whenMakeFunctions_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeFunctions(statement, KEYSPACE, "function_test1");
+        assertNotNull(result);
+        assertEquals(6, result.getMetaData().getColumnCount());
+        assertEquals("FUNCTION_CAT", result.getMetaData().getColumnName(1));
+        assertEquals("FUNCTION_SCHEM", result.getMetaData().getColumnName(2));
+        assertEquals("FUNCTION_NAME", result.getMetaData().getColumnName(3));
+        assertEquals("REMARKS", result.getMetaData().getColumnName(4));
+        assertEquals("FUNCTION_TYPE", result.getMetaData().getColumnName(5));
+        assertEquals("SPECIFIC_NAME", result.getMetaData().getColumnName(6));
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
+                result.getString(5), result.getString(6)));
+        }
+        assertEquals(1, resultSize);
+        assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";function_test1;;1;function_test1"))));
+    }
+
 }

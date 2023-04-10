@@ -18,6 +18,8 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionSignature;
 import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
@@ -67,6 +69,10 @@ public final class MetadataResultSets {
     static final String DECIMAL_DIGITS = "DECIMAL_DIGITS";
     static final String FILTER_CONDITION = "FILTER_CONDITION";
     static final String FIXED_PRECISION_SCALE = "FIXED_PREC_SCALE";
+    static final String FUNCTION_CATALOG = "FUNCTION_CAT";
+    static final String FUNCTION_NAME = "FUNCTION_NAME";
+    static final String FUNCTION_SCHEMA = "FUNCTION_SCHEM";
+    static final String FUNCTION_TYPE = "FUNCTION_TYPE";
     static final String INDEX_NAME = "INDEX_NAME";
     static final String INDEX_QUALIFIER = "INDEX_QUALIFIER";
     static final String IS_AUTOINCREMENT = "IS_AUTOINCREMENT";
@@ -94,6 +100,7 @@ public final class MetadataResultSets {
     static final String SEARCHABLE = "SEARCHABLE";
     static final String SELF_REFERENCING_COL_NAME = "SELF_REFERENCING_COL_NAME";
     static final String SOURCE_DATA_TYPE = "SOURCE_DATA_TYPE";
+    static final String SPECIFIC_NAME = "SPECIFIC_NAME";
     static final String SQL_DATA_TYPE = "SQL_DATA_TYPE";
     static final String SQL_DATETIME_SUB = "SQL_DATETIME_SUB";
     static final String TABLE = "TABLE";
@@ -779,6 +786,90 @@ public final class MetadataResultSets {
                 .addEntry(NUM_PRECISION_RADIX, String.valueOf(jdbcType.getPrecision(null)));
             types.add(row);
         }
+        // Sort results by DATA_TYPE.
+        types.sort(Comparator.comparing(row -> Integer.valueOf(row.getString(DATA_TYPE))));
         return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(types));
+    }
+
+    /**
+     * Builds a valid result set of the system and user functions available in the given catalog (Cassandra cluster).
+     * This method is used to implement the method {@link DatabaseMetaData#getFunctions(String, String, String)}.
+     * <p>
+     * Only system and user function descriptions matching the schema and function name criteria are returned. They are
+     * ordered by {@code FUNCTION_CAT}, {@code FUNCTION_SCHEM}, {@code FUNCTION_NAME} and {@code SPECIFIC_NAME}.
+     * </p>
+     * <p>
+     * The columns of this result set are:
+     *     <ol>
+     *         <li><b>FUNCTION_CAT</b> String => function catalog, may be {@code null}: here is the Cassandra cluster
+     *         name (if available).</li>
+     *         <li><b>FUNCTION_SCHEM</b> String => function schema, may be {@code null}: here is the keyspace the table
+     *         is member of.</li>
+     *         <li><b>FUNCTION_NAME</b> String => function name. This is the name used to invoke the function.</li>
+     *         <li><b>REMARKS</b> String => explanatory comment on the function (always empty, Cassandra does not
+     *         allow to describe functions with a comment).</li>
+     *         <li><b>FUNCTION_TYPE</b> short => kind of function:
+     *             <ul>
+     *                 <li>{@link DatabaseMetaData#functionResultUnknown} - cannot determine if a return value or table
+     *                 will be returned</li>
+     *                 <li>{@link DatabaseMetaData#functionNoTable} - does not return a table (Cassandra user-defined
+     *                 functions only return CQL types, so never a table)</li>
+     *                 <li>{@link DatabaseMetaData#functionReturnsTable} - returns a table</li>
+     *             </ul>
+     *         </li>
+     *         <li><b>SPECIFIC_NAME</b> String => the name which uniquely identifies this function within its schema.
+     *         This is a user specified, or DBMS generated, name that may be different then the {@code FUNCTION_NAME}
+     *         for example with overload functions.</li>
+     *     </ol>
+     * </p>
+     * <p>
+     * A user may not have permission to execute any of the functions that are returned by {@code getFunctions}.
+     * </p>
+     *
+     * @param statement             The statement.
+     * @param schemaPattern         A schema name pattern. It must match the schema name as it is stored in the
+     *                              database; {@code ""} retrieves those without a schema and {@code null} means that
+     *                              the schema name should not be used to narrow down the search.
+     * @param functionNamePattern   A function name pattern; must match the function name as it is stored in the
+     *                              database.
+     * @return A valid result set for implementation of {@link DatabaseMetaData#getFunctions(String, String, String)}.
+     * @throws SQLException when something went wrong during the creation of the result set.
+     */
+    public CassandraMetadataResultSet makeFunctions(final CassandraStatement statement, final String schemaPattern,
+                                                    final String functionNamePattern) throws SQLException {
+        final ArrayList<MetadataRow> functionsRows = new ArrayList<>();
+        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
+
+        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
+            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
+            String schemaNamePattern = schemaPattern;
+            if (WILDCARD_CHAR.equals(schemaPattern)) {
+                schemaNamePattern = keyspaceMetadata.getName().asInternal();
+            }
+            if (schemaNamePattern == null || schemaNamePattern.equals(keyspaceMetadata.getName().asInternal())) {
+                final Map<FunctionSignature, FunctionMetadata> functions = keyspaceMetadata.getFunctions();
+
+                for (final FunctionSignature function : functions.keySet()) {
+                    if (WILDCARD_CHAR.equals(functionNamePattern) || functionNamePattern == null
+                        || functionNamePattern.equals(function.getName().asInternal())) {
+                        final MetadataRow row = new MetadataRow()
+                            .addEntry(FUNCTION_CATALOG, statement.connection.getCatalog())
+                            .addEntry(FUNCTION_SCHEMA, keyspaceMetadata.getName().asInternal())
+                            .addEntry(FUNCTION_NAME, function.getName().asInternal())
+                            .addEntry(REMARKS, StringUtils.EMPTY)
+                            .addEntry(FUNCTION_TYPE, String.valueOf(DatabaseMetaData.functionNoTable))
+                            .addEntry(SPECIFIC_NAME, function.getName().asInternal());
+                        functionsRows.add(row);
+                    }
+                }
+            }
+        }
+
+        // Results should all have the same FUNCTION_CAT, so just sort them by FUNCTION_SCHEM, then FUNCTION_NAME and
+        // finally SPECIFIC_NAME.
+        functionsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
+            .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME))
+            .thenComparing(row -> ((MetadataRow) row).getString(SPECIFIC_NAME)));
+        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(functionsRows));
     }
 }
