@@ -33,7 +33,7 @@ t_key int,
 t_value text,
 );
 
-CREATE FUNCTION function_test1 (var1 int)
+CREATE FUNCTION function_test1 (var1 int, var2 text)
 RETURNS NULL ON NULL INPUT
 RETURNS int LANGUAGE java AS
 'return 2 * var1;';

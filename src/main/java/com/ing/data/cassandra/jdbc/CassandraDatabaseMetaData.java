@@ -328,8 +328,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getFunctionColumns(final String catalog, final String schemaPattern,
                                         final String functionNamePattern, final String columnNamePattern)
         throws SQLException {
-        // TODO: method to implement
         checkStatementClosed();
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            String schemaName = schemaPattern;
+            if (schemaPattern == null) {
+                schemaName = this.connection.getSchema(); // limit to current schema if defined.
+            }
+            return MetadataResultSets.INSTANCE.makeFunctionColumns(this.statement, schemaName, functionNamePattern,
+                columnNamePattern);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 

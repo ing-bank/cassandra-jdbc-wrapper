@@ -16,8 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Implement the methods `isSigned()` and `isSearchable()` in the different `ResultSetMetaData` implementations.
 - Implement the method `isValid(int)` in `CassandraConnection`.
 - Implement the following methods of `CassandraDatabaseMetaData`: `getFunctions(String, String, String)`,
-  `getNumericFunctions()`, `getSQLKeywords()`, `getStringFunctions()`, `getSystemFunctions()`, `getTimeDateFunctions()`,
-  `getTypeInfo()` and `getUDTs(String, String, String, int[])`.
+  `getFunctionColumns(String, String, String, String)`, `getNumericFunctions()`, `getSQLKeywords()`, 
+  `getStringFunctions()`, `getSystemFunctions()`, `getTimeDateFunctions()`, `getTypeInfo()` and 
+  `getUDTs(String, String, String, int[])`.
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
 - Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.

@@ -506,4 +506,50 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";function_test1;;1;function_test1"))));
     }
 
+    @Test
+    void givenStatement_whenMakeFunctionColumns_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = MetadataResultSets.INSTANCE.makeFunctionColumns(statement, KEYSPACE, "function_test1",
+            "%");
+        assertNotNull(result);
+        assertEquals(17, result.getMetaData().getColumnCount());
+        assertEquals("FUNCTION_CAT", result.getMetaData().getColumnName(1));
+        assertEquals("FUNCTION_SCHEM", result.getMetaData().getColumnName(2));
+        assertEquals("FUNCTION_NAME", result.getMetaData().getColumnName(3));
+        assertEquals("COLUMN_NAME", result.getMetaData().getColumnName(4));
+        assertEquals("COLUMN_TYPE", result.getMetaData().getColumnName(5));
+        assertEquals("DATA_TYPE", result.getMetaData().getColumnName(6));
+        assertEquals("TYPE_NAME", result.getMetaData().getColumnName(7));
+        assertEquals("PRECISION", result.getMetaData().getColumnName(8));
+        assertEquals("LENGTH", result.getMetaData().getColumnName(9));
+        assertEquals("SCALE", result.getMetaData().getColumnName(10));
+        assertEquals("RADIX", result.getMetaData().getColumnName(11));
+        assertEquals("NULLABLE", result.getMetaData().getColumnName(12));
+        assertEquals("REMARKS", result.getMetaData().getColumnName(13));
+        assertEquals("CHAR_OCTET_LENGTH", result.getMetaData().getColumnName(14));
+        assertEquals("ORDINAL_POSITION", result.getMetaData().getColumnName(15));
+        assertEquals("IS_NULLABLE", result.getMetaData().getColumnName(16));
+        assertEquals("SPECIFIC_NAME", result.getMetaData().getColumnName(17));
+
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            List<String> results = new ArrayList<>();
+            for (int i = 2; i <= 17; i++) {
+                results.add(result.getString(i));
+            }
+            foundColumns.add(String.join(";", results));
+        }
+        assertEquals(3, resultSize);
+        assertEquals(KEYSPACE.concat(
+            ";function_test1;;4;4;INT;11;2147483647;0;11;1;;null;0;YES;function_test1"), foundColumns.get(0));
+        assertEquals(KEYSPACE.concat(
+            ";function_test1;var1;1;4;INT;11;2147483647;0;11;1;;null;1;YES;function_test1"),
+            foundColumns.get(1));
+        assertEquals(KEYSPACE.concat(
+            ";function_test1;var2;1;12;TEXT;2147483647;2147483647;0;2147483647;1;;null;2;YES;function_test1"),
+            foundColumns.get(2));
+    }
+
 }
