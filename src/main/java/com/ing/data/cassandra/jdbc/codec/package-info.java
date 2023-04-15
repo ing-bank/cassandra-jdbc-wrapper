@@ -13,23 +13,7 @@
  *   limitations under the License.
  */
 
-package com.ing.data.cassandra.jdbc.optionset;
-
-import com.ing.data.cassandra.jdbc.CassandraConnection;
-
 /**
- * Abstract option set to set common parameter used by option sets.
+ * This package contains the codec classes to handle conversions between CQL types and Java types.
  */
-public abstract class AbstractOptionSet implements OptionSet {
-
-    private CassandraConnection connection;
-
-    @Override
-    public CassandraConnection getConnection() {
-        return this.connection;
-    }
-
-    public void setConnection(final CassandraConnection connection) {
-        this.connection = connection;
-    }
-}
+package com.ing.data.cassandra.jdbc.codec;

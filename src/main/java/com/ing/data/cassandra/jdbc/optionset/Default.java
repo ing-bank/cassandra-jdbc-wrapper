@@ -23,9 +23,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Default Option set.
+ * Default option set implementing the methods of {@code OptionSet} accordingly to the JDBC API standard.
  */
-
 public class Default extends AbstractOptionSet {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOptionSet.class);
 
@@ -50,4 +49,5 @@ public class Default extends AbstractOptionSet {
     public int getSQLUpdateResponse() {
         return 0;
     }
+
 }

@@ -13,23 +13,7 @@
  *   limitations under the License.
  */
 
-package com.ing.data.cassandra.jdbc.optionset;
-
-import com.ing.data.cassandra.jdbc.CassandraConnection;
-
 /**
- * Abstract option set to set common parameter used by option sets.
+ * Implementation of JDBC API for Cassandra databases by wrapping the DataStax Java Driver for Apache Cassandra.
  */
-public abstract class AbstractOptionSet implements OptionSet {
-
-    private CassandraConnection connection;
-
-    @Override
-    public CassandraConnection getConnection() {
-        return this.connection;
-    }
-
-    public void setConnection(final CassandraConnection connection) {
-        this.connection = connection;
-    }
-}
+package com.ing.data.cassandra.jdbc;

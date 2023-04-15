@@ -16,10 +16,9 @@
 package com.ing.data.cassandra.jdbc.optionset;
 
 /**
- * Option Set for liquibase compatibility and flavour of JDBC.
+ * Option set implementation for Liquibase compatibility and flavour of JDBC.
  */
 public class Liquibase extends AbstractOptionSet {
-
 
     @Override
     public String getCatalog() {
@@ -30,4 +29,5 @@ public class Liquibase extends AbstractOptionSet {
     public int getSQLUpdateResponse() {
         return -1;
     }
+
 }

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.9.0] - 2023-04-15
 ### Added
 - Add non-JDBC standard [JSON support](https://cassandra.apache.org/doc/latest/cassandra/cql/json.html) with the 
   methods `getObjectFromJson(int | String, Class)` and `getObjectFromJson(Class)` in `CassandraResultSet` and
@@ -121,6 +121,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.9.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.8.0...v4.9.0
 [4.8.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.7.0...v4.8.0
 [4.7.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.6.0...v4.7.0
 [4.6.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.5.0...v4.6.0

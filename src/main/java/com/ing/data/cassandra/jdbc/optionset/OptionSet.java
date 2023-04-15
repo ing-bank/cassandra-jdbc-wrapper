@@ -18,36 +18,36 @@ package com.ing.data.cassandra.jdbc.optionset;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 
 /**
- * Option Set for compliance mode.
+ * Option set for compliance mode.
  * Different use cases require one or more adjustments to the wrapper, to be compatible.
- * Thus, OptionSet would provide convenience to set for different flavours.
- *
+ * Thus, {@code OptionSet} would provide convenience to set for different flavours (for example Liquibase expect some
+ * methods return values different of the JDBC standard implementation).
  */
 public interface OptionSet {
     /**
-      * There is no Catalog concept in cassandra. Different flavour requires different response.
+      * There is no catalog concept in Cassandra. Different flavour requires different response.
      *
-      * @return Catalog
+      * @return The current catalog name or {@code null} if there is none.
      */
     String getCatalog();
 
     /**
-     * There is no updateCount available in Datastax Java driver, different flavour requires different response.
+     * There is no {@code updateCount} available in Datastax Java driver, different flavour requires different response.
      *
-     * @return Predefined update response
+     * @return A predefined update response.
      */
     int getSQLUpdateResponse();
 
     /**
-     * Set referenced connection. See @{@link AbstractOptionSet}
-     * @param connection Connection to set
+     * Set referenced connection. See @{@link AbstractOptionSet}.
+     * @param connection Connection to set.
      */
     void setConnection(CassandraConnection connection);
 
     /**
-     * Get referenced connection. See @{@link AbstractOptionSet}
+     * Get referenced connection. See @{@link AbstractOptionSet}.
      *
-     * @return referenced connection
+     * @return the referenced connection.
      */
     CassandraConnection getConnection();
 }

@@ -13,23 +13,8 @@
  *   limitations under the License.
  */
 
-package com.ing.data.cassandra.jdbc.optionset;
-
-import com.ing.data.cassandra.jdbc.CassandraConnection;
-
 /**
- * Abstract option set to set common parameter used by option sets.
+ * This package contains the classes relative to the compliance modes used to adapt some behaviours of the wrapper
+ * to different needs (standard JDBC API, Liquibase, ...).
  */
-public abstract class AbstractOptionSet implements OptionSet {
-
-    private CassandraConnection connection;
-
-    @Override
-    public CassandraConnection getConnection() {
-        return this.connection;
-    }
-
-    public void setConnection(final CassandraConnection connection) {
-        this.connection = connection;
-    }
-}
+package com.ing.data.cassandra.jdbc.optionset;
