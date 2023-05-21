@@ -56,12 +56,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_TIMEOUT;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.SSL_CONFIG_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -26,6 +26,8 @@ import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.datastax.oss.driver.internal.core.type.DefaultSetType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -65,7 +67,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.utils.Utils.getObjectMapper;
 
 /**
  * Cassandra prepared statement: implementation class for {@link PreparedStatement}.

@@ -24,6 +24,10 @@ import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
+import com.ing.data.cassandra.jdbc.metadata.MetadataResultSet;
+import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +41,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
-import static com.ing.data.cassandra.jdbc.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
+import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.functionColumnIn;
 import static java.sql.DatabaseMetaData.functionReturn;
 import static java.sql.DatabaseMetaData.typeNullable;
@@ -49,6 +53,7 @@ import static java.sql.Types.JAVA_OBJECT;
 /**
  * Utility class to manage database metadata result sets ({@link CassandraMetadataResultSet} objects).
  */
+// TODO: split by families of metadata (table, columns, functions, ...) and move to metadata package.
 public final class MetadataResultSets {
     /**
      * Gets an instance of {@code MetadataResultSets}.
@@ -148,7 +153,7 @@ public final class MetadataResultSets {
         final ArrayList<MetadataRow> tableTypes = new ArrayList<>();
         final MetadataRow row = new MetadataRow().addEntry(TABLE_TYPE, TABLE);
         tableTypes.add(row);
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(tableTypes));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(tableTypes));
     }
 
     /**
@@ -169,7 +174,7 @@ public final class MetadataResultSets {
         final ArrayList<MetadataRow> catalog = new ArrayList<>();
         final MetadataRow row = new MetadataRow().addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog());
         catalog.add(row);
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(catalog));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(catalog));
     }
 
     /**
@@ -210,7 +215,7 @@ public final class MetadataResultSets {
             }
         }
 
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**
@@ -281,7 +286,7 @@ public final class MetadataResultSets {
             }
         }
 
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**
@@ -453,7 +458,7 @@ public final class MetadataResultSets {
             }
         }
 
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**
@@ -552,7 +557,7 @@ public final class MetadataResultSets {
             }
         }
 
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**
@@ -611,7 +616,7 @@ public final class MetadataResultSets {
             }
         }
 
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**
@@ -701,7 +706,7 @@ public final class MetadataResultSets {
         // Results should all have the same DATA_TYPE and TYPE_CAT so just sort them by TYPE_SCHEM then TYPE_NAME.
         udtsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME)));
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(udtsRows));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(udtsRows));
     }
 
     /**
@@ -796,7 +801,7 @@ public final class MetadataResultSets {
         }
         // Sort results by DATA_TYPE.
         types.sort(Comparator.comparing(row -> Integer.valueOf(row.getString(DATA_TYPE))));
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(types));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(types));
     }
 
     /**
@@ -877,7 +882,7 @@ public final class MetadataResultSets {
         // here SPECIFIC_NAME is equal to FUNCTION_NAME).
         functionsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME)));
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(functionsRows));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(functionsRows));
     }
 
     /**
@@ -1041,6 +1046,6 @@ public final class MetadataResultSets {
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME))
             .thenComparing(row -> ((MetadataRow) row).getString(SPECIFIC_NAME))
             .thenComparing(row -> Integer.valueOf(((MetadataRow) row).getString(ORDINAL_POSITION))));
-        return new CassandraMetadataResultSet(statement, new MetadataResultSet().setRows(functionParamsRows));
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(functionParamsRows));
     }
 }

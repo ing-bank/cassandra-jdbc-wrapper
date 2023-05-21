@@ -29,7 +29,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
 
 /**
  * Pooled Cassandra data source: implementation class for {@link DataSource} and {@link ConnectionEventListener}.

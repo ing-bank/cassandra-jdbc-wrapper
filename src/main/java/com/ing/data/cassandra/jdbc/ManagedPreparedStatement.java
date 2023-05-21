@@ -37,7 +37,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
+import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_CONN;
 
 /**
  * Cassandra prepared statement executed in the context of a pool of connections managed in a

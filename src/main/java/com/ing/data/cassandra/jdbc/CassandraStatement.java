@@ -24,6 +24,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

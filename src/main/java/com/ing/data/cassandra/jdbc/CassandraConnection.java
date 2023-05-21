@@ -66,20 +66,20 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
-import static com.ing.data.cassandra.jdbc.Utils.ALWAYS_AUTOCOMMIT;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_TIMEOUT;
-import static com.ing.data.cassandra.jdbc.Utils.NO_TRANSACTIONS;
-import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_ACTIVE_CQL_VERSION;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_COMPLIANCE_MODE;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_CONSISTENCY_LEVEL;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_CQL_VERSION;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_DEBUG;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
-import static com.ing.data.cassandra.jdbc.Utils.createSubName;
-import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.Utils.ALWAYS_AUTOCOMMIT;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NO_TRANSACTIONS;
+import static com.ing.data.cassandra.jdbc.utils.Utils.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_ACTIVE_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_COMPLIANCE_MODE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_DEBUG;
+import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_CONN;
+import static com.ing.data.cassandra.jdbc.utils.Utils.createSubName;
+import static com.ing.data.cassandra.jdbc.utils.Utils.getDriverProperty;
 
 /**
  * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra

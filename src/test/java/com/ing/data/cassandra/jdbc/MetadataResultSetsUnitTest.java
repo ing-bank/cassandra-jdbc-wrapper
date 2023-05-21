@@ -14,6 +14,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

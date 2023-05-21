@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 
-import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NULL_KEYWORD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;

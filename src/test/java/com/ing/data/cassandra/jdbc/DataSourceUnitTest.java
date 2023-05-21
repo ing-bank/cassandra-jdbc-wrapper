@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;

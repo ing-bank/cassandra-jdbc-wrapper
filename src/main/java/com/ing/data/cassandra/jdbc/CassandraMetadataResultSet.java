@@ -20,6 +20,12 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.ListType;
 import com.datastax.oss.driver.api.core.type.MapType;
 import com.datastax.oss.driver.api.core.type.SetType;
+import com.ing.data.cassandra.jdbc.metadata.MetadataResultSet;
+import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.types.TypesMap;
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -55,16 +61,16 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_DIR;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.Utils.FORWARD_ONLY;
-import static com.ing.data.cassandra.jdbc.Utils.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_DIR;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.MUST_BE_POSITIVE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_RS;
 
 /**
  * Cassandra metadata result set. This is an implementation of {@link ResultSet} for database metadata.
@@ -163,6 +169,20 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         if (hasMoreRows()) {
             populateColumns();
         }
+    }
+
+    /**
+     * Builds a new instance of Cassandra metadata result set from a {@link MetadataResultSet}.
+     *
+     * @param statement         The statement.
+     * @param metadataResultSet The metadata result set from the Cassandra driver.
+     * @return A new instance of Cassandra metadata result set.
+     * @throws SQLException if a database access error occurs or this constructor is called with a closed
+     * {@link Statement}.
+     */
+    public static CassandraMetadataResultSet buildFrom(final CassandraStatement statement,
+                                                       final MetadataResultSet metadataResultSet) throws SQLException {
+        return new CassandraMetadataResultSet(statement, metadataResultSet);
     }
 
     private void populateColumns() {

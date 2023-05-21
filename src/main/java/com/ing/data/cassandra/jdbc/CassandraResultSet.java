@@ -29,6 +29,10 @@ import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.types.TypesMap;
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -78,19 +82,19 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
-import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromCqlTypeName;
-import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromDataType;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_DIR;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.Utils.FORWARD_ONLY;
-import static com.ing.data.cassandra.jdbc.Utils.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
-import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromCqlTypeName;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromDataType;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_DIR;
+import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.MUST_BE_POSITIVE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.utils.Utils.getObjectMapper;
 
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.

@@ -40,6 +40,7 @@ import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
+import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -61,11 +62,11 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_KEYSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.JSSE_TRUSTSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.Utils.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.Utils.SSL_CONFIG_FAILED;
 
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.

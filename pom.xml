@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.ing.data</groupId>
-	<artifactId>cassandra-jdbc-wrapper</artifactId>
+    <groupId>com.ing.data</groupId>
+    <artifactId>cassandra-jdbc-wrapper</artifactId>
     <version>4.9.0</version>
-	<packaging>jar</packaging>
+    <packaging>jar</packaging>
 
-	<name>Cassandra JDBC Wrapper</name>
-	<description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
+    <name>Cassandra JDBC Wrapper</name>
+    <description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
     <url>https://github.com/ing-bank/cassandra-jdbc-wrapper</url>
     <inceptionYear>2020</inceptionYear>
 
-	<licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <organization>
         <name>ING Bank</name>
         <url>https://www.ing.com</url>
     </organization>
 
-	<developers>
+    <developers>
         <developer>
-			<id>maximevw</id>
+            <id>maximevw</id>
             <url>https://github.com/maximevw</url>
-			<name>Maxime Wiewiora</name>
-			<roles>
-				<role>developer</role>
-			</roles>
-		</developer>
-	</developers>
+            <name>Maxime Wiewiora</name>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
 
     <contributors>
         <!-- Thanks to @adejanovski, developer of the original project forked as base for this one. -->
         <contributor>
             <name>Alexander Dejanovski</name>
             <url>https://github.com/adejanovski</url>
-			<roles>
-				<role>developer</role>
-			</roles>
+            <roles>
+                <role>developer</role>
+            </roles>
         </contributor>
         <contributor>
             <name>Madhavan Sridharan</name>
@@ -117,9 +117,9 @@
         <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-	</properties>
+    </properties>
 
-	<dependencies>
+    <dependencies>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
@@ -128,10 +128,10 @@
 
         <!-- Apache Commons Lang 3 -->
         <dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
             <version>${commons-lang3.version}</version>
-		</dependency>
+        </dependency>
 
         <!-- Apache Commons IO -->
         <dependency>
@@ -247,18 +247,18 @@
             <version>${lombok.version}</version>
             <scope>test</scope>
         </dependency>
-	</dependencies>
+    </dependencies>
 
-	<build>
+    <build>
         <!-- Configuration for resources filtering -->
         <resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
 
-		<plugins>
+        <plugins>
             <!-- Cleaning -->
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -343,11 +343,11 @@
                     </dependency>
                 </dependencies>
             </plugin>
-		</plugins>
-	</build>
+        </plugins>
+    </build>
 
     <!-- Specific building profiles -->
-	<profiles>
+    <profiles>
         <!-- 'release' profile is used for releasing of stable versions only. -->
         <profile>
             <id>release</id>
@@ -439,5 +439,5 @@
                 </plugins>
             </build>
         </profile>
-	</profiles>
+    </profiles>
 </project>

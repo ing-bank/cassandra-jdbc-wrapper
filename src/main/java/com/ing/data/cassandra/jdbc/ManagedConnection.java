@@ -15,6 +15,8 @@
 
 package com.ing.data.cassandra.jdbc;
 
+import com.ing.data.cassandra.jdbc.utils.Utils;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -29,7 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
 
 /**
  * Cassandra connection from a pool managed by a {@link PooledCassandraDataSource}.

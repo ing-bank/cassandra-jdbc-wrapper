@@ -16,11 +16,14 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.types.TypesMap;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
 
 /**
  * Cassandra parameter metadata: implementation class for {@link ParameterMetaData}.

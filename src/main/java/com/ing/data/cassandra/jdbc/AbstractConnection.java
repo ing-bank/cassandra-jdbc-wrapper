@@ -30,8 +30,8 @@ import java.sql.Wrapper;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
 
 /**
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented

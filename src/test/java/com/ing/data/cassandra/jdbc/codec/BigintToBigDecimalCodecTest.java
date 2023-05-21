@@ -16,7 +16,7 @@ package com.ing.data.cassandra.jdbc.codec;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.ing.data.cassandra.jdbc.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,7 +28,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.Utils.NULL_KEYWORD;
+import static com.ing.data.cassandra.jdbc.utils.Utils.NULL_KEYWORD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
