@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## Unreleased
 ### Changed
+- Update Apache Commons IO to version 2.12.0.
+- Update Jackson dependencies to version 2.15.1.
 - Packages refactoring: utility classes, types and database metadata management have been moved to dedicated packages.
 
 ## [4.9.0] - 2023-04-15
