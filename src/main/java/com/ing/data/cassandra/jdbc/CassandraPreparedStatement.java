@@ -20,10 +20,12 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.internal.core.type.DefaultListType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.datastax.oss.driver.internal.core.type.DefaultSetType;
+import com.datastax.oss.driver.internal.core.type.DefaultVectorType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
@@ -67,6 +69,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
+import static com.ing.data.cassandra.jdbc.utils.Utils.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.Utils.getObjectMapper;
 
 /**
@@ -522,6 +525,8 @@ public class CassandraPreparedStatement extends CassandraStatement
             targetType = Types.OTHER;
         } else if (x.getClass().equals(UUID.class)) {
             targetType = Types.OTHER;
+        } else if (x.getClass().equals(CqlVector.class)) {
+            targetType = Types.OTHER;
         } else {
             targetType = Types.OTHER;
         }
@@ -609,6 +614,18 @@ public class CassandraPreparedStatement extends CassandraStatement
                     this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, (UUID) x);
                 } else if (x instanceof CqlDuration) {
                     this.boundStatement = this.boundStatement.setCqlDuration(parameterIndex - 1, (CqlDuration) x);
+                } else if (x instanceof CqlVector) {
+                    final CqlVector vector = (CqlVector) x;
+                    final DefaultVectorType vectorType =
+                        (DefaultVectorType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
+                    final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(vectorType.getElementType()
+                        .asCql(false, false)).javaType;
+                    if (Number.class.isAssignableFrom(itemsClass)) {
+                        this.boundStatement = this.boundStatement.setVector(parameterIndex - 1, vector,
+                            itemsClass.asSubclass(Number.class));
+                    } else {
+                        throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
+                    }
                 } else if (x instanceof java.net.InetAddress) {
                     this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, (InetAddress) x);
                 } else if (List.class.isAssignableFrom(x.getClass())) {

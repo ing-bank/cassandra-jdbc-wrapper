@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 
 import java.math.BigInteger;
 import java.sql.ResultSet;
@@ -150,5 +151,30 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                      on a closed result set.
      */
     CqlDuration getDuration(String columnLabel) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link CqlVector}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    CqlVector<?> getVector(int columnIndex) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link CqlVector}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
+     * depending on the driver implementation.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    CqlVector<?> getVector(String columnLabel) throws SQLException;
 
 }
