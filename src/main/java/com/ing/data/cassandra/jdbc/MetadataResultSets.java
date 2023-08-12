@@ -60,7 +60,6 @@ public final class MetadataResultSets {
      */
     public static final MetadataResultSets INSTANCE = new MetadataResultSets();
 
-    static final String CQL_OPTION_COMMENT = "comment";
     static final String ASC_OR_DESC = "ASC_OR_DESC";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
     static final String BASE_TYPE = "BASE_TYPE";
@@ -103,14 +102,12 @@ public final class MetadataResultSets {
     static final String PRECISION = "PRECISION";
     static final String PRIMARY_KEY_NAME = "PK_NAME";
     static final String RADIX = "RADIX";
-    static final String REF_GENERATION = "REF_GENERATION";
     static final String REMARKS = "REMARKS";
     static final String SCALE = "SCALE";
     static final String SCOPE_CATALOG = "SCOPE_CATALOG";
     static final String SCOPE_SCHEMA = "SCOPE_SCHEMA";
     static final String SCOPE_TABLE = "SCOPE_TABLE";
     static final String SEARCHABLE = "SEARCHABLE";
-    static final String SELF_REFERENCING_COL_NAME = "SELF_REFERENCING_COL_NAME";
     static final String SOURCE_DATA_TYPE = "SOURCE_DATA_TYPE";
     static final String SPECIFIC_NAME = "SPECIFIC_NAME";
     static final String SQL_DATA_TYPE = "SQL_DATA_TYPE";
@@ -120,7 +117,6 @@ public final class MetadataResultSets {
     static final String TABLE_CATALOG = "TABLE_CATALOG";
     static final String TABLE_NAME = "TABLE_NAME";
     static final String TABLE_SCHEMA = "TABLE_SCHEM";
-    static final String TABLE_TYPE = "TABLE_TYPE";
     static final String TYPE = "TYPE";
     static final String TYPE_CATALOG = "TYPE_CAT";
     static final String TYPE_NAME = "TYPE_NAME";
@@ -133,27 +129,6 @@ public final class MetadataResultSets {
 
     private MetadataResultSets() {
         // Private constructor to hide the public one.
-    }
-
-    /**
-     * Builds a valid result set of the table types available in Cassandra database. This method is used to implement
-     * the method {@link DatabaseMetaData#getTableTypes()}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_TYPE</b> String => table type: always {@value TABLE}.</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement The statement.
-     * @return A valid result set for implementation of {@link DatabaseMetaData#getTableTypes()}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makeTableTypes(final CassandraStatement statement) throws SQLException {
-        final ArrayList<MetadataRow> tableTypes = new ArrayList<>();
-        final MetadataRow row = new MetadataRow().addEntry(TABLE_TYPE, TABLE);
-        tableTypes.add(row);
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(tableTypes));
     }
 
     /**
@@ -212,77 +187,6 @@ public final class MetadataResultSets {
                     .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
                     .addEntry(TABLE_CATALOG, statement.connection.getCatalog());
                 schemas.add(row);
-            }
-        }
-
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
-    }
-
-    /**
-     * Builds a valid result set of the description of the tables available in the given catalog (Cassandra cluster).
-     * This method is used to implement the method {@link DatabaseMetaData#getTables(String, String, String, String[])}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_CAT</b> String => table catalog, may be {@code null}: here is the Cassandra cluster name
-     *         (if available).</li>
-     *         <li><b>TABLE_SCHEM</b> String => table schema, may be {@code null}: here is the keyspace the table is
-     *         member of.</li>
-     *         <li><b>TABLE_NAME</b> String => table name.</li>
-     *         <li><b>TABLE_TYPE</b> String => table type: always {@value TABLE} here.</li>
-     *         <li><b>REMARKS</b> String => explanatory comment on the table.</li>
-     *         <li><b>TYPE_CAT</b> String => the types catalog: always {@code null} here.</li>
-     *         <li><b>TYPE_SCHEM</b> String => the types schema: always {@code null} here.</li>
-     *         <li><b>TYPE_NAME</b> String => type name: always {@code null} here.</li>
-     *         <li><b>SELF_REFERENCING_COL_NAME</b> String => name of the designated "identifier" column of a typed
-     *         table: always {@code null} here.</li>
-     *         <li><b>REF_GENERATION</b> String =>  specifies how values in {@code SELF_REFERENCING_COL_NAME} are
-     *         created: always {@code null} here.</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement        The statement.
-     * @param schemaPattern    A schema name pattern. It must match the schema name as it is stored in the database;
-     *                         {@code ""} retrieves those without a schema and {@code null} means that the schema name
-     *                         should not be used to narrow down the search.
-     * @param tableNamePattern A table name pattern. It must match the table name as it is stored in the database.
-     * @return A valid result set for implementation of
-     * {@link DatabaseMetaData#getTables(String, String, String, String[])}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makeTables(final CassandraStatement statement, final String schemaPattern,
-                                                 final String tableNamePattern) throws SQLException {
-        final ArrayList<MetadataRow> schemas = new ArrayList<>();
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
-
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            String schemaNamePattern = schemaPattern;
-            if (WILDCARD_CHAR.equals(schemaPattern)) {
-                schemaNamePattern = keyspaceMetadata.getName().asInternal();
-            }
-            if (schemaNamePattern == null || schemaNamePattern.equals(keyspaceMetadata.getName().asInternal())) {
-                final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
-
-                for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
-                    final TableMetadata tableMetadata = table.getValue();
-                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null
-                        || tableNamePattern.equals(tableMetadata.getName().asInternal())) {
-                        final MetadataRow row = new MetadataRow()
-                            .addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog())
-                            .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                            .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                            .addEntry(TABLE_TYPE, TABLE)
-                            .addEntry(REMARKS, tableMetadata.getOptions()
-                                .get(CqlIdentifier.fromCql(CQL_OPTION_COMMENT)).toString())
-                            .addEntry(TYPE_CATALOG, null)
-                            .addEntry(TYPE_SCHEMA, null)
-                            .addEntry(TYPE_NAME, null)
-                            .addEntry(SELF_REFERENCING_COL_NAME, null)
-                            .addEntry(REF_GENERATION, null);
-                        schemas.add(row);
-                    }
-                }
             }
         }
 

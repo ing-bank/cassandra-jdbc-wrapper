@@ -14,6 +14,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeTableTypes_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeTableTypes(statement);
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTableTypes();
         assertNotNull(result);
         assertEquals(1, result.getMetaData().getColumnCount());
         assertEquals("TABLE_TYPE", result.getMetaData().getColumnName(1));
@@ -96,7 +97,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeTables_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeTables(statement, null, null);
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTables(null, null);
         assertNotNull(result);
         assertEquals(10, result.getMetaData().getColumnCount());
         assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
@@ -120,7 +121,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;TABLE;Second table in the keyspace"))));
 
         int result2Size = 0;
-        final ResultSet result2 = MetadataResultSets.INSTANCE.makeTables(statement, ANOTHER_KEYSPACE, null);
+        final ResultSet result2 = new TableMetadataResultSetBuilder(statement).buildTables(ANOTHER_KEYSPACE, null);
         assertNotNull(result2);
         foundTables.clear();
         while (result2.next()) {
@@ -133,7 +134,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;TABLE;Second table in the keyspace"))));
 
         int result3Size = 0;
-        final ResultSet result3 = MetadataResultSets.INSTANCE.makeTables(statement, null, "cf_test1");
+        final ResultSet result3 = new TableMetadataResultSetBuilder(statement).buildTables(null, "cf_test1");
         assertNotNull(result3);
         foundTables.clear();
         while (result3.next()) {
@@ -146,7 +147,8 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test1;TABLE;First table in the keyspace"))));
 
         int result4Size = 0;
-        final ResultSet result4 = MetadataResultSets.INSTANCE.makeTables(statement, ANOTHER_KEYSPACE, "cf_test1");
+        final ResultSet result4 = new TableMetadataResultSetBuilder(statement)
+            .buildTables(ANOTHER_KEYSPACE, "cf_test1");
         assertNotNull(result4);
         foundTables.clear();
         while (result4.next()) {

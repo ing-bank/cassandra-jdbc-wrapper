@@ -452,6 +452,16 @@ public class CassandraStatement extends AbstractStatement
         return this.connection;
     }
 
+    /**
+     * Retrieves the {@link CassandraConnection} object that produced this {@link Statement} object.
+     *
+     * @return The Cassandra connection that produced this statement.
+     * @throws SQLException if a database access error occurs or this method is called on a closed {@link Statement}.
+     */
+    public CassandraConnection getCassandraConnection() throws SQLException {
+        return (CassandraConnection) getConnection();
+    }
+
     @Override
     public ConsistencyLevel getConsistencyLevel() {
         return this.consistencyLevel;

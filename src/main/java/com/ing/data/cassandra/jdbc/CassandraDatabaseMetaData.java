@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -755,26 +756,23 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTableTypes() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.INSTANCE.makeTableTypes(this.statement);
+        return new TableMetadataResultSetBuilder(this.statement).buildTableTypes();
     }
 
     @Override
     public ResultSet getTables(final String catalog, final String schemaPattern, final String tableNamePattern,
                                final String[] types) throws SQLException {
+        // Note: only TABLE or null are taken into account for types parameter here since Cassandra only supports
+        // TABLE type.
         boolean askingForTable = types == null;
         if (types != null) {
-            for (final String typeName : types) {
-                if (MetadataResultSets.TABLE.equals(typeName)) {
-                    askingForTable = true;
-                    break;
-                }
-            }
+            askingForTable = Arrays.asList(types).contains(MetadataResultSets.TABLE);
         }
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if ((catalog == null || catalog.equals(this.connection.getCatalog())) && askingForTable) {
             checkStatementClosed();
-            return MetadataResultSets.INSTANCE.makeTables(this.statement, schemaPattern, tableNamePattern);
+            return new TableMetadataResultSetBuilder(this.statement).buildTables(schemaPattern, tableNamePattern);
         }
-
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
