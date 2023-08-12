@@ -208,3 +208,15 @@ uuidValue: uuid(),
 varcharValue: 'varchar text',
 varintValue: 4321
 });
+
+/* Init keyspace and tables for VectorsUnitTest */
+DROP KEYSPACE IF EXISTS test_keyspace_vect;
+CREATE KEYSPACE "test_keyspace_vect" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+/* FIXME: Uncomment this script part when Cassandra 5.0 is available.
+USE test_keyspace_vect;
+CREATE TABLE vectors_test (
+keyValue int PRIMARY KEY,
+intsVector vector<int, 3>,
+floatsVector vector<float, 4>);
+*/

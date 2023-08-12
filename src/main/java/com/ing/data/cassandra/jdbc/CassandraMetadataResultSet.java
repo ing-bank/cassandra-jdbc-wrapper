@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.ListType;
 import com.datastax.oss.driver.api.core.type.MapType;
@@ -952,6 +953,16 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
             }
         }
+    }
+
+    @Override
+    public CqlVector<?> getVector(final int columnIndex) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    @Override
+    public CqlVector<?> getVector(final String columnLabel) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

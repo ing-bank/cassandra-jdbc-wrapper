@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
@@ -67,7 +68,8 @@ public enum DataTypeEnum {
     UDT(DataType.UDT, UdtValue.class, "UDT"),
     UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
-    VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT));
+    VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT)),
+    VECTOR(DataType.LIST, CqlVector.class, "vector");
 
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
     public final Class<?> javaType;
@@ -130,7 +132,8 @@ public enum DataTypeEnum {
     }
 
     /**
-     * Returns whether this data type name represents the name of a collection type (i.e. that is a list, set or map).
+     * Returns whether this data type name represents the name of a collection type (i.e. that is a list, set, vector
+     * or map).
      *
      * @return {@code true} if this data type name represents the name of a collection type, {@code false} otherwise.
      */
@@ -139,6 +142,7 @@ public enum DataTypeEnum {
             case LIST:
             case SET:
             case MAP:
+            case VECTOR:
                 return true;
             default:
                 return false;
@@ -179,6 +183,7 @@ public enum DataTypeEnum {
      * <tr><td>UUID          </td><td>{@link UUID}</td></tr>
      * <tr><td>VARCHAR       </td><td>{@link String}</td></tr>
      * <tr><td>VARINT        </td><td>{@link BigInteger}</td></tr>
+     * <tr><td>VECTOR        </td><td>{@link CqlVector}</td></tr>
      * </table>
      * <p>
      *     (*) See <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">

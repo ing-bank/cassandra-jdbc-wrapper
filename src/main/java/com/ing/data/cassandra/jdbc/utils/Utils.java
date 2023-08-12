@@ -231,6 +231,7 @@ public final class Utils {
     public static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
     public static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
     public static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
+    public static final String VECTOR_ELEMENTS_NOT_NUMBERS = "Vector elements are not numbers.";
 
     static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 

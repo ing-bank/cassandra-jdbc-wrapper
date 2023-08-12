@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Add support for new [`vector` CQL type](https://datastax-oss.atlassian.net/browse/JAVA-3060)
+  defined in [CEP-30](https://cwiki.apache.org/confluence/x/OQ40Dw).
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.17.0.
 - Update Apache Commons IO to version 2.13.0.

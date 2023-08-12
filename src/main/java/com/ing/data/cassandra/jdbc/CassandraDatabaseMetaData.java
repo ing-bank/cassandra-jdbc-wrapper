@@ -636,13 +636,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         // SQL:2003 standard keywords (see: https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#xref-keywords).
         // The CQL keywords are listed here:
         // https://cassandra.apache.org/doc/latest/cassandra/cql/appendices.html#appendix-A
-        final List<String> cqlKeywords = Arrays.asList("AGGREGATE", "ALLOW", "APPLY", "ASCII", "AUTHORIZE", "BATCH",
-            "CLUSTERING", "COLUMNFAMILY", "COMPACT", "COUNTER", "CUSTOM", "ENTRIES", "FILTERING", "FINALFUNC", "FROZEN",
-            "FUNCTIONS", "IF", "INDEX", "INET", "INFINITY", "INITCOND", "JSON", "KEYS", "KEYSPACE", "KEYSPACES",
-            "LIMIT", "LIST", "LOGIN", "MODIFY", "NAN", "NOLOGIN", "NORECURSIVE", "NOSUPERUSER", "PASSWORD",
+        // Also add new keywords relative to vector type introduced by CEP-30:
+        // https://cwiki.apache.org/confluence/x/OQ40Dw
+        final List<String> cqlKeywords = Arrays.asList("AGGREGATE", "ALLOW", "ANN OF", "APPLY", "ASCII", "AUTHORIZE",
+            "BATCH", "CLUSTERING", "COLUMNFAMILY", "COMPACT", "COUNTER", "CUSTOM", "ENTRIES", "FILTERING", "FINALFUNC",
+            "FROZEN", "FUNCTIONS", "IF", "INDEX", "INET", "INFINITY", "INITCOND", "JSON", "KEYS", "KEYSPACE",
+            "KEYSPACES", "LIMIT", "LIST", "LOGIN", "MODIFY", "NAN", "NOLOGIN", "NORECURSIVE", "NOSUPERUSER", "PASSWORD",
             "PERMISSION", "PERMISSIONS", "RENAME", "REPLACE", "RETURNS", "ROLES", "SFUNC", "SMALLINT", "STORAGE",
             "STYPE", "SUPERUSER", "TEXT", "TIMEUUID", "TINYINT", "TOKEN", "TRUNCATE", "TTL", "TUPLE", "UNLOGGED", "USE",
-            "USERS", "UUID", "VARINT", "WRITETIME");
+            "USERS", "UUID", "VARINT", "VECTOR", "WRITETIME");
         return String.join(",", cqlKeywords);
     }
 
