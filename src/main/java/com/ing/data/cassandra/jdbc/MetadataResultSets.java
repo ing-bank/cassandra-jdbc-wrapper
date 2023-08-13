@@ -132,68 +132,6 @@ public final class MetadataResultSets {
     }
 
     /**
-     * Builds a valid result set of the catalog names available in this Cassandra database. This method is used to
-     * implement the method {@link DatabaseMetaData#getCatalogs()}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_CAT</b> String => catalog name: here is the Cassandra cluster name (if available).</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement The statement.
-     * @return A valid result set for implementation of {@link DatabaseMetaData#getCatalogs()}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makeCatalogs(final CassandraStatement statement) throws SQLException {
-        final ArrayList<MetadataRow> catalog = new ArrayList<>();
-        final MetadataRow row = new MetadataRow().addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog());
-        catalog.add(row);
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(catalog));
-    }
-
-    /**
-     * Builds a valid result set of the schema names available in this Cassandra database. This method is used to
-     * implement the methods {@link DatabaseMetaData#getSchemas()} and
-     * {@link DatabaseMetaData#getSchemas(String, String)}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_SCHEM</b> String => schema name: here is the keyspace name.</li>
-     *         <li><b>TABLE_CATALOG</b> String => catalog name, may be {@code null}: here is the Cassandra cluster name
-     *         (if available).</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement     The statement.
-     * @param schemaPattern A schema name. It must match the schema name as it is stored in the database; {@code null}
-     *                      means schema name should not be used to narrow down the search.
-     * @return A valid result set for implementation of {@link DatabaseMetaData#getSchemas(String, String)}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makeSchemas(final CassandraStatement statement, final String schemaPattern)
-        throws SQLException {
-        final ArrayList<MetadataRow> schemas = new ArrayList<>();
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
-
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            String schemaNamePattern = schemaPattern;
-            if (WILDCARD_CHAR.equals(schemaPattern)) {
-                schemaNamePattern = keyspaceMetadata.getName().asInternal();
-            }
-            if (schemaNamePattern == null || schemaNamePattern.equals(keyspaceMetadata.getName().asInternal())) {
-                final MetadataRow row = new MetadataRow()
-                    .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                    .addEntry(TABLE_CATALOG, statement.connection.getCatalog());
-                schemas.add(row);
-            }
-        }
-
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
-    }
-
-    /**
      * Builds a valid result set of the description of the table columns available in the given catalog (Cassandra
      * cluster). This method is used to implement the method
      * {@link DatabaseMetaData#getColumns(String, String, String, String)}.

@@ -16,6 +16,8 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import org.apache.commons.lang3.StringUtils;
 
@@ -144,7 +146,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getCatalogs() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.INSTANCE.makeCatalogs(statement);
+        return new CatalogMetadataResultSetBuilder(this.statement).buildCatalogs();
     }
 
     /**
@@ -661,7 +663,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getSchemas() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.INSTANCE.makeSchemas(this.statement, null);
+        return new SchemaMetadataResultSetBuilder(this.statement).buildSchemas(null);
     }
 
     @Override
@@ -670,8 +672,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         if (!(catalog == null || catalog.equals(this.statement.connection.getCatalog()))) {
             throw new SQLSyntaxErrorException("Catalog name must exactly match or be null.");
         }
-
-        return MetadataResultSets.INSTANCE.makeSchemas(this.statement, schemaPattern);
+        return new SchemaMetadataResultSetBuilder(this.statement).buildSchemas(schemaPattern);
     }
 
     @Override
