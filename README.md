@@ -284,7 +284,7 @@ For further information about connecting to DBaaS, see [cloud documentation](htt
 ### Compliance modes
 
 For some specific usages, the default behaviour of some JDBC implementations has to be modified. That's why you can
-use the argument `compliancemode` in the JDBC URL to cutomize the behaviour of some methods.
+use the argument `compliancemode` in the JDBC URL to customize the behaviour of some methods.
 
 The values currently allowed for this argument are:
 * `Default`: mode activated by default if not specified in the JDBC URL. It implements the methods detailed below as 
@@ -293,10 +293,19 @@ The values currently allowed for this argument are:
 
 Here are the behaviours defined by the compliance modes listed above:
 
-| Method                                     | Default mode                                                                                      | Liquibase mode |
-|--------------------------------------------|---------------------------------------------------------------------------------------------------|----------------|
-| `CassandraConnection.getCatalog()`         | returns the result of the query`SELECT cluster_name FROM system.local` or `null` if not available | returns `null` |
-| `CassandraStatement.executeUpdate(String)` | returns 0                                                                                         | returns -1     |
+| Method                                     | Default mode                                                                                      | Liquibase mode                                         |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `CassandraConnection.getCatalog()`         | returns the result of the query`SELECT cluster_name FROM system.local` or `null` if not available | returns the schema name if available, `null` otherwise |
+| `CassandraConnection.rollback()`           | throws a `SQLFeatureNotSupportedException`                                                        | do nothing more after checking connection is open      |
+| `CassandraStatement.executeUpdate(String)` | returns 0                                                                                         | returns -1                                             |
+
+For the following methods: `CassandraStatement.execute(String)`, `CassandraStatement.executeQuery(String)` and
+`CassandraStatement.executeUpdate(String)`, if the CQL statement includes several queries (separated by semicolons),
+the behaviour is the following:
+
+| Default mode                        | Liquibase mode                     |
+|-------------------------------------|------------------------------------|
+| executes the queries asynchronously | executes the queries synchronously |
 
 ### Using simple statements
 
