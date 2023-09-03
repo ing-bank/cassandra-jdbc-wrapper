@@ -135,6 +135,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     private int fetchDirection;
     private int fetchSize;
     private boolean wasNull;
+    private boolean isClosed;
     // Result set from the Cassandra driver.
     private MetadataResultSet driverResultSet;
 
@@ -144,6 +145,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     CassandraMetadataResultSet() {
         this.metadata = new CResultSetMetaData();
         this.statement = null;
+        this.isClosed = false;
     }
 
     /**
@@ -163,6 +165,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         this.fetchSize = statement.getFetchSize();
         this.driverResultSet = metadataResultSet;
         this.rowsIterator = metadataResultSet.iterator();
+        this.isClosed = false;
 
         // Initialize the column values from the first row.
         // Note that the first call to next() will harmlessly re-write these values for the columns. The row cursor
@@ -271,7 +274,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     @Override
     public void close() throws SQLException {
         if (!isClosed()) {
-            this.statement.close();
+            this.isClosed = true;
         }
     }
 
@@ -992,10 +995,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
     @Override
     public boolean isClosed() {
-        if (this.statement == null) {
-            return true;
-        }
-        return this.statement.isClosed();
+        return this.isClosed;
     }
 
     @Override

@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.optionset;
 
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 
+import java.sql.SQLFeatureNotSupportedException;
+
 /**
  * Option set for compliance mode.
  * Different use cases require one or more adjustments to the wrapper, to be compatible.
@@ -37,6 +39,23 @@ public interface OptionSet {
      * @return A predefined update response.
      */
     int getSQLUpdateResponse();
+
+    /**
+     * Whether the rollback method on a Cassandra connection should throw a {@link SQLFeatureNotSupportedException}
+     * since Cassandra is always in auto-commit mode and does not support rollback.
+     *
+     * @return {@code true} if the method {@link CassandraConnection#rollback()} should throw an exception,
+     * {@code false} otherwise.
+     */
+    boolean shouldThrowExceptionOnRollback();
+
+    /**
+     * Whether the statement execution methods must execute queries asynchronously when the statement contains several
+     * queries separated by semicolons.
+     *
+     * @return {@code true} if the queries must be executed asynchronously, {@code false} otherwise.
+     */
+    boolean executeMultipleQueriesByStatementAsync();
 
     /**
      * Set referenced connection. See @{@link AbstractOptionSet}.

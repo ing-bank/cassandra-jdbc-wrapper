@@ -15,14 +15,28 @@
 
 package com.ing.data.cassandra.jdbc.optionset;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+
 /**
  * Option set implementation for Liquibase compatibility and flavour of JDBC.
  */
 public class Liquibase extends AbstractOptionSet {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractOptionSet.class);
 
     @Override
     public String getCatalog() {
-        return null;
+        if (getConnection() == null) {
+            return null;
+        }
+        try {
+            return getConnection().getSchema();
+        } catch (final SQLException e) {
+            LOG.warn("Unable to retrieve the schema name: {}", e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -30,4 +44,13 @@ public class Liquibase extends AbstractOptionSet {
         return -1;
     }
 
+    @Override
+    public boolean shouldThrowExceptionOnRollback() {
+        return false;
+    }
+
+    @Override
+    public boolean executeMultipleQueriesByStatementAsync() {
+        return false;
+    }
 }
