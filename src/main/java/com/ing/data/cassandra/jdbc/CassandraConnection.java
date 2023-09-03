@@ -547,7 +547,9 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public void rollback() throws SQLException {
         checkNotClosed();
-        throw new SQLFeatureNotSupportedException(ALWAYS_AUTOCOMMIT);
+        if (this.optionSet.shouldThrowExceptionOnRollback()) {
+            throw new SQLFeatureNotSupportedException(ALWAYS_AUTOCOMMIT);
+        }
     }
 
     /**

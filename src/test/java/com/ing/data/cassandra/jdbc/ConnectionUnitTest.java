@@ -407,12 +407,14 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
                 .withLocalDatacenter("datacenter1")
                 .build();
 
+        final Liquibase liquibaseMode = new Liquibase();
         final CassandraConnection jdbcConnection =
-            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, new Liquibase());
+            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, liquibaseMode);
+        liquibaseMode.setConnection(jdbcConnection);
         final ResultSet resultSet = jdbcConnection.createStatement()
             .executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
-        assertNull(jdbcConnection.getCatalog());
+        assertEquals(KEYSPACE, jdbcConnection.getCatalog());
     }
 
     @Test
