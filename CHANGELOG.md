@@ -151,7 +151,10 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+<<<<<<< HEAD
 [4.10.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.1...v4.10.0
+=======
+>>>>>>> b66035e (Fix issue #25 (#26))
 [4.9.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.0...v4.9.1
 [4.9.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.8.0...v4.9.0
 [4.8.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.7.0...v4.8.0
