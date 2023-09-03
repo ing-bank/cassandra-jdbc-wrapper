@@ -50,4 +50,13 @@ public class Default extends AbstractOptionSet {
         return 0;
     }
 
+    @Override
+    public boolean shouldThrowExceptionOnRollback() {
+        return true;
+    }
+
+    @Override
+    public boolean executeMultipleQueriesByStatementAsync() {
+        return true;
+    }
 }

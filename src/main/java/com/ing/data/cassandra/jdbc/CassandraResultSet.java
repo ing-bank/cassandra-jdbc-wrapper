@@ -184,6 +184,7 @@ public class CassandraResultSet extends AbstractResultSet
     private int fetchDirection;
     private int fetchSize;
     private boolean wasNull;
+    private boolean isClosed;
     // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
 
@@ -193,6 +194,7 @@ public class CassandraResultSet extends AbstractResultSet
     CassandraResultSet() {
         this.metadata = new CResultSetMetaData();
         this.statement = null;
+        this.isClosed = false;
     }
 
     /**
@@ -211,6 +213,7 @@ public class CassandraResultSet extends AbstractResultSet
         this.fetchSize = statement.getFetchSize();
         this.driverResultSet = resultSet;
         this.rowsIterator = resultSet.iterator();
+        this.isClosed = false;
 
         // Initialize the column values from the first row.
         if (hasMoreRows()) {
@@ -233,6 +236,7 @@ public class CassandraResultSet extends AbstractResultSet
         this.resultSetType = statement.getResultSetType();
         this.fetchDirection = statement.getFetchDirection();
         this.fetchSize = statement.getFetchSize();
+        this.isClosed = false;
 
         // We have several result sets, but we will use only the first one for metadata needs.
         this.driverResultSet = resultSets.get(0);
@@ -332,7 +336,7 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public void close() throws SQLException {
         if (!isClosed()) {
-            this.statement.close();
+            this.isClosed = true;
         }
     }
 
@@ -1422,10 +1426,7 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     public boolean isClosed() {
-        if (this.statement == null) {
-            return true;
-        }
-        return this.statement.isClosed();
+        return this.isClosed;
     }
 
     @Override
