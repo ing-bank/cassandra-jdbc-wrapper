@@ -386,12 +386,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getIndexInfo(final String catalog, final String schema, final String table, final boolean unique,
                                   final boolean approximate) throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            String schemaName = schema;
-            if (schema == null) {
-                schemaName = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makeIndexes(this.statement, schemaName, table, unique, approximate);
+            return new TableMetadataResultSetBuilder(this.statement).buildIndexes(schema, table, unique, approximate);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -517,12 +514,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getPrimaryKeys(final String catalog, final String schema, final String table) throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            String schemaName = schema;
-            if (schema == null) {
-                schemaName = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makePrimaryKeys(this.statement, schemaName, table);
+            return new TableMetadataResultSetBuilder(this.statement).buildPrimaryKeys(schema, table);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }

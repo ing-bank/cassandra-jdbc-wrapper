@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
 
@@ -222,6 +223,10 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1ivalue;INT;11"))));
     }
 
+    /*
+     * Result sets metadata
+     */
+
     @Test
     void givenStatement_whenGetResultMetadata_returnExpectedValues() throws Exception {
         final Statement stmtCreateTable = sqlConnection.createStatement();
@@ -307,16 +312,22 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenCassandraMetadataResultSet_whenUnwrap_returnUnwrappedMetadataResultSet() throws Exception {
-        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
-        assertNotNull(metadataRs.unwrap(ResultSet.class));
-        assertNotNull(metadataRs.unwrap(CassandraResultSetExtras.class));
+    void givenCassandraMetadataResultSet_whenUnwrap_returnUnwrappedMetadataResultSet() {
+        try (final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet()) {
+            assertNotNull(metadataRs.unwrap(ResultSet.class));
+            assertNotNull(metadataRs.unwrap(CassandraResultSetExtras.class));
+        } catch (final Exception e) {
+            fail(e);
+        }
     }
 
     @Test
     void givenCassandraMetadataResultSet_whenUnwrapToInvalidInterface_throwException() {
-        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
-        assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+        try (final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet()) {
+            assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+        } catch (final Exception e) {
+            fail(e);
+        }
     }
 
     @Test
@@ -353,6 +364,10 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
 
         stmt.close();
     }
+
+    /*
+     * Types metadata
+     */
 
     @Test
     void givenStatement_whenMakeUDTs_returnExpectedResultSet() throws SQLException {
@@ -504,6 +519,10 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
             foundColumns.get(26));
     }
+
+    /*
+     * Functions metadata
+     */
 
     @Test
     void givenStatement_whenMakeFunctions_returnExpectedResultSet() throws SQLException {

@@ -17,20 +17,15 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.data.UdtValue;
-import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.FunctionMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.FunctionSignature;
-import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
-import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.ing.data.cassandra.jdbc.metadata.MetadataResultSet;
 import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -41,7 +36,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.functionColumnIn;
@@ -60,10 +54,8 @@ public final class MetadataResultSets {
      */
     public static final MetadataResultSets INSTANCE = new MetadataResultSets();
 
-    static final String ASC_OR_DESC = "ASC_OR_DESC";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
     static final String BASE_TYPE = "BASE_TYPE";
-    static final String CARDINALITY = "CARDINALITY";
     static final String CASE_SENSITIVE = "CASE_SENSITIVE";
     static final String CHAR_OCTET_LENGTH = "CHAR_OCTET_LENGTH";
     static final String CLASS_NAME = "CLASS_NAME";
@@ -71,29 +63,22 @@ public final class MetadataResultSets {
     static final String COLUMN_TYPE = "COLUMN_TYPE";
     static final String CREATE_PARAMS = "CREATE_PARAMS";
     static final String DATA_TYPE = "DATA_TYPE";
-    static final String FILTER_CONDITION = "FILTER_CONDITION";
     static final String FIXED_PRECISION_SCALE = "FIXED_PREC_SCALE";
     static final String FUNCTION_CATALOG = "FUNCTION_CAT";
     static final String FUNCTION_NAME = "FUNCTION_NAME";
     static final String FUNCTION_SCHEMA = "FUNCTION_SCHEM";
     static final String FUNCTION_TYPE = "FUNCTION_TYPE";
-    static final String INDEX_NAME = "INDEX_NAME";
-    static final String INDEX_QUALIFIER = "INDEX_QUALIFIER";
     static final String IS_NULLABLE = "IS_NULLABLE";
-    static final String KEY_SEQ = "KEY_SEQ";
     static final String LENGTH = "LENGTH";
     static final String LITERAL_PREFIX = "LITERAL_PREFIX";
     static final String LITERAL_SUFFIX = "LITERAL_SUFFIX";
     static final String LOCALIZED_TYPE_NAME = "LOCAL_TYPE_NAME";
     static final String MAXIMUM_SCALE = "MAXIMUM_SCALE";
     static final String MINIMUM_SCALE = "MINIMUM_SCALE";
-    static final String NON_UNIQUE = "NON_UNIQUE";
     static final String NULLABLE = "NULLABLE";
     static final String NUM_PRECISION_RADIX = "NUM_PREC_RADIX";
     static final String ORDINAL_POSITION = "ORDINAL_POSITION";
-    static final String PAGES = "PAGES";
     static final String PRECISION = "PRECISION";
-    static final String PRIMARY_KEY_NAME = "PK_NAME";
     static final String RADIX = "RADIX";
     static final String REMARKS = "REMARKS";
     static final String SCALE = "SCALE";
@@ -102,10 +87,6 @@ public final class MetadataResultSets {
     static final String SQL_DATA_TYPE = "SQL_DATA_TYPE";
     static final String SQL_DATETIME_SUB = "SQL_DATETIME_SUB";
     static final String TABLE = "TABLE";
-    static final String TABLE_CATALOG_SHORTNAME = "TABLE_CAT";
-    static final String TABLE_NAME = "TABLE_NAME";
-    static final String TABLE_SCHEMA = "TABLE_SCHEM";
-    static final String TYPE = "TYPE";
     static final String TYPE_CATALOG = "TYPE_CAT";
     static final String TYPE_NAME = "TYPE_NAME";
     static final String TYPE_SCHEMA = "TYPE_SCHEM";
@@ -116,164 +97,6 @@ public final class MetadataResultSets {
 
     private MetadataResultSets() {
         // Private constructor to hide the public one.
-    }
-
-    /**
-     * Builds a valid result set of the description of given table's indices and statistics.
-     * This method is used to implement the method
-     * {@link DatabaseMetaData#getIndexInfo(String, String, String, boolean, boolean)}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_CAT</b> String => table catalog, may be {@code null}: here is the Cassandra cluster name
-     *         (if available).</li>
-     *         <li><b>TABLE_SCHEM</b> String => table schema, may be {@code null}: here is the keyspace the table is
-     *         member of.</li>
-     *         <li><b>TABLE_NAME</b> String => table name.</li>
-     *         <li><b>NON_UNIQUE</b> boolean => Can index values be non-unique, {@code false} when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}. Always {@code true} here.</li>
-     *         <li><b>INDEX_QUALIFIER</b> String => index catalog, {@code null} when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}.</li>
-     *         <li><b>INDEX_NAME</b> String => index name, {@code null} when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}.</li>
-     *         <li><b>TYPE</b> short => index type:
-     *             <ul>
-     *                 <li>{@link DatabaseMetaData#tableIndexStatistic} - this identifies table statistics that are
-     *                 returned in conjunction with a table's index descriptions</li>
-     *                 <li>{@link DatabaseMetaData#tableIndexClustered} - this is a clustered index</li>
-     *                 <li>{@link DatabaseMetaData#tableIndexHashed} - this is a hashed index</li>
-     *                 <li>{@link DatabaseMetaData#tableIndexOther} - this is some other style of index</li>
-     *             </ul> Always {@link DatabaseMetaData#tableIndexHashed} here.
-     *         </li>
-     *         <li><b>ORDINAL_POSITION</b> short => column sequence number within index; zero when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}. Always 1 here.</li>
-     *         <li><b>COLUMN_NAME</b> String => column name, {@code null} when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}.</li>
-     *         <li><b>ASC_OR_DESC</b> String => column sort sequence, "A" means ascending, "D" means descending, may be
-     *         {@code null} if sort sequence is not supported or when {@code TYPE} is
-     *         {@link DatabaseMetaData#tableIndexStatistic}. Always {@code null} here.</li>
-     *         <li><b>CARDINALITY</b> int => When {@code TYPE} is {@link DatabaseMetaData#tableIndexStatistic}, then
-     *         this is the number of rows in the table; otherwise, it is the number of unique values in the index.
-     *         Always -1 here.</li>
-     *         <li><b>PAGES</b> int => When {@code TYPE} is {@link DatabaseMetaData#tableIndexStatistic}, then
-     *         this is the number of pages used for the table; otherwise, it is the number of pages used for the
-     *         current index. Always -1 here.</li>
-     *         <li><b>FILTER_CONDITION</b> String => Filter condition, if any: always {@code null} here.</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement   The statement.
-     * @param schema      A schema name. It must match the schema name as it is stored in the database; {@code ""}
-     *                    retrieves those without a schema and {@code null} means that the schema name should not be
-     *                    used to narrow down the search.
-     * @param tableName   A table name. It must match the table name as it is stored in the database.
-     * @param unique      when {@code true}, return only indices for unique values; when {@code false}, return
-     *                    indices regardless of whether unique or not.
-     * @param approximate when {@code true}, result is allowed to reflect approximate or out of data values; when
-     *                    {@code false}, results are requested to be accurate.
-     * @return A valid result set for implementation of
-     * {@link DatabaseMetaData#getIndexInfo(String, String, String, boolean, boolean)}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    @SuppressWarnings("unused")
-    public CassandraMetadataResultSet makeIndexes(final CassandraStatement statement, final String schema,
-                                                  final String tableName, final boolean unique,
-                                                  final boolean approximate) throws SQLException {
-        final ArrayList<MetadataRow> schemas = new ArrayList<>();
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
-
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            if (schema.equals(keyspaceMetadata.getName().asInternal())) {
-                final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
-
-                for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
-                    final TableMetadata tableMetadata = table.getValue();
-                    if (tableName.equals(tableMetadata.getName().asInternal())) {
-                        for (final Map.Entry<CqlIdentifier, IndexMetadata> index
-                            : tableMetadata.getIndexes().entrySet()) {
-                            final IndexMetadata indexMetadata = index.getValue();
-                            final MetadataRow row = new MetadataRow()
-                                .addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog())
-                                .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                                .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                                .addEntry(NON_UNIQUE, Boolean.TRUE.toString())
-                                .addEntry(INDEX_QUALIFIER, statement.connection.getCatalog())
-                                .addEntry(INDEX_NAME, indexMetadata.getName().asInternal())
-                                .addEntry(TYPE, String.valueOf(DatabaseMetaData.tableIndexHashed))
-                                .addEntry(ORDINAL_POSITION, String.valueOf(1))
-                                .addEntry(COLUMN_NAME, indexMetadata.getTarget())
-                                .addEntry(ASC_OR_DESC, null)
-                                .addEntry(CARDINALITY, String.valueOf(-1))
-                                .addEntry(PAGES, String.valueOf(-1))
-                                .addEntry(FILTER_CONDITION, null);
-                            schemas.add(row);
-                        }
-                    }
-                }
-            }
-        }
-
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
-    }
-
-    /**
-     * Builds a valid result set of the description of given table's primary key columns.
-     * This method is used to implement the method {@link DatabaseMetaData#getPrimaryKeys(String, String, String)}.
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_CAT</b> String => table catalog, may be {@code null}: here is the Cassandra cluster name
-     *         (if available).</li>
-     *         <li><b>TABLE_SCHEM</b> String => table schema, may be {@code null}: here is the keyspace the table is
-     *         member of.</li>
-     *         <li><b>TABLE_NAME</b> String => table name.</li>
-     *         <li><b>COLUMN_NAME</b> String => column name.</li>
-     *         <li><b>KEY_SEQ</b> short => sequence number within primary key (a value of 1 represents the first column
-     *         of the primary key, a value of 2 would represent the second column within the primary key).</li>
-     *         <li><b>PK_NAME</b> String => primary key name: always {@code null} here.</li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement The statement.
-     * @param schema    A schema name. It must match the schema name as it is stored in the database; {@code ""}
-     *                  retrieves those without a schema and {@code null} means that the schema name should not be
-     *                  used to narrow down the search.
-     * @param tableName A table name. It must match the table name as it is stored in the database.
-     * @return A valid result set for implementation of {@link DatabaseMetaData#getPrimaryKeys(String, String, String)}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makePrimaryKeys(final CassandraStatement statement, final String schema,
-                                                      final String tableName) throws SQLException {
-        final ArrayList<MetadataRow> schemas = new ArrayList<>();
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
-
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            if (schema.equals(keyspaceMetadata.getName().asInternal())) {
-                final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
-
-                for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
-                    final TableMetadata tableMetadata = table.getValue();
-                    if (tableName.equals(tableMetadata.getName().asInternal())) {
-                        int seq = 0;
-                        for (final ColumnMetadata col : tableMetadata.getPrimaryKey()) {
-                            final MetadataRow row = new MetadataRow()
-                                .addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog())
-                                .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                                .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                                .addEntry(COLUMN_NAME, col.getName().asInternal())
-                                .addEntry(KEY_SEQ, String.valueOf(seq))
-                                .addEntry(PRIMARY_KEY_NAME, null);
-                            schemas.add(row);
-                            seq++;
-                        }
-                    }
-                }
-            }
-        }
-
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**

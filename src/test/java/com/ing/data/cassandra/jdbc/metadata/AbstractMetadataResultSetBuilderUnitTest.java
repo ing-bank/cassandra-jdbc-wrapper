@@ -15,6 +15,7 @@ package com.ing.data.cassandra.jdbc.metadata;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
@@ -52,6 +53,12 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final TableMetadata mockTableMetadata = mock(TableMetadata.class);
         when(mockTableMetadata.getName()).thenReturn(CqlIdentifier.fromCql(tableName));
         return mockTableMetadata;
+    }
+
+    static ColumnMetadata generateTestColumnMetadata(final String columnName) {
+        final ColumnMetadata mockColumnMetadata = mock(ColumnMetadata.class);
+        when(mockColumnMetadata.getName()).thenReturn(CqlIdentifier.fromCql(columnName));
+        return mockColumnMetadata;
     }
 
     @Test
@@ -152,5 +159,62 @@ class AbstractMetadataResultSetBuilderUnitTest {
         log.info("Tables matching '%cf%': {}", filteredTables);
         assertThat(filteredTables, hasSize(3));
         assertThat(filteredTables, hasItems("cf1", "cf2", "test_cf"));
+    }
+
+    @Test
+    void givenColumnPattern_whenApplyColumnFiltering_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement mockStatement = mock(CassandraStatement.class);
+        final CassandraConnection mockConnection = mock(CassandraConnection.class);
+        final Metadata mockMetadata = mock(Metadata.class);
+        when(mockStatement.getCassandraConnection()).thenReturn(mockConnection);
+        when(mockConnection.getClusterMetadata()).thenReturn(mockMetadata);
+        final KeyspaceMetadata ksTestMetadata = generateTestKeyspaceMetadata("ks_test");
+
+        final Map<CqlIdentifier, TableMetadata> testTablesMetadata = new HashMap<>();
+        final TableMetadata tableTestMetadata = generateTestTableMetadata("tbl_test");
+        testTablesMetadata.put(CqlIdentifier.fromInternal("tbl_test"), tableTestMetadata);
+        when(ksTestMetadata.getTables()).thenReturn(testTablesMetadata);
+
+        final Map<CqlIdentifier, ColumnMetadata> testColumnsMetadata = new HashMap<>();
+        testColumnsMetadata.put(CqlIdentifier.fromInternal("col1"), generateTestColumnMetadata("col1"));
+        testColumnsMetadata.put(CqlIdentifier.fromInternal("col2"), generateTestColumnMetadata("col2"));
+        testColumnsMetadata.put(CqlIdentifier.fromInternal("clmn_test"), generateTestColumnMetadata("clmn_test"));
+        testColumnsMetadata.put(CqlIdentifier.fromInternal("test_col"), generateTestColumnMetadata("test_col"));
+        when(tableTestMetadata.getColumns()).thenReturn(testColumnsMetadata);
+
+        final AbstractMetadataResultSetBuilder sut = new TestMetadataResultSetBuilder(mockStatement);
+
+        final Set<String> filteredColumns = new HashSet<>();
+        sut.filterByColumnNamePattern(StringUtils.EMPTY, tableTestMetadata,
+            columnMetadata -> filteredColumns.add(columnMetadata.getName().asInternal()), null);
+        log.info("Columns matching '': {}", filteredColumns);
+        assertThat(filteredColumns, empty());
+
+        filteredColumns.clear();
+        sut.filterByColumnNamePattern(null, tableTestMetadata,
+            tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
+        log.info("Columns matching null: {}", filteredColumns);
+        assertThat(filteredColumns, hasSize(4));
+        assertThat(filteredColumns, hasItems("col1", "col2", "clmn_test", "test_col"));
+
+        filteredColumns.clear();
+        sut.filterByColumnNamePattern("col", tableTestMetadata,
+            tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
+        log.info("Columns matching 'col': {}", filteredColumns);
+        assertThat(filteredColumns, empty());
+
+        filteredColumns.clear();
+        sut.filterByColumnNamePattern("col%", tableTestMetadata,
+            tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
+        log.info("Columns matching 'col%': {}", filteredColumns);
+        assertThat(filteredColumns, hasSize(2));
+        assertThat(filteredColumns, hasItems("col1", "col2"));
+
+        filteredColumns.clear();
+        sut.filterByColumnNamePattern("%col%", tableTestMetadata,
+            tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
+        log.info("Columns matching '%col%': {}", filteredColumns);
+        assertThat(filteredColumns, hasSize(3));
+        assertThat(filteredColumns, hasItems("col1", "col2", "test_col"));
     }
 }
