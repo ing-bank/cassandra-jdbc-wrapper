@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc.metadata;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
@@ -25,6 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -116,32 +119,102 @@ public abstract class AbstractMetadataResultSetBuilder {
         this.connection = statement.getCassandraConnection();
     }
 
-    private boolean matchesPattern(final String pattern, final String against) {
-        return against.matches(String.format("^%s$", pattern.replaceAll("%", ".*")));
+    /**
+     * Checks whether the specified pattern (potentially using SQL wildcard '%') matches the given string.
+     * <p>
+     *     For example, the pattern {@code a%_table} will be transformed to the regular expression {@code ^a.*_table$}
+     *     and will match {@code any_table} but not {@code main_table}.
+     * </p>
+     *
+     * @param pattern     The SQL pattern to check.
+     * @param testedValue The tested string.
+     * @return {@code true} if the pattern matches the tested string, {@code false} otherwise.
+     */
+    private boolean matchesPattern(final String pattern, final String testedValue) {
+        return testedValue.matches(String.format("^%s$", pattern.replaceAll("%", ".*")));
     }
 
-    void filterBySchemaNamePattern(final String schemaNamePattern, final Consumer<KeyspaceMetadata> consumer) {
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspacesMetadata =
-            this.connection.getClusterMetadata().getKeyspaces();
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspacesMetadata.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            if (schemaNamePattern == null || StringUtils.EMPTY.equals(schemaNamePattern)
-                || matchesPattern(schemaNamePattern, keyspaceMetadata.getName().asInternal())) {
-                consumer.accept(keyspaceMetadata);
-            }
-        }
+    /**
+     * Executes a {@link Consumer} function on each {@link KeyspaceMetadata} instance corresponding to a keyspace
+     * matching the specified schema name pattern.
+     *
+     * @implNote The pattern matches a keyspace name if the pattern is {@code null} or empty or if the function
+     * {@link #matchesPattern(String, String)} returns {@code true}.
+     * @param schemaNamePattern The schema name pattern.
+     * @param consumer          The applied consumer function when there is a pattern match.
+     * @param altConsumer       The applied consumer function when there is no pattern match.If {@code null}, a no-op
+     *                          consumer is used.
+     */
+    @SuppressWarnings("SameParameterValue")
+    void filterBySchemaNamePattern(final String schemaNamePattern, final Consumer<KeyspaceMetadata> consumer,
+                                   final Consumer<KeyspaceMetadata> altConsumer) {
+        filterByPattern(schemaNamePattern, this.connection.getClusterMetadata().getKeyspaces(),
+            (pattern, keyspaceMetadata) -> pattern == null || StringUtils.EMPTY.equals(pattern)
+                || matchesPattern(pattern, keyspaceMetadata.getName().asInternal()), consumer,
+            Optional.ofNullable(altConsumer).orElse(noOpConsumer()));
     }
 
+    /**
+     * Executes a {@link Consumer} function on each {@link TableMetadata} instance corresponding to a table
+     * matching the specified table name pattern in the specified keyspace.
+     *
+     * @implNote The pattern matches a table name if the pattern is {@code null} or if the function
+     * {@link #matchesPattern(String, String)} returns {@code true}.
+     * @param tableNamePattern The table name pattern.
+     * @param keyspaceMetadata The keyspace on which the filter is applied: only the tables present in this keyspace
+     *                         are filtered.
+     * @param consumer          The applied consumer function when there is a pattern match.
+     * @param altConsumer       The applied consumer function when there is no pattern match. If {@code null}, a no-op
+     *                          consumer is used.
+     */
+    @SuppressWarnings("SameParameterValue")
     void filterByTableNamePattern(final String tableNamePattern, final KeyspaceMetadata keyspaceMetadata,
-                        final Consumer<TableMetadata> consumer) {
-        final Map<CqlIdentifier, TableMetadata> tablesMetadata = keyspaceMetadata.getTables();
-        for (final Map.Entry<CqlIdentifier, TableMetadata> table : tablesMetadata.entrySet()) {
-            final TableMetadata tableMetadata = table.getValue();
-            if (tableNamePattern == null
-                || matchesPattern(tableNamePattern, tableMetadata.getName().asInternal())) {
-                consumer.accept(tableMetadata);
+                                  final Consumer<TableMetadata> consumer, final Consumer<TableMetadata> altConsumer) {
+        filterByPattern(tableNamePattern, keyspaceMetadata.getTables(),
+            (pattern, tableMetadata) -> pattern == null
+                || matchesPattern(pattern, tableMetadata.getName().asInternal()), consumer,
+            Optional.ofNullable(altConsumer).orElse(noOpConsumer()));
+    }
+
+    /**
+     * Executes a {@link Consumer} function on each {@link ColumnMetadata} instance corresponding to a column
+     * matching the specified column name pattern in the specified table.
+     *
+     * @implNote The pattern matches a column name if the pattern is {@code null} or if the function
+     * {@link #matchesPattern(String, String)} returns {@code true}.
+     * @param columnNamePattern The column name pattern.
+     * @param tableMetadata     The table on which the filter is applied: only the columns present in this table
+     *                          are filtered.
+     * @param consumer          The applied consumer function when there is a pattern match.
+     * @param altConsumer       The applied consumer function when there is no pattern match. If {@code null}, a no-op
+     *                          consumer is used.
+     */
+    void filterByColumnNamePattern(final String columnNamePattern, final TableMetadata tableMetadata,
+                                   final Consumer<ColumnMetadata> consumer,
+                                   final Consumer<ColumnMetadata> altConsumer) {
+        filterByPattern(columnNamePattern, tableMetadata.getColumns(),
+            (pattern, columnMetadata) -> pattern == null
+                || matchesPattern(pattern, columnMetadata.getName().asInternal()), consumer,
+            Optional.ofNullable(altConsumer).orElse(noOpConsumer()));
+    }
+
+    <M> void filterByPattern(final String pattern, final Map<CqlIdentifier, M> metadataMap,
+                             final BiFunction<String, M, Boolean> patternMatcher,
+                             final Consumer<M> consumer, final Consumer<M> altConsumer) {
+        for (final Map.Entry<CqlIdentifier, M> entry : metadataMap.entrySet()) {
+            final M entityMetadata = entry.getValue();
+            if (patternMatcher.apply(pattern, entityMetadata)) {
+                consumer.accept(entityMetadata);
+            } else {
+                altConsumer.accept(entityMetadata);
             }
         }
+    }
+
+    <M> Consumer<M> noOpConsumer() {
+        return entityMetadata -> {
+            // No-op consumer: do nothing
+        };
     }
 
 }

@@ -15,6 +15,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.ColumnMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
@@ -181,7 +182,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeColumns_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeColumns(statement, KEYSPACE, "cf_test1", null);
+        final ResultSet result = new ColumnMetadataResultSetBuilder(statement).buildColumns(KEYSPACE, "cf_test1", null);
         assertNotNull(result);
         assertEquals(24, result.getMetaData().getColumnCount());
         assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));

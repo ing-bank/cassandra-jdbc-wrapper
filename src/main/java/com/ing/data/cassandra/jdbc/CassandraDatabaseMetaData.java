@@ -17,6 +17,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.ColumnMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -192,13 +193,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getColumns(final String catalog, final String schemaPattern, final String tableNamePattern,
                                 final String columnNamePattern) throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            this.statement.connection = connection;
-            String schemaNamePattern = schemaPattern;
-            if (schemaPattern == null) {
-                schemaNamePattern = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makeColumns(statement, schemaNamePattern, tableNamePattern,
+            return new ColumnMetadataResultSetBuilder(this.statement).buildColumns(schemaPattern, tableNamePattern,
                 columnNamePattern);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;

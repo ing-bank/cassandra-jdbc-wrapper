@@ -71,34 +71,34 @@ class AbstractMetadataResultSetBuilderUnitTest {
 
         final Set<String> filteredSchemas = new HashSet<>();
         sut.filterBySchemaNamePattern(StringUtils.EMPTY,
-            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()));
+            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
         log.info("Schemas matching '': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(4));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks", "another"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern(null,
-            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()));
+            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
         log.info("Schemas matching null: {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(4));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks", "another"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("ks",
-            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()));
+            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
         log.info("Schemas matching 'ks': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(0));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("ks%",
-            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()));
+            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
         log.info("Schemas matching 'ks%': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(2));
         assertThat(filteredSchemas, hasItems("ks1", "ks2"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("%ks%",
-            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()));
+            keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
         log.info("Schemas matching '%ks%': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(3));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks"));
@@ -122,33 +122,33 @@ class AbstractMetadataResultSetBuilderUnitTest {
 
         final Set<String> filteredTables = new HashSet<>();
         sut.filterByTableNamePattern(StringUtils.EMPTY, ksTestMetadata,
-            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()));
+            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
         log.info("Tables matching '': {}", filteredTables);
         assertThat(filteredTables, empty());
 
         filteredTables.clear();
         sut.filterByTableNamePattern(null, ksTestMetadata,
-            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()));
+            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
         log.info("Tables matching null: {}", filteredTables);
         assertThat(filteredTables, hasSize(4));
         assertThat(filteredTables, hasItems("cf1", "cf2", "another_table", "test_cf"));
 
         filteredTables.clear();
         sut.filterByTableNamePattern("cf", ksTestMetadata,
-            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()));
+            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
         log.info("Tables matching 'cf': {}", filteredTables);
         assertThat(filteredTables, empty());
 
         filteredTables.clear();
         sut.filterByTableNamePattern("cf%", ksTestMetadata,
-            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()));
+            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
         log.info("Tables matching 'cf%': {}", filteredTables);
         assertThat(filteredTables, hasSize(2));
         assertThat(filteredTables, hasItems("cf1", "cf2"));
 
         filteredTables.clear();
         sut.filterByTableNamePattern("%cf%", ksTestMetadata,
-            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()));
+            tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
         log.info("Tables matching '%cf%': {}", filteredTables);
         assertThat(filteredTables, hasSize(3));
         assertThat(filteredTables, hasItems("cf1", "cf2", "test_cf"));

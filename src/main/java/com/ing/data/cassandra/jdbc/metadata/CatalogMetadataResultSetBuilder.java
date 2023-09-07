@@ -55,7 +55,7 @@ public class CatalogMetadataResultSetBuilder extends AbstractMetadataResultSetBu
         final MetadataRow row = new MetadataRow().addEntry(TABLE_CATALOG_SHORTNAME,
             this.statement.getConnection().getCatalog());
         catalogs.add(row);
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(catalogs));
+        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(catalogs));
     }
 
 }

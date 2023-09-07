@@ -63,18 +63,14 @@ public final class MetadataResultSets {
     static final String ASC_OR_DESC = "ASC_OR_DESC";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
     static final String BASE_TYPE = "BASE_TYPE";
-    static final String BUFFER_LENGTH = "BUFFER_LENGTH";
     static final String CARDINALITY = "CARDINALITY";
     static final String CASE_SENSITIVE = "CASE_SENSITIVE";
     static final String CHAR_OCTET_LENGTH = "CHAR_OCTET_LENGTH";
     static final String CLASS_NAME = "CLASS_NAME";
-    static final String COLUMN_DEFAULT = "COLUMN_DEF";
     static final String COLUMN_NAME = "COLUMN_NAME";
-    static final String COLUMN_SIZE = "COLUMN_SIZE";
     static final String COLUMN_TYPE = "COLUMN_TYPE";
     static final String CREATE_PARAMS = "CREATE_PARAMS";
     static final String DATA_TYPE = "DATA_TYPE";
-    static final String DECIMAL_DIGITS = "DECIMAL_DIGITS";
     static final String FILTER_CONDITION = "FILTER_CONDITION";
     static final String FIXED_PRECISION_SCALE = "FIXED_PREC_SCALE";
     static final String FUNCTION_CATALOG = "FUNCTION_CAT";
@@ -83,8 +79,6 @@ public final class MetadataResultSets {
     static final String FUNCTION_TYPE = "FUNCTION_TYPE";
     static final String INDEX_NAME = "INDEX_NAME";
     static final String INDEX_QUALIFIER = "INDEX_QUALIFIER";
-    static final String IS_AUTOINCREMENT = "IS_AUTOINCREMENT";
-    static final String IS_GENERATED_COLUMN = "IS_GENERATEDCOLUMN";
     static final String IS_NULLABLE = "IS_NULLABLE";
     static final String KEY_SEQ = "KEY_SEQ";
     static final String LENGTH = "LENGTH";
@@ -93,7 +87,6 @@ public final class MetadataResultSets {
     static final String LOCALIZED_TYPE_NAME = "LOCAL_TYPE_NAME";
     static final String MAXIMUM_SCALE = "MAXIMUM_SCALE";
     static final String MINIMUM_SCALE = "MINIMUM_SCALE";
-    static final String NO_VALUE = "NO";
     static final String NON_UNIQUE = "NON_UNIQUE";
     static final String NULLABLE = "NULLABLE";
     static final String NUM_PRECISION_RADIX = "NUM_PREC_RADIX";
@@ -104,17 +97,12 @@ public final class MetadataResultSets {
     static final String RADIX = "RADIX";
     static final String REMARKS = "REMARKS";
     static final String SCALE = "SCALE";
-    static final String SCOPE_CATALOG = "SCOPE_CATALOG";
-    static final String SCOPE_SCHEMA = "SCOPE_SCHEMA";
-    static final String SCOPE_TABLE = "SCOPE_TABLE";
     static final String SEARCHABLE = "SEARCHABLE";
-    static final String SOURCE_DATA_TYPE = "SOURCE_DATA_TYPE";
     static final String SPECIFIC_NAME = "SPECIFIC_NAME";
     static final String SQL_DATA_TYPE = "SQL_DATA_TYPE";
     static final String SQL_DATETIME_SUB = "SQL_DATETIME_SUB";
     static final String TABLE = "TABLE";
     static final String TABLE_CATALOG_SHORTNAME = "TABLE_CAT";
-    static final String TABLE_CATALOG = "TABLE_CATALOG";
     static final String TABLE_NAME = "TABLE_NAME";
     static final String TABLE_SCHEMA = "TABLE_SCHEM";
     static final String TYPE = "TYPE";
@@ -125,182 +113,9 @@ public final class MetadataResultSets {
     static final String WILDCARD_CHAR = "%";
     static final String YES_VALUE = "YES";
 
-    private static final Logger LOG = LoggerFactory.getLogger(MetadataResultSets.class);
 
     private MetadataResultSets() {
         // Private constructor to hide the public one.
-    }
-
-    /**
-     * Builds a valid result set of the description of the table columns available in the given catalog (Cassandra
-     * cluster). This method is used to implement the method
-     * {@link DatabaseMetaData#getColumns(String, String, String, String)}.
-     *
-     * <p>
-     * The columns of this result set are:
-     *     <ol>
-     *         <li><b>TABLE_CAT</b> String => table catalog, may be {@code null}: here is the Cassandra cluster name
-     *         (if available).</li>
-     *         <li><b>TABLE_SCHEM</b> String => table schema, may be {@code null}: here is the keyspace the table is
-     *         member of.</li>
-     *         <li><b>TABLE_NAME</b> String => table name.</li>
-     *         <li><b>COLUMN_NAME</b> String => column name.</li>
-     *         <li><b>DATA_TYPE</b> int => SQL type from {@link Types}.</li>
-     *         <li><b>TYPE_NAME</b> String => Data source dependent type name, for a UDT the type name is fully
-     *         qualified.</li>
-     *         <li><b>COLUMN_SIZE</b> int => column size.</li>
-     *         <li><b>BUFFER_LENGTH</b> int => not used.</li>
-     *         <li><b>DECIMAL_DIGITS</b> int => the number of fractional digits, {@code null} is returned for data
-     *         types where it is not applicable. Always {@code null} here.</li>
-     *         <li><b>NUM_PREC_RADIX</b> int => Radix (typically either 10 or 2).</li>
-     *         <li><b>NULLABLE</b> int => is {@code NULL} allowed:
-     *             <ul>
-     *                 <li>{@link DatabaseMetaData#columnNoNulls} - might not allow {@code NULL} values</li>
-     *                 <li>{@link DatabaseMetaData#columnNullable} - definitely allows {@code NULL} values</li>
-     *                 <li>{@link DatabaseMetaData#columnNullableUnknown} - nullability unknown</li>
-     *             </ul> Always {@link DatabaseMetaData#columnNoNulls} here.
-     *         </li>
-     *         <li><b>REMARKS</b> String => comment describing column, may be {@code null}.</li>
-     *         <li><b>COLUMN_DEF</b> String => default value for the column, which should be interpreted as a string
-     *         when the value is enclosed in single quotes, may be {@code null}. Always {@code null} here.</li>
-     *         <li><b>SQL_DATA_TYPE</b> int => not used.</li>
-     *         <li><b>SQL_DATETIME_SUB</b> int => is not used.</li>
-     *         <li><b>CHAR_OCTET_LENGTH</b> int => for char types the maximum number of bytes in the column.</li>
-     *         <li><b>ORDINAL_POSITION</b> int => index of column in table (starting at 1).</li>
-     *         <li><b>IS_NULLABLE</b> String => ISO rules are used to determine the nullability for a column:
-     *             <ul>
-     *                 <li><i>YES</i> - if the parameter can include {@code NULL}s</li>
-     *                 <li><i>NO</i> - if the parameter cannot include {@code NULL}s</li>
-     *                 <li><i>empty string</i> - if the nullability for the parameter is unknown</li>
-     *             </ul> Always empty here.
-     *         </li>
-     *         <li><b>SCOPE_CATALOG</b> String => catalog of table that is the scope of a reference attribute
-     *         ({@code null} if {@code DATA_TYPE} isn't REF). Always {@code null} here.</li>
-     *         <li><b>SCOPE_SCHEMA</b> String => schema of table that is the scope of a reference attribute
-     *         ({@code null} if {@code DATA_TYPE} isn't REF). Always {@code null} here.</li>
-     *         <li><b>SCOPE_TABLE</b> String => table name that is the scope of a reference attribute
-     *         ({@code null} if {@code DATA_TYPE} isn't REF). Always {@code null} here.</li>
-     *         <li><b>SOURCE_DATA_TYPE</b> short => source type of a distinct type or user-generated Ref type, SQL type
-     *         from {@link Types} ({@code null} if {@code DATA_TYPE} isn't {@code DISTINCT} or user-generated
-     *         {@code REF}). Always {@code null} here.</li>
-     *         <li><b>IS_AUTOINCREMENT</b> String => Indicates whether this column is auto-incremented:
-     *             <ul>
-     *                 <li><i>YES</i> - if the column is auto-incremented</li>
-     *                 <li><i>NO</i> - if the column is not auto-incremented</li>
-     *                 <li><i>empty string</i> - if it cannot be determined whether the column is auto incremented
-     *                 parameter is unknown</li>
-     *             </ul> Always {@code NO} here.
-     *         </li>
-     *         <li><b>IS_GENERATEDCOLUMN</b> String => Indicates whether this is a generated column:
-     *             <ul>
-     *                 <li><i>YES</i> - if this is a generated column</li>
-     *                 <li><i>NO</i> - if this is not a generated column</li>
-     *                 <li><i>empty string</i> - if it cannot be determined whether this is a generated column</li>
-     *             </ul> Always {@code NO} here.
-     *         </li>
-     *     </ol>
-     * </p>
-     *
-     * @param statement         The statement.
-     * @param schemaPattern     A schema name pattern. It must match the schema name as it is stored in the database;
-     *                          {@code ""} retrieves those without a schema and {@code null} means that the schema name
-     *                          should not be used to narrow down the search.
-     * @param tableNamePattern  A table name pattern. It must match the table name as it is stored in the database.
-     * @param columnNamePattern A column name pattern. It must match the column name as it is stored in the database.
-     * @return A valid result set for implementation of
-     * {@link DatabaseMetaData#getColumns(String, String, String, String)}.
-     * @throws SQLException when something went wrong during the creation of the result set.
-     */
-    public CassandraMetadataResultSet makeColumns(final CassandraStatement statement, final String schemaPattern,
-                                                  final String tableNamePattern, final String columnNamePattern)
-        throws SQLException {
-        String originalSchemaPattern = schemaPattern;
-        final ArrayList<MetadataRow> schemas = new ArrayList<>();
-        final Map<CqlIdentifier, KeyspaceMetadata> keyspaces = statement.connection.getClusterMetadata().getKeyspaces();
-
-        for (final Map.Entry<CqlIdentifier, KeyspaceMetadata> keyspace : keyspaces.entrySet()) {
-            final KeyspaceMetadata keyspaceMetadata = keyspace.getValue();
-            if (WILDCARD_CHAR.equals(schemaPattern)) {
-                originalSchemaPattern = keyspaceMetadata.getName().asInternal();
-            }
-
-            if (originalSchemaPattern == null
-                || originalSchemaPattern.equals(keyspaceMetadata.getName().asInternal())) {
-                final Map<CqlIdentifier, TableMetadata> tables = keyspaceMetadata.getTables();
-
-                for (final Map.Entry<CqlIdentifier, TableMetadata> table : tables.entrySet()) {
-                    final TableMetadata tableMetadata = table.getValue();
-                    if (WILDCARD_CHAR.equals(tableNamePattern) || tableNamePattern == null
-                        || tableNamePattern.equals(tableMetadata.getName().asInternal())) {
-                        final Map<CqlIdentifier, ColumnMetadata> columns = tableMetadata.getColumns();
-
-                        int columnIndex = 1;
-                        for (final Map.Entry<CqlIdentifier, ColumnMetadata> column : columns.entrySet()) {
-                            final ColumnMetadata columnMetadata = column.getValue();
-                            if (WILDCARD_CHAR.equals(columnNamePattern) || columnNamePattern == null
-                                || columnNamePattern.equals(columnMetadata.getName().asInternal())) {
-                                final AbstractJdbcType<?> jdbcEquivalentType =
-                                    getTypeForComparator(columnMetadata.getType().toString());
-
-                                // Define value of COLUMN_SIZE.
-                                int columnSize = DEFAULT_PRECISION;
-                                if (jdbcEquivalentType != null) {
-                                    columnSize = jdbcEquivalentType.getPrecision(null);
-                                }
-
-                                // Define value of NUM_PREC_RADIX.
-                                int radix = 2;
-                                if (jdbcEquivalentType != null && (jdbcEquivalentType.getJdbcType() == Types.DECIMAL
-                                    || jdbcEquivalentType.getJdbcType() == Types.NUMERIC)) {
-                                    radix = 10;
-                                }
-
-                                // Define value of DATA_TYPE.
-                                int jdbcType = Types.OTHER;
-                                try {
-                                    jdbcType = getTypeForComparator(columnMetadata.getType().toString())
-                                        .getJdbcType();
-                                } catch (final Exception e) {
-                                    LOG.warn("Unable to get JDBC type for comparator [{}]: {}",
-                                        columnMetadata.getType(), e.getMessage());
-                                }
-
-                                // Build the metadata row.
-                                final MetadataRow row = new MetadataRow()
-                                    .addEntry(TABLE_CATALOG_SHORTNAME, statement.connection.getCatalog())
-                                    .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                                    .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                                    .addEntry(COLUMN_NAME, columnMetadata.getName().asInternal())
-                                    .addEntry(DATA_TYPE, String.valueOf(jdbcType))
-                                    .addEntry(TYPE_NAME, columnMetadata.getType().toString())
-                                    .addEntry(COLUMN_SIZE, String.valueOf(columnSize))
-                                    .addEntry(BUFFER_LENGTH, String.valueOf(0))
-                                    .addEntry(DECIMAL_DIGITS, null)
-                                    .addEntry(NUM_PRECISION_RADIX, String.valueOf(radix))
-                                    .addEntry(NULLABLE, String.valueOf(DatabaseMetaData.columnNoNulls))
-                                    .addEntry(REMARKS, column.toString())
-                                    .addEntry(COLUMN_DEFAULT, null)
-                                    .addEntry(SQL_DATA_TYPE, null)
-                                    .addEntry(SQL_DATETIME_SUB, null)
-                                    .addEntry(CHAR_OCTET_LENGTH, String.valueOf(Integer.MAX_VALUE))
-                                    .addEntry(ORDINAL_POSITION, String.valueOf(columnIndex))
-                                    .addEntry(IS_NULLABLE, StringUtils.EMPTY)
-                                    .addEntry(SCOPE_CATALOG, null)
-                                    .addEntry(SCOPE_SCHEMA, null)
-                                    .addEntry(SCOPE_TABLE, null)
-                                    .addEntry(SOURCE_DATA_TYPE, null)
-                                    .addEntry(IS_AUTOINCREMENT, NO_VALUE)
-                                    .addEntry(IS_GENERATED_COLUMN, NO_VALUE);
-                                schemas.add(row);
-                                columnIndex++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(schemas));
     }
 
     /**

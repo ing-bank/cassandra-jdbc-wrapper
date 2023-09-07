@@ -69,7 +69,7 @@ public class SchemaMetadataResultSetBuilder extends AbstractMetadataResultSetBui
                 .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
                 .addEntry(TABLE_CATALOG, catalog);
             schemas.add(row);
-        });
+        }, null);
 
         // Results should all have the same TABLE_CATALOG, so just sort them by TABLE_SCHEM.
         schemas.sort(Comparator.comparing(row -> row.getString(TABLE_SCHEMA)));

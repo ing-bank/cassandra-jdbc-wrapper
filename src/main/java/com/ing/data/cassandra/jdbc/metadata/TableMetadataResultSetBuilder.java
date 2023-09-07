@@ -116,8 +116,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                     .addEntry(SELF_REFERENCING_COL_NAME, null)
                     .addEntry(REF_GENERATION, null);
                 tables.add(row);
-            })
-        );
+            }, null), null);
 
         // Results should all have the same TABLE_CAT, so just sort them by TABLE_SCHEM then TABLE_NAME.
         tables.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
