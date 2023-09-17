@@ -29,7 +29,6 @@ import com.datastax.oss.driver.internal.core.type.DefaultVectorType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
-import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -69,8 +68,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.VECTOR_ELEMENTS_NOT_NUMBERS;
-import static com.ing.data.cassandra.jdbc.utils.Utils.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
+import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 
 /**
  * Cassandra prepared statement: implementation class for {@link PreparedStatement}.
@@ -289,7 +289,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         checkNotClosed();
         doExecute();
         if (this.currentResultSet == null) {
-            throw new SQLNonTransientException(Utils.NO_RESULT_SET);
+            throw new SQLNonTransientException(NO_RESULT_SET);
         }
         return this.currentResultSet;
     }

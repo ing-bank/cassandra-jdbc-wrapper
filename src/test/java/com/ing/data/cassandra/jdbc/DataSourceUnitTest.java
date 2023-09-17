@@ -13,12 +13,12 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,7 +58,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         cnx = ds.getConnection();
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
-        assertEquals(VERSION, ((CassandraConnection) cnx).getConnectionProperties().get(Utils.TAG_CQL_VERSION));
+        assertEquals(VERSION, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_CQL_VERSION));
         assertEquals(5, ds.getLoginTimeout());
     }
 

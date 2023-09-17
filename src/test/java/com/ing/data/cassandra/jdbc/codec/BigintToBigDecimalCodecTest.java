@@ -28,7 +28,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.NULL_KEYWORD;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;

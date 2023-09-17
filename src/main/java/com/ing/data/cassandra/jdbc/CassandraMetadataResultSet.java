@@ -26,7 +26,6 @@ import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.TypesMap;
-import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -64,14 +63,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_DIR;
-import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.FORWARD_ONLY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
 
 /**
  * Cassandra metadata result set. This is an implementation of {@link ResultSet} for database metadata.
@@ -937,7 +937,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
@@ -953,7 +953,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }

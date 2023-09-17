@@ -40,7 +40,6 @@ import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
-import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -62,11 +61,33 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_KEYSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.JSSE_TRUSTSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ENABLE_SSL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_KEEP_ALIVE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PORT_NUMBER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERVER_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.
@@ -102,7 +123,7 @@ class SessionHolder {
 
         // Parse the URL into a set of Properties and replace double quote marks (") by simple quotes (') to handle the
         // fact that double quotes (") are not valid characters in URIs.
-        this.properties = Utils.parseURL(url.replace("\"", "'"));
+        this.properties = parseURL(url.replace("\"", "'"));
 
         // Other properties in parameters come from the initial call to connect(), they take priority.
         params.keySet().stream()
@@ -162,23 +183,23 @@ class SessionHolder {
 
     private Session createSession(final Properties properties) throws SQLException {
         File configurationFile = null;
-        final String configurationFilePath = properties.getProperty(Utils.TAG_CONFIG_FILE, StringUtils.EMPTY);
+        final String configurationFilePath = properties.getProperty(TAG_CONFIG_FILE, StringUtils.EMPTY);
         if (StringUtils.isNotBlank(configurationFilePath)) {
             configurationFile = new File(configurationFilePath);
             if (configurationFile.exists()) {
                 // We remove some parameters to use the values defined into the specified configuration file
                 // instead.
-                this.properties.remove(Utils.TAG_CONSISTENCY_LEVEL);
-                this.properties.remove(Utils.TAG_LOCAL_DATACENTER);
-                this.properties.remove(Utils.TAG_USER);
-                this.properties.remove(Utils.TAG_PASSWORD);
-                this.properties.remove(Utils.TAG_ENABLE_SSL);
-                this.properties.remove(Utils.TAG_SSL_ENGINE_FACTORY);
-                this.properties.remove(Utils.TAG_SSL_HOSTNAME_VERIFICATION);
-                this.properties.remove(Utils.TAG_REQUEST_TIMEOUT);
-                this.properties.remove(Utils.TAG_CONNECT_TIMEOUT);
-                this.properties.remove(Utils.TAG_KEEP_ALIVE);
-                this.properties.remove(Utils.TAG_TCP_NO_DELAY);
+                this.properties.remove(TAG_CONSISTENCY_LEVEL);
+                this.properties.remove(TAG_LOCAL_DATACENTER);
+                this.properties.remove(TAG_USER);
+                this.properties.remove(TAG_PASSWORD);
+                this.properties.remove(TAG_ENABLE_SSL);
+                this.properties.remove(TAG_SSL_ENGINE_FACTORY);
+                this.properties.remove(TAG_SSL_HOSTNAME_VERIFICATION);
+                this.properties.remove(TAG_REQUEST_TIMEOUT);
+                this.properties.remove(TAG_CONNECT_TIMEOUT);
+                this.properties.remove(TAG_KEEP_ALIVE);
+                this.properties.remove(TAG_TCP_NO_DELAY);
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
@@ -186,27 +207,27 @@ class SessionHolder {
             }
         }
 
-        final String hosts = properties.getProperty(Utils.TAG_SERVER_NAME);
-        final int port = Integer.parseInt(properties.getProperty(Utils.TAG_PORT_NUMBER));
-        final String cloudSecureConnectBundle = properties.getProperty(Utils.TAG_CLOUD_SECURE_CONNECT_BUNDLE);
-        final String keyspace = properties.getProperty(Utils.TAG_DATABASE_NAME);
-        final String username = properties.getProperty(Utils.TAG_USER, StringUtils.EMPTY);
-        final String password = properties.getProperty(Utils.TAG_PASSWORD, StringUtils.EMPTY);
-        final String loadBalancingPolicy = properties.getProperty(Utils.TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
-        final String localDatacenter = properties.getProperty(Utils.TAG_LOCAL_DATACENTER, StringUtils.EMPTY);
-        final String retryPolicy = properties.getProperty(Utils.TAG_RETRY_POLICY, StringUtils.EMPTY);
-        final String reconnectPolicy = properties.getProperty(Utils.TAG_RECONNECT_POLICY, StringUtils.EMPTY);
-        final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(Utils.TAG_DEBUG,
+        final String hosts = properties.getProperty(TAG_SERVER_NAME);
+        final int port = Integer.parseInt(properties.getProperty(TAG_PORT_NUMBER));
+        final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
+        final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
+        final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);
+        final String password = properties.getProperty(TAG_PASSWORD, StringUtils.EMPTY);
+        final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
+        final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, StringUtils.EMPTY);
+        final String retryPolicy = properties.getProperty(TAG_RETRY_POLICY, StringUtils.EMPTY);
+        final String reconnectPolicy = properties.getProperty(TAG_RECONNECT_POLICY, StringUtils.EMPTY);
+        final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(TAG_DEBUG,
             StringUtils.EMPTY));
-        final String enableSslValue = properties.getProperty(Utils.TAG_ENABLE_SSL);
-        final String sslEngineFactoryClassName = properties.getProperty(Utils.TAG_SSL_ENGINE_FACTORY,
+        final String enableSslValue = properties.getProperty(TAG_ENABLE_SSL);
+        final String sslEngineFactoryClassName = properties.getProperty(TAG_SSL_ENGINE_FACTORY,
             StringUtils.EMPTY);
         final boolean sslEnabled = Boolean.TRUE.toString().equals(enableSslValue)
             || (enableSslValue == null && StringUtils.isNotEmpty(sslEngineFactoryClassName));
-        final String enableSslHostnameVerification = properties.getProperty(Utils.TAG_SSL_HOSTNAME_VERIFICATION);
+        final String enableSslHostnameVerification = properties.getProperty(TAG_SSL_HOSTNAME_VERIFICATION);
         final boolean sslHostnameVerificationEnabled = Boolean.TRUE.toString().equals(enableSslHostnameVerification)
             || enableSslHostnameVerification == null;
-        final String requestTimeoutRawValue = properties.getProperty(Utils.TAG_REQUEST_TIMEOUT);
+        final String requestTimeoutRawValue = properties.getProperty(TAG_REQUEST_TIMEOUT);
         Integer requestTimeout = null;
         if (NumberUtils.isParsable(requestTimeoutRawValue)) {
             requestTimeout = Integer.parseInt(requestTimeoutRawValue);
@@ -277,7 +298,7 @@ class SessionHolder {
             // if reconnection policy has been given in the JDBC URL, parse it and add it to the cluster builder.
             try {
                 final Map<DriverOption, Object> parsedPolicy = Optional.ofNullable(
-                    Utils.parseReconnectionPolicy(reconnectPolicy)).orElse(new HashMap<>());
+                    parseReconnectionPolicy(reconnectPolicy)).orElse(new HashMap<>());
 
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.RECONNECTION_POLICY_CLASS,
                     (String) parsedPolicy.get(DefaultDriverOption.RECONNECTION_POLICY_CLASS));
@@ -347,14 +368,14 @@ class SessionHolder {
     void configureSocketOptions(final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder,
                                 final Properties properties) {
         // Parse options received from JDBC URL
-        final String connectTimeoutRawValue = properties.getProperty(Utils.TAG_CONNECT_TIMEOUT);
+        final String connectTimeoutRawValue = properties.getProperty(TAG_CONNECT_TIMEOUT);
         Integer connectTimeout = null;
         if (NumberUtils.isParsable(connectTimeoutRawValue)) {
             connectTimeout = Integer.parseInt(connectTimeoutRawValue);
         }
-        final String enableTcpNoDelay = properties.getProperty(Utils.TAG_TCP_NO_DELAY);
+        final String enableTcpNoDelay = properties.getProperty(TAG_TCP_NO_DELAY);
         final boolean tcpNoDelayEnabled = Boolean.TRUE.toString().equals(enableTcpNoDelay) || enableTcpNoDelay == null;
-        final String enableTcpKeepAlive = properties.getProperty(Utils.TAG_KEEP_ALIVE);
+        final String enableTcpKeepAlive = properties.getProperty(TAG_KEEP_ALIVE);
         final boolean tcpKeepAliveEnabled = Boolean.TRUE.toString().equals(enableTcpKeepAlive);
 
         // Apply configuration

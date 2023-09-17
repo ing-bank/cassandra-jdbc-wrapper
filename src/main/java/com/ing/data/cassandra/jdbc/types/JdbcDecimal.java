@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.NULL_KEYWORD;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
 
 /**
  * JDBC description of {@code DECIMAL} CQL type (corresponding Java type: {@link BigDecimal}).

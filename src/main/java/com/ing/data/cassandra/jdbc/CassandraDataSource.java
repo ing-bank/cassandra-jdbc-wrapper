@@ -17,7 +17,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.utils.Utils;
+import com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil;
 
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
@@ -29,19 +29,20 @@ import java.sql.SQLNonTransientConnectionException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.HOST_REQUIRED;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.PROTOCOL;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_CONSISTENCY_LEVEL;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_CQL_VERSION;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_DATABASE_NAME;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_LOCAL_DATACENTER;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_PASSWORD;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_PORT_NUMBER;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_SERVER_NAME;
-import static com.ing.data.cassandra.jdbc.utils.Utils.TAG_USER;
-import static com.ing.data.cassandra.jdbc.utils.Utils.createSubName;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.DEFAULT_PORT;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PORT_NUMBER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERVER_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
 /**
  * Cassandra data source: implementation class for {@link DataSource} and {@link ConnectionPoolDataSource}.
@@ -66,9 +67,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     protected String serverName;
     /**
-     * The port number of the data source, by default {@value Utils#DEFAULT_PORT}.
+     * The port number of the data source, by default {@value JdbcUrlUtil#DEFAULT_PORT}.
      */
-    protected int portNumber = Utils.DEFAULT_PORT;
+    protected int portNumber = DEFAULT_PORT;
     /**
      * The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */

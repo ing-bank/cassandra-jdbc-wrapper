@@ -19,7 +19,7 @@ import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.NULL_KEYWORD;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
 
 /**
  * Provides a minimal implementation for the methods {@link TypeCodec#parse(String)} and

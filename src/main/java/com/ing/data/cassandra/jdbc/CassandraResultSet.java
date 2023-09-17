@@ -34,7 +34,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.TypesMap;
-import com.ing.data.cassandra.jdbc.utils.Utils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -88,16 +87,17 @@ import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISI
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromCqlTypeName;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromDataType;
-import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_DIR;
-import static com.ing.data.cassandra.jdbc.utils.Utils.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.FORWARD_ONLY;
-import static com.ing.data.cassandra.jdbc.utils.Utils.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.utils.Utils.VECTOR_ELEMENTS_NOT_NUMBERS;
-import static com.ing.data.cassandra.jdbc.utils.Utils.WAS_CLOSED_RS;
-import static com.ing.data.cassandra.jdbc.utils.Utils.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
@@ -1337,7 +1337,7 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
@@ -1353,7 +1353,7 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }

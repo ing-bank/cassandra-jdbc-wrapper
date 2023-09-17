@@ -35,10 +35,10 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.utils.Utils.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.utils.Utils.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 
 /**
  * Cassandra database metadata: implementation class for {@link DatabaseMetaData}.

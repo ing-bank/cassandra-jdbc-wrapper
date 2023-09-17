@@ -23,7 +23,7 @@ import com.ing.data.cassandra.jdbc.types.TypesMap;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 
-import static com.ing.data.cassandra.jdbc.utils.Utils.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 
 /**
  * Cassandra parameter metadata: implementation class for {@link ParameterMetaData}.

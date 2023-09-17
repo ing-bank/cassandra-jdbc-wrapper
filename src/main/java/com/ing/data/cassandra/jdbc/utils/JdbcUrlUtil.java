@@ -18,269 +18,301 @@ package com.ing.data.cassandra.jdbc.utils;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ing.data.cassandra.jdbc.json.CassandraBlobDeserializer;
-import com.ing.data.cassandra.jdbc.json.CassandraBlobSerializer;
-import com.ing.data.cassandra.jdbc.json.CassandraDateDeserializer;
-import com.ing.data.cassandra.jdbc.json.CassandraDateTimeDeserializer;
-import com.ing.data.cassandra.jdbc.json.CassandraTimeDeserializer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
+
 /**
- * A set of static utility methods and constants used by the JDBC wrapper, various default values and error message
- * strings that can be shared across classes.
+ * A set of static utility methods and constants used to parse the JDBC URL used to establish a connection to a
+ * Cassandra database.
  */
-public final class Utils {
-    /**
-     * JDBC protocol for Cassandra connection.
-     */
-    public static final String PROTOCOL = "jdbc:cassandra:";
-    /**
-     * JDBC protocol for Cassandra DBaaS connection.
-     */
-    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
+public final class JdbcUrlUtil {
+
     /**
      * Default Cassandra cluster port.
      */
     public static final int DEFAULT_PORT = 9042;
-    /**
-     * Properties file name containing some properties relative to this JDBC wrapper (such as JDBC driver version,
-     * name, etc.).
-     */
-    public static final String JDBC_DRIVER_PROPERTIES_FILE = "jdbc-driver.properties";
 
     /**
-     * JDBC URL parameter key for the database version.
+     * JDBC protocol for Cassandra connection.
+     */
+    public static final String PROTOCOL = "jdbc:cassandra:";
+
+    /**
+     * JDBC protocol for Cassandra DBaaS connection.
+     */
+    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
+
+    /**
+     * JDBC URL parameter key for the CQL version.
      */
     public static final String KEY_VERSION = "version";
+
+    /**
+     * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code version} or from the default value defined in the
+     * property {@code database.defaultCqlVersion} of the resource file 'jdbc-driver.properties'.
+     */
+    public static final String TAG_ACTIVE_CQL_VERSION = "activeCqlVersion";
+
+    /**
+     * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code version}.
+     */
+    public static final String TAG_CQL_VERSION = "cqlVersion";
+
     /**
      * JDBC URL parameter key for the consistency.
      */
     public static final String KEY_CONSISTENCY = "consistency";
+
+    /**
+     * Property name used to retrieve the consistency when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL parameter {@code consistency}.
+     */
+    public static final String TAG_CONSISTENCY_LEVEL = "consistencyLevel";
+
     /**
      * JDBC URL parameter key for the connection number of retries.
      */
     public static final String KEY_CONNECTION_RETRIES = "retries";
+
+    /**
+     * Property name used to retrieve the number of retries when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code retries}.
+     */
+    public static final String TAG_CONNECTION_RETRIES = "retries";
+
     /**
      * JDBC URL parameter key for the load balancing policy.
      */
     public static final String KEY_LOAD_BALANCING_POLICY = "loadbalancing";
+
+    /**
+     * Property name used to retrieve the load balancing policy when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code loadbalancing}.
+     */
+    public static final String TAG_LOAD_BALANCING_POLICY = "loadBalancing";
+
     /**
      * JDBC URL parameter key for the local data center.
      */
     public static final String KEY_LOCAL_DATACENTER = "localdatacenter";
+
+    /**
+     * Property name used to retrieve the local data center when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code localdatacenter}.
+     */
+    public static final String TAG_LOCAL_DATACENTER = "localDatacenter";
+
     /**
      * JDBC URL parameter key for the retry policy.
      */
     public static final String KEY_RETRY_POLICY = "retry";
+
+    /**
+     * Property name used to retrieve the retry policy when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code retry}.
+     */
+    public static final String TAG_RETRY_POLICY = "retry";
+
     /**
      * JDBC URL parameter key for the reconnection policy.
      */
     public static final String KEY_RECONNECT_POLICY = "reconnection";
+
+    /**
+     * Property name used to retrieve the reconnection policy when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code reconnection}.
+     */
+    public static final String TAG_RECONNECT_POLICY = "reconnection";
+
     /**
      * JDBC URL parameter key for the debug mode.
      */
     public static final String KEY_DEBUG = "debug";
+
+    /**
+     * Property name used to retrieve the debug mode value when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code debug}.
+     */
+    public static final String TAG_DEBUG = "debug";
+
     /**
      * JDBC URL parameter key for SSL enabling.
      */
     public static final String KEY_ENABLE_SSL = "enablessl";
+
+    /**
+     * Property name used to retrieve the SSL enabling value when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code enablessl}.
+     */
+    public static final String TAG_ENABLE_SSL = "enableSsl";
+
     /**
      * JDBC URL parameter key for the custom SSL engine factory ({@link SslEngineFactory}).
      */
     public static final String KEY_SSL_ENGINE_FACTORY = "sslenginefactory";
+
+    /**
+     * Property name used to retrieve the custom SSL engine factory when the connection to Cassandra is established.
+     * This property is mapped from the JDBC URL parameter {@code sslenginefactory}.
+     */
+    public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
+
     /**
      * JDBC URL parameter key for SSL hostname verification disabling.
      */
     public static final String KEY_SSL_HOSTNAME_VERIFICATION = "hostnameverification";
+
+    /**
+     * Property name used to retrieve the SSL hostname verification enabling when the connection to Cassandra is
+     * established. This property is mapped from the JDBC URL parameter {@code hostnameverification}.
+     */
+    public static final String TAG_SSL_HOSTNAME_VERIFICATION = "hostnameVerification";
+
     /**
      * JDBC URL parameter key for the cloud secure connect bundle.
      */
     public static final String KEY_CLOUD_SECURE_CONNECT_BUNDLE = "secureconnectbundle";
+
+    /**
+     * Property name used to retrieve the secure connect Bundle when the connection to Cassandra DBaaS is established.
+     * This property is mapped from the JDBC URL parameter {@code secureconnectbundle}.
+     */
+    public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
+
     /**
      * JDBC URL parameter key for the username.
      */
     public static final String KEY_USER = "user";
+
+    /**
+     * Property name used to retrieve the username when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL parameter {@code user}.
+     */
+    public static final String TAG_USER = "user";
+
     /**
      * JDBC URL parameter key for the user password.
      */
     public static final String KEY_PASSWORD = "password";
+
+    /**
+     * Property name used to retrieve the user password when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL parameter {@code password}.
+     */
+    public static final String TAG_PASSWORD = "password";
+
     /**
      * JDBC URL parameter key for the request timeout.
      */
     public static final String KEY_REQUEST_TIMEOUT = "requesttimeout";
+
+    /**
+     * Property name used to retrieve the request timeout when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL parameter {@code requesttimeout}.
+     */
+    public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
+
     /**
      * JDBC URL parameter key for the connection timeout.
      */
     public static final String KEY_CONNECT_TIMEOUT = "connecttimeout";
+
+    /**
+     * Property name used to retrieve the connection timeout when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code connecttimeout}.
+     */
+    public static final String TAG_CONNECT_TIMEOUT = "connectTimeout";
+
     /**
      * JDBC URL parameter key for the Nagle's algorithm enabling.
      */
     public static final String KEY_TCP_NO_DELAY = "tcpnodelay";
+
+    /**
+     * Property name used to retrieve the Nagle's algorithm enabling when the connection to Cassandra is established.
+     * This property is mapped from the JDBC URL parameter {@code tcpnodelay}.
+     */
+    public static final String TAG_TCP_NO_DELAY = "tcpNoDelay";
+
     /**
      * JDBC URL parameter key for the TCP keep-alive enabling.
      */
     public static final String KEY_KEEP_ALIVE = "keepalive";
+
+    /**
+     * Property name used to retrieve the TCP keep-alive enabling when the connection to Cassandra is established.
+     * This property is mapped from the JDBC URL parameter {@code keepalive}.
+     */
+    public static final String TAG_KEEP_ALIVE = "keepAlive";
+
     /**
      * JDBC URL parameter key for the configuration file.
      */
     public static final String KEY_CONFIG_FILE = "configfile";
+
+    /**
+     * Property name used to retrieve the configuration file when the connection to Cassandra is established.
+     * This property is mapped from the JDBC URL parameter {@code configfile}.
+     */
+    public static final String TAG_CONFIG_FILE = "configFile";
+
     /**
      * JDBC URL parameter key for the compliance mode.
      */
     public static final String KEY_COMPLIANCE_MODE = "compliancemode";
 
-    public static final String TAG_USER = "user";
-    public static final String TAG_PASSWORD = "password";
-    public static final String TAG_DATABASE_NAME = "databaseName";
-    public static final String TAG_SERVER_NAME = "serverName";
-    public static final String TAG_PORT_NUMBER = "portNumber";
-    public static final String TAG_ACTIVE_CQL_VERSION = "activeCqlVersion";
-    public static final String TAG_CQL_VERSION = "cqlVersion";
-    public static final String TAG_CONSISTENCY_LEVEL = "consistencyLevel";
-    public static final String TAG_LOAD_BALANCING_POLICY = "loadBalancing";
-    public static final String TAG_LOCAL_DATACENTER = "localDatacenter";
-    public static final String TAG_RETRY_POLICY = "retry";
-    public static final String TAG_RECONNECT_POLICY = "reconnection";
-    public static final String TAG_DEBUG = "debug";
-    public static final String TAG_CONNECTION_RETRIES = "retries";
-    public static final String TAG_ENABLE_SSL = "enableSsl";
-    public static final String TAG_SSL_ENGINE_FACTORY = "sslEngineFactory";
-    public static final String TAG_SSL_HOSTNAME_VERIFICATION = "hostnameVerification";
-    public static final String TAG_CLOUD_SECURE_CONNECT_BUNDLE = "secureConnectBundle";
-    public static final String TAG_CONFIG_FILE = "configFile";
-    public static final String TAG_REQUEST_TIMEOUT = "requestTimeout";
-    public static final String TAG_CONNECT_TIMEOUT = "connectTimeout";
-    public static final String TAG_TCP_NO_DELAY = "tcpNoDelay";
-    public static final String TAG_KEEP_ALIVE = "keepAlive";
+    /**
+     * Property name used to retrieve the compliance mode to use when the connection to Cassandra is established.
+     * This property is mapped from the JDBC URL parameter {@code compliancemode}.
+     */
     public static final String TAG_COMPLIANCE_MODE = "complianceMode";
 
-    public static final String JSSE_TRUSTSTORE_PROPERTY = "javax.net.ssl.trustStore";
-    public static final String JSSE_TRUSTSTORE_PASSWORD_PROPERTY = "javax.net.ssl.trustStorePassword";
-    public static final String JSSE_KEYSTORE_PROPERTY = "javax.net.ssl.keyStore";
-    public static final String JSSE_KEYSTORE_PASSWORD_PROPERTY = "javax.net.ssl.keyStorePassword";
+    /**
+     * Property name used to retrieve the keyspace name when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL keyspace path parameter.
+     */
+    public static final String TAG_DATABASE_NAME = "databaseName";
 
     /**
-     * {@code NULL} CQL keyword.
+     * Property name used to retrieve the contact points when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL host.
      */
-    public static final String NULL_KEYWORD = "NULL";
+    public static final String TAG_SERVER_NAME = "serverName";
 
-    public static final String WAS_CLOSED_CONN = "Method was called on a closed Connection.";
-    public static final String WAS_CLOSED_STMT = "Method was called on a closed Statement.";
-    public static final String WAS_CLOSED_RS = "Method was called on a closed ResultSet.";
-    public static final String NO_INTERFACE = "No object was found that matched the provided interface: %s";
-    public static final String NO_TRANSACTIONS = "The Cassandra implementation does not support transactions.";
-    public static final String ALWAYS_AUTOCOMMIT = "The Cassandra implementation is always in auto-commit mode.";
-    public static final String BAD_TIMEOUT = "The timeout value was less than zero.";
-    public static final String NOT_SUPPORTED = "The Cassandra implementation does not support this method.";
-    public static final String NO_GEN_KEYS =
-        "The Cassandra implementation does not currently support returning generated keys.";
-    public static final String NO_MULTIPLE =
-        "The Cassandra implementation does not currently support multiple open Result Sets.";
-    public static final String NO_RESULT_SET =
-        "No ResultSet returned from the CQL statement passed in an 'executeQuery()' method.";
-    public static final String BAD_KEEP_RS =
-        "The argument for keeping the current result set: %s is not a valid value.";
-    public static final String BAD_TYPE_RS = "The argument for result set type: %s is not a valid value.";
-    public static final String BAD_CONCURRENCY_RS =
-        "The argument for result set concurrency: %s is not a valid value.";
-    public static final String BAD_HOLD_RS =
-        "The argument for result set holdability: %s is not a valid value.";
-    public static final String BAD_FETCH_DIR = "Fetch direction value of: %s is illegal.";
-    public static final String BAD_AUTO_GEN = "Auto key generation value of: %s is illegal.";
-    public static final String BAD_FETCH_SIZE = "Fetch size of: %s rows may not be negative.";
-    public static final String MUST_BE_POSITIVE =
-        "Index must be a positive number less or equal the count of returned columns: %d";
-    public static final String VALID_LABELS = "Name provided was not in the list of valid column labels: %s";
-    public static final String HOST_IN_URL =
-        "Connection url must specify a host, e.g. jdbc:cassandra://localhost:9042/keyspace";
-    public static final String HOST_REQUIRED = "A 'host' name is required to build a Connection.";
-    public static final String BAD_KEYSPACE =
-        "Keyspace names must be composed of alphanumerics and underscores (parsed: '%s').";
-    public static final String URI_IS_SIMPLE =
-        "Connection url may only include host, port, and keyspace, consistency and version option, e.g. "
-            + "jdbc:cassandra://localhost:9042/keyspace?version=3.0.0&consistency=ONE";
-    public static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
-    public static final String FORWARD_ONLY = "Can not position cursor with a type of TYPE_FORWARD_ONLY.";
-    public static final String MALFORMED_URL = "The string '%s' is not a valid URL.";
-    public static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
-    public static final String VECTOR_ELEMENTS_NOT_NUMBERS = "Vector elements are not numbers.";
+    /**
+     * Property name used to retrieve the port used when the connection to Cassandra is established. This property
+     * is mapped from the JDBC URL port.
+     */
+    public static final String TAG_PORT_NUMBER = "portNumber";
 
-    static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
-    static ObjectMapper objectMapperInstance = null;
-
-    private Utils() {
+    private JdbcUrlUtil() {
         // Private constructor to hide the public one.
-    }
-
-    /**
-     * Gets a property value from the Cassandra JDBC driver properties file.
-     *
-     * @param name The name of the property.
-     * @return The property value or an empty string the value cannot be retrieved.
-     */
-    public static String getDriverProperty(final String name) {
-        try (final InputStream propertiesFile =
-                 Utils.class.getClassLoader().getResourceAsStream(JDBC_DRIVER_PROPERTIES_FILE)) {
-            final Properties driverProperties = new Properties();
-            driverProperties.load(propertiesFile);
-            return driverProperties.getProperty(name, StringUtils.EMPTY);
-        } catch (IOException ex) {
-            LOG.error("Unable to get JDBC driver property: {}.", name, ex);
-            return StringUtils.EMPTY;
-        }
-    }
-
-    /**
-     * Gets a part of a version string.
-     * <p>
-     *     It uses the dot character as separator to parse the different parts of a version (major, minor, patch).
-     * </p>
-     *
-     * @param version The version string (for example X.Y.Z).
-     * @param part The part of the version to extract (for the semantic versioning, use 0 for the major version, 1 for
-     *             the minor and 2 for the patch).
-     * @return The requested part of the version, or 0 if the requested part cannot be parsed correctly.
-     */
-    public static int parseVersion(final String version, final int part) {
-        if (StringUtils.isBlank(version) || StringUtils.countMatches(version, ".") < part || part < 0) {
-            return 0;
-        } else {
-            try {
-                return Integer.parseInt(version.split("\\.")[part]);
-            } catch (final NumberFormatException ex) {
-                LOG.error("Unable to parse version: {}", version);
-                return 0;
-            }
-        }
     }
 
     /**
@@ -551,7 +583,7 @@ public final class Utils {
         policyParametersMap.put(DefaultDriverOption.RECONNECTION_POLICY_CLASS, primaryReconnectionPolicyClass);
 
         // Parameters have been specified
-        if (parameters.length() > 0) {
+        if (!parameters.isEmpty()) {
             final String paramsRegex = "([^,]+\\(.+?\\))|([^,]+)";
             final Pattern paramsPattern = Pattern.compile(paramsRegex);
             final Matcher paramsMatcher = paramsPattern.matcher(parameters);
@@ -582,31 +614,6 @@ public final class Utils {
         }
 
         return policyParametersMap;
-    }
-
-    /**
-     * Gets a pre-configured {@link ObjectMapper} for JSON support.
-     *
-     * @return A pre-configured {@link ObjectMapper} for JSON support.
-     */
-    public static ObjectMapper getObjectMapper() {
-        if (objectMapperInstance != null) {
-            return objectMapperInstance;
-        } else {
-            final ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-            objectMapper.registerModule(new JavaTimeModule());
-            final SimpleModule cassandraExtensionsModule = new SimpleModule();
-            cassandraExtensionsModule.addDeserializer(ByteBuffer.class, new CassandraBlobDeserializer());
-            cassandraExtensionsModule.addDeserializer(LocalDate.class, new CassandraDateDeserializer());
-            cassandraExtensionsModule.addDeserializer(LocalTime.class, new CassandraTimeDeserializer());
-            cassandraExtensionsModule.addDeserializer(OffsetDateTime.class, new CassandraDateTimeDeserializer());
-            cassandraExtensionsModule.addSerializer(ByteBuffer.class, new CassandraBlobSerializer());
-            objectMapper.registerModule(cassandraExtensionsModule);
-            objectMapperInstance = objectMapper;
-            return objectMapper;
-        }
     }
 
 }
