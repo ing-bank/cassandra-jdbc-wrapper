@@ -16,6 +16,8 @@ package com.ing.data.cassandra.jdbc.metadata;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionSignature;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
@@ -59,6 +61,12 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final ColumnMetadata mockColumnMetadata = mock(ColumnMetadata.class);
         when(mockColumnMetadata.getName()).thenReturn(CqlIdentifier.fromCql(columnName));
         return mockColumnMetadata;
+    }
+
+    static FunctionMetadata generateTestFunctionMetadata(final FunctionSignature signature) {
+        final FunctionMetadata mockFunctionMetadata = mock(FunctionMetadata.class);
+        when(mockFunctionMetadata.getSignature()).thenReturn(signature);
+        return mockFunctionMetadata;
     }
 
     @Test
@@ -216,5 +224,59 @@ class AbstractMetadataResultSetBuilderUnitTest {
         log.info("Columns matching '%col%': {}", filteredColumns);
         assertThat(filteredColumns, hasSize(3));
         assertThat(filteredColumns, hasItems("col1", "col2", "test_col"));
+    }
+
+    @Test
+    void givenFunctionNamePattern_whenApplyFunctionFiltering_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement mockStatement = mock(CassandraStatement.class);
+        final CassandraConnection mockConnection = mock(CassandraConnection.class);
+        final Metadata mockMetadata = mock(Metadata.class);
+        when(mockStatement.getCassandraConnection()).thenReturn(mockConnection);
+        when(mockConnection.getClusterMetadata()).thenReturn(mockMetadata);
+        final KeyspaceMetadata ksTestMetadata = generateTestKeyspaceMetadata("ks_test");
+        final Map<FunctionSignature, FunctionMetadata> testFunctionsMetadata = new HashMap<>();
+        final FunctionSignature signatureFunc1 = new FunctionSignature("func1");
+        testFunctionsMetadata.put(signatureFunc1, generateTestFunctionMetadata(signatureFunc1));
+        final FunctionSignature signatureFunc2 = new FunctionSignature("func2");
+        testFunctionsMetadata.put(signatureFunc2, generateTestFunctionMetadata(signatureFunc2));
+        final FunctionSignature signatureAnotherFunc = new FunctionSignature("another_function");
+        testFunctionsMetadata.put(signatureAnotherFunc, generateTestFunctionMetadata(signatureAnotherFunc));
+        final FunctionSignature signatureAnotherTestFunc = new FunctionSignature("another_test");
+        testFunctionsMetadata.put(signatureAnotherTestFunc, generateTestFunctionMetadata(signatureAnotherTestFunc));
+        when(ksTestMetadata.getFunctions()).thenReturn(testFunctionsMetadata);
+        final AbstractMetadataResultSetBuilder sut = new TestMetadataResultSetBuilder(mockStatement);
+
+        final Set<String> filteredFunctions = new HashSet<>();
+        sut.filterByFunctionNamePattern(StringUtils.EMPTY, ksTestMetadata,
+            (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
+        log.info("Functions matching '': {}", filteredFunctions);
+        assertThat(filteredFunctions, empty());
+
+        filteredFunctions.clear();
+        sut.filterByFunctionNamePattern(null, ksTestMetadata,
+            (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
+        log.info("Functions matching null: {}", filteredFunctions);
+        assertThat(filteredFunctions, hasSize(4));
+        assertThat(filteredFunctions, hasItems("func1", "func2", "another_function", "another_test"));
+
+        filteredFunctions.clear();
+        sut.filterByFunctionNamePattern("func", ksTestMetadata,
+            (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
+        log.info("Functions matching 'func': {}", filteredFunctions);
+        assertThat(filteredFunctions, empty());
+
+        filteredFunctions.clear();
+        sut.filterByFunctionNamePattern("func%", ksTestMetadata,
+            (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
+        log.info("Functions matching 'func%': {}", filteredFunctions);
+        assertThat(filteredFunctions, hasSize(2));
+        assertThat(filteredFunctions, hasItems("func1", "func2"));
+
+        filteredFunctions.clear();
+        sut.filterByFunctionNamePattern("%func%", ksTestMetadata,
+            (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
+        log.info("Functions matching '%func%': {}", filteredFunctions);
+        assertThat(filteredFunctions, hasSize(3));
+        assertThat(filteredFunctions, hasItems("func1", "func2", "another_function"));
     }
 }

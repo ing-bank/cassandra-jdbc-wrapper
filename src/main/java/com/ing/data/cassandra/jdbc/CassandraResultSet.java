@@ -1396,10 +1396,26 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        // The rationale is there are no warnings to return in this implementation, but it still throws an exception
-        // when called on a closed result set.
         checkNotClosed();
-        return null;
+        final List<String> driverWarnings = this.driverResultSet.getExecutionInfo().getWarnings();
+        if (!driverWarnings.isEmpty()) {
+            SQLWarning firstWarning = null;
+            SQLWarning previousWarning = null;
+
+            for (final String warningMessage : driverWarnings) {
+                final SQLWarning warning = new SQLWarning(warningMessage);
+                if (previousWarning == null) {
+                    firstWarning = warning;
+                } else {
+                    previousWarning.setNextWarning(warning);
+                }
+                previousWarning = warning;
+            }
+
+            return firstWarning;
+        } else {
+            return null;
+        }
     }
 
     /**
