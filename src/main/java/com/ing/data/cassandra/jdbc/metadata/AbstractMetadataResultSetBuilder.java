@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.metadata;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.FunctionSignature;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
@@ -27,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -36,6 +39,7 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractMetadataResultSetBuilder {
 
+    static final String TABLE = "TABLE";
     static final String CQL_OPTION_COMMENT = "comment";
     static final String ASC_OR_DESC = "ASC_OR_DESC";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
@@ -91,7 +95,6 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String SPECIFIC_NAME = "SPECIFIC_NAME";
     static final String SQL_DATA_TYPE = "SQL_DATA_TYPE";
     static final String SQL_DATETIME_SUB = "SQL_DATETIME_SUB";
-    static final String TABLE = "TABLE";
     static final String TABLE_CATALOG_SHORTNAME = "TABLE_CAT";
     static final String TABLE_CATALOG = "TABLE_CATALOG";
     static final String TABLE_NAME = "TABLE_NAME";
@@ -102,7 +105,6 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String TYPE_NAME = "TYPE_NAME";
     static final String TYPE_SCHEMA = "TYPE_SCHEM";
     static final String UNSIGNED_ATTRIBUTE = "UNSIGNED_ATTRIBUTE";
-    static final String WILDCARD_CHAR = "%";
     static final String YES_VALUE = "YES";
 
     CassandraStatement statement;
@@ -130,8 +132,8 @@ public abstract class AbstractMetadataResultSetBuilder {
      * @param testedValue The tested string.
      * @return {@code true} if the pattern matches the tested string, {@code false} otherwise.
      */
-    private boolean matchesPattern(final String pattern, final String testedValue) {
-        return testedValue.matches(String.format("^%s$", pattern.replaceAll("%", ".*")));
+    public boolean matchesPattern(final String pattern, final String testedValue) {
+        return testedValue.matches(String.format("(?i)^%s$", pattern.replaceAll("%", ".*")));
     }
 
     /**
@@ -142,7 +144,7 @@ public abstract class AbstractMetadataResultSetBuilder {
      * {@link #matchesPattern(String, String)} returns {@code true}.
      * @param schemaNamePattern The schema name pattern.
      * @param consumer          The applied consumer function when there is a pattern match.
-     * @param altConsumer       The applied consumer function when there is no pattern match.If {@code null}, a no-op
+     * @param altConsumer       The applied consumer function when there is no pattern match. If {@code null}, a no-op
      *                          consumer is used.
      */
     @SuppressWarnings("SameParameterValue")
@@ -196,6 +198,29 @@ public abstract class AbstractMetadataResultSetBuilder {
             (pattern, columnMetadata) -> pattern == null
                 || matchesPattern(pattern, columnMetadata.getName().asInternal()), consumer,
             Optional.ofNullable(altConsumer).orElse(noOpConsumer()));
+    }
+
+    /**
+     * Executes a {@link BiConsumer} function on each pair of {@link FunctionSignature} and {@link FunctionMetadata}
+     * instances corresponding to a function matching the specified function name pattern in the specified keyspace.
+     *
+     * @implNote The pattern matches a function name if the pattern is {@code null} or if the function
+     * {@link #matchesPattern(String, String)} returns {@code true}.
+     * @param functionNamePattern The function name pattern.
+     * @param keyspaceMetadata    The keyspace on which the filter is applied: only the functions present in this
+     *                            keyspace are filtered.
+     * @param consumer            The applied bi-consumer function when there is a pattern match.
+     */
+    void filterByFunctionNamePattern(final String functionNamePattern, final KeyspaceMetadata keyspaceMetadata,
+                                     final BiConsumer<FunctionSignature, FunctionMetadata> consumer) {
+        for (final Map.Entry<FunctionSignature, FunctionMetadata> entry : keyspaceMetadata.getFunctions().entrySet()) {
+            final FunctionSignature functionSignature = entry.getKey();
+            final FunctionMetadata functionMetadata = entry.getValue();
+            if (functionNamePattern == null
+                || matchesPattern(functionNamePattern, functionSignature.getName().asInternal())) {
+                consumer.accept(functionSignature, functionMetadata);
+            }
+        }
     }
 
     <M> void filterByPattern(final String pattern, final Map<CqlIdentifier, M> metadataMap,

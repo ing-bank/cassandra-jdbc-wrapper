@@ -16,7 +16,6 @@
 package com.ing.data.cassandra.jdbc.metadata;
 
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-import com.ing.data.cassandra.jdbc.MetadataResultSets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,7 +23,7 @@ import java.util.Iterator;
 /**
  * A simple metadata result set made of {@link MetadataRow} objects.
  *
- * @see MetadataResultSets
+ * @see AbstractMetadataResultSetBuilder
  */
 public class MetadataResultSet {
 

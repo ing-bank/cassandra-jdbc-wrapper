@@ -18,8 +18,10 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.ColumnMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.FunctionMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -121,7 +123,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getAttributes(final String catalog, final String schemaPattern, final String typeNamePattern,
                                    final String attributeNamePattern) throws SQLException {
-        // TODO: method to implement
+        // TODO: method to implement into TypeMetadataResultSetBuilder
         checkStatementClosed();
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -129,7 +131,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getBestRowIdentifier(final String catalog, final String schema, final String table,
                                           final int scope, final boolean nullable) throws SQLException {
-        // TODO: method to implement
+        // TODO: method to implement into TableMetadataResultSetBuilder
         checkStatementClosed();
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -329,13 +331,10 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
                                         final String functionNamePattern, final String columnNamePattern)
         throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            String schemaName = schemaPattern;
-            if (schemaPattern == null) {
-                schemaName = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makeFunctionColumns(this.statement, schemaName, functionNamePattern,
-                columnNamePattern);
+            return new FunctionMetadataResultSetBuilder(this.statement).buildFunctionColumns(schemaPattern,
+                functionNamePattern, columnNamePattern);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -344,12 +343,10 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getFunctions(final String catalog, final String schemaPattern, final String functionNamePattern)
         throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            String schemaName = schemaPattern;
-            if (schemaPattern == null) {
-                schemaName = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makeFunctions(this.statement, schemaName, functionNamePattern);
+            return new FunctionMetadataResultSetBuilder(this.statement).buildFunctions(schemaPattern,
+                functionNamePattern);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
@@ -760,7 +757,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         // TABLE type.
         boolean askingForTable = types == null;
         if (types != null) {
-            askingForTable = Arrays.asList(types).contains(MetadataResultSets.TABLE);
+            askingForTable = Arrays.asList(types).contains("TABLE");
         }
         // Only null or the current catalog (i.e. cluster) name are supported.
         if ((catalog == null || catalog.equals(this.connection.getCatalog())) && askingForTable) {
@@ -781,7 +778,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTypeInfo() throws SQLException {
         checkStatementClosed();
-        return MetadataResultSets.INSTANCE.makeTypes(this.statement);
+        return new TypeMetadataResultSetBuilder(this.statement).buildTypes();
     }
 
     /**
@@ -836,13 +833,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getUDTs(final String catalog, final String schemaPattern, final String typeNamePattern,
                              final int[] types) throws SQLException {
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {
-            this.statement.connection = connection;
-            String schemaNamePattern = schemaPattern;
-            if (schemaPattern == null) {
-                schemaNamePattern = this.connection.getSchema(); // limit to current schema if defined.
-            }
-            return MetadataResultSets.INSTANCE.makeUDTs(this.statement, schemaNamePattern, typeNamePattern, types);
+            return new TypeMetadataResultSetBuilder(this.statement).buildUDTs(schemaPattern, typeNamePattern, types);
         }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
