@@ -14,6 +14,12 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.ColumnMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.FunctionMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
 
@@ -48,10 +55,14 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
     }
 
+    /*
+     * Tables metadata
+     */
+
     @Test
     void givenStatement_whenMakeTableTypes_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeTableTypes(statement);
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTableTypes();
         assertNotNull(result);
         assertEquals(1, result.getMetaData().getColumnCount());
         assertEquals("TABLE_TYPE", result.getMetaData().getColumnName(1));
@@ -59,44 +70,9 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenStatement_whenMakeCatalogs_returnExpectedResultSet() throws SQLException {
-        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeCatalogs(statement);
-        assertNotNull(result);
-        assertEquals(1, result.getMetaData().getColumnCount());
-        assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
-        assertEquals("embedded_test_cluster", result.getString(1));
-    }
-
-    @Test
-    void givenStatement_whenMakeSchemas_returnExpectedResultSet() throws SQLException {
-        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeSchemas(statement, null);
-        assertNotNull(result);
-        assertEquals(2, result.getMetaData().getColumnCount());
-        assertEquals("TABLE_SCHEM", result.getMetaData().getColumnName(1));
-        final List<String> foundKeyspaces = new ArrayList<>();
-        while (result.next()) {
-            foundKeyspaces.add(result.getString(1));
-        }
-        assertThat(foundKeyspaces, hasItem(is(KEYSPACE)));
-        assertThat(foundKeyspaces, hasItem(is(ANOTHER_KEYSPACE)));
-        assertEquals("TABLE_CATALOG", result.getMetaData().getColumnName(2));
-        assertEquals("embedded_test_cluster", result.getString(2));
-
-        final ResultSet result2 = MetadataResultSets.INSTANCE.makeSchemas(statement, ANOTHER_KEYSPACE);
-        assertNotNull(result2);
-        assertEquals(2, result2.getMetaData().getColumnCount());
-        assertEquals("TABLE_SCHEM", result2.getMetaData().getColumnName(1));
-        assertEquals(ANOTHER_KEYSPACE, result2.getString(1));
-        assertEquals("TABLE_CATALOG", result.getMetaData().getColumnName(2));
-        assertEquals("embedded_test_cluster", result.getString(2));
-    }
-
-    @Test
     void givenStatement_whenMakeTables_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeTables(statement, null, null);
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTables(null, null);
         assertNotNull(result);
         assertEquals(10, result.getMetaData().getColumnCount());
         assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
@@ -120,7 +96,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;TABLE;Second table in the keyspace"))));
 
         int result2Size = 0;
-        final ResultSet result2 = MetadataResultSets.INSTANCE.makeTables(statement, ANOTHER_KEYSPACE, null);
+        final ResultSet result2 = new TableMetadataResultSetBuilder(statement).buildTables(ANOTHER_KEYSPACE, null);
         assertNotNull(result2);
         foundTables.clear();
         while (result2.next()) {
@@ -133,7 +109,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;TABLE;Second table in the keyspace"))));
 
         int result3Size = 0;
-        final ResultSet result3 = MetadataResultSets.INSTANCE.makeTables(statement, null, "cf_test1");
+        final ResultSet result3 = new TableMetadataResultSetBuilder(statement).buildTables(null, "cf_test1");
         assertNotNull(result3);
         foundTables.clear();
         while (result3.next()) {
@@ -146,7 +122,8 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test1;TABLE;First table in the keyspace"))));
 
         int result4Size = 0;
-        final ResultSet result4 = MetadataResultSets.INSTANCE.makeTables(statement, ANOTHER_KEYSPACE, "cf_test1");
+        final ResultSet result4 = new TableMetadataResultSetBuilder(statement)
+            .buildTables(ANOTHER_KEYSPACE, "cf_test1");
         assertNotNull(result4);
         foundTables.clear();
         while (result4.next()) {
@@ -158,10 +135,57 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundTables, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test1;TABLE;First table in the keyspace"))));
     }
 
+    /*
+     * Catalogs metadata
+     */
+
+    @Test
+    void givenStatement_whenMakeCatalogs_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = new CatalogMetadataResultSetBuilder(statement).buildCatalogs();
+        assertNotNull(result);
+        assertEquals(1, result.getMetaData().getColumnCount());
+        assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
+        assertEquals("embedded_test_cluster", result.getString(1));
+    }
+
+    /*
+     * Schemas metadata
+     */
+
+    @Test
+    void givenStatement_whenMakeSchemas_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = new SchemaMetadataResultSetBuilder(statement).buildSchemas(null);
+        assertNotNull(result);
+        assertEquals(2, result.getMetaData().getColumnCount());
+        assertEquals("TABLE_SCHEM", result.getMetaData().getColumnName(1));
+        final List<String> foundKeyspaces = new ArrayList<>();
+        while (result.next()) {
+            foundKeyspaces.add(result.getString(1));
+        }
+        assertThat(foundKeyspaces, hasItem(is(KEYSPACE)));
+        assertThat(foundKeyspaces, hasItem(is(ANOTHER_KEYSPACE)));
+        assertEquals("TABLE_CATALOG", result.getMetaData().getColumnName(2));
+        assertEquals("embedded_test_cluster", result.getString(2));
+
+        final ResultSet result2 = new SchemaMetadataResultSetBuilder(statement).buildSchemas(ANOTHER_KEYSPACE);
+        assertNotNull(result2);
+        assertEquals(2, result2.getMetaData().getColumnCount());
+        assertEquals("TABLE_SCHEM", result2.getMetaData().getColumnName(1));
+        assertEquals(ANOTHER_KEYSPACE, result2.getString(1));
+        assertEquals("TABLE_CATALOG", result.getMetaData().getColumnName(2));
+        assertEquals("embedded_test_cluster", result.getString(2));
+    }
+
+    /*
+     * Columns metadata
+     */
+
     @Test
     void givenStatement_whenMakeColumns_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeColumns(statement, KEYSPACE, "cf_test1", null);
+        final ResultSet result = new ColumnMetadataResultSetBuilder(statement).buildColumns(KEYSPACE, "cf_test1", null);
         assertNotNull(result);
         assertEquals(24, result.getMetaData().getColumnCount());
         assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
@@ -200,6 +224,10 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1bvalue;BOOLEAN;5"))));
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;t1ivalue;INT;11"))));
     }
+
+    /*
+     * Result sets metadata
+     */
 
     @Test
     void givenStatement_whenGetResultMetadata_returnExpectedValues() throws Exception {
@@ -286,16 +314,22 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenCassandraMetadataResultSet_whenUnwrap_returnUnwrappedMetadataResultSet() throws Exception {
-        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
-        assertNotNull(metadataRs.unwrap(ResultSet.class));
-        assertNotNull(metadataRs.unwrap(CassandraResultSetExtras.class));
+    void givenCassandraMetadataResultSet_whenUnwrap_returnUnwrappedMetadataResultSet() {
+        try (final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet()) {
+            assertNotNull(metadataRs.unwrap(ResultSet.class));
+            assertNotNull(metadataRs.unwrap(CassandraResultSetExtras.class));
+        } catch (final Exception e) {
+            fail(e);
+        }
     }
 
     @Test
     void givenCassandraMetadataResultSet_whenUnwrapToInvalidInterface_throwException() {
-        final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet();
-        assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+        try (final CassandraMetadataResultSet metadataRs = new CassandraMetadataResultSet()) {
+            assertThrows(SQLException.class, () -> metadataRs.unwrap(this.getClass()));
+        } catch (final Exception e) {
+            fail(e);
+        }
     }
 
     @Test
@@ -333,10 +367,14 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         stmt.close();
     }
 
+    /*
+     * Types metadata
+     */
+
     @Test
     void givenStatement_whenMakeUDTs_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, KEYSPACE, "CustomType1",
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildUDTs(KEYSPACE, "CustomType1",
             new int[]{Types.JAVA_OBJECT});
         assertNotNull(result);
         assertEquals(7, result.getMetaData().getColumnCount());
@@ -359,8 +397,8 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             .concat(";2000;;null"))));
 
         // Using a fully-qualified type name.
-        final ResultSet resultFullyQualifiedName = MetadataResultSets.INSTANCE.makeUDTs(statement,
-            KEYSPACE, KEYSPACE + ".customtype2", new int[]{Types.JAVA_OBJECT});
+        final ResultSet resultFullyQualifiedName = new TypeMetadataResultSetBuilder(statement)
+            .buildUDTs(KEYSPACE, KEYSPACE + ".customtype2", new int[]{Types.JAVA_OBJECT});
         assertNotNull(resultFullyQualifiedName);
         assertEquals(7, resultFullyQualifiedName.getMetaData().getColumnCount());
         assertTrue(resultFullyQualifiedName.next());
@@ -369,7 +407,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeUDTsWithNonJavaObjectTypes_returnEmptyResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, KEYSPACE, "CustomType1",
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildUDTs(KEYSPACE, "CustomType1",
             new int[]{Types.STRUCT, Types.DISTINCT});
         assertNotNull(result);
         assertFalse(result.next());
@@ -378,7 +416,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeUDTsNotSpecifyingSchemaPattern_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeUDTs(statement, null, "type_in_different_ks",
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildUDTs(null, "type_in_different_ks",
             new int[]{Types.JAVA_OBJECT});
         assertNotNull(result);
         assertEquals(7, result.getMetaData().getColumnCount());
@@ -396,7 +434,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeTypes_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeTypes(statement);
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildTypes();
         assertNotNull(result);
         assertEquals(18, result.getMetaData().getColumnCount());
         assertEquals("TYPE_NAME", result.getMetaData().getColumnName(1));
@@ -484,10 +522,15 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             foundColumns.get(26));
     }
 
+    /*
+     * Functions metadata
+     */
+
     @Test
     void givenStatement_whenMakeFunctions_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeFunctions(statement, KEYSPACE, "function_test1");
+        final ResultSet result = new FunctionMetadataResultSetBuilder(statement)
+            .buildFunctions(KEYSPACE, "function_test1");
         assertNotNull(result);
         assertEquals(6, result.getMetaData().getColumnCount());
         assertEquals("FUNCTION_CAT", result.getMetaData().getColumnName(1));
@@ -510,8 +553,8 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenStatement_whenMakeFunctionColumns_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = MetadataResultSets.INSTANCE.makeFunctionColumns(statement, KEYSPACE, "function_test1",
-            "%");
+        final ResultSet result = new FunctionMetadataResultSetBuilder(statement)
+            .buildFunctionColumns(KEYSPACE, "function_test1", "%");
         assertNotNull(result);
         assertEquals(17, result.getMetaData().getColumnCount());
         assertEquals("FUNCTION_CAT", result.getMetaData().getColumnName(1));

@@ -19,12 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix issue [#25](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/25) causing failure when running with
   Liquibase. The fix includes several changes:
-  - fixes result sets and statements closing. 
-  - introduces a new behaviour in Liquibase compliance mode to run multiple queries in the same statement synchronously 
-    (by default, they are executed asynchronously). 
-  - returns the schema name instead of `null` when the method `CassandraConnection.getCatalog()` is called in Liquibase 
+  - fixes result sets and statements closing.
+  - introduces a new behaviour in Liquibase compliance mode to run multiple queries in the same statement synchronously
+    (by default, they are executed asynchronously).
+  - returns the schema name instead of `null` when the method `CassandraConnection.getCatalog()` is called in Liquibase
     compliance mode.
-  - does not throw `SQLFeatureNotSupportedException` when `CassandraConnection.rollback()` is called in Liquibase 
+  - does not throw `SQLFeatureNotSupportedException` when `CassandraConnection.rollback()` is called in Liquibase
     compliance mode.
 
 ## [4.9.0] - 2023-04-15
