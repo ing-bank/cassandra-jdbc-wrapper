@@ -58,6 +58,14 @@ abstract class AbstractResultSet implements Wrapper {
      */
     boolean isCqlType(final int columnIndex, @NonNull final DataTypeEnum type) {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnIndex)), "<");
+        /*
+         * BUG FIXING:
+         * isCqlType() always return false for Vector. The columnType returns looks like
+         * org.apache.cassandra.db.marshal.VectorType(14) and as such is never vector.
+         */
+        if (columnType.contains("org.apache.cassandra.db.marshal.VectorType")) {
+            return DataTypeEnum.VECTOR.equals(type);
+        }
         return type.cqlType.equalsIgnoreCase(columnType);
     }
 
@@ -70,6 +78,14 @@ abstract class AbstractResultSet implements Wrapper {
      */
     boolean isCqlType(final String columnLabel, @NonNull final DataTypeEnum type) {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnLabel)), "<");
+        /*
+         * BUG FIXING:
+         * isCqlType() always return false for Vector. The columnType returns looks like
+         * org.apache.cassandra.db.marshal.VectorType(14) and as such is never vector.
+         */
+        if (columnType.contains("org.apache.cassandra.db.marshal.VectorType")) {
+            return DataTypeEnum.VECTOR.equals(type);
+        }
         return type.cqlType.equalsIgnoreCase(columnType);
     }
 

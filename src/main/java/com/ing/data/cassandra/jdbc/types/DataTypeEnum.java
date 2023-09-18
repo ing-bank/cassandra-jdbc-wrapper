@@ -21,6 +21,7 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
+import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -69,7 +70,7 @@ public enum DataTypeEnum {
     UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
     VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT)),
-    VECTOR(DataType.LIST, CqlVector.class, "vector");
+    VECTOR(DataType.LIST, CqlVector.class, "Vector");
 
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
     public final Class<?> javaType;
@@ -127,6 +128,9 @@ public enum DataTypeEnum {
     public static DataTypeEnum fromDataType(final com.datastax.oss.driver.api.core.type.DataType dataType) {
         if (dataType instanceof UserDefinedType) {
             return UDT;
+        }
+        if (dataType instanceof VectorType) {
+            return VECTOR;
         }
         return fromCqlTypeName(dataType.asCql(false, false));
     }
