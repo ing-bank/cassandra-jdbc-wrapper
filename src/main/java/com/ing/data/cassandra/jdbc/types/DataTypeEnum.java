@@ -170,7 +170,7 @@ public enum DataTypeEnum {
      * {@code vector} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link CqlVector} Java
      * type.
      */
-    VECTOR(DataType.LIST, CqlVector.class, "Cector");
+    VECTOR(DataType.LIST, CqlVector.class, "Vector");
 
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
 

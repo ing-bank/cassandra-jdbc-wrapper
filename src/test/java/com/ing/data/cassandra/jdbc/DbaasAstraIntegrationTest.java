@@ -31,16 +31,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Test JDBC Driver against Astra.
- * To run this test an environment variable ASTRA_DB_APPLICATION_TOKEN must be set.
- * (Vector is fully deployed there)
+ * Test JDBC Driver against DbAAS Astra.
+ * To run this test define environment variable ASTRA_DB_APPLICATION_TOKEN
+ * but not having any token does not block the build.
  */
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class DbaasAstraIntegrationTest {
 
     private static final String DATABASE_NAME = "test_cassandra_jdbc";
     private static final String KEYSPACE_NAME = "test";
-
     static CassandraConnection sqlConnection = null;
 
     @BeforeAll
@@ -48,15 +47,13 @@ class DbaasAstraIntegrationTest {
     static void setupAstra() throws Exception {
 
         /*
-         * Devops API Client, handy for tests
+         * Devops API Client (create database, resume, delete)
          */
         AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
 
         /*
-         * Give a Database (create if not exist, resume if needed)
+         * Setup a Database in Astra : create if not exist, resume if needed
          * Vector Database is Cassandra DB with vector support enabled.
-         *
-         * TestUtils.setupDatabase(DATABASE_NAME, KEYSPACE_NAME);
          * It can take up to 1 min to create the database if not exists
          */
         String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
@@ -64,9 +61,9 @@ class DbaasAstraIntegrationTest {
         Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
 
         /*
-         * We need the cloud secure bundle to connect to the database.
-         * - TestUtils will download it for you and saved in /tmp
-         * - Single region so we can use the default
+         * Download cloud secure bundle to connect to the database.
+         * - Saved in /tmp
+         * - Single region = we can use default region
          */
         astraDbClient
             .database(dbId)
@@ -74,7 +71,7 @@ class DbaasAstraIntegrationTest {
 
         /*
          * Building jdbcUrl and sqlConnection.
-         * Astra can be access with only a token (username='token')
+         * Note: Astra can be access with only a token (username='token')
          */
         sqlConnection = (CassandraConnection) DriverManager.getConnection(
             "jdbc:cassandra://dbaas/" + KEYSPACE_NAME +
@@ -83,7 +80,7 @@ class DbaasAstraIntegrationTest {
             "&consistency=" + "LOCAL_QUORUM" +
             "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
     }
-/*
+
     @Test
     @Order(1)
     @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
@@ -156,7 +153,7 @@ class DbaasAstraIntegrationTest {
                     "VALUES ('pf7044','PupperSausage Beef dog Treats',[0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0])");
         // Then (warning on Cassandra expected)
         Assertions.assertEquals(6, countRecords("pet_supply_vectors"));
-    }*/
+    }
 
     @Test
     @Order(4)
