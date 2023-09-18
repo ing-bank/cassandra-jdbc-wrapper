@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons Lang to version 3.13.0.
 - Update Jackson dependencies to version 2.15.2.
 - Packages refactoring: utility classes, types and database metadata management have been moved to dedicated packages.
+### Removed
+- Remove the legacy package `org.apache.cassandra2.cql.jdbc`: only `com.ing.data.cassandra.jdbc.CassandraDriver` should
+  be used now as `java.sql.Driver` implementation.
 
 ## [4.9.1] - 2023-09-03
 ### Fixed
