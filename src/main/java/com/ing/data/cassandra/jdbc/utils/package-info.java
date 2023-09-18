@@ -1,5 +1,4 @@
 /*
- *      Copyright (C) 2012-2015 DataStax Inc.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -14,14 +13,7 @@
  *   limitations under the License.
  */
 
-package org.apache.cassandra2.cql.jdbc;
-
-import java.sql.Driver;
-
 /**
- * The {@code CassandraDriver} class.
- *
- * @see com.ing.data.cassandra.jdbc.CassandraDriver
+ * This package contains utility classes used by the JDBC wrapper.
  */
-public class CassandraDriver extends com.ing.data.cassandra.jdbc.CassandraDriver implements Driver {
-}
+package com.ing.data.cassandra.jdbc.utils;

@@ -1323,7 +1323,7 @@ server_encryption_options:
   #     dc   : Encrypt connections to peers in other datacenters but not within datacenters
   #     rack : Encrypt connections to peers in other racks but not within racks
   #     all  : Always use encrypted connections
-  internode_encryption: none
+  internode_encryption: all
   # When set to true, encrypted and unencrypted connections are allowed on the storage_port
   # This should _only be true_ while in unencrypted or transitional operation
   # optional defaults to true if internode_encryption is none
@@ -1332,13 +1332,13 @@ server_encryption_options:
   # during upgrade to 4.0; otherwise, set to false.
   legacy_ssl_storage_port_enabled: false
   # Set to a valid keystore if internode_encryption is dc, rack or all
-  keystore: conf/.keystore
-  keystore_password: cassandra
+  keystore: /security/cassandra.keystore
+  keystore_password: changeit
   # Verify peer server certificates
   require_client_auth: false
   # Set to a valid trustore if require_client_auth is true
-  truststore: conf/.truststore
-  truststore_password: cassandra
+  truststore: /security/cassandra.truststore
+  truststore_password: changeit
   # Verify that the host name in the certificate matches the connected host
   require_endpoint_verification: false
   # More advanced defaults:
@@ -1365,14 +1365,14 @@ server_encryption_options:
 # auth set require_client_auth=true. Restart all nodes
 client_encryption_options:
   # Enable client-to-server encryption
-  enabled: false
+  enabled: true
   # When set to true, encrypted and unencrypted connections are allowed on the native_transport_port
   # This should _only be true_ while in unencrypted or transitional operation
   # optional defaults to true when enabled is false, and false when enabled is true.
-  # optional: true
+  optional: true
   # Set keystore and keystore_password to valid keystores if enabled is true
-  keystore: conf/.keystore
-  keystore_password: cassandra
+  keystore: /security/cassandra.keystore
+  keystore_password: changeit
   # Verify client certificates
   require_client_auth: false
   # Set trustore and truststore_password if require_client_auth is true
