@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
-import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
@@ -28,7 +27,6 @@ import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPoli
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
-import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
 import com.ing.data.cassandra.jdbc.optionset.Liquibase;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
@@ -351,7 +349,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     /*
      * IMPORTANT NOTE:
-     * The resources 'test_keystore.jks' and 'test_truststore.jks' are provided for testing purpose only. They contain
+     * The resources 'cassandra.keystore' and 'cassandra.truststore' are provided for testing purpose only. They contain
      * self-signed certificate to not use in a production context.
      */
 
@@ -359,18 +357,24 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     void givenEnabledSslWithJsse_whenConfigureSsl_addDefaultSslEngineFactoryToSessionBuilder() throws Exception {
         final ClassLoader classLoader = this.getClass().getClassLoader();
         System.setProperty(JSSE_TRUSTSTORE_PROPERTY,
-            Objects.requireNonNull(classLoader.getResource("test_truststore.jks")).getPath());
+            Objects.requireNonNull(classLoader.getResource("cassandra.truststore")).getPath());
         System.setProperty(JSSE_TRUSTSTORE_PASSWORD_PROPERTY, "changeit");
         System.setProperty(JSSE_KEYSTORE_PROPERTY,
-            Objects.requireNonNull(classLoader.getResource("test_keystore.jks")).getPath());
+            Objects.requireNonNull(classLoader.getResource("cassandra.keystore")).getPath());
         System.setProperty(JSSE_KEYSTORE_PASSWORD_PROPERTY, "changeit");
 
-        final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
-            buildJdbcUrl(cassandraContainer.getContactPoint().getHostName(),
-                cassandraContainer.getContactPoint().getPort(), KEYSPACE)), null);
-        final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
-        sessionHolder.configureDefaultSslEngineFactory(cqlSessionBuilder, DriverConfigLoader.programmaticBuilder());
-        verify(cqlSessionBuilder).withSslEngineFactory(any(DefaultSslEngineFactory.class));
+        initConnection(KEYSPACE, "enablessl=true", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertTrue(sqlConnection.getSession().getContext().getSslEngineFactory().isPresent());
+
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet resultSet = statement.executeQuery("SELECT * FROM system.local");
+        assertNotNull(resultSet);
+        resultSet.close();
+        statement.close();
+        sqlConnection.close();
     }
 
     @Test

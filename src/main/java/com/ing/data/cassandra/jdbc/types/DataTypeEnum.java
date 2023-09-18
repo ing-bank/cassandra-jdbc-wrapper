@@ -42,38 +42,146 @@ import java.util.UUID;
  */
 public enum DataTypeEnum {
 
+    /**
+     * {@code ascii} CQL type (type {@value DataType#ASCII} in CQL native protocol) mapped to {@link String} Java type.
+     */
     ASCII(DataType.ASCII, String.class, cqlName(DataTypes.ASCII)),
+    /**
+     * {@code bigint} CQL type (type {@value DataType#BIGINT} in CQL native protocol) mapped to {@link Long} Java type.
+     */
     BIGINT(DataType.BIGINT, Long.class, cqlName(DataTypes.BIGINT)),
+    /**
+     * {@code blob} CQL type (type {@value DataType#BLOB} in CQL native protocol) mapped to {@link ByteBuffer} Java
+     * type.
+     */
     BLOB(DataType.BLOB, ByteBuffer.class, cqlName(DataTypes.BLOB)),
+    /**
+     * {@code boolean} CQL type (type {@value DataType#BOOLEAN} in CQL native protocol) mapped to {@link Boolean} Java
+     * type.
+     */
     BOOLEAN(DataType.BOOLEAN, Boolean.class, cqlName(DataTypes.BOOLEAN)),
+    /**
+     * {@code counter} CQL type (type {@value DataType#COUNTER} in CQL native protocol) mapped to {@link Long} Java
+     * type.
+     */
     COUNTER(DataType.COUNTER, Long.class, cqlName(DataTypes.COUNTER)),
+    /**
+     * {@code custom} CQL type (type {@value DataType#CUSTOM} in CQL native protocol) mapped to {@link ByteBuffer} Java
+     * type.
+     */
     CUSTOM(DataType.CUSTOM, ByteBuffer.class, "CUSTOM"),
+    /**
+     * {@code date} CQL type (type {@value DataType#DATE} in CQL native protocol) mapped to {@link Date} Java type.
+     */
     DATE(DataType.DATE, Date.class, cqlName(DataTypes.DATE)),
+    /**
+     * {@code decimal} CQL type (type {@value DataType#DECIMAL} in CQL native protocol) mapped to {@link BigDecimal}
+     * Java type.
+     */
     DECIMAL(DataType.DECIMAL, BigDecimal.class, cqlName(DataTypes.DECIMAL)),
+    /**
+     * {@code double} CQL type (type {@value DataType#DOUBLE} in CQL native protocol) mapped to {@link Double} Java
+     * type.
+     */
     DOUBLE(DataType.DOUBLE, Double.class, cqlName(DataTypes.DOUBLE)),
+    /**
+     * {@code duration} CQL type (type {@value DataType#DURATION} in CQL native protocol) mapped to {@link CqlDuration}
+     * Java type.
+     */
     DURATION(DataType.DURATION, CqlDuration.class, cqlName(DataTypes.DURATION)),
+    /**
+     * {@code float} CQL type (type {@value DataType#FLOAT} in CQL native protocol) mapped to {@link Float} Java type.
+     */
     FLOAT(DataType.FLOAT, Float.class, cqlName(DataTypes.FLOAT)),
+    /**
+     * {@code inet} CQL type (type {@value DataType#INET} in CQL native protocol) mapped to {@link InetAddress} Java
+     * type.
+     */
     INET(DataType.INET, InetAddress.class, cqlName(DataTypes.INET)),
+    /**
+     * {@code int} CQL type (type {@value DataType#INT} in CQL native protocol) mapped to {@link Integer} Java type.
+     */
     INT(DataType.INT, Integer.class, cqlName(DataTypes.INT)),
+    /**
+     * {@code list} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link List} Java type.
+     */
     LIST(DataType.LIST, List.class, "list"),
+    /**
+     * {@code map} CQL type (type {@value DataType#MAP} in CQL native protocol) mapped to {@link Map} Java type.
+     */
     MAP(DataType.MAP, Map.class, "map"),
+    /**
+     * {@code set} CQL type (type {@value DataType#SET} in CQL native protocol) mapped to {@link Set} Java type.
+     */
     SET(DataType.SET, Set.class, "set"),
+    /**
+     * {@code smallint} CQL type (type {@value DataType#SMALLINT} in CQL native protocol) mapped to {@link Short} Java
+     * type.
+     */
     SMALLINT(DataType.SMALLINT, Short.class, cqlName(DataTypes.SMALLINT)),
+    /**
+     * {@code text} CQL type (type {@value DataType#VARCHAR} in CQL native protocol) mapped to {@link String} Java type.
+     */
     TEXT(DataType.VARCHAR, String.class, cqlName(DataTypes.TEXT)),
+    /**
+     * {@code time} CQL type (type {@value DataType#TIME} in CQL native protocol) mapped to {@link Time} Java type.
+     */
     TIME(DataType.TIME, Time.class, cqlName(DataTypes.TIME)),
+    /**
+     * {@code timestamp} CQL type (type {@value DataType#TIMESTAMP} in CQL native protocol) mapped to {@link Timestamp}
+     * Java type.
+     */
     TIMESTAMP(DataType.TIMESTAMP, Timestamp.class, cqlName(DataTypes.TIMESTAMP)),
+    /**
+     * {@code timeuuid} CQL type (type {@value DataType#TIMEUUID} in CQL native protocol) mapped to {@link UUID} Java
+     * type.
+     */
     TIMEUUID(DataType.TIMEUUID, UUID.class, cqlName(DataTypes.TIMEUUID)),
+    /**
+     * {@code tinyint} CQL type (type {@value DataType#TINYINT} in CQL native protocol) mapped to {@link Byte} Java
+     * type.
+     */
     TINYINT(DataType.TINYINT, Byte.class, cqlName(DataTypes.TINYINT)),
+    /**
+     * {@code tuple} CQL type (type {@value DataType#TUPLE} in CQL native protocol) mapped to {@link TupleValue} Java
+     * type.
+     */
     TUPLE(DataType.TUPLE, TupleValue.class, "tuple"),
+    /**
+     * {@code udt} CQL type (type {@value DataType#UDT} in CQL native protocol) mapped to {@link UdtValue} Java type.
+     */
     UDT(DataType.UDT, UdtValue.class, "UDT"),
+    /**
+     * {@code uuid} CQL type (type {@value DataType#UUID} in CQL native protocol) mapped to {@link UUID} Java type.
+     */
     UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
+    /**
+     * {@code varchar} CQL type (type {@value DataType#VARCHAR} in CQL native protocol) mapped to {@link String} Java
+     * type.
+     */
     VARCHAR(DataType.VARCHAR, String.class, "VARCHAR"),
+    /**
+     * {@code varint} CQL type (type {@value DataType#VARINT} in CQL native protocol) mapped to {@link BigInteger} Java
+     * type.
+     */
     VARINT(DataType.VARINT, BigInteger.class, cqlName(DataTypes.VARINT)),
+    /**
+     * {@code vector} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link CqlVector} Java
+     * type.
+     */
     VECTOR(DataType.LIST, CqlVector.class, "vector");
 
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
+
+    /**
+     * Gets the Java type corresponding to the enum value.
+     */
     public final Class<?> javaType;
+    /**
+     * Gets the CQL type corresponding to the enum value.
+     */
     public final String cqlType;
+
     final int protocolId;
 
     static {

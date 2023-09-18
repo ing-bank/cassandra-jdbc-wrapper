@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 import java.net.InetSocketAddress;
 import java.sql.DriverManager;
@@ -37,6 +38,10 @@ abstract class UsingCassandraContainerTest {
     static final CassandraContainer<?> cassandraContainer = new CassandraContainer<>(CASSANDRA_IMAGE)
         .withEnv("CASSANDRA_DC", "datacenter1")
         .withEnv("CASSANDRA_CLUSTER_NAME", "embedded_test_cluster")
+        .withCopyFileToContainer(MountableFile.forClasspathResource("cassandra.keystore"),
+            "/security/cassandra.keystore")
+        .withCopyFileToContainer(MountableFile.forClasspathResource("cassandra.truststore"),
+            "/security/cassandra.truststore")
         .withConfigurationOverride("config_override")
         .withInitScript("initEmbeddedCassandra.cql");
 
@@ -59,7 +64,7 @@ abstract class UsingCassandraContainerTest {
 
     static CassandraConnection newConnection(final String keyspace, final String... parameters) throws Exception {
         final InetSocketAddress contactPoint = cassandraContainer.getContactPoint();
-        return  (CassandraConnection) DriverManager.getConnection(buildJdbcUrl(contactPoint.getHostName(),
+        return (CassandraConnection) DriverManager.getConnection(buildJdbcUrl(contactPoint.getHostName(),
             contactPoint.getPort(), keyspace, parameters));
     }
 
