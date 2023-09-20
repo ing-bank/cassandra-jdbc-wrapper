@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS pet_supply_vectors (
     product_vector vector<float, 14>
 );
 
-/* Ni similarity search withouth the SAI INDEX. */
+/* Ni similarity search without the SAI INDEX. */
 CREATE CUSTOM INDEX IF NOT EXISTS idx_vector
 ON pet_supply_vectors(product_vector)
 USING 'StorageAttachedIndex';
