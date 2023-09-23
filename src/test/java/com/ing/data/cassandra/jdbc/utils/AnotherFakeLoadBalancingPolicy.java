@@ -19,9 +19,9 @@ import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.session.Request;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.internal.core.util.collection.SimpleQueryPlan;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import lombok.NonNull;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
 
 public class AnotherFakeLoadBalancingPolicy implements LoadBalancingPolicy {
 
-    public AnotherFakeLoadBalancingPolicy(@NonNull final DriverContext context, @NonNull final String profileName) {
+    public AnotherFakeLoadBalancingPolicy(final DriverContext context, final String profileName) {
         // Do nothing. For testing purpose only.
     }
 

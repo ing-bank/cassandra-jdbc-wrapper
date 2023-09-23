@@ -82,10 +82,12 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String PAGES = "PAGES";
     static final String PRECISION = "PRECISION";
     static final String PRIMARY_KEY_NAME = "PK_NAME";
+    static final String PSEUDO_COLUMN = "PSEUDO_COLUMN";
     static final String RADIX = "RADIX";
     static final String REF_GENERATION = "REF_GENERATION";
     static final String REMARKS = "REMARKS";
     static final String SCALE = "SCALE";
+    static final String SCOPE = "SCOPE";
     static final String SCOPE_CATALOG = "SCOPE_CATALOG";
     static final String SCOPE_SCHEMA = "SCOPE_SCHEMA";
     static final String SCOPE_TABLE = "SCOPE_TABLE";
