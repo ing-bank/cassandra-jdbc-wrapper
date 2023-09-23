@@ -22,8 +22,8 @@ import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -324,7 +324,7 @@ public enum DataTypeEnum {
      * @param dataType The data type.
      * @return The CQL name of the type.
      */
-    public static String cqlName(@NonNull final com.datastax.oss.driver.api.core.type.DataType dataType) {
+    public static String cqlName(@Nonnull final com.datastax.oss.driver.api.core.type.DataType dataType) {
         return dataType.asCql(false, false);
     }
 }

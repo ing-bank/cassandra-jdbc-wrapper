@@ -24,11 +24,11 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -282,7 +282,7 @@ public class CassandraStatement extends AbstractStatement
     }
 
     @Override
-    public int compareTo(@NonNull final Object target) {
+    public int compareTo(@Nonnull final Object target) {
         if (this.equals(target)) {
             return 0;
         }

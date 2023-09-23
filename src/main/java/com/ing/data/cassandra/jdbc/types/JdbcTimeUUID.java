@@ -15,8 +15,8 @@
 
 package com.ing.data.cassandra.jdbc.types;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -34,12 +34,12 @@ public class JdbcTimeUUID extends AbstractJdbcUUID {
     }
 
     @Override
-    public UUID compose(@NonNull final Object obj) {
+    public UUID compose(@Nonnull final Object obj) {
         return UUID.fromString(obj.toString());
     }
 
     @Override
-    public Object decompose(@NonNull final UUID value) {
+    public Object decompose(@Nonnull final UUID value) {
         return value.toString();
     }
 

@@ -123,8 +123,12 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getAttributes(final String catalog, final String schemaPattern, final String typeNamePattern,
                                    final String attributeNamePattern) throws SQLException {
-        // TODO: method to implement into TypeMetadataResultSetBuilder
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            return new TypeMetadataResultSetBuilder(this.statement).buildAttributes(schemaPattern, typeNamePattern,
+                attributeNamePattern);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 

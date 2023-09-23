@@ -20,9 +20,9 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 /**
@@ -36,20 +36,20 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
     public VarintToIntCodec() {
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public GenericType<Integer> getJavaType() {
         return GenericType.INTEGER;
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public DataType getCqlType() {
         return DataTypes.VARINT;
     }
 
     @Override
-    public ByteBuffer encode(final Integer value, @NonNull final ProtocolVersion protocolVersion) {
+    public ByteBuffer encode(final Integer value, @Nonnull final ProtocolVersion protocolVersion) {
         if (value == null) {
             return null;
         }
@@ -57,7 +57,7 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
     }
 
     @Override
-    public Integer decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+    public Integer decode(final ByteBuffer bytes, @Nonnull final ProtocolVersion protocolVersion) {
         if (bytes == null) {
             return null;
         }
@@ -66,12 +66,12 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
     }
 
     @Override
-    Integer parseNonNull(@NonNull final String value) {
+    Integer parseNonNull(@Nonnull final String value) {
         return Integer.valueOf(value);
     }
 
     @Override
-    String formatNonNull(@NonNull final Integer value) {
+    String formatNonNull(@Nonnull final Integer value) {
         return String.valueOf(value);
     }
 

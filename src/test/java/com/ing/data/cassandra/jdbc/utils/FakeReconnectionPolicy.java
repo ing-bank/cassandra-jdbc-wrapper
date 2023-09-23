@@ -16,7 +16,8 @@ package com.ing.data.cassandra.jdbc.utils;
 import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.metadata.Node;
-import edu.umd.cs.findbugs.annotations.NonNull;
+
+import javax.annotation.Nonnull;
 
 import static org.mockito.Mockito.mock;
 
@@ -26,14 +27,14 @@ public class FakeReconnectionPolicy implements ReconnectionPolicy {
         // Do nothing. For testing purpose only.
     }
 
-    @NonNull
+    @Nonnull
     @Override
-    public ReconnectionSchedule newNodeSchedule(@NonNull final Node node) {
+    public ReconnectionSchedule newNodeSchedule(@Nonnull final Node node) {
         // Do nothing. For testing purpose only.
         return mock(ReconnectionSchedule.class);
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public ReconnectionSchedule newControlConnectionSchedule(final boolean isInitialConnection) {
         // Do nothing. For testing purpose only.

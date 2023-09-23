@@ -42,6 +42,10 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String TABLE = "TABLE";
     static final String CQL_OPTION_COMMENT = "comment";
     static final String ASC_OR_DESC = "ASC_OR_DESC";
+    static final String ATTRIBUTE_DEFAULT = "ATTR_DEF";
+    static final String ATTRIBUTE_NAME = "ATTR_NAME";
+    static final String ATTRIBUTE_SIZE = "ATTR_SIZE";
+    static final String ATTRIBUTE_TYPE_NAME = "ATTR_TYPE_NAME";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
     static final String BASE_TYPE = "BASE_TYPE";
     static final String BUFFER_LENGTH = "BUFFER_LENGTH";
