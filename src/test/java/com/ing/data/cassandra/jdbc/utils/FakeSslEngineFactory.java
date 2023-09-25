@@ -15,8 +15,8 @@ package com.ing.data.cassandra.jdbc.utils;
 
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLEngine;
 
 public class FakeSslEngineFactory implements SslEngineFactory {
@@ -25,9 +25,9 @@ public class FakeSslEngineFactory implements SslEngineFactory {
         // Do nothing. For testing purpose only.
     }
 
-    @NonNull
+    @Nonnull
     @Override
-    public SSLEngine newSslEngine(@NonNull EndPoint remoteEndpoint) {
+    public SSLEngine newSslEngine(@Nonnull EndPoint remoteEndpoint) {
         // Do nothing. For testing purpose only.
         return null;
     }

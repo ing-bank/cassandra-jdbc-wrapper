@@ -42,6 +42,10 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String TABLE = "TABLE";
     static final String CQL_OPTION_COMMENT = "comment";
     static final String ASC_OR_DESC = "ASC_OR_DESC";
+    static final String ATTRIBUTE_DEFAULT = "ATTR_DEF";
+    static final String ATTRIBUTE_NAME = "ATTR_NAME";
+    static final String ATTRIBUTE_SIZE = "ATTR_SIZE";
+    static final String ATTRIBUTE_TYPE_NAME = "ATTR_TYPE_NAME";
     static final String AUTO_INCREMENT = "AUTO_INCREMENT";
     static final String BASE_TYPE = "BASE_TYPE";
     static final String BUFFER_LENGTH = "BUFFER_LENGTH";
@@ -82,10 +86,12 @@ public abstract class AbstractMetadataResultSetBuilder {
     static final String PAGES = "PAGES";
     static final String PRECISION = "PRECISION";
     static final String PRIMARY_KEY_NAME = "PK_NAME";
+    static final String PSEUDO_COLUMN = "PSEUDO_COLUMN";
     static final String RADIX = "RADIX";
     static final String REF_GENERATION = "REF_GENERATION";
     static final String REMARKS = "REMARKS";
     static final String SCALE = "SCALE";
+    static final String SCOPE = "SCOPE";
     static final String SCOPE_CATALOG = "SCOPE_CATALOG";
     static final String SCOPE_SCHEMA = "SCOPE_SCHEMA";
     static final String SCOPE_TABLE = "SCOPE_TABLE";

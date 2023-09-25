@@ -15,8 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.types;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
+import javax.annotation.Nonnull;
 import java.sql.Types;
 import java.util.UUID;
 
@@ -29,7 +28,7 @@ public abstract class AbstractJdbcUUID extends AbstractJdbcType<UUID> {
     private static final int DEFAULT_UUID_PRECISION = 36;
 
     @Override
-    public String toString(@NonNull final UUID obj) {
+    public String toString(@Nonnull final UUID obj) {
         return obj.toString();
     }
 

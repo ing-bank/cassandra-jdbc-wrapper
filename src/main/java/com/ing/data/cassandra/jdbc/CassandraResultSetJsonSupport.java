@@ -69,6 +69,7 @@ import java.util.UUID;
  *         <tr><td>uuid     </td><td>string     </td><td>{@link UUID}                   </td></tr>
  *         <tr><td>varchar  </td><td>string     </td><td>{@link String}                 </td></tr>
  *         <tr><td>varint   </td><td>integer    </td><td>{@link Number}                 </td></tr>
+ *         <tr><td>vector   </td><td>list       </td><td>{@link List}                   </td></tr>
  *     </table>
  *     See: <a href="https://cassandra.apache.org/doc/latest/cassandra/cql/json.html">
  *         CQL reference for JSON support</a>.

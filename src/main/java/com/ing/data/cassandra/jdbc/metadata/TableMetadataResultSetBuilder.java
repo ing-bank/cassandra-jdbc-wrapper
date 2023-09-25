@@ -20,17 +20,27 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
+
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static java.sql.DatabaseMetaData.bestRowNotPseudo;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to tables.
  */
 public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuilder {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TableMetadataResultSetBuilder.class);
 
     /**
      * Constructor.
@@ -276,4 +286,99 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
         return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(primaryKeys));
     }
 
+    /**
+     * Builds a valid result set of the description of a table's optimal set of columns that uniquely identifies a row.
+     * This method is used to implement the method
+     * {@link DatabaseMetaData#getBestRowIdentifier(String, String, String, int, boolean)}.
+     * <p>
+     *     In Cassandra, all the tables must define a single primary key and the columns defining this primary key
+     *     ensure the uniqueness of each row. So, we consider in this implementation that the best row identifier for
+     *     a table is always its primary key regardless of the specified scope. Also, the parameter {@code nullable} has
+     *     no effect here since Cassandra does not allow null values in primary keys.
+     * </p>
+     * <p>
+     *     Only identifiers for tables matching the catalog, schema and table name criteria are returned. They are
+     *     ordered by {@code SCOPE}.
+     * </p>
+     * <p>
+     * The columns of this result set are:
+     *     <ol>
+     *         <li><b>SCOPE</b> short => actual scope of result:
+     *             <ul>
+     *                 <li>{@link DatabaseMetaData#bestRowTemporary} - very temporary, while using row</li>
+     *                 <li>{@link DatabaseMetaData#bestRowTransaction} - valid for remainder of current transaction</li>
+     *                 <li>{@link DatabaseMetaData#bestRowSession} - valid for remainder of current session</li>
+     *             </ul> Always the input scope value.
+     *         </li>
+     *         <li><b>COLUMN_NAME</b> String => column name.</li>
+     *         <li><b>DATA_TYPE</b> int => SQL type from {@link Types}.</li>
+     *         <li><b>TYPE_NAME</b> String => Data source dependent type name, for a UDT the type name is fully
+     *         qualified.</li>
+     *         <li><b>COLUMN_SIZE</b> int => column size.</li>
+     *         <li><b>BUFFER_LENGTH</b> int => not used: always 0 here.</li>
+     *         <li><b>DECIMAL_DIGITS</b> int => the number of fractional digits, {@code null} is returned for data
+     *         types where it is not applicable. Always {@code null} here.</li>
+     *         <li><b>PSEUDO_COLUMN</b> short => is this a pseudo column like an Oracle ROWID:
+     *             <ul>
+     *                 <li>{@link DatabaseMetaData#bestRowUnknown} - may or may not be pseudo column</li>
+     *                 <li>{@link DatabaseMetaData#bestRowNotPseudo} - is not a pseudo column</li>
+     *                 <li>{@link DatabaseMetaData#bestRowPseudo} - is a pseudo column</li>
+     *             </ul> Always {@link DatabaseMetaData#bestRowNotPseudo} here since there is no concept of pseudo
+     *             column in Cassandra.
+     *         </li>
+     *     </ol>
+     * </p>
+     *
+     * @param schema   A schema name pattern. It must match the schema name as it is stored in the database; {@code ""}
+     *                 retrieves those without a schema and {@code null} means that the schema name should not be used to
+     *                 narrow the search. Using {@code ""} as the same effect as {@code null} because here the schema
+     *                 corresponds to the keyspace and Cassandra tables cannot be defined outside a keyspace.
+     * @param table    A table name. It must match the table name as it is stored in the database.
+     * @param scope    The scope of interest, using the same values as {@code SCOPE} in the result set.
+     * @return A valid result set for implementation of
+     * {@link DatabaseMetaData#getBestRowIdentifier(String, String, String, int, boolean)}.
+     * @throws SQLException when something went wrong during the creation of the result set.
+     */
+    public CassandraMetadataResultSet buildBestRowIdentifier(final String schema, final String table, final int scope)
+        throws SQLException {
+        final ArrayList<MetadataRow> bestRowIdentifiers = new ArrayList<>();
+
+        filterBySchemaNamePattern(schema, keyspaceMetadata ->
+            filterByTableNamePattern(table, keyspaceMetadata, tableMetadata -> {
+                for (final ColumnMetadata columnMetadata : tableMetadata.getPrimaryKey()) {
+
+                    final AbstractJdbcType<?> jdbcEquivalentType =
+                        getTypeForComparator(columnMetadata.getType().toString());
+
+                    // Define value of COLUMN_SIZE.
+                    int columnSize = DEFAULT_PRECISION;
+                    if (jdbcEquivalentType != null) {
+                        columnSize = jdbcEquivalentType.getPrecision(null);
+                    }
+
+                    // Define value of DATA_TYPE.
+                    int jdbcType = Types.OTHER;
+                    try {
+                        jdbcType = getTypeForComparator(columnMetadata.getType().toString()).getJdbcType();
+                    } catch (final Exception e) {
+                        LOG.warn("Unable to get JDBC type for comparator [{}]: {}",
+                            columnMetadata.getType(), e.getMessage());
+                    }
+
+                    final MetadataRow row = new MetadataRow()
+                        .addEntry(SCOPE, String.valueOf(scope))
+                        .addEntry(COLUMN_NAME, columnMetadata.getName().asInternal())
+                        .addEntry(DATA_TYPE, String.valueOf(jdbcType))
+                        .addEntry(TYPE_NAME, columnMetadata.getType().toString())
+                        .addEntry(COLUMN_SIZE, String.valueOf(columnSize))
+                        .addEntry(BUFFER_LENGTH, String.valueOf(0))
+                        .addEntry(DECIMAL_DIGITS, null)
+                        .addEntry(PSEUDO_COLUMN, String.valueOf(bestRowNotPseudo));
+                    bestRowIdentifiers.add(row);
+                }
+            }, null), null);
+
+        // All the rows of the result set have the same scope, so there is no need to perform an additional sort.
+        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(bestRowIdentifiers));
+    }
 }

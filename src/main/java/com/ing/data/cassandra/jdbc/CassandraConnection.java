@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -160,18 +161,13 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.cSession = sessionHolder.session;
         this.metadata = this.cSession.getMetadata();
 
-        // TODO check if this code should be definitely removed.
-        // final List<SessionHolder> l = new ArrayList<>();
-        // l.stream().map(s -> s.session).collect(Collectors.toList());
-
         LOG.info("Connected to cluster: {}, with session: {}",
-            StringUtils.defaultString(getCatalog(), "<not available>"), this.cSession.getName());
+            Objects.toString(getCatalog(), "<not available>"), this.cSession.getName());
         this.metadata.getNodes().forEach(
             (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
                 node.getEndPoint().resolve(), node.getRack())
         );
 
-        // TODO this is shared among all Connections, what if they belong to different clusters?
         this.metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
             final Version cassandraVersion = entry.getValue().getCassandraVersion();
             if (cassandraVersion != null) {

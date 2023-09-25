@@ -16,8 +16,8 @@
 package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.sql.Types;
 
 /**
@@ -50,7 +50,7 @@ public class JdbcTuple extends AbstractJdbcType<TupleValue> {
     }
 
     @Override
-    public String toString(@NonNull final TupleValue obj) {
+    public String toString(@Nonnull final TupleValue obj) {
         return getString(obj);
     }
 

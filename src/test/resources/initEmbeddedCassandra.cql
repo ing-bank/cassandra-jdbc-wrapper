@@ -18,6 +18,13 @@ t2bValue boolean,
 t2iValue int)
 WITH comment = 'Second table in the keyspace';
 
+CREATE COLUMNFAMILY cf_test3 (
+keyname text,
+t3bValue boolean,
+t3iValue int,
+PRIMARY KEY(keyname, t3iValue))
+WITH comment = 'Third table in the keyspace';
+
 CREATE TYPE CustomType1 (
 key1 int,
 value1 text,

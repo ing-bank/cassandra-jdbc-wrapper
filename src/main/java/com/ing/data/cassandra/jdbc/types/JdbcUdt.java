@@ -16,8 +16,8 @@
 package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.sql.Types;
 
 /**
@@ -49,7 +49,7 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
     }
 
     @Override
-    public String toString(@NonNull final UdtValue obj) {
+    public String toString(@Nonnull final UdtValue obj) {
         return getString(obj);
     }
 

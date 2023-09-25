@@ -123,16 +123,23 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getAttributes(final String catalog, final String schemaPattern, final String typeNamePattern,
                                    final String attributeNamePattern) throws SQLException {
-        // TODO: method to implement into TypeMetadataResultSetBuilder
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            return new TypeMetadataResultSetBuilder(this.statement).buildAttributes(schemaPattern, typeNamePattern,
+                attributeNamePattern);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
     public ResultSet getBestRowIdentifier(final String catalog, final String schema, final String table,
                                           final int scope, final boolean nullable) throws SQLException {
-        // TODO: method to implement into TableMetadataResultSetBuilder
         checkStatementClosed();
+        // Only null or the current catalog (i.e. cluster) name are supported.
+        if (catalog == null || catalog.equals(this.connection.getCatalog())) {
+            return new TableMetadataResultSetBuilder(this.statement).buildBestRowIdentifier(schema, table, scope);
+        }
         return CassandraResultSet.EMPTY_RESULT_SET;
     }
 

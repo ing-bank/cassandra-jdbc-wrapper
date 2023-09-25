@@ -19,9 +19,9 @@ import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.session.Request;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.internal.core.util.collection.SimpleQueryPlan;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
@@ -30,16 +30,16 @@ import static org.mockito.Mockito.mock;
 
 public class FakeLoadBalancingPolicy implements LoadBalancingPolicy {
 
-    public FakeLoadBalancingPolicy(@NonNull final DriverContext context, @NonNull final String profileName) {
+    public FakeLoadBalancingPolicy(@Nonnull final DriverContext context, @Nonnull final String profileName) {
         // Do nothing. For testing purpose only.
     }
 
     @Override
-    public void init(@NonNull final Map<UUID, Node> nodes, @NonNull final DistanceReporter distanceReporter) {
+    public void init(@Nonnull final Map<UUID, Node> nodes, @Nonnull final DistanceReporter distanceReporter) {
         // Do nothing. For testing purpose only.
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public Queue<Node> newQueryPlan(@Nullable final Request request, @Nullable final Session session) {
         // Do nothing. For testing purpose only.
@@ -47,22 +47,22 @@ public class FakeLoadBalancingPolicy implements LoadBalancingPolicy {
     }
 
     @Override
-    public void onAdd(@NonNull final Node node) {
+    public void onAdd(@Nonnull final Node node) {
         // Do nothing. For testing purpose only.
     }
 
     @Override
-    public void onUp(@NonNull final Node node) {
+    public void onUp(@Nonnull final Node node) {
         // Do nothing. For testing purpose only.
     }
 
     @Override
-    public void onDown(@NonNull final Node node) {
+    public void onDown(@Nonnull final Node node) {
         // Do nothing. For testing purpose only.
     }
 
     @Override
-    public void onRemove(@NonNull final Node node) {
+    public void onRemove(@Nonnull final Node node) {
         // Do nothing. For testing purpose only.
     }
 

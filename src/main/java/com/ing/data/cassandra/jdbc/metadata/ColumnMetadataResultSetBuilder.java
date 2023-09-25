@@ -85,15 +85,15 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
      *         always {@code null} here since comments on columns does not exist in Cassandra.</li>
      *         <li><b>COLUMN_DEF</b> String => default value for the column, which should be interpreted as a string
      *         when the value is enclosed in single quotes, may be {@code null}. Always {@code null} here.</li>
-     *         <li><b>SQL_DATA_TYPE</b> int => not used: always {@code null} here.</li>
+     *         <li><b>SQL_DATA_TYPE</b> int => is not used: always {@code null} here.</li>
      *         <li><b>SQL_DATETIME_SUB</b> int => is not used: always {@code null} here.</li>
      *         <li><b>CHAR_OCTET_LENGTH</b> int => for char types the maximum number of bytes in the column.</li>
      *         <li><b>ORDINAL_POSITION</b> int => index of column in table (starting at 1).</li>
      *         <li><b>IS_NULLABLE</b> String => ISO rules are used to determine the nullability for a column:
      *             <ul>
-     *                 <li><i>YES</i> - if the parameter can include {@code NULL}s</li>
-     *                 <li><i>NO</i> - if the parameter cannot include {@code NULL}s</li>
-     *                 <li><i>empty string</i> - if the nullability for the parameter is unknown</li>
+     *                 <li><i>YES</i> - if the column can include {@code NULL}s</li>
+     *                 <li><i>NO</i> - if the column cannot include {@code NULL}s</li>
+     *                 <li><i>empty string</i> - if the nullability for the column is unknown</li>
      *             </ul> Always empty here.
      *         </li>
      *         <li><b>SCOPE_CATALOG</b> String => catalog of table that is the scope of a reference attribute

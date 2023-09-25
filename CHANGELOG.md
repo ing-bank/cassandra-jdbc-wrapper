@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for new [`vector` CQL type](https://datastax-oss.atlassian.net/browse/JAVA-3060)
   defined in [CEP-30](https://cwiki.apache.org/confluence/x/OQ40Dw).
 - Implement the method `getWarnings()` in `CassandraResultSet`.
+- Implement the following methods of `CassandraDatabaseMetaData`: 
+  `getBestRowIdentifier(String, String, String, int, boolean)` and `getAttributes(String, String, String, String)`.
 ### Changed
 - Update DataStax Java Driver for Apache Cassandra(R) to version 4.17.0.
 - Update Apache Commons IO to version 2.13.0.
