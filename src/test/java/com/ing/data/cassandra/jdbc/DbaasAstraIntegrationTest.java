@@ -43,42 +43,45 @@ class DbaasAstraIntegrationTest {
     static CassandraConnection sqlConnection = null;
 
     @BeforeAll
-    @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
     static void setupAstra() throws Exception {
+        if (System.getenv("ASTRA_DB_APPLICATION_TOKEN") != null) {
 
-        /*
-         * Devops API Client (create database, resume, delete)
-         */
-        AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
+            /*
+             * Devops API Client (create database, resume, delete)
+             */
+            AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
 
-        /*
-         * Setup a Database in Astra : create if not exist, resume if needed
-         * Vector Database is Cassandra DB with vector support enabled.
-         * It can take up to 1 min to create the database if not exists
-         */
-        String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
-        Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
-        Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
+            /*
+             * Setup a Database in Astra : create if not exist, resume if needed
+             * Vector Database is Cassandra DB with vector support enabled.
+             * It can take up to 1 min to create the database if not exists
+             */
+            String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
+            Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
+            Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
 
-        /*
-         * Download cloud secure bundle to connect to the database.
-         * - Saved in /tmp
-         * - Single region = we can use default region
-         */
-        astraDbClient
-            .database(dbId)
-            .downloadDefaultSecureConnectBundle("/tmp/" + DATABASE_NAME + "_scb.zip");
+            /*
+             * Download cloud secure bundle to connect to the database.
+             * - Saved in /tmp
+             * - Single region = we can use default region
+             */
+            astraDbClient
+                .database(dbId)
+                .downloadDefaultSecureConnectBundle("/tmp/" + DATABASE_NAME + "_scb.zip");
 
-        /*
-         * Building jdbcUrl and sqlConnection.
-         * Note: Astra can be access with only a token (username='token')
-         */
-        sqlConnection = (CassandraConnection) DriverManager.getConnection(
-            "jdbc:cassandra://dbaas/" + KEYSPACE_NAME +
-            "?user=" + "token" +
-            "&password=" + TestUtils.getAstraToken() + // env var ASTRA_DB_APPLICATION_TOKEN
-            "&consistency=" + "LOCAL_QUORUM" +
-            "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
+            /*
+             * Building jdbcUrl and sqlConnection.
+             * Note: Astra can be access with only a token (username='token')
+             */
+            sqlConnection = (CassandraConnection) DriverManager.getConnection(
+                "jdbc:cassandra://dbaas/" + KEYSPACE_NAME +
+                    "?user=" + "token" +
+                    "&password=" + TestUtils.getAstraToken() + // env var ASTRA_DB_APPLICATION_TOKEN
+                    "&consistency=" + "LOCAL_QUORUM" +
+                    "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
+        } else {
+            System.out.println("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping ASTRA test");
+        }
     }
 
     @Test
