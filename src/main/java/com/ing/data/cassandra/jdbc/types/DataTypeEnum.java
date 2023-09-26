@@ -335,7 +335,7 @@ public enum DataTypeEnum {
      * @param dataType The data type.
      * @return The CQL name of the type.
      */
-    public static String cqlName(@NonNull final com.datastax.oss.driver.api.core.type.DataType dataType) {
+    public static String cqlName(@Nonnull final com.datastax.oss.driver.api.core.type.DataType dataType) {
         final String rawCql = dataType.asCql(false, false);
         return rawCql.contains(VECTOR_CLASSNAME) ? VECTOR.cqlType : rawCql;
     }

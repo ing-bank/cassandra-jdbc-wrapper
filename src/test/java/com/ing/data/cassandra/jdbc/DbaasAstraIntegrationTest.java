@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -38,6 +40,7 @@ import java.sql.SQLException;
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class DbaasAstraIntegrationTest {
 
+    private static final Logger log = LoggerFactory.getLogger(DbaasAstraIntegrationTest.class);
     private static final String DATABASE_NAME = "test_cassandra_jdbc";
     private static final String KEYSPACE_NAME = "test";
     static CassandraConnection sqlConnection = null;
@@ -45,20 +48,24 @@ class DbaasAstraIntegrationTest {
     @BeforeAll
     static void setupAstra() throws Exception {
         if (System.getenv("ASTRA_DB_APPLICATION_TOKEN") != null) {
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is provided, Astra Test is executed");
+
 
             /*
              * Devops API Client (create database, resume, delete)
              */
             AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
+            log.debug("Connected the dbaas API");
 
             /*
-             * Setup a Database in Astra : create if not exist, resume if needed
+             * Set up a Database in Astra : create if not exist, resume if needed
              * Vector Database is Cassandra DB with vector support enabled.
              * It can take up to 1 min to create the database if not exists
              */
             String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
             Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
             Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
+            log.debug("Database ready");
 
             /*
              * Download cloud secure bundle to connect to the database.
@@ -68,6 +75,7 @@ class DbaasAstraIntegrationTest {
             astraDbClient
                 .database(dbId)
                 .downloadDefaultSecureConnectBundle("/tmp/" + DATABASE_NAME + "_scb.zip");
+            log.debug("Connection bundle downloaded.");
 
             /*
              * Building jdbcUrl and sqlConnection.
@@ -80,7 +88,7 @@ class DbaasAstraIntegrationTest {
                     "&consistency=" + "LOCAL_QUORUM" +
                     "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
         } else {
-            System.out.println("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping ASTRA test");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping ASTRA test");
         }
     }
 
