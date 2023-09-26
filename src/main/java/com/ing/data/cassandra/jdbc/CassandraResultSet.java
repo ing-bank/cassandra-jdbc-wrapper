@@ -1593,6 +1593,9 @@ public class CassandraResultSet extends AbstractResultSet
             } else {
                 dataType = driverResultSet.getColumnDefinitions().get(column - 1).getType();
             }
+            if (dataType.toString().contains(DataTypeEnum.VECTOR.cqlType)) {
+                return DataTypeEnum.VECTOR.cqlType;
+            }
             return dataType.toString();
         }
 

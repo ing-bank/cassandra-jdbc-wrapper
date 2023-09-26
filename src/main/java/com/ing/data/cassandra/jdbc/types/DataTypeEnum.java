@@ -21,6 +21,7 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
+import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 
 import javax.annotation.Nonnull;
@@ -169,7 +170,7 @@ public enum DataTypeEnum {
      * {@code vector} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link CqlVector} Java
      * type.
      */
-    VECTOR(DataType.LIST, CqlVector.class, "vector");
+    VECTOR(DataType.LIST, CqlVector.class, "Vector");
 
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
 
@@ -183,6 +184,8 @@ public enum DataTypeEnum {
     public final String cqlType;
 
     final int protocolId;
+
+    static final String VECTOR_CLASSNAME = "org.apache.cassandra.db.marshal.VectorType";
 
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
@@ -217,6 +220,9 @@ public enum DataTypeEnum {
         if (cqlTypeName.startsWith(UDT.cqlType)) {
             return UDT;
         }
+        if (cqlTypeName.contains(VECTOR_CLASSNAME)) {
+            return VECTOR;
+        }
         // Manage collection types (e.g. "list<varchar>")
         final int collectionTypeCharPos = cqlTypeName.indexOf("<");
         String cqlDataType = cqlTypeName;
@@ -235,6 +241,9 @@ public enum DataTypeEnum {
     public static DataTypeEnum fromDataType(final com.datastax.oss.driver.api.core.type.DataType dataType) {
         if (dataType instanceof UserDefinedType) {
             return UDT;
+        }
+        if (dataType instanceof VectorType) {
+            return VECTOR;
         }
         return fromCqlTypeName(dataType.asCql(false, false));
     }
@@ -320,12 +329,15 @@ public enum DataTypeEnum {
 
     /**
      * Gets the CQL name from a given {@link com.datastax.oss.driver.api.core.type.DataType} instance.
+     * For vectors, dataType.asCql returns looks like 'org.apache.cassandra.db.marshal.VectorType(n)' where n is
+     * the dimension of the vector. In this specific case, return a common name not including the dimension.
      *
      * @param dataType The data type.
      * @return The CQL name of the type.
      */
     public static String cqlName(@Nonnull final com.datastax.oss.driver.api.core.type.DataType dataType) {
-        return dataType.asCql(false, false);
+        final String rawCql = dataType.asCql(false, false);
+        return rawCql.contains(VECTOR_CLASSNAME) ? VECTOR.cqlType : rawCql;
     }
 }
 
