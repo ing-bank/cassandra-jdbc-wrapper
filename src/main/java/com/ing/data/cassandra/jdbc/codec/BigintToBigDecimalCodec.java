@@ -20,9 +20,9 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import com.ing.data.cassandra.jdbc.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
@@ -37,20 +37,20 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
     public BigintToBigDecimalCodec() {
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public GenericType<BigDecimal> getJavaType() {
         return GenericType.BIG_DECIMAL;
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public DataType getCqlType() {
         return DataTypes.BIGINT;
     }
 
     @Override
-    public ByteBuffer encode(final BigDecimal value, @NonNull final ProtocolVersion protocolVersion) {
+    public ByteBuffer encode(final BigDecimal value, @Nonnull final ProtocolVersion protocolVersion) {
         if (value == null) {
             return null;
         }
@@ -58,7 +58,7 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
     }
 
     @Override
-    public BigDecimal decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+    public BigDecimal decode(final ByteBuffer bytes, @Nonnull final ProtocolVersion protocolVersion) {
         if (bytes == null) {
             return null;
         }
@@ -68,12 +68,12 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
     }
 
     @Override
-    BigDecimal parseNonNull(@NonNull final String value) {
+    BigDecimal parseNonNull(@Nonnull final String value) {
         return BigDecimal.valueOf(Long.parseLong(value));
     }
 
     @Override
-    String formatNonNull(@NonNull final BigDecimal value) {
+    String formatNonNull(@Nonnull final BigDecimal value) {
         return String.valueOf(value);
     }
 

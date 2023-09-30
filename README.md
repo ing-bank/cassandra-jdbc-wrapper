@@ -49,6 +49,17 @@ To compile and run tests, execute the following Maven command:
 ```bash
 mvn clean package
 ```
+
+#### Some considerations about running tests
+
+If for some reason the tests using DataStax Enterprise server (`*DseContainerTest`) fail in your local environment, you 
+might disable them using the Maven profile `disableDseTests`: 
+```bash
+mvn clean package -PdisableDseTests
+```
+
+The test suite also includes integration tests with AstraDB (`DbaasAstraIntegrationTest`). These tests require an
+AstraDB token configured in the environment variable `ASTRA_DB_APPLICATION_TOKEN`, otherwise they are skipped.
     
 ### Integration in Maven projects
 
@@ -265,8 +276,11 @@ For further information about custom implementations of `SslEngineFactory`, see
 
 ### Connecting to DBaaS
 
-In order to connect to the cloud [Cassandra-based DBaaS AstraDB](https://www.datastax.com/astra) cluster, one would 
-need to specify:
+An alternative JDBC driver based on this one exists to ease the connection to the cloud 
+[Cassandra-based DBaaS AstraDB](https://www.datastax.com/astra) cluster:
+[Astra JDBC driver](https://github.com/DataStax-Examples/astra-jdbc-connector/tree/main). Do not hesitate to use it if you are in this specific situation.
+
+It's still possible to connect to AstraDB using this JDBC wrapper, so one would need to specify:
 * `secureconnectbundle`: the fully qualified path of the cloud secure connect bundle file
 * `keyspace`: the keyspace to connect to
 * `user`: the username
@@ -352,7 +366,8 @@ CREATE TABLE example_table (
     varint_col varint,
     string_set_col set<text>,
     string_list_col list<text>, 
-    string_map_col map<text, text>
+    string_map_col map<text, text>,
+    vector_col vector<float, 5>
 );
 ```
 
@@ -360,6 +375,7 @@ To insert a record into `example_table` using a prepared statement:
 
 ```java
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 
 import java.io.ByteArrayInputStream;
 import java.sql.Date;
@@ -370,8 +386,8 @@ public class HelloCassandra {
     final String insertCql = "INSERT INTO example_table (bigint_col, ascii_col, blob_col, boolean_col, decimal_col, "
       + "double_col, float_col, inet_col, int_col, smallint_col, text_col, timestamp_col, time_col, date_col, "
       + "tinyint_col, duration_col, uuid_col, timeuuid_col, varchar_col, varint_col, string_set_col, "
-      + "string_list_col, string_map_col) "
-      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?);";
+      + "string_list_col, string_map_col, vector_col) "
+      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?, ?);";
     final PreparedStatement preparedStatement = connection.prepareStatement(insertCql);
     preparedStatement.setObject(1, 1L);                             // bigint
     preparedStatement.setObject(2, "test");                         // ascii
@@ -401,14 +417,16 @@ public class HelloCassandra {
     sampleSet.add("test1");
     sampleSet.add("test2");
     preparedStatement.setObject(20, sampleSet);                     // set
-    ArrayList<String> sampleList = new ArrayList<String>();
+    final ArrayList<String> sampleList = new ArrayList<String>();
     sampleList.add("test1");
     sampleList.add("test2");
     preparedStatement.setObject(21, sampleList);                    // list
-    HashMap<String, String> sampleMap = new HashMap<String, String>();
+    final HashMap<String, String> sampleMap = new HashMap<String, String>();
     sampleMap.put("1", "test1");
     sampleMap.put("2", "test2");
     preparedStatement.setObject(22, sampleMap);                     // map
+    final CqlVector<Float> sampleVector = CqlVector.newInstance(1.0f, 0.0f, 1.0f, 0.5f, 0.2f);
+    preparedStatement.setObject(23, sampleVector);                  // vector
     // Execute the prepare statement.
     preparedStatement.execute();
   }
@@ -696,6 +714,7 @@ We use [SemVer](http://semver.org/) for versioning.
 * Madhavan Sridharan - **[@msmygit](https://github.com/msmygit)**
 * Marius Jokubauskas - **[@mjok](https://github.com/mjok)**
 * Sualeh Fatehi - **[@sualeh](https://github.com/sualeh)**
+* Cedrick Lunven - **[@clun](https://github.com/clun)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

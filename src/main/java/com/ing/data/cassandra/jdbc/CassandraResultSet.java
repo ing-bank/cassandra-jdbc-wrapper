@@ -19,6 +19,7 @@ import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataType;
@@ -27,8 +28,12 @@ import com.datastax.oss.driver.api.core.type.MapType;
 import com.datastax.oss.driver.api.core.type.SetType;
 import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
+import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.types.TypesMap;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -78,19 +83,21 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_PRECISION;
-import static com.ing.data.cassandra.jdbc.AbstractJdbcType.DEFAULT_SCALE;
-import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromCqlTypeName;
-import static com.ing.data.cassandra.jdbc.DataTypeEnum.fromDataType;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_DIR;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.Utils.FORWARD_ONLY;
-import static com.ing.data.cassandra.jdbc.Utils.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.Utils.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.Utils.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_RS;
-import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
+import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromCqlTypeName;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromDataType;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
+import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
@@ -135,6 +142,7 @@ import static com.ing.data.cassandra.jdbc.Utils.getObjectMapper;
  *     <tr><td>uuid     </td><td>{@link UUID}       </td><td>A UUID in standard UUID format</td></tr>
  *     <tr><td>varchar  </td><td>{@link String}     </td><td>UTF-8 encoded string</td></tr>
  *     <tr><td>varint   </td><td>{@link BigInteger} </td><td>Arbitrary-precision integer</td></tr>
+ *     <tr><td>vector   </td><td>{@link CqlVector}  </td><td>A n-dimensional vector</td></tr>
  * </table>
  * See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
  *     CQL data types reference</a> and
@@ -758,7 +766,7 @@ public class CassandraResultSet extends AbstractResultSet
             return currentRow.getTupleValue(columnIndex - 1);
         }
 
-        // Collections: sets, lists & maps
+        // Collections: sets, lists, vectors & maps
         if (dataType.isCollection()) {
             // Sets
             if (isCqlType(columnIndex, DataTypeEnum.SET)) {
@@ -799,6 +807,11 @@ public class CassandraResultSet extends AbstractResultSet
                     return null;
                 }
                 return new ArrayList<>(resultList);
+            }
+
+            // Vectors
+            if (isCqlType(columnIndex, DataTypeEnum.VECTOR)) {
+                return getVector(columnIndex);
             }
 
             // Maps
@@ -889,7 +902,7 @@ public class CassandraResultSet extends AbstractResultSet
             return currentRow.getTupleValue(columnLabel);
         }
 
-        // Collections: sets, lists & maps
+        // Collections: sets, lists, vectors & maps
         if (dataType.isCollection()) {
             // Sets
             if (isCqlType(columnLabel, DataTypeEnum.SET)) {
@@ -930,6 +943,11 @@ public class CassandraResultSet extends AbstractResultSet
                     return null;
                 }
                 return new ArrayList<>(resultList);
+            }
+
+            // Vectors
+            if (isCqlType(columnLabel, DataTypeEnum.VECTOR)) {
+                return getVector(columnLabel);
             }
 
             // Maps
@@ -1089,6 +1107,8 @@ public class CassandraResultSet extends AbstractResultSet
             returnValue = getDuration(columnIndex);
         } else if (type == URL.class) {
             returnValue = getURL(columnIndex);
+        } else if (type == CqlVector.class) {
+            returnValue = getVector(columnIndex);
         } else {
             throw new SQLException(String.format("Conversion to type %s not supported.", type.getSimpleName()));
         }
@@ -1317,7 +1337,7 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
@@ -1333,17 +1353,69 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return new URL(storedUrl);
             } catch (final MalformedURLException e) {
-                throw new SQLException(String.format(Utils.MALFORMED_URL, storedUrl), e);
+                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
 
     @Override
-    public SQLWarning getWarnings() throws SQLException {
-        // The rationale is there are no warnings to return in this implementation, but it still throws an exception
-        // when called on a closed result set.
-        checkNotClosed();
+    public CqlVector<?> getVector(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        try {
+            final VectorType vectorType = (VectorType) getCqlDataType(columnIndex);
+            final Class<?> elementClass = Class.forName(fromDataType(vectorType.getElementType()).asJavaClass()
+                .getCanonicalName());
+            if (Number.class.isAssignableFrom(elementClass)) {
+                return this.currentRow.getVector(columnIndex - 1, elementClass.asSubclass(Number.class));
+            } else {
+                throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
+            }
+        } catch (ClassNotFoundException e) {
+            LOG.warn("Error while executing getSet()", e);
+        }
         return null;
+    }
+
+    @Override
+    public CqlVector<?> getVector(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        try {
+            final VectorType vectorType = (VectorType) getCqlDataType(columnLabel);
+            final Class<?> elementClass = Class.forName(fromDataType(vectorType.getElementType()).asJavaClass()
+                .getCanonicalName());
+            if (Number.class.isAssignableFrom(elementClass)) {
+                return this.currentRow.getVector(columnLabel, elementClass.asSubclass(Number.class));
+            } else {
+                throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
+            }
+        } catch (ClassNotFoundException e) {
+            LOG.warn("Error while executing getVector()", e);
+        }
+        return null;
+    }
+
+    @Override
+    public SQLWarning getWarnings() throws SQLException {
+        checkNotClosed();
+        final List<String> driverWarnings = this.driverResultSet.getExecutionInfo().getWarnings();
+        if (!driverWarnings.isEmpty()) {
+            SQLWarning firstWarning = null;
+            SQLWarning previousWarning = null;
+
+            for (final String warningMessage : driverWarnings) {
+                final SQLWarning warning = new SQLWarning(warningMessage);
+                if (previousWarning == null) {
+                    firstWarning = warning;
+                } else {
+                    previousWarning.setNextWarning(warning);
+                }
+                previousWarning = warning;
+            }
+
+            return firstWarning;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -1520,6 +1592,9 @@ public class CassandraResultSet extends AbstractResultSet
                 dataType = currentRow.getColumnDefinitions().get(column - 1).getType();
             } else {
                 dataType = driverResultSet.getColumnDefinitions().get(column - 1).getType();
+            }
+            if (dataType.toString().contains(DataTypeEnum.VECTOR.cqlType)) {
+                return DataTypeEnum.VECTOR.cqlType;
             }
             return dataType.toString();
         }

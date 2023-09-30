@@ -20,9 +20,9 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import com.ing.data.cassandra.jdbc.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 /**
@@ -36,20 +36,20 @@ public class DecimalToDoubleCodec extends AbstractCodec<Double> implements TypeC
     public DecimalToDoubleCodec() {
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public GenericType<Double> getJavaType() {
         return GenericType.DOUBLE;
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public DataType getCqlType() {
         return DataTypes.DECIMAL;
     }
 
     @Override
-    public ByteBuffer encode(final Double value, @NonNull final ProtocolVersion protocolVersion) {
+    public ByteBuffer encode(final Double value, @Nonnull final ProtocolVersion protocolVersion) {
         if (value == null) {
             return null;
         }
@@ -57,7 +57,7 @@ public class DecimalToDoubleCodec extends AbstractCodec<Double> implements TypeC
     }
 
     @Override
-    public Double decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+    public Double decode(final ByteBuffer bytes, @Nonnull final ProtocolVersion protocolVersion) {
         if (bytes == null) {
             return null;
         }
@@ -66,12 +66,12 @@ public class DecimalToDoubleCodec extends AbstractCodec<Double> implements TypeC
     }
 
     @Override
-    Double parseNonNull(@NonNull final String value) {
+    Double parseNonNull(@Nonnull final String value) {
         return Double.valueOf(value);
     }
 
     @Override
-    String formatNonNull(@NonNull final Double value) {
+    String formatNonNull(@Nonnull final Double value) {
         return String.valueOf(value);
     }
 

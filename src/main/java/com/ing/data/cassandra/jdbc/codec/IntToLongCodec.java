@@ -20,9 +20,9 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import com.ing.data.cassandra.jdbc.ByteBufferUtil;
+import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 /**
@@ -36,20 +36,20 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
     public IntToLongCodec() {
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public GenericType<Long> getJavaType() {
         return GenericType.LONG;
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public DataType getCqlType() {
         return DataTypes.INT;
     }
 
     @Override
-    public ByteBuffer encode(final Long value, @NonNull final ProtocolVersion protocolVersion) {
+    public ByteBuffer encode(final Long value, @Nonnull final ProtocolVersion protocolVersion) {
         if (value == null) {
             return null;
         }
@@ -57,7 +57,7 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
     }
 
     @Override
-    public Long decode(final ByteBuffer bytes, @NonNull final ProtocolVersion protocolVersion) {
+    public Long decode(final ByteBuffer bytes, @Nonnull final ProtocolVersion protocolVersion) {
         if (bytes == null) {
             return null;
         }
@@ -66,12 +66,12 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
     }
 
     @Override
-    Long parseNonNull(@NonNull final String value) {
+    Long parseNonNull(@Nonnull final String value) {
         return Long.valueOf(value);
     }
 
     @Override
-    String formatNonNull(@NonNull final Long value) {
+    String formatNonNull(@Nonnull final Long value) {
         return String.valueOf(value);
     }
 }

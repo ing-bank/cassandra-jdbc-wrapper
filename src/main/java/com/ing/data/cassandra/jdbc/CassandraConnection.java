@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -66,20 +67,20 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
-import static com.ing.data.cassandra.jdbc.Utils.ALWAYS_AUTOCOMMIT;
-import static com.ing.data.cassandra.jdbc.Utils.BAD_TIMEOUT;
-import static com.ing.data.cassandra.jdbc.Utils.NO_TRANSACTIONS;
-import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_ACTIVE_CQL_VERSION;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_COMPLIANCE_MODE;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_CONSISTENCY_LEVEL;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_CQL_VERSION;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_DATABASE_NAME;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_DEBUG;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
-import static com.ing.data.cassandra.jdbc.Utils.WAS_CLOSED_CONN;
-import static com.ing.data.cassandra.jdbc.Utils.createSubName;
-import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_TRANSACTIONS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
 /**
  * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra
@@ -160,18 +161,13 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.cSession = sessionHolder.session;
         this.metadata = this.cSession.getMetadata();
 
-        // TODO check if this code should be definitely removed.
-        // final List<SessionHolder> l = new ArrayList<>();
-        // l.stream().map(s -> s.session).collect(Collectors.toList());
-
         LOG.info("Connected to cluster: {}, with session: {}",
-            StringUtils.defaultString(getCatalog(), "<not available>"), this.cSession.getName());
+            Objects.toString(getCatalog(), "<not available>"), this.cSession.getName());
         this.metadata.getNodes().forEach(
             (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
                 node.getEndPoint().resolve(), node.getRack())
         );
 
-        // TODO this is shared among all Connections, what if they belong to different clusters?
         this.metadata.getNodes().entrySet().stream().findFirst().ifPresent(entry -> {
             final Version cassandraVersion = entry.getValue().getCassandraVersion();
             if (cassandraVersion != null) {

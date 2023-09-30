@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 
 /**
  * Cassandra connection from a pool managed by a {@link PooledCassandraDataSource}.
@@ -52,7 +53,7 @@ class ManagedConnection extends AbstractConnection implements Connection {
 
     private void checkNotClosed() throws SQLNonTransientConnectionException {
         if (isClosed()) {
-            throw new SQLNonTransientConnectionException(Utils.WAS_CLOSED_CONN);
+            throw new SQLNonTransientConnectionException(WAS_CLOSED_CONN);
         }
     }
 

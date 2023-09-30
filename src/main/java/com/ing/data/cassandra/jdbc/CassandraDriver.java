@@ -32,12 +32,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.ing.data.cassandra.jdbc.Utils.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.Utils.PROTOCOL;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_PASSWORD;
-import static com.ing.data.cassandra.jdbc.Utils.TAG_USER;
-import static com.ing.data.cassandra.jdbc.Utils.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.Utils.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 
 /**
  * The Cassandra driver implementation.

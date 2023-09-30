@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.9.1</version>
+    <version>4.10.0</version>
 	<packaging>jar</packaging>
 
-	<name>Cassandra JDBC Wrapper</name>
-	<description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
+    <name>Cassandra JDBC Wrapper</name>
+    <description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
     <url>https://github.com/ing-bank/cassandra-jdbc-wrapper</url>
     <inceptionYear>2020</inceptionYear>
 
-	<licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <organization>
         <name>ING Bank</name>
         <url>https://www.ing.com</url>
     </organization>
 
-	<developers>
+    <developers>
         <developer>
-			<id>maximevw</id>
+            <id>maximevw</id>
             <url>https://github.com/maximevw</url>
-			<name>Maxime Wiewiora</name>
-			<roles>
-				<role>developer</role>
-			</roles>
-		</developer>
-	</developers>
+            <name>Maxime Wiewiora</name>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
 
     <contributors>
         <!-- Thanks to @adejanovski, developer of the original project forked as base for this one. -->
         <contributor>
             <name>Alexander Dejanovski</name>
             <url>https://github.com/adejanovski</url>
-			<roles>
-				<role>developer</role>
-			</roles>
+            <roles>
+                <role>developer</role>
+            </roles>
         </contributor>
         <contributor>
             <name>Madhavan Sridharan</name>
@@ -63,6 +63,13 @@
         <contributor>
             <name>Sualeh Fatehi</name>
             <url>https://github.com/sualeh</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
+        <contributor>
+            <name>Cedrick Lunven</name>
+            <url>https://github.com/clun</url>
             <roles>
                 <role>developer</role>
             </roles>
@@ -94,32 +101,33 @@
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <commons-collections.version>4.4</commons-collections.version>
-        <commons-io.version>2.11.0</commons-io.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <datastax.java.driver.version>4.15.0</datastax.java.driver.version>
-        <jackson.version>2.14.2</jackson.version>
+        <commons-io.version>2.13.0</commons-io.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <datastax.java.driver.version>4.17.0</datastax.java.driver.version>
+        <jackson.version>2.15.2</jackson.version>
         <!-- Versions for test dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
-        <junit5.version>5.9.2</junit5.version>
-        <junit-platform.version>1.9.2</junit-platform.version>
-        <lombok.version>1.18.26</lombok.version>
+        <junit5.version>5.10.0</junit5.version>
+        <junit-platform.version>1.10.0</junit-platform.version>
+        <lombok.version>1.18.30</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <testcontainers.version>1.18.0</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
+        <astra-sdk.version>0.6.11</astra-sdk.version>
         <!-- Versions for plugins -->
-        <maven-checkstyle-plugin.version>3.2.0</maven-checkstyle-plugin.version>
-        <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
-        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-        <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
-        <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
-        <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
-        <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
-        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+        <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
+        <maven-clean-plugin.version>3.3.1</maven-clean-plugin.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-enforcer-plugin.version>3.3.0</maven-enforcer-plugin.version>
+        <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+        <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
+        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-	</properties>
+    </properties>
 
-	<dependencies>
+    <dependencies>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
@@ -128,10 +136,10 @@
 
         <!-- Apache Commons Lang 3 -->
         <dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
             <version>${commons-lang3.version}</version>
-		</dependency>
+        </dependency>
 
         <!-- Apache Commons IO -->
         <dependency>
@@ -233,6 +241,20 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Astra SDK for integration tests with AstraDB -->
+        <dependency>
+            <groupId>com.datastax.astra</groupId>
+            <artifactId>astra-sdk-devops</artifactId>
+            <version>${astra-sdk.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Handy to build the CQL queries -->
+        <dependency>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-query-builder</artifactId>
+            <version>${datastax.java.driver.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- Logging for tests -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -247,18 +269,18 @@
             <version>${lombok.version}</version>
             <scope>test</scope>
         </dependency>
-	</dependencies>
+    </dependencies>
 
-	<build>
+    <build>
         <!-- Configuration for resources filtering -->
         <resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
 
-		<plugins>
+        <plugins>
             <!-- Cleaning -->
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -343,11 +365,11 @@
                     </dependency>
                 </dependencies>
             </plugin>
-		</plugins>
-	</build>
+        </plugins>
+    </build>
 
     <!-- Specific building profiles -->
-	<profiles>
+    <profiles>
         <!-- 'release' profile is used for releasing of stable versions only. -->
         <profile>
             <id>release</id>
@@ -439,5 +461,24 @@
                 </plugins>
             </build>
         </profile>
-	</profiles>
+
+        <!-- 'disableDseTests' excludes integration tests using DataStax Enterprise server. This can be handy if
+         these specific tests failed for some reason in a local environment. -->
+        <profile>
+            <id>disableDseTests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>*DseContainerTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
