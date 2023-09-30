@@ -511,8 +511,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getNumericFunctions() throws SQLException {
         checkStatementClosed();
-        // Cassandra does not implement natively numeric functions.
-        return StringUtils.EMPTY;
+        // We consider here the vectors similarity functions introduced by CEP-30 as numeric functions (see
+        // https://issues.apache.org/jira/browse/CASSANDRA-18640).
+        return "similarity_cosine,similarity_euclidean,similarity_dot_product";
     }
 
     @Override
@@ -779,7 +780,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         checkStatementClosed();
         // See: https://cassandra.apache.org/doc/latest/cassandra/cql/functions.html
         return "dateOf,now,minTimeuuid,maxTimeuuid,unixTimestampOf,toDate,toTimestamp,toUnixTimestamp,currentTimestamp,"
-            + "currentDate,currentTime,currentTimeUUID,";
+            + "currentDate,currentTime,currentTimeUUID";
     }
 
     @Override

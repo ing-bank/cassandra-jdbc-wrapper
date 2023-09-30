@@ -330,8 +330,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
      * </p>
      *
      * @param schema   A schema name pattern. It must match the schema name as it is stored in the database; {@code ""}
-     *                 retrieves those without a schema and {@code null} means that the schema name should not be used to
-     *                 narrow the search. Using {@code ""} as the same effect as {@code null} because here the schema
+     *                 retrieves those without a schema and {@code null} means that the schema name should not be used
+     *                 to narrow the search. Using {@code ""} as the same effect as {@code null} because here the schema
      *                 corresponds to the keyspace and Cassandra tables cannot be defined outside a keyspace.
      * @param table    A table name. It must match the table name as it is stored in the database.
      * @param scope    The scope of interest, using the same values as {@code SCOPE} in the result set.

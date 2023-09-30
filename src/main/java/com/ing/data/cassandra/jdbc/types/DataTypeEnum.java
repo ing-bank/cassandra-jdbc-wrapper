@@ -172,6 +172,8 @@ public enum DataTypeEnum {
      */
     VECTOR(DataType.LIST, CqlVector.class, "Vector");
 
+    static final String VECTOR_CLASSNAME = "org.apache.cassandra.db.marshal.VectorType";
+
     private static final Map<String, DataTypeEnum> CQL_DATATYPE_TO_DATATYPE;
 
     /**
@@ -184,8 +186,6 @@ public enum DataTypeEnum {
     public final String cqlType;
 
     final int protocolId;
-
-    static final String VECTOR_CLASSNAME = "org.apache.cassandra.db.marshal.VectorType";
 
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
@@ -220,6 +220,7 @@ public enum DataTypeEnum {
         if (cqlTypeName.startsWith(UDT.cqlType)) {
             return UDT;
         }
+        // Manage vector type
         if (cqlTypeName.contains(VECTOR_CLASSNAME)) {
             return VECTOR;
         }
@@ -337,7 +338,10 @@ public enum DataTypeEnum {
      */
     public static String cqlName(@Nonnull final com.datastax.oss.driver.api.core.type.DataType dataType) {
         final String rawCql = dataType.asCql(false, false);
-        return rawCql.contains(VECTOR_CLASSNAME) ? VECTOR.cqlType : rawCql;
+        if (rawCql.contains(VECTOR_CLASSNAME)) {
+            return VECTOR.cqlType;
+        }
+        return rawCql;
     }
 }
 

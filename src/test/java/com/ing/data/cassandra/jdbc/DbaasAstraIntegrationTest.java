@@ -33,39 +33,41 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Test JDBC Driver against DbAAS Astra.
- * To run this test define environment variable ASTRA_DB_APPLICATION_TOKEN
+ * Test JDBC Driver against DBaaS Astra.
+ * To run this test class, define an environment variable ASTRA_DB_APPLICATION_TOKEN containing the AstraDB token,
  * but not having any token does not block the build.
  */
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class DbaasAstraIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(DbaasAstraIntegrationTest.class);
+    private static final String ASTRA_DB_TOKEN_ENV_VARIABLE = "ASTRA_DB_APPLICATION_TOKEN";
+    private static final String ASTRA_DB_TOKEN_PATTERN = "Astra.*";
     private static final String DATABASE_NAME = "test_cassandra_jdbc";
     private static final String KEYSPACE_NAME = "test";
+
     static CassandraConnection sqlConnection = null;
 
     @BeforeAll
     static void setupAstra() throws Exception {
-        if (System.getenv("ASTRA_DB_APPLICATION_TOKEN") != null) {
-            log.debug("ASTRA_DB_APPLICATION_TOKEN is provided, Astra Test is executed");
-
+        if (System.getenv(ASTRA_DB_TOKEN_ENV_VARIABLE) != null) {
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is provided, AstraDB tests are executed.");
 
             /*
              * Devops API Client (create database, resume, delete)
              */
-            AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
-            log.debug("Connected the dbaas API");
+            final AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
+            log.debug("Connected the DBaaS API.");
 
             /*
-             * Set up a Database in Astra : create if not exist, resume if needed
+             * Set up a Database in Astra: create if not exist, resume if needed.
              * Vector Database is Cassandra DB with vector support enabled.
-             * It can take up to 1 min to create the database if not exists
+             * It can take up to 1 min to create the database if not exists.
              */
             String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
             Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
             Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
-            log.debug("Database ready");
+            log.debug("Database ready.");
 
             /*
              * Download cloud secure bundle to connect to the database.
@@ -79,7 +81,7 @@ class DbaasAstraIntegrationTest {
 
             /*
              * Building jdbcUrl and sqlConnection.
-             * Note: Astra can be access with only a token (username='token')
+             * Note: Astra can be accessed with only a token (username='token').
              */
             sqlConnection = (CassandraConnection) DriverManager.getConnection(
                 "jdbc:cassandra://dbaas/" + KEYSPACE_NAME +
@@ -88,13 +90,13 @@ class DbaasAstraIntegrationTest {
                     "&consistency=" + "LOCAL_QUORUM" +
                     "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
         } else {
-            log.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping ASTRA test");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests.");
         }
     }
 
     @Test
     @Order(1)
-    @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
+    @EnabledIfEnvironmentVariable(named = ASTRA_DB_TOKEN_ENV_VARIABLE, matches = ASTRA_DB_TOKEN_PATTERN)
     void givenConnection_whenCreateTable_shouldTableExist() throws SQLException {
         // Given
         Assertions.assertNotNull(sqlConnection);
@@ -107,15 +109,15 @@ class DbaasAstraIntegrationTest {
             .withColumn("lastname", DataTypes.TEXT)
             .build().getQuery());
         // Then
-        Assertions.assertTrue(tableExist("simple_table"));
+        Assertions.assertTrue(tableExists("simple_table"));
     }
 
     @Test
     @Order(2)
-    @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
+    @EnabledIfEnvironmentVariable(named = ASTRA_DB_TOKEN_ENV_VARIABLE, matches = ASTRA_DB_TOKEN_PATTERN)
     void givenTable_whenInsert_shouldRetrieveData() throws Exception {
         // Given
-        Assertions.assertTrue(tableExist("simple_table"));
+        Assertions.assertTrue(tableExists("simple_table"));
         // When
         String insertSimpleCQL = "INSERT INTO simple_table (email, firstname, lastname) VALUES(?,?,?)";
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(insertSimpleCQL);
@@ -129,52 +131,52 @@ class DbaasAstraIntegrationTest {
 
     @Test
     @Order(3)
-    @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
+    @EnabledIfEnvironmentVariable(named = ASTRA_DB_TOKEN_ENV_VARIABLE, matches = ASTRA_DB_TOKEN_PATTERN)
     void givenConnection_whenCreateTableVector_shouldTableExist() throws Exception {
         // When
-        sqlConnection.createStatement().execute("" +
+        sqlConnection.createStatement().execute(
                     "CREATE TABLE IF NOT EXISTS pet_supply_vectors (" +
                     "    product_id     TEXT PRIMARY KEY," +
                     "    product_name   TEXT," +
                     "    product_vector vector<float, 14>)");
         // Then
-        Assertions.assertTrue(tableExist("pet_supply_vectors"));
-        sqlConnection.createStatement().execute("" +
+        Assertions.assertTrue(tableExists("pet_supply_vectors"));
+        sqlConnection.createStatement().execute(
                     "CREATE CUSTOM INDEX IF NOT EXISTS idx_vector " +
                     "ON pet_supply_vectors(product_vector) " +
                     "USING 'StorageAttachedIndex'");
         // When
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pf1843','HealthyFresh - Chicken raw dog food',[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])");
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pf1844','HealthyFresh - Beef raw dog food',[1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])");
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pt0021','Dog Tennis Ball Toy',[0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0])");
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pt0041','Dog Ring Chew Toy',[0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0])");
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pf7043','PupperSausage Bacon dog Treats',[0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1])");
-        sqlConnection.createStatement().execute("" +
-                    "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) " +
-                    "VALUES ('pf7044','PupperSausage Beef dog Treats',[0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pf1843','HealthyFresh - Chicken raw dog food',[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pf1844','HealthyFresh - Beef raw dog food',[1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pt0021','Dog Tennis Ball Toy',[0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pt0041','Dog Ring Chew Toy',[0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pf7043','PupperSausage Bacon dog Treats',[0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1])");
+        sqlConnection.createStatement().execute(
+            "INSERT INTO pet_supply_vectors (product_id, product_name, product_vector) "
+                + "VALUES ('pf7044','PupperSausage Beef dog Treats',[0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0])");
         // Then (warning on Cassandra expected)
         Assertions.assertEquals(6, countRecords("pet_supply_vectors"));
     }
 
     @Test
     @Order(4)
-    @EnabledIfEnvironmentVariable(named = "ASTRA_DB_APPLICATION_TOKEN", matches = "Astra.*")
+    @EnabledIfEnvironmentVariable(named = ASTRA_DB_TOKEN_ENV_VARIABLE, matches = ASTRA_DB_TOKEN_PATTERN)
     void givenVectorTable_whenSimilaritySearch_shouldReturnResults() throws Exception {
         // Given
-        Assertions.assertTrue(tableExist("pet_supply_vectors"));
+        Assertions.assertTrue(tableExists("pet_supply_vectors"));
         Assertions.assertEquals(6, countRecords("pet_supply_vectors"));
         // When
-        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement("" +
+        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(
             "SELECT\n" +
             "     product_id, product_vector,\n" +
             "     similarity_dot_product(product_vector,[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) as similarity\n" +
@@ -190,16 +192,17 @@ class DbaasAstraIntegrationTest {
         Assertions.assertEquals(3.0d, rs.getDouble("similarity"));
     }
 
-    private boolean tableExist(String tableName) throws SQLException {
-        String existTableCql = "select table_name,keyspace_name from system_schema.tables where keyspace_name=? and table_name=?";
+    private boolean tableExists(final String tableName) throws SQLException {
+        final String existTableCql =
+            "select table_name,keyspace_name from system_schema.tables where keyspace_name=? and table_name=?";
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(existTableCql);
         prepStatement.setString(1, KEYSPACE_NAME);
         prepStatement.setString(2, tableName);
         return prepStatement.executeQuery().next();
     }
 
-    private int countRecords(String tablename) throws SQLException {
-        String countRecordsCql = "select count(*) from " + tablename;
+    private int countRecords(final String tableName) throws SQLException {
+        String countRecordsCql = "select count(*) from " + tableName;
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(countRecordsCql);
         final ResultSet resultSet = prepStatement.executeQuery();
         resultSet.next();

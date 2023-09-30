@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.9.1</version>
+    <version>4.10.0</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -109,10 +109,10 @@
         <hamcrest.version>2.2</hamcrest.version>
         <junit5.version>5.10.0</junit5.version>
         <junit-platform.version>1.10.0</junit-platform.version>
-        <lombok.version>1.18.28</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <astra-sdk.version>0.6.11</astra-sdk.version>
         <!-- Versions for plugins -->
         <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
@@ -241,14 +241,14 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- Astra Test instances for integration tests -->
+        <!-- Astra SDK for integration tests with AstraDB -->
         <dependency>
             <groupId>com.datastax.astra</groupId>
             <artifactId>astra-sdk-devops</artifactId>
             <version>${astra-sdk.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- handy to build the Cql Queries -->
+        <!-- Handy to build the CQL queries -->
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-query-builder</artifactId>
@@ -456,6 +456,25 @@
                             <createSourcesJar>false</createSourcesJar>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <finalName>${project.artifactId}-${project.version}-bundle</finalName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- 'disableDseTests' excludes integration tests using DataStax Enterprise server. This can be handy if
+         these specific tests failed for some reason in a local environment. -->
+        <profile>
+            <id>disableDseTests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>*DseContainerTest.java</exclude>
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -17,27 +17,23 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Test CQL Vector data type
+ * Test CQL Vector data type using DataStax Enterprise.
  */
 class VectorsDseContainerTest extends UsingDseContainerTest {
 
     private static final String KEYSPACE = "test_keyspace_vect";
 
     @BeforeAll
-    static void setup() throws Exception {
-        initializeContainer("7.0.0-a");
+    static void finalizeSetUpTests() throws Exception {
+        initializeContainer();
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
     }
 
     @Test
     void givenVectorTable_whenSimilaritySearch_shouldReturnResults() throws Exception {
         // When
-        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement("" +
+        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(
             "SELECT\n" +
             "     product_id, product_vector,\n" +
             "     similarity_dot_product(product_vector,[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) as similarity\n" +

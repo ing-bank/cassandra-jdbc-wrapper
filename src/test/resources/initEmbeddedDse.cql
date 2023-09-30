@@ -20,6 +20,7 @@ VALUES ('pf1843','HealthyFresh - Chicken raw dog food',[1, 1, 1, 1, 1, 0, 0, 0, 
 
 INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
 VALUES ('pf1844','HealthyFresh - Beef raw dog food',[1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+
 INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
 VALUES ('pt0021','Dog Tennis Ball Toy',[0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]);
 
