@@ -344,7 +344,7 @@ public class CassandraResultSet extends AbstractResultSet
     public int findColumn(final String columnLabel) throws SQLException {
         checkNotClosed();
         checkName(columnLabel);
-        return this.currentRow.getColumnDefinitions().firstIndexOf(columnLabel);
+        return this.currentRow.getColumnDefinitions().firstIndexOf(columnLabel)+1;
     }
 
     @Override
@@ -1025,7 +1025,7 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
         final int index = findColumn(columnLabel);
-        return getObject(index + 1, type);
+        return getObject(index, type);
     }
 
     @Override
@@ -1149,7 +1149,7 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public <T> T getObjectFromJson(final String columnLabel, final Class<T> type) throws SQLException {
         final int index = findColumn(columnLabel);
-        return getObjectFromJson(index + 1, type);
+        return getObjectFromJson(index, type);
     }
 
     @Override
