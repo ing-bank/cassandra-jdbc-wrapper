@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -395,6 +396,25 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertTrue(result.getMetaData().isSearchable(5));
 
         stmt.close();
+    }
+
+    @Test
+    void givenMetadataResultSet_whenFindColumns_returnExpectedIndex() throws Exception {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final CassandraMetadataResultSet metadataResultSet =
+            new TableMetadataResultSetBuilder(statement).buildTables(KEYSPACE, "cf_test1");
+        assertEquals(3, metadataResultSet.findColumn("TABLE_NAME"));
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> metadataResultSet.findColumn("CATALOG"));
+        assertEquals("Name provided was not in the list of valid column labels: CATALOG", exception.getMessage());
+    }
+
+    @Test
+    void givenIncompleteMetadataResultSet_whenFindColumns_throwException() {
+        final CassandraMetadataResultSet metadataResultSet = new CassandraMetadataResultSet();
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> metadataResultSet.findColumn("COLUMN_NAME"));
+        assertEquals("Name provided was not in the list of valid column labels: COLUMN_NAME", exception.getMessage());
     }
 
     /*

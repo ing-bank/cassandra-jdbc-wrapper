@@ -18,11 +18,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLWarning;
+import java.sql.Statement;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,6 +40,38 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
+    }
+
+    @Test
+    void givenResultSetWithRows_whenFindColumns_returnExpectedIndex() throws Exception {
+        final String cql = "SELECT keyname, t1iValue FROM cf_test1";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertEquals(1, rs.findColumn("keyname"));
+        assertEquals(2, rs.findColumn("t1iValue"));
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> rs.findColumn("t1bValue"));
+        assertEquals("Name provided was not in the list of valid column labels: t1bValue", exception.getMessage());
+    }
+
+    @Test
+    void givenResultSetWithoutRows_whenFindColumns_returnExpectedIndex() throws Exception {
+        final String cql = "SELECT keyname, t2iValue FROM cf_test2";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertEquals(1, rs.findColumn("keyname"));
+        assertEquals(2, rs.findColumn("t2iValue"));
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> rs.findColumn("t2bValue"));
+        assertEquals("Name provided was not in the list of valid column labels: t2bValue", exception.getMessage());
+    }
+
+    @Test
+    void givenIncompleteResultSet_whenFindColumns_throwException() {
+        final CassandraResultSet rs = new CassandraResultSet();
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> rs.findColumn("keyname"));
+        assertEquals("Name provided was not in the list of valid column labels: keyname", exception.getMessage());
     }
 
     @Test

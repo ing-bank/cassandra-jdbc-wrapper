@@ -74,6 +74,13 @@
                 <role>developer</role>
             </roles>
         </contributor>
+        <contributor>
+            <name>Stefano Fornari</name>
+            <url>https://github.com/stefanofornari</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>
