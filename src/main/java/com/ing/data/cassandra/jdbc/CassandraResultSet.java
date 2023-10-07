@@ -293,11 +293,11 @@ public class CassandraResultSet extends AbstractResultSet
 
     private void checkIndex(final int index) throws SQLException {
         if (this.currentRow != null) {
-            this.wasNull = this.currentRow.isNull(index - 1);
             if (index < 1 || index > this.currentRow.getColumnDefinitions().size()) {
                 throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
                     + this.currentRow.getColumnDefinitions().size());
             }
+            this.wasNull = this.currentRow.isNull(index - 1);
         } else if (this.driverResultSet != null) {
             if (index < 1 || index > this.driverResultSet.getColumnDefinitions().size()) {
                 throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
@@ -309,10 +309,10 @@ public class CassandraResultSet extends AbstractResultSet
 
     private void checkName(final String name) throws SQLException {
         if (this.currentRow != null) {
-            this.wasNull = this.currentRow.isNull(name);
             if (!this.currentRow.getColumnDefinitions().contains(name)) {
                 throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
             }
+            this.wasNull = this.currentRow.isNull(name);
         } else if (this.driverResultSet != null) {
             if (!this.driverResultSet.getColumnDefinitions().contains(name)) {
                 throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
@@ -344,7 +344,12 @@ public class CassandraResultSet extends AbstractResultSet
     public int findColumn(final String columnLabel) throws SQLException {
         checkNotClosed();
         checkName(columnLabel);
-        return this.currentRow.getColumnDefinitions().firstIndexOf(columnLabel);
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().firstIndexOf(columnLabel) + 1;
+        } else if (this.driverResultSet != null) {
+            return this.driverResultSet.getColumnDefinitions().firstIndexOf(columnLabel) + 1;
+        }
+        throw new SQLSyntaxErrorException(String.format(VALID_LABELS, columnLabel));
     }
 
     @Override
@@ -1025,7 +1030,7 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
         final int index = findColumn(columnLabel);
-        return getObject(index + 1, type);
+        return getObject(index, type);
     }
 
     @Override
@@ -1149,7 +1154,7 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public <T> T getObjectFromJson(final String columnLabel, final Class<T> type) throws SQLException {
         final int index = findColumn(columnLabel);
-        return getObjectFromJson(index + 1, type);
+        return getObjectFromJson(index, type);
     }
 
     @Override

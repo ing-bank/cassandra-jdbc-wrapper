@@ -370,7 +370,7 @@ public class CassandraStatement extends AbstractStatement
 
     private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql) {
         if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-            LOG.debug("CQL: " + cql);
+            LOG.debug("CQL: {}", cql);
         }
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
             .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
@@ -407,12 +407,12 @@ public class CassandraStatement extends AbstractStatement
         final int[] returnCounts = new int[this.batchQueries.size()];
         final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
         if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-            LOG.debug("CQL statements: " + this.batchQueries.size());
+            LOG.debug("CQL statements: {}", this.batchQueries.size());
         }
 
         for (final String query : this.batchQueries) {
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.debug("CQL: " + query);
+                LOG.debug("CQL: {}", query);
             }
             SimpleStatement stmt = SimpleStatement.newInstance(query)
                 .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());

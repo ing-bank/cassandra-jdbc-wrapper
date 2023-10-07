@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
 
-    private static final Logger log = LoggerFactory.getLogger(MetadataResultSetsUnitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataResultSetsUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace";
     private static final String ANOTHER_KEYSPACE = "test_keyspace2";
@@ -284,18 +285,18 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertTrue(result.next());
         assertEquals(6, result.getMetaData().getColumnCount());
         for (int i = 1; i <= result.getMetaData().getColumnCount(); i++) {
-            log.debug("getColumnName : " + result.getMetaData().getColumnName(i));
-            log.debug("getCatalogName : " + result.getMetaData().getCatalogName(i));
-            log.debug("getColumnClassName : " + result.getMetaData().getColumnClassName(i));
-            log.debug("getColumnDisplaySize : " + result.getMetaData().getColumnDisplaySize(i));
-            log.debug("getColumnLabel : " + result.getMetaData().getColumnLabel(i));
-            log.debug("getColumnType : " + result.getMetaData().getColumnType(i));
-            log.debug("getColumnTypeName : " + result.getMetaData().getColumnTypeName(i));
-            log.debug("getPrecision : " + result.getMetaData().getPrecision(i));
-            log.debug("getScale : " + result.getMetaData().getScale(i));
-            log.debug("getSchemaName : " + result.getMetaData().getSchemaName(i));
-            log.debug("getTableName : " + result.getMetaData().getTableName(i));
-            log.debug("==========================");
+            LOG.debug("getColumnName : {}", result.getMetaData().getColumnName(i));
+            LOG.debug("getCatalogName : {}", result.getMetaData().getCatalogName(i));
+            LOG.debug("getColumnClassName : {}", result.getMetaData().getColumnClassName(i));
+            LOG.debug("getColumnDisplaySize : {}", result.getMetaData().getColumnDisplaySize(i));
+            LOG.debug("getColumnLabel : {}", result.getMetaData().getColumnLabel(i));
+            LOG.debug("getColumnType : {}", result.getMetaData().getColumnType(i));
+            LOG.debug("getColumnTypeName : {}", result.getMetaData().getColumnTypeName(i));
+            LOG.debug("getPrecision : {}", result.getMetaData().getPrecision(i));
+            LOG.debug("getScale : {}", result.getMetaData().getScale(i));
+            LOG.debug("getSchemaName : {}", result.getMetaData().getSchemaName(i));
+            LOG.debug("getTableName : {}", result.getMetaData().getTableName(i));
+            LOG.debug("==========================");
         }
 
         assertEquals("part_key", result.getMetaData().getColumnName(1));
@@ -395,6 +396,25 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertTrue(result.getMetaData().isSearchable(5));
 
         stmt.close();
+    }
+
+    @Test
+    void givenMetadataResultSet_whenFindColumns_returnExpectedIndex() throws Exception {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final CassandraMetadataResultSet metadataResultSet =
+            new TableMetadataResultSetBuilder(statement).buildTables(KEYSPACE, "cf_test1");
+        assertEquals(3, metadataResultSet.findColumn("TABLE_NAME"));
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> metadataResultSet.findColumn("CATALOG"));
+        assertEquals("Name provided was not in the list of valid column labels: CATALOG", exception.getMessage());
+    }
+
+    @Test
+    void givenIncompleteMetadataResultSet_whenFindColumns_throwException() {
+        final CassandraMetadataResultSet metadataResultSet = new CassandraMetadataResultSet();
+        final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
+            () -> metadataResultSet.findColumn("COLUMN_NAME"));
+        assertEquals("Name provided was not in the list of valid column labels: COLUMN_NAME", exception.getMessage());
     }
 
     /*

@@ -12,6 +12,8 @@ t1bValue boolean,
 t1iValue int)
 WITH comment = 'First table in the keyspace';
 
+INSERT INTO cf_test1 (keyname, t1bValue, t1iValue) VALUES('key1', true, 1);
+
 CREATE COLUMNFAMILY cf_test2 (
 keyname text PRIMARY KEY,
 t2bValue boolean,

@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.10.0</version>
+    <version>4.10.1</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -74,6 +74,13 @@
                 <role>developer</role>
             </roles>
         </contributor>
+        <contributor>
+            <name>Stefano Fornari</name>
+            <url>https://github.com/stefanofornari</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>
@@ -101,7 +108,7 @@
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <commons-collections.version>4.4</commons-collections.version>
-        <commons-io.version>2.13.0</commons-io.version>
+        <commons-io.version>2.14.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <datastax.java.driver.version>4.17.0</datastax.java.driver.version>
         <jackson.version>2.15.2</jackson.version>

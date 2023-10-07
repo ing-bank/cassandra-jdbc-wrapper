@@ -189,7 +189,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             this.connection.removeStatement(this);
         } catch (final Exception e) {
-            LOG.warn("Unable to close the prepared statement: " + e.getMessage());
+            LOG.warn("Unable to close the prepared statement: {}", e.getMessage());
         }
     }
 
@@ -198,7 +198,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             resetResults();
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.trace("CQL: " + this.cql);
+                LOG.trace("CQL: {}", this.cql);
             }
             // Force paging to avoid timeout and node harm.
             if (this.boundStatement.getPageSize() == 0) {
@@ -248,7 +248,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.trace("CQL statements: " + this.batchStatements.size());
+                LOG.trace("CQL statements: {}", this.batchStatements.size());
             }
             for (final BoundStatement statement : this.batchStatements) {
                 for (int i = 0; i < statement.getPreparedStatement().getVariableDefinitions().size(); i++) {
@@ -258,7 +258,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                     }
                 }
                 if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                    LOG.trace("CQL: " + this.cql);
+                    LOG.trace("CQL: {}", this.cql);
                 }
                 final BoundStatement boundStatement = statement.setConsistencyLevel(
                     this.connection.getDefaultConsistencyLevel());

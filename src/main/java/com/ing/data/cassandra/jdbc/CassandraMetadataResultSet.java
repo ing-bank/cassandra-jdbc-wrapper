@@ -226,13 +226,13 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
     private void checkIndex(final int index) throws SQLException {
         if (this.currentRow != null) {
-            this.wasNull = this.currentRow.isNull(index - 1);
             if (this.currentRow.getColumnDefinitions() != null) {
                 if (index < 1 || index > this.currentRow.getColumnDefinitions().asList().size()) {
                     throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
                         + this.currentRow.getColumnDefinitions().asList().size());
                 }
             }
+            this.wasNull = this.currentRow.isNull(index - 1);
         } else if (this.driverResultSet != null) {
             if (this.driverResultSet.getColumnDefinitions() != null) {
                 if (index < 1 || index > this.driverResultSet.getColumnDefinitions().asList().size()) {
@@ -245,10 +245,10 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
     private void checkName(final String name) throws SQLException {
         if (this.currentRow != null) {
-            this.wasNull = this.currentRow.isNull(name);
             if (!this.currentRow.getColumnDefinitions().contains(name)) {
                 throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
             }
+            this.wasNull = this.currentRow.isNull(name);
         } else if (this.driverResultSet != null) {
             if (this.driverResultSet.getColumnDefinitions() != null) {
                 if (!this.driverResultSet.getColumnDefinitions().contains(name)) {
@@ -282,7 +282,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     public int findColumn(final String columnLabel) throws SQLException {
         checkNotClosed();
         checkName(columnLabel);
-        return this.currentRow.getColumnDefinitions().getIndexOf(columnLabel);
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().getIndexOf(columnLabel) + 1;
+        } else if (this.driverResultSet != null) {
+            return this.driverResultSet.getColumnDefinitions().getIndexOf(columnLabel) + 1;
+        }
+        throw new SQLSyntaxErrorException(String.format(VALID_LABELS, columnLabel));
     }
 
     @Override

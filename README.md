@@ -715,6 +715,7 @@ We use [SemVer](http://semver.org/) for versioning.
 * Marius Jokubauskas - **[@mjok](https://github.com/mjok)**
 * Sualeh Fatehi - **[@sualeh](https://github.com/sualeh)**
 * Cedrick Lunven - **[@clun](https://github.com/clun)**
+* Stefano Fornari - **[@stefanofornari](https://github.com/stefanofornari)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

@@ -40,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
-    private static final Logger log = LoggerFactory.getLogger(PreparedStatementsUnitTest.class);
 
     private static final String KEYSPACE = "test_prep_stmt";
 

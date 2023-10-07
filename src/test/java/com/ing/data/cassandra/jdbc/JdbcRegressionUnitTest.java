@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <a href="https://github.com/adejanovski/cassandra-jdbc-wrapper/">original project from GitHub</a>.
  */
 class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
-    private static final Logger log = LoggerFactory.getLogger(JdbcRegressionUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace3";
     private static final String TABLE = "regressions_test";
