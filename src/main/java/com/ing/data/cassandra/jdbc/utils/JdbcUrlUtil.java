@@ -66,20 +66,29 @@ public final class JdbcUrlUtil {
 
     /**
      * JDBC URL parameter key for the CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public static final String KEY_VERSION = "version";
 
     /**
      * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
      * property is mapped from the JDBC URL parameter {@code version} or from the default value defined in the
      * property {@code database.defaultCqlVersion} of the resource file 'jdbc-driver.properties'.
+     * @deprecated For removal, because {@link #KEY_VERSION} and {@link #TAG_CQL_VERSION} are deprecated.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public static final String TAG_ACTIVE_CQL_VERSION = "activeCqlVersion";
 
     /**
      * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
      * property is mapped from the JDBC URL parameter {@code version}.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public static final String TAG_CQL_VERSION = "cqlVersion";
 
     /**
@@ -460,7 +469,7 @@ public final class JdbcUrlUtil {
      * Creates a "sub-name" portion of a JDBC URL from properties.
      *
      * @param props A {@link Properties} instance containing all the properties to be considered.
-     * @return A "sub-name" portion of a JDBC URL (for example: //myhost:9160/Test1?version=3.0.0).
+     * @return A "sub-name" portion of a JDBC URL (for example: //myhost:9160/Test1?localdatacenter=DC1).
      * @throws SQLException when something went wrong during the "sub-name" creation.
      * @throws SQLNonTransientConnectionException when the host name is missing.
      */
@@ -496,26 +505,18 @@ public final class JdbcUrlUtil {
     }
 
     /**
-     * Builds the URI part containing the query parameters "consistency" and "version" from properties.
+     * Builds the URI part containing the query parameter "consistency" from properties.
      *
      * @param props A {@link Properties} instance containing all the properties to be considered.
-     * @return The URI part containing the query parameters (for example: "consistency=ONE&amp;version=3.0.0") or
-     * {@code null} if neither version nor consistency are defined in the provided properties.
+     * @return The URI part containing the query parameter "consistency" (for example: "consistency=ONE") or
+     * {@code null} if consistency is not defined in the provided properties.
      */
     static String makeQueryString(final Properties props) {
         final StringBuilder sb = new StringBuilder();
-        final String version = props.getProperty(TAG_CQL_VERSION);
         final String consistency = props.getProperty(TAG_CONSISTENCY_LEVEL);
         if (StringUtils.isNotBlank(consistency)) {
             sb.append(KEY_CONSISTENCY).append("=").append(consistency);
         }
-        if (StringUtils.isNotBlank(version)) {
-            if (sb.length() != 0) {
-                sb.append("&");
-            }
-            sb.append(KEY_VERSION).append("=").append(version);
-        }
-
         if (sb.length() > 0) {
             return sb.toString().trim();
         } else {

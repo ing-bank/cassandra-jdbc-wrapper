@@ -84,7 +84,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     protected String password;
     /**
      * The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
     protected String version = null;
     /**
      * The consistency level.
@@ -107,9 +109,26 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param keyspace      The keyspace.
      * @param user          The username used to connect.
      * @param password      The password used to connect.
-     * @param version       The CQL version.
      * @param consistency   The consistency level.
      */
+    public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
+                               final String password, final String consistency) {
+        this(host, port, keyspace, user, password, null, consistency, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param host          The host name.
+     * @param port          The port.
+     * @param keyspace      The keyspace.
+     * @param user          The username used to connect.
+     * @param password      The password used to connect.
+     * @param version       The CQL version. Deprecated, do not use anymore.
+     * @param consistency   The consistency level.
+     * @deprecated For removal. Use {@link #CassandraDataSource(String, int, String, String, String, String)} instead.
+     */
+    @Deprecated
     public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
                                final String password, final String version, final String consistency) {
         this(host, port, keyspace, user, password, version, consistency, null);
@@ -123,7 +142,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param keyspace          The keyspace.
      * @param user              The username used to connect.
      * @param password          The password used to connect.
-     * @param version           The CQL version.
+     * @param version           The CQL version. Deprecated, do not use anymore.
      * @param consistency       The consistency level.
      * @param localDataCenter   The local datacenter.
      */
@@ -181,7 +200,10 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Gets the CQL version.
      *
      * @return The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public String getVersion() {
         return this.version;
     }
@@ -190,7 +212,10 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Sets the CQL version.
      *
      * @param version The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public void setVersion(final String version) {
         this.version = version;
     }

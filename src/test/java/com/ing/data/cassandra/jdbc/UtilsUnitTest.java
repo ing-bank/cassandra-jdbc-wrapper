@@ -43,7 +43,6 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECTION_RETRIES;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
@@ -84,12 +83,11 @@ class UtilsUnitTest {
                     put(TAG_USER, "user1");
                     put(TAG_PASSWORD, "password1");
                 }}),
-            Arguments.of("jdbc:cassandra://localhost:9042/Keyspace1?version=3.0.0&consistency=QUORUM",
+            Arguments.of("jdbc:cassandra://localhost:9042/Keyspace1?consistency=QUORUM",
                 new HashMap<String, String>() {{
                     put(TAG_SERVER_NAME, "localhost");
                     put(TAG_PORT_NUMBER, "9042");
                     put(TAG_DATABASE_NAME, "Keyspace1");
-                    put(TAG_CQL_VERSION, "3.0.0");
                     put(TAG_CONSISTENCY_LEVEL, "QUORUM");
                 }}),
             Arguments.of("jdbc:cassandra://localhost/Keyspace1?consistency=QUORUM",
@@ -97,15 +95,13 @@ class UtilsUnitTest {
                     put(TAG_SERVER_NAME, "localhost");
                     put(TAG_PORT_NUMBER, "9042");
                     put(TAG_DATABASE_NAME, "Keyspace1");
-                    put(TAG_CQL_VERSION, null);
                     put(TAG_CONSISTENCY_LEVEL, "QUORUM");
                 }}),
-            Arguments.of("jdbc:cassandra://localhost/Keyspace1?version=2.0.0",
+            Arguments.of("jdbc:cassandra://localhost/Keyspace1",
                 new HashMap<String, String>() {{
                     put(TAG_SERVER_NAME, "localhost");
                     put(TAG_PORT_NUMBER, "9042");
                     put(TAG_DATABASE_NAME, "Keyspace1");
-                    put(TAG_CQL_VERSION, "2.0.0");
                     put(TAG_CONSISTENCY_LEVEL, null);
                 }}),
             Arguments.of("jdbc:cassandra://localhost",
@@ -113,7 +109,6 @@ class UtilsUnitTest {
                     put(TAG_SERVER_NAME, "localhost");
                     put(TAG_PORT_NUMBER, "9042");
                     put(TAG_DATABASE_NAME, null);
-                    put(TAG_CQL_VERSION, null);
                     put(TAG_CONSISTENCY_LEVEL, null);
                 }}),
             Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1",
@@ -194,7 +189,7 @@ class UtilsUnitTest {
 
     @Test
     void testCreateSubName() throws Exception {
-        final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1?consistency=QUORUM&version=3.0.0";
+        final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1?consistency=QUORUM";
         final Properties props = parseURL(jdbcUrl);
         final String result = createSubName(props);
         assertEquals(jdbcUrl, PROTOCOL + result);

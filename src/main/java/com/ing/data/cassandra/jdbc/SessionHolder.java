@@ -259,13 +259,13 @@ class SessionHolder {
         configureSocketOptions(driverConfigLoaderBuilder, properties);
 
         // Set credentials when applicable.
-        if (username.length() > 0) {
+        if (!username.isEmpty()) {
             builder.withAuthCredentials(username, password);
         }
 
         // The DefaultLoadBalancingPolicy requires to specify a local data center.
         builder.withLocalDatacenter(localDatacenter);
-        if (loadBalancingPolicy.length() > 0) {
+        if (!loadBalancingPolicy.isEmpty()) {
             // if a custom load balancing policy has been given in the JDBC URL, parse it and add it to the cluster
             // builder.
             try {
@@ -282,7 +282,7 @@ class SessionHolder {
             }
         }
 
-        if (retryPolicy.length() > 0) {
+        if (!retryPolicy.isEmpty()) {
             // if retry policy has been given in the JDBC URL, parse it and add it to the cluster builder.
             try {
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.RETRY_POLICY_CLASS, retryPolicy);
@@ -294,7 +294,7 @@ class SessionHolder {
             }
         }
 
-        if (reconnectPolicy.length() > 0) {
+        if (!reconnectPolicy.isEmpty()) {
             // if reconnection policy has been given in the JDBC URL, parse it and add it to the cluster builder.
             try {
                 final Map<DriverOption, Object> parsedPolicy = Optional.ofNullable(

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,22 +30,20 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     private static final String KEYSPACE = "test_keyspace";
     private static final String USER = "testuser";
     private static final String PASSWORD = "secret";
-    private static final String VERSION = "3.0.0";
     private static final String CONSISTENCY = "ONE";
 
     @Test
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
         final CassandraDataSource cds = new CassandraDataSource(
-            "localhost", 9042, KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+            "localhost", 9042, KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertEquals("localhost", cds.getServerName());
         assertEquals(9042, cds.getPortNumber());
         assertEquals(KEYSPACE, cds.getDatabaseName());
         assertEquals(USER, cds.getUser());
         assertEquals(PASSWORD, cds.getPassword());
-        assertEquals(VERSION, cds.getVersion());
 
         final DataSource ds = new CassandraDataSource(cassandraContainer.getContactPoint().getHostName(),
-            cassandraContainer.getContactPoint().getPort(), KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+            cassandraContainer.getContactPoint().getPort(), KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertNotNull(ds);
 
         // null username and password
@@ -58,7 +56,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         cnx = ds.getConnection();
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
-        assertEquals(VERSION, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_CQL_VERSION));
+        assertEquals(CONSISTENCY, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_CONSISTENCY_LEVEL));
         assertEquals(5, ds.getLoginTimeout());
     }
 
@@ -67,7 +65,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     void givenCassandraDataSource_whenIsWrapperFor_returnExpectedValue() throws Exception {
         final DataSource ds = new CassandraDataSource(
             cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
-            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY);
 
         // Assert it is a wrapper for DataSource.
         assertTrue(ds.isWrapperFor(DataSource.class));
@@ -80,7 +78,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     void givenCassandraDataSource_whenUnwrap_returnUnwrappedDatasource() throws Exception {
         final DataSource ds = new CassandraDataSource(
             cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
-            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertNotNull(ds.unwrap(DataSource.class));
     }
 
@@ -88,7 +86,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     void givenCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
         final DataSource ds = new CassandraDataSource(
             cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
-            KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertThrows(SQLException.class, () -> ds.unwrap(this.getClass()));
     }
 }

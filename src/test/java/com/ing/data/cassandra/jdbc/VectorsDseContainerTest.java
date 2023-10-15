@@ -27,7 +27,7 @@ class VectorsDseContainerTest extends UsingDseContainerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initializeContainer();
-        initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
     }
 
     @Test

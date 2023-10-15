@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
+  effect. This will be removed in the next release.
+
 ## [4.10.1] - 2023-10-07
 ### Changed
 - Update Apache Commons IO to version 2.14.0.
