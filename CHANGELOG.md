@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
   effect. This will be removed in the next release.
+- Update Apache Commons IO to version 2.15.0.
+- Update Jackson dependencies to version 2.15.3.
+- Use Apache Cassandra® 5.0 image to run tests.
 - Replace references to "DataStax Java driver" by "Java Driver for Apache Cassandra®" following the transfer of the 
   codebase to Apache Software Foundation (see: 
   [IP clearance status](https://incubator.apache.org/ip-clearance/cassandra-java-driver.html) and
