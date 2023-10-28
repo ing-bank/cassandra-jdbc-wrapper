@@ -88,20 +88,20 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
  */
 public class CassandraConnection extends AbstractConnection implements Connection {
 
-    // Minimal Apache Cassandra version supported by the DataStax Java Driver for Apache Cassandra on top which this
-    // wrapper is built.
+    // Minimal Apache Cassandra version supported by the Java Driver for Apache Cassandra® on top which this wrapper is
+    // built.
     // If available, the effective version run by the node on which the connection is established will override these
     // values.
     /**
-     * Minimal Apache Cassandra major version supported by the DataStax Java Driver for Apache Cassandra.
+     * Minimal Apache Cassandra major version supported by the Java Driver for Apache Cassandra®.
      */
     public static volatile int dbMajorVersion = 2;
     /**
-     * Minimal Apache Cassandra minor version supported by the DataStax Java Driver for Apache Cassandra.
+     * Minimal Apache Cassandra minor version supported by the Java Driver for Apache Cassandra®.
      */
     public static volatile int dbMinorVersion = 1;
     /**
-     * Minimal Apache Cassandra patch version supported by the DataStax Java Driver for Apache Cassandra.
+     * Minimal Apache Cassandra patch version supported by the Java Driver for Apache Cassandra®.
      */
     public static volatile int dbPatchVersion = 0;
 

@@ -9,7 +9,7 @@
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
-    <description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
+    <description>JDBC wrapper of the Java Driver for Apache Cassandra®.</description>
     <url>https://github.com/ing-bank/cassandra-jdbc-wrapper</url>
     <inceptionYear>2020</inceptionYear>
 
@@ -110,7 +110,7 @@
         <commons-collections.version>4.4</commons-collections.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <datastax.java.driver.version>4.17.0</datastax.java.driver.version>
+        <java.driver.version>4.17.0</java.driver.version>
         <jackson.version>2.15.2</jackson.version>
         <!-- Versions for test dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -138,7 +138,7 @@
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
-            <version>${datastax.java.driver.version}</version>
+            <version>${java.driver.version}</version>
         </dependency>
 
         <!-- Apache Commons Lang 3 -->
@@ -259,7 +259,7 @@
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-query-builder</artifactId>
-            <version>${datastax.java.driver.version}</version>
+            <version>${java.driver.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging for tests -->

@@ -176,7 +176,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the access rights for a table's columns.
      * <p>
-     * Datastax Java driver for Apache Cassandra(R) currently does not provide information about permissions and only
+     * Java Driver for Apache Cassandra® currently does not provide information about permissions and only
      * super users can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
      * be implemented safely for any connection to the database, that's why this method will throw a
      * {@link SQLFeatureNotSupportedException}.
@@ -266,8 +266,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves the version number of this database product.
      * <p>
-     * The version number returned by this method is the minimal version of Apache Cassandra supported by this JDBC
-     * implementation (see Datastax Java driver version embedded into this JDBC wrapper and
+     * The version number returned by this method is the minimal version of Apache Cassandra® supported by this JDBC
+     * implementation (see Java Driver version embedded into this JDBC wrapper and
      * <a href="https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html">
      * compatibility matrix</a> for further details.
      * </p>
@@ -731,7 +731,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the access rights for each table available in a catalog (Cassandra cluster).
      * <p>
-     * Datastax Java driver for Apache Cassandra(R) currently does not provide information about permissions and only
+     * Java Driver for Apache Cassandra® currently does not provide information about permissions and only
      * super users can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
      * be implemented safely for any connection to the database, that's why this method will throw a
      * {@link SQLFeatureNotSupportedException}.

@@ -14,6 +14,6 @@
  */
 
 /**
- * Implementation of JDBC API for Cassandra databases by wrapping the DataStax Java Driver for Apache Cassandra.
+ * Implementation of JDBC API for Cassandra databases by wrapping the Java Driver for Apache Cassandra®.
  */
 package com.ing.data.cassandra.jdbc;

@@ -1,11 +1,11 @@
-# Cassandra JDBC wrapper for the Datastax Java Driver
+# JDBC wrapper of the Java Driver for Apache Cassandra®
 
 [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 ![Build Status](https://img.shields.io/github/actions/workflow/status/ing-bank/cassandra-jdbc-wrapper/ci-workflow.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ing.data/cassandra-jdbc-wrapper)](https://search.maven.org/search?q=g:com.ing.data%20AND%20cassandra-jdbc-wrapper)
 [![Javadoc](https://javadoc.io/badge2/com.ing.data/cassandra-jdbc-wrapper/javadoc.svg)](https://javadoc.io/doc/com.ing.data/cassandra-jdbc-wrapper)
 
-This is a JDBC wrapper of the DataStax Java Driver for Apache Cassandra (C*), which offers a simple JDBC compliant 
+This is a JDBC wrapper of the Java Driver for Apache Cassandra®, which offers a simple JDBC compliant 
 API to work with CQL3.
 
 This JDBC wrapper is based on a fork of the project
@@ -27,8 +27,8 @@ The JDBC wrapper offers access to most of the core module features:
 
 ### Prerequisites
 
-The wrapper uses DataStax Java driver for Apache Cassandra(R) 4.4.0 or greater. This driver is designed for Apache 
-Cassandra(R) 2.1+ and DataStax Enterprise (5.0+). So, it will throw "unsupported feature" exceptions if used against an 
+The wrapper uses Java Driver for Apache Cassandra® 4.4.0 or greater. This driver is designed for Apache 
+Cassandra® 2.1+ and DataStax Enterprise (5.0+). So, it will throw "unsupported feature" exceptions if used against an 
 older version of Cassandra cluster. For more information, please check the 
 [compatibility matrix](https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html) and read the 
 [driver documentation](https://docs.datastax.com/en/developer/java-driver/latest/).
@@ -154,7 +154,7 @@ jdbc:cassandra://host1--host2--host3:9042/keyspace?requesttimeout=5000
 
 ### Specifying load balancing policies
 
-In versions 4+ of DataStax Java driver for Apache Cassandra(R), the load balancing is defined with 
+In versions 4+ of Java Driver for Apache Cassandra®, the load balancing is defined with 
 `DefaultLoadBalancingPolicy` by default (see 
 [Load balancing](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/load_balancing/) documentation).
 
@@ -174,7 +174,7 @@ The custom policy must implement `LoadBalancingPolicy` interface.
 
 ### Specifying retry policies
 
-In versions 4+ of DataStax Java driver for Apache Cassandra(R), the retry policy is defined with `DefaultRetryPolicy` by
+In versions 4+ of Java Driver for Apache Cassandra®, the retry policy is defined with `DefaultRetryPolicy` by
 default (see [Retries](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/retries/) documentation).
 
 However, if you want to use a custom policy, add a `retry` argument to the JDBC URL and give the full package of the 
@@ -187,7 +187,7 @@ The custom policy must implement `RetryPolicy` interface.
 
 ### Specifying reconnection policies
 
-In versions 4+ of DataStax Java driver for Apache Cassandra(R), the reconnection policy is defined with 
+In versions 4+ of Java driver for Apache Cassandra®, the reconnection policy is defined with 
 `ExponentialReconnectionPolicy` by default (see 
 [Reconnection](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/reconnection/) documentation).
 
@@ -528,8 +528,8 @@ To create a new `Tuple` object in Java (see
 [Tuple](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/tuples/) documentation), use the 
 `com.datastax.oss.driver.api.core.type.DataTypes.tupleOf(...).newValue()` method.
 Note that the UDT ([User-Defined Types](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/udts/)) 
-fields cannot be instantiated outside the Datastax Java driver core. If you want to use prepared statements, you 
-must proceed as in the following example:
+fields cannot be instantiated outside the Java Driver for Apache Cassandra® core. If you want to use prepared 
+statements, you must proceed as in the following example:
 ```java
 public class HelloCassandra {
     public void insertTuples(final Connection connection) {

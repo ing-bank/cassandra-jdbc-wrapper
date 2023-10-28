@@ -34,7 +34,8 @@ public interface OptionSet {
     String getCatalog();
 
     /**
-     * There is no {@code updateCount} available in Datastax Java driver, different flavour requires different response.
+     * There is no {@code updateCount} available in Java Driver for Apache Cassandra®, different flavour requires
+     * different response.
      *
      * @return A predefined update response.
      */

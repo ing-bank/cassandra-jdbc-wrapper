@@ -299,14 +299,15 @@ public class CassandraPreparedStatement extends CassandraStatement
      * Language (DML) statement, such as {@code INSERT}, {@code UPDATE} or {@code DELETE}; or a CQL statement that
      * returns nothing, such as a DDL statement.
      *
-     * @return Always 0, for any statement. The rationale is that Datastax Java driver does not provide update count.
+     * @return Always 0, for any statement. The rationale is that Java Driver for Apache Cassandra® does not provide
+     * update count.
      * @throws SQLException when something went wrong during the execution of the statement.
      */
     @Override
     public int executeUpdate() throws SQLException {
         checkNotClosed();
         doExecute();
-        // There is no updateCount available in Datastax Java driver, so return 0.
+        // There is no updateCount available in Java Driver for Apache Cassandra®, so return 0.
         return 0;
     }
 

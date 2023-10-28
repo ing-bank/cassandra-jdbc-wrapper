@@ -88,7 +88,7 @@ public final class ErrorConstants {
 
     /**
      * Error message used in any SQL exception thrown because a {@code null} result set has been returned by the
-     * DataStax driver when a query is executed.
+     * Java Driver for Apache Cassandra® when a query is executed.
      */
     public static final String NO_RESULT_SET =
         "No ResultSet returned from the CQL statement passed in an 'executeQuery()' method.";
