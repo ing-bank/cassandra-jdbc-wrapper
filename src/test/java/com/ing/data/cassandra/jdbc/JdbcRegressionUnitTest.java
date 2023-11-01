@@ -984,4 +984,52 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
                 "Cassandra results cannot be unwrapped to String");
         }
     }
+
+    @Test
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    void testIngIssue33() throws Exception {
+        final Statement stmt = sqlConnection.createStatement();
+
+        // Create the target table.
+        final String createTableQuery = "CREATE TABLE t33_blob (key int PRIMARY KEY, blob_col blob);";
+        stmt.execute(createTableQuery);
+        stmt.close();
+        sqlConnection.close();
+
+        // Open it up again to see the new column family.
+        sqlConnection = newConnection(KEYSPACE, "localdatacenter=datacenter1");
+        final String insertQuery = "INSERT INTO t33_blob (key, blob_col) VALUES(?, ?);";
+        final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
+        stmt2.setObject(1, 1);
+        stmt2.setObject(2, "test123".getBytes(StandardCharsets.UTF_8));
+        stmt2.execute();
+        stmt2.setObject(1, 2);
+        stmt2.setObject(2, "test456".getBytes(StandardCharsets.UTF_8), Types.VARBINARY);
+        stmt2.execute();
+        stmt2.setObject(1, 3);
+        stmt2.setObject(2, "test789".getBytes(StandardCharsets.UTF_8), Types.LONGVARBINARY);
+        stmt2.execute();
+
+        final Statement stmt3 = sqlConnection.createStatement();
+        ResultSet result = stmt3.executeQuery("SELECT * FROM t33_blob where key = 1;");
+        assertTrue(result.next());
+        byte[] array = new byte[result.getBinaryStream("blob_col").available()];
+        result.getBinaryStream("blob_col").read(array);
+        assertEquals("test123", new String(array, StandardCharsets.UTF_8));
+
+        result = stmt3.executeQuery("SELECT * FROM t33_blob where key = 2;");
+        assertTrue(result.next());
+        array = new byte[result.getBinaryStream("blob_col").available()];
+        result.getBinaryStream("blob_col").read(array);
+        assertEquals("test456", new String(array, StandardCharsets.UTF_8));
+
+        result = stmt3.executeQuery("SELECT * FROM t33_blob where key = 3;");
+        assertTrue(result.next());
+        array = new byte[result.getBinaryStream("blob_col").available()];
+        result.getBinaryStream("blob_col").read(array);
+        assertEquals("test789", new String(array, StandardCharsets.UTF_8));
+
+        stmt2.close();
+        stmt3.close();
+    }
 }

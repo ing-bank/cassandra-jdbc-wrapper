@@ -496,6 +496,8 @@ public class CassandraPreparedStatement extends CassandraStatement
             targetType = Types.BIGINT;
         } else if (x.getClass().equals(ByteArrayInputStream.class)) {
             targetType = Types.BINARY;
+        } else if (x instanceof byte[]) {
+            targetType = Types.BINARY;
         } else if (x.getClass().equals(String.class)) {
             targetType = Types.VARCHAR;
         } else if (x.getClass().equals(Boolean.class)) {
@@ -555,11 +557,20 @@ public class CassandraPreparedStatement extends CassandraStatement
                 }
                 break;
             case Types.BINARY:
-                final byte[] array = new byte[((ByteArrayInputStream) x).available()];
-                try {
-                    ((ByteArrayInputStream) x).read(array);
-                } catch (final IOException e) {
-                    LOG.warn("Exception while setting object of BINARY type.", e);
+            case Types.VARBINARY:
+            case Types.LONGVARBINARY:
+                final byte[] array;
+                if (x instanceof ByteArrayInputStream) {
+                    array = new byte[((ByteArrayInputStream) x).available()];
+                    try {
+                        ((ByteArrayInputStream) x).read(array);
+                    } catch (final IOException e) {
+                        LOG.warn("Exception while setting object of BINARY/VARBINARY/LONGVARBINARY type.", e);
+                    }
+                } else if (x instanceof byte[]) {
+                    array = (byte[]) x;
+                } else {
+                    throw new SQLException("Unsupported parameter type: " + x.getClass());
                 }
                 this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(array));
                 break;

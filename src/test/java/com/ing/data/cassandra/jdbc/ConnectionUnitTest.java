@@ -41,6 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -83,7 +87,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenInvalidConfigurationFile_whenGetConnection_createConnectionIgnoringConfigFile() throws Exception {
-        initConnection(KEYSPACE, "configfile=wrong_application.conf", "consistency=LOCAL_QUORUM");
+        initConnection(KEYSPACE, "configfile=wrong_application.conf", "consistency=LOCAL_QUORUM",
+            "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getDefaultConsistencyLevel());
         final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
@@ -364,6 +369,35 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         System.setProperty(JSSE_KEYSTORE_PASSWORD_PROPERTY, "changeit");
 
         initConnection(KEYSPACE, "enablessl=true", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertTrue(sqlConnection.getSession().getContext().getSslEngineFactory().isPresent());
+
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet resultSet = statement.executeQuery("SELECT * FROM system.local");
+        assertNotNull(resultSet);
+        resultSet.close();
+        statement.close();
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenConfigurationFileWithSslEnabled_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        final URL confTestUrl = classLoader.getResource("test_application_with_ssl.conf");
+        if (confTestUrl == null) {
+            fail("Unable to find test_application_with_ssl.conf");
+        }
+
+        // Update the truststore path in the configuration file and store the modified file in a temporary location.
+        String content = new String(Files.readAllBytes(Paths.get(confTestUrl.toURI())));
+        content = content.replaceAll("\\$TRUSTSTORE_PATH",
+            Objects.requireNonNull(classLoader.getResource("cassandra.truststore")).getPath());
+        final Path updatedConfTestPath = Files.createTempFile("test_application_with_ssl_", ".conf");
+        Files.write(updatedConfTestPath, content.getBytes(StandardCharsets.UTF_8));
+
+        initConnection(KEYSPACE, "configfile=" + updatedConfTestPath);
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());

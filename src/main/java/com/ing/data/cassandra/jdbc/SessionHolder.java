@@ -183,10 +183,12 @@ class SessionHolder {
 
     private Session createSession(final Properties properties) throws SQLException {
         File configurationFile = null;
+        boolean configurationFileExists = false;
         final String configurationFilePath = properties.getProperty(TAG_CONFIG_FILE, StringUtils.EMPTY);
         if (StringUtils.isNotBlank(configurationFilePath)) {
             configurationFile = new File(configurationFilePath);
-            if (configurationFile.exists()) {
+            configurationFileExists = configurationFile.exists();
+            if (configurationFileExists) {
                 // We remove some parameters to use the values defined into the specified configuration file
                 // instead.
                 this.properties.remove(TAG_CONSISTENCY_LEVEL);
@@ -264,7 +266,13 @@ class SessionHolder {
         }
 
         // The DefaultLoadBalancingPolicy requires to specify a local data center.
-        builder.withLocalDatacenter(localDatacenter);
+        // Note (issue #35): This should only be set programmatically when there is no configuration file specified.
+        // When a configuration file is used, we rely on the property 'basic.load-balancing-policy.local-datacenter'
+        // of the configuration file, so we must not call withLocalDatacenter() method because when both are specified,
+        // the programmatic value takes precedence.
+        if (configurationFile == null || !configurationFileExists) {
+            builder.withLocalDatacenter(localDatacenter);
+        }
         if (!loadBalancingPolicy.isEmpty()) {
             // if a custom load balancing policy has been given in the JDBC URL, parse it and add it to the cluster
             // builder.
