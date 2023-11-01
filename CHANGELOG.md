@@ -4,12 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.10.2] - 2023-11-01
+### Fixed
+- Fix issue [#33](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/33) to handle `VARBINARY` and 
+  `LONGVARBINARY` types with either `ByteArrayInputStream` or `byte[]` in the methods
+  `CassandraPreparedStatement.setObject()`.
+- Fix issue [#35](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/35) to fix configuration of the local
+  datacenter using the one from the configuration file when such a file is used.
+
 ## [4.10.1] - 2023-10-07
 ### Changed
 - Update Apache Commons IO to version 2.14.0.
 - Harmonize logging.
 ### Fixed
-- Fix multiple issues related to the method `findColumn(String)` of `CassandraResultSet` and `CassandraMetadataResultSet`:
+- Fix multiple issues related to the method `findColumn(String)` of `CassandraResultSet` and 
+  `CassandraMetadataResultSet`:
   - Fix issue [#31](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/31) to return a 1-based index value.
   - Return a result even if there's no row in the result set but the column exist in the statement.
   - Fix the exception thrown by the method when the given column name does not exist in the result set (was an
@@ -162,6 +171,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.10.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.1...v4.10.2
 [4.10.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.0...v4.10.1
 [4.10.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.1...v4.10.0
 [4.9.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.0...v4.9.1
