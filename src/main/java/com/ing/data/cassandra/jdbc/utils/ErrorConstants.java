@@ -15,6 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.ing.data.cassandra.jdbc.CassandraPreparedStatement;
 import com.ing.data.cassandra.jdbc.CassandraResultSet;
 
 import java.net.URI;
@@ -222,6 +223,34 @@ public final class ErrorConstants {
      * {@link CassandraResultSet#getVector(String)} is invoked on a column containing an invalid CQL vector.
      */
     public static final String VECTOR_ELEMENTS_NOT_NUMBERS = "Vector elements are not numbers.";
+
+    /**
+     * Error message used in any SQL exception thrown when the target JDBC type specified in the method
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     */
+    public static final String UNSUPPORTED_JDBC_TYPE = "Unsupported JDBC type: %s";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion of the specified object in the method
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     */
+    public static final String UNSUPPORTED_PARAMETER_TYPE = "Unsupported parameter type: %s";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
+     * {@link CassandraResultSet#getObject(int, Class)} and {@link CassandraResultSet#getObject(String, Class)} is not
+     * supported.
+     */
+    public static final String UNSUPPORTED_TYPE_CONVERSION = "Conversion to type %s not supported.";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
+     * {@link CassandraResultSet#getObjectFromJson(int, Class)},
+     * {@link CassandraResultSet#getObjectFromJson(String, Class)} and
+     * {@link CassandraResultSet#getObjectFromJson(Class)} is not supported.
+     */
+    public static final String UNSUPPORTED_JSON_TYPE_CONVERSION =
+        "Unable to convert the column of index %d to an instance of %s";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

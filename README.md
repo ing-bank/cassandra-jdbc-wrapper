@@ -33,8 +33,8 @@ older version of Cassandra cluster. For more information, please check the
 [compatibility matrix](https://docs.datastax.com/en/driver-matrix/doc/driver_matrix/javaDrivers.html) and read the 
 [driver documentation](https://docs.datastax.com/en/developer/java-driver/latest/).
 
-If you are having issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check the 
-[connection requirements](https://github.com/datastax/java-driver/wiki/Connection-requirements).
+If you meet issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check if your
+configuration is correct, and you specified a valid local datacenter if you use the default load-balancing policy.
 
 This project requires Java 8 JDK (minimum).
 
@@ -80,6 +80,15 @@ You can install it in your application using the following Gradle dependency:
 ```
 implementation 'com.ing.data:cassandra-jdbc-wrapper:${cassandra-jdbc-wrapper.version}'
 ```
+
+### Other integrations
+
+To use this JDBC wrapper for Apache Cassandra® in database administration tools such as DBeaver Community Edition or 
+JetBrains DataGrip, you can have a look to the following links:
+* [connecting DBeaver to Cassandra cluster](https://stackoverflow.com/a/77100652/13292108)
+* [connecting DataGrip to Cassandra cluster](https://awesome-astra.github.io/docs/pages/data/explore/datagrip/); note 
+  this example uses Astra JDBC driver (based on this project), so refer to the "Usage" section below to adapt driver
+  class and JDBC URL values.
 
 ## Usage
 
@@ -278,7 +287,8 @@ For further information about custom implementations of `SslEngineFactory`, see
 
 An alternative JDBC driver based on this one exists to ease the connection to the cloud 
 [Cassandra-based DBaaS AstraDB](https://www.datastax.com/astra) cluster:
-[Astra JDBC driver](https://github.com/DataStax-Examples/astra-jdbc-connector/tree/main). Do not hesitate to use it if you are in this specific situation.
+[Astra JDBC driver](https://github.com/DataStax-Examples/astra-jdbc-connector/tree/main). 
+Do not hesitate to use it if you are in this specific situation.
 
 It's still possible to connect to AstraDB using this JDBC wrapper, so one would need to specify:
 * `secureconnectbundle`: the fully qualified path of the cloud secure connect bundle file
@@ -329,11 +339,11 @@ public class HelloCassandra {
     public void selectValuesFromCassandra(final Connection connection) {
         final Statement statement = connection.createStatement();
         final ResultSet result = statement.executeQuery(
-            "SELECT bValue, iValue FROM test_table WHERE keyname = 'key0';"
+            "SELECT b_value, i_value FROM test_table WHERE keyname = 'key0';"
         );
         while (result.next()) {
-            System.out.println("bValue = " + result.getBoolean("bValue"));
-            System.out.println("iValue = " + result.getInt("iValue"));
+            System.out.println("b_value = " + result.getBoolean("b_value"));
+            System.out.println("i_value = " + result.getInt("i_value"));
         }
     }
 }
@@ -393,6 +403,8 @@ public class HelloCassandra {
     preparedStatement.setObject(2, "test");                         // ascii
     final ByteArrayInputStream baInputStream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8));
     preparedStatement.setObject(3, baInputStream);                  // blob
+    // Alternatively, you can also use byte arrays for blobs:
+    preparedStatement.setObject(3, "test".getBytes(StandardCharsets.UTF_8));
     preparedStatement.setObject(4, true);                           // boolean
     preparedStatement.setObject(5, new BigDecimal(5.1));            // decimal
     preparedStatement.setObject(6, (double) 5.1);                   // double
@@ -437,8 +449,8 @@ public class HelloCassandra {
 
 #### Insert/update
 
-There are two ways to insert/update data using asynchronous queries. The first is to use JDBC batches (we're not talking 
-about Cassandra atomic batches here).
+There are two ways to insert/update data using asynchronous queries. The first one is to use JDBC batches (we're not
+talking about Cassandra atomic batches here).
 
 With simple statements:
 ```java
@@ -446,8 +458,8 @@ public class HelloCassandra {
     public void insertUsingJdbcBatches(final Connection connection) {
         final Statement statement = connection.createStatement();
         
-        for(int i = 0; i < 10; i++){
-            statement.addBatch("INSERT INTO testCollection (keyValue, lValue) VALUES (" + i + ", [1, 3, 12345])");
+        for (int i = 0; i < 10; i++) {
+            statement.addBatch("INSERT INTO test_table (key_value, l_value) VALUES (" + i + ", [1, 3, 12345])");
         }
         
         final int[] counts = statement.executeBatch();
@@ -461,7 +473,7 @@ With prepared statements:
 public class HelloCassandra {
     public void insertUsingJdbcBatches(final Connection connection) {
         final PreparedStatement statement = connection.prepareStatement(
-            "INSERT INTO testCollection (keyValue, lValue) VALUES (?, ?)"
+            "INSERT INTO test_table (key_value, l_value) VALUES (?, ?)"
         );
         
         for (int i = 0; i < 10; i++) {
@@ -484,7 +496,7 @@ public class HelloCassandra {
 
         final StringBuilder queryBuilder = new StringBuilder();
         for (int i = 0; i < 10; i++) {
-            queryBuilder.append("INSERT INTO testCollection (keyValue, lValue) VALUES(")
+            queryBuilder.append("INSERT INTO test_table (key_value, l_value) VALUES (")
                         .append(i)
                         .append(", [1, 3, 12345]);");
         }
@@ -504,7 +516,7 @@ public class HelloCassandra {
     public void multipleSelectQueries(final Connection connection) {
         final StringBuilder queries = new StringBuilder();
         for (int i = 0; i < 10; i++) {
-            queries.append("SELECT * FROM testCollection where keyValue = ").append(i).append(";");
+            queries.append("SELECT * FROM test_table WHERE key_value = ").append(i).append(";");
         }
 
         // Send all the select queries at once.
@@ -514,7 +526,7 @@ public class HelloCassandra {
         // Get all the results from all the select queries in a single result set.
         final ArrayList<Integer> ids = new ArrayList<>();
         while (result.next()){
-            ids.add(result.getInt("keyValue"));
+            ids.add(result.getInt("key_value"));
         }
     }
 }
@@ -522,7 +534,7 @@ public class HelloCassandra {
 
 Make sure you send select queries that return the exact same columns, or you might get pretty unpredictable results.
 
-### Working with Tuples and UDTs
+### Working with Tuples and UDTs (User-Defined Types)
 
 To create a new `Tuple` object in Java (see 
 [Tuple](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/tuples/) documentation), use the 
@@ -555,6 +567,7 @@ public class HelloCassandra {
         preparedStatement.setString(5, "midVal");
         preparedStatement.setFloat(6, (float)2.0);
         preparedStatement.setObject(7, (Object)tuple);
+        
         // Execute the prepared statement.
         preparedStatement.execute();
         preparedStatement.close();
@@ -586,6 +599,8 @@ public class HelloCassandra {
                                  + "{'map_key1' : {key : 'key1', value : 'value1'},"
                                  + "'map_key2' : {key : 'key2', value : 'value2'}}, " 
                                  + "{'tuple1' : (1, 2), 'tuple2' : (2, 3)});";
+        
+        // Execute the statement.
         insertStatement.execute(insertCql);
         insertStatement.close();
     }
@@ -629,11 +644,11 @@ public class JsonSubEntity {
 }
 ```
 
-The class `JsonSubEntity` above corresponds to the UDT `subType` in our Cassandra keyspace and the class `JsonEntity`
+The class `JsonSubEntity` above corresponds to the UDT `subtype` in our Cassandra keyspace and the class `JsonEntity`
 matches the columns of the table `t_using_json`:
 ```
-CREATE TYPE IF NOT EXISTS subType (text_val text, bool_val boolean);
-CREATE TABLE t_using_json (col_int int PRIMARY KEY, col_text text, col_udt frozen<subType>);
+CREATE TYPE IF NOT EXISTS subtype (text_val text, bool_val boolean);
+CREATE TABLE t_using_json (col_int int PRIMARY KEY, col_text text, col_udt frozen<subtype>);
 ```
 
 #### JSON support in result sets
@@ -672,15 +687,14 @@ object into JSON to pass to Cassandra as shown below:
 public class HelloCassandra {
   public void insertJson(final Connection connection) {
     // Using INSERT INTO ... JSON syntax
-    final CassandraPreparedStatement insertStatement1 = connection.prepareStatement(
-      "INSERT INTO t_using_json JSON ?;");
+    final CassandraPreparedStatement insertStatement1 = connection.prepareStatement("INSERT INTO t_using_json JSON ?;");
     insertStatement1.setJson(1, new JsonEntity(1, "a text value", new JsonSubEntity("1.1", false)));
     insertStatement1.execute();
     insertStatement1.close();
 
     // Using fromJson() function
-    final CassandraPreparedStatement insertStatement2 = connection.prepareStatement(
-      "INSERT INTO t_using_json (col_int, col_text, col_udt) VALUES (?, ?, fromJson(?));");
+    final CassandraPreparedStatement insertStatement2 = 
+      connection.prepareStatement("INSERT INTO t_using_json (col_int, col_text, col_udt) VALUES (?, ?, fromJson(?));");
     insertStatement2.setInt(1, 2);
     insertStatement2.setString(2, "another text value");
     insertStatement2.setInt(3, new JsonSubEntity("2.1", true));

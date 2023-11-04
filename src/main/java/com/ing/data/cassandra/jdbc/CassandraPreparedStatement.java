@@ -46,6 +46,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -59,6 +60,11 @@ import java.sql.SQLTransientException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -68,7 +74,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToByteArray;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToInstant;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalDate;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 
@@ -497,7 +508,11 @@ public class CassandraPreparedStatement extends CassandraStatement
         } else if (x.getClass().equals(ByteArrayInputStream.class)) {
             targetType = Types.BINARY;
         } else if (x instanceof byte[]) {
-            targetType = Types.BINARY;
+            targetType = Types.VARBINARY;
+        } else if (x instanceof Blob) {
+            targetType = Types.BLOB;
+        } else if (x instanceof Clob) {
+            targetType = Types.CLOB;
         } else if (x.getClass().equals(String.class)) {
             targetType = Types.VARCHAR;
         } else if (x.getClass().equals(Boolean.class)) {
@@ -514,16 +529,23 @@ public class CassandraPreparedStatement extends CassandraStatement
             targetType = Types.OTHER;
         } else if (x.getClass().equals(Integer.class)) {
             targetType = Types.INTEGER;
-        } else if (x.getClass().equals(java.sql.Timestamp.class)) {
+        } else if (x.getClass().equals(java.sql.Timestamp.class) || x instanceof Calendar
+            || x.getClass().equals(java.util.Date.class) || x.getClass().equals(LocalDateTime.class)) {
             targetType = Types.TIMESTAMP;
-        } else if (x.getClass().equals(java.sql.Date.class)) {
+        } else if (x.getClass().equals(java.sql.Date.class) || x.getClass().equals(LocalDate.class)) {
             targetType = Types.DATE;
-        } else if (x.getClass().equals(java.sql.Time.class)) {
+        } else if (x.getClass().equals(java.sql.Time.class) || x.getClass().equals(LocalTime.class)) {
             targetType = Types.TIME;
+        } else if (x.getClass().equals(OffsetDateTime.class)) {
+            targetType = Types.TIMESTAMP_WITH_TIMEZONE;
+        } else if (x.getClass().equals(OffsetTime.class)) {
+            targetType = Types.TIME_WITH_TIMEZONE;
         } else if (x.getClass().equals(Byte.class)) {
             targetType = Types.TINYINT;
         } else if (x.getClass().equals(Short.class)) {
             targetType = Types.SMALLINT;
+        } else if (x.getClass().equals(URL.class)) {
+            targetType = Types.DATALINK;
         } else if (x.getClass().equals(CqlDuration.class)) {
             targetType = Types.OTHER;
         } else if (x.getClass().equals(UUID.class)) {
@@ -559,39 +581,38 @@ public class CassandraPreparedStatement extends CassandraStatement
             case Types.BINARY:
             case Types.VARBINARY:
             case Types.LONGVARBINARY:
-                final byte[] array;
-                if (x instanceof ByteArrayInputStream) {
-                    array = new byte[((ByteArrayInputStream) x).available()];
-                    try {
-                        ((ByteArrayInputStream) x).read(array);
-                    } catch (final IOException e) {
-                        LOG.warn("Exception while setting object of BINARY/VARBINARY/LONGVARBINARY type.", e);
-                    }
-                } else if (x instanceof byte[]) {
-                    array = (byte[]) x;
-                } else {
-                    throw new SQLException("Unsupported parameter type: " + x.getClass());
-                }
+            case Types.BLOB:
+            case Types.CLOB:
+            case Types.NCLOB:
+                final byte[] array = convertToByteArray(x);
                 this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(array));
                 break;
             case Types.BOOLEAN:
+            case Types.BIT:
                 this.boundStatement = this.boundStatement.setBoolean(parameterIndex - 1, (Boolean) x);
                 break;
             case Types.CHAR:
-            case Types.CLOB:
             case Types.VARCHAR:
+            case Types.LONGVARCHAR:
+            case Types.NCHAR:
+            case Types.NVARCHAR:
+            case Types.LONGNVARCHAR:
+            case Types.DATALINK:
                 this.boundStatement = this.boundStatement.setString(parameterIndex - 1, x.toString());
                 break;
             case Types.TIMESTAMP:
-                this.boundStatement = this.boundStatement.setInstant(parameterIndex - 1, ((Timestamp) x).toInstant());
+            case Types.TIMESTAMP_WITH_TIMEZONE:
+                this.boundStatement = this.boundStatement.setInstant(parameterIndex - 1, convertToInstant(x));
                 break;
             case Types.DECIMAL:
+            case Types.NUMERIC:
                 this.boundStatement = this.boundStatement.setBigDecimal(parameterIndex - 1, (BigDecimal) x);
                 break;
             case Types.DOUBLE:
                 this.boundStatement = this.boundStatement.setDouble(parameterIndex - 1, (Double) x);
                 break;
             case Types.FLOAT:
+            case Types.REAL:
                 this.boundStatement = this.boundStatement.setFloat(parameterIndex - 1, (Float) x);
                 break;
             case Types.INTEGER:
@@ -611,10 +632,11 @@ public class CassandraPreparedStatement extends CassandraStatement
                 this.boundStatement = this.boundStatement.setByte(parameterIndex - 1, (Byte) x);
                 break;
             case Types.DATE:
-                this.boundStatement = this.boundStatement.setLocalDate(parameterIndex - 1, ((Date) x).toLocalDate());
+                this.boundStatement = this.boundStatement.setLocalDate(parameterIndex - 1, convertToLocalDate(x));
                 break;
             case Types.TIME:
-                this.boundStatement = this.boundStatement.setLocalTime(parameterIndex - 1, ((Time) x).toLocalTime());
+            case Types.TIME_WITH_TIMEZONE:
+                this.boundStatement = this.boundStatement.setLocalTime(parameterIndex - 1, convertToLocalTime(x));
                 break;
             case Types.ROWID:
                 this.boundStatement.setToNull(parameterIndex - 1);
@@ -667,7 +689,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                 }
                 break;
             default:
-                throw new SQLException("Unsupported SQL type: " + targetSqlType);
+                throw new SQLException(String.format(UNSUPPORTED_JDBC_TYPE, targetSqlType));
         }
     }
 

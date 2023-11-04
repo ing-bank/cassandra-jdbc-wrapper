@@ -94,6 +94,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
@@ -1115,7 +1117,7 @@ public class CassandraResultSet extends AbstractResultSet
         } else if (type == CqlVector.class) {
             returnValue = getVector(columnIndex);
         } else {
-            throw new SQLException(String.format("Conversion to type %s not supported.", type.getSimpleName()));
+            throw new SQLException(String.format(UNSUPPORTED_TYPE_CONVERSION, type.getSimpleName()));
         }
 
         return type.cast(returnValue);
@@ -1144,8 +1146,7 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return getObjectMapper().readValue(json, type);
             } catch (final JsonProcessingException e) {
-                throw new SQLException(String.format("Unable to convert the column of index %d to an instance of %s",
-                    columnIndex, type.getName()), e);
+                throw new SQLException(String.format(UNSUPPORTED_JSON_TYPE_CONVERSION, columnIndex, type.getName()), e);
             }
         }
         return null;

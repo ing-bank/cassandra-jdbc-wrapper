@@ -156,6 +156,20 @@ col_inet inet,
 col_duration duration,
 col_uuid uuid);
 
+CREATE TABLE test_ps_blobs (
+col_key text PRIMARY KEY,
+col_blob blob);
+
+CREATE TABLE test_ps_texts (
+col_key text PRIMARY KEY,
+col_text text);
+
+CREATE TABLE test_ps_datetimes (
+col_key text PRIMARY KEY,
+col_time time,
+col_date date,
+col_ts timestamp);
+
 /* Init keyspaces, UDTs and tables for JsonSupportUnitTest */
 DROP KEYSPACE IF EXISTS test_json_support;
 CREATE KEYSPACE "test_json_support" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
