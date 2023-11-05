@@ -215,7 +215,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                         .addEntry(NON_UNIQUE, Boolean.TRUE.toString())
                         .addEntry(INDEX_QUALIFIER, catalog)
                         .addEntry(INDEX_NAME, indexMetadata.getName().asInternal())
-                        .addEntry(TYPE, String.valueOf(DatabaseMetaData.tableIndexHashed))
+                        .addEntry(TYPE, String.valueOf(DatabaseMetaData.tableIndexOther))
                         .addEntry(ORDINAL_POSITION, String.valueOf(1))
                         .addEntry(COLUMN_NAME, indexMetadata.getTarget())
                         .addEntry(ASC_OR_DESC, null)

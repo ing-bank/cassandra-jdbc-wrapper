@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
   effect. This will be removed in the next release.
+- The index type returned by `CassandraDatabaseMetaData.getIndexInfo(String, String, String, boolean, boolean)` is
+  now always `tableIndexOther`.
 - Update Apache Commons IO to version 2.15.0.
 - Update Jackson dependencies to version 2.15.3.
 - Use Apache Cassandra® 5.0 image to run tests.

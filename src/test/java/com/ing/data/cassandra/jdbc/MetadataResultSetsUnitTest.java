@@ -52,6 +52,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace";
     private static final String ANOTHER_KEYSPACE = "test_keyspace2";
+    private static final String VECTORS_KEYSPACE = "test_keyspace_vect";
 
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
@@ -686,6 +687,54 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertEquals(KEYSPACE.concat(
             ";function_test1;var2;1;12;TEXT;2147483647;2147483647;0;2147483647;1;;null;2;YES;function_test1"),
             foundColumns.get(2));
+    }
+
+    /*
+     * Indexes metadata
+     */
+
+    @Test
+    void givenStatement_whenBuildIndexes_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        ResultSet result = new TableMetadataResultSetBuilder(statement)
+            .buildIndexes(VECTORS_KEYSPACE, "pet_supply_vectors", false, false);
+        assertNotNull(result);
+        assertEquals(13, result.getMetaData().getColumnCount());
+        assertEquals("TABLE_CAT", result.getMetaData().getColumnName(1));
+        assertEquals("TABLE_SCHEM", result.getMetaData().getColumnName(2));
+        assertEquals("TABLE_NAME", result.getMetaData().getColumnName(3));
+        assertEquals("NON_UNIQUE", result.getMetaData().getColumnName(4));
+        assertEquals("INDEX_QUALIFIER", result.getMetaData().getColumnName(5));
+        assertEquals("INDEX_NAME", result.getMetaData().getColumnName(6));
+        assertEquals("TYPE", result.getMetaData().getColumnName(7));
+        assertEquals("ORDINAL_POSITION", result.getMetaData().getColumnName(8));
+        assertEquals("COLUMN_NAME", result.getMetaData().getColumnName(9));
+        assertEquals("ASC_OR_DESC", result.getMetaData().getColumnName(10));
+        assertEquals("CARDINALITY", result.getMetaData().getColumnName(11));
+        assertEquals("PAGES", result.getMetaData().getColumnName(12));
+        assertEquals("FILTER_CONDITION", result.getMetaData().getColumnName(13));
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
+                result.getString(6), result.getString(7), result.getString(8), result.getString(9)));
+        }
+        assertEquals(1, resultSize);
+        assertThat(foundColumns,
+            hasItem(is(VECTORS_KEYSPACE.concat(";pet_supply_vectors;true;idx_vector;3;1;product_vector"))));
+
+        result = new TableMetadataResultSetBuilder(statement).buildIndexes(ANOTHER_KEYSPACE, "cf_test2", false, false);
+        assertNotNull(result);
+        foundColumns.clear();
+        resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
+                result.getString(6), result.getString(7), result.getString(8), result.getString(9)));
+        }
+        assertEquals(1, resultSize);
+        assertThat(foundColumns, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;true;int_values_idx;3;1;t2ivalue"))));
     }
 
 }

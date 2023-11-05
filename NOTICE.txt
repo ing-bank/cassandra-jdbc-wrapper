@@ -1,0 +1,34 @@
+JDBC wrapper of the Java Driver for Apache Cassandra®
+Copyright 2020- ING Bank
+
+This product includes software developed by The Apache Software Foundation (http://www.apache.org/).
+
+Apache Cassandra Java Driver
+Copyright 2012- The Apache Software Foundation
+This product includes software developed as part of the Apache Cassandra Java Driver project
+( https://github.com/apache/cassandra-java-driver ).
+
+Apache Commons Collections
+Copyright 2001-2023 The Apache Software Foundation
+This product includes software developed as part of the Apache Commons Collections project
+( https://github.com/apache/commons-collections ).
+
+Apache Commons IO
+Copyright 2002-2023 The Apache Software Foundation
+This product includes software developed as part of the Apache Commons IO project
+( https://github.com/apache/commons-io ).
+
+Apache Commons Lang
+Copyright 2001-2023 The Apache Software Foundation
+This product includes software developed as part of the Apache Commons Lang project
+( https://github.com/apache/commons-lang ).
+
+FasterXML Jackson
+Copyright 2012 FasterXML.com
+This product includes software developed as part of the Jackson project
+( https://github.com/FasterXML/jackson ).
+
+Caffeine
+Copyright 2018 Ben Manes
+This product includes software developed as part of the Caffeine project
+( https://github.com/ben-manes/caffeine ).

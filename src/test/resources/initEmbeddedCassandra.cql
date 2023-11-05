@@ -78,6 +78,9 @@ t2bValue boolean,
 t2iValue int)
 WITH comment = 'Second table in the keyspace';
 
+CREATE INDEX IF NOT EXISTS int_values_idx
+ON cf_test2 (t2iValue);
+
 CREATE TYPE type_in_different_ks (
 t_key int,
 t_value text,
