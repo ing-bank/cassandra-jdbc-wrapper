@@ -89,11 +89,19 @@ abstract class AbstractResultSet implements Wrapper {
      */
     abstract DataType getCqlDataType(String columnLabel);
 
+    public boolean absolute(final int row) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
     public void cancelRowUpdates() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     public void deleteRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean first() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -165,11 +173,11 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
+    public <T> T getObject(final int columnIndex, final Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public <T> T getObject(final int columnIndex, final Class<T> type) throws SQLException {
+    public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -201,6 +209,10 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    public boolean last() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
     public void moveToCurrentRow() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -209,7 +221,15 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    public boolean previous() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
     public void refreshRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean relative(final int arg0) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

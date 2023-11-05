@@ -14,18 +14,24 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Calendar;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -90,6 +96,48 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         final SQLWarning nextWarning = resultSet.getWarnings().getNextWarning();
         assertNotNull(nextWarning);
         assertEquals("Second warning message", nextWarning.getMessage());
+    }
+
+    @Test
+    void givenResultSetWithRows_whenGetObjectAsCalendar_returnExpectedValue() throws Exception {
+        final String cql = "SELECT col_ts FROM tbl_test_timestamps WHERE keyname = 'key1'";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        assertEquals(new Calendar.Builder()
+                .setInstant(OffsetDateTime.parse("2023-11-01T11:30:25.789+01:00").toEpochSecond())
+                .build(), rs.getObject("col_ts", Calendar.class));
+    }
+
+    @Test
+    void givenResultSetWithRows_whenGetClob_returnExpectedValue() throws Exception {
+        final String cql = "SELECT col_blob FROM tbl_test_blobs WHERE keyname = 'key1'";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        final byte[] byteArray = IOUtils.toByteArray(rs.getClob("col_blob").getCharacterStream(),
+            StandardCharsets.UTF_8);
+        assertArrayEquals("testValueAsClobInUtf8 with accents: Äîéè".getBytes(StandardCharsets.UTF_8), byteArray);
+    }
+
+    @Test
+    void givenResultSetWithRows_whenGetAsciiStream_returnExpectedValue() throws Exception {
+        final String cql = "SELECT col_ascii FROM tbl_test_texts WHERE keyname = 'key1'";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        final byte[] byteArray = IOUtils.toByteArray(rs.getAsciiStream("col_ascii"));
+        assertArrayEquals("testValueAscii".getBytes(StandardCharsets.US_ASCII), byteArray);
+    }
+
+    @Test
+    void givenResultSetWithRows_whenGetCharacterStream_returnExpectedValue() throws Exception {
+        final String cql = "SELECT col_blob FROM tbl_test_blobs WHERE keyname = 'key1'";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        final byte[] byteArray = IOUtils.toByteArray(rs.getCharacterStream("col_blob"), StandardCharsets.UTF_8);
+        assertArrayEquals("testValueAsClobInUtf8 with accents: Äîéè".getBytes(StandardCharsets.UTF_8), byteArray);
     }
 
 }

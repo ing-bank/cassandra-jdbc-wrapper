@@ -244,6 +244,12 @@ public final class ErrorConstants {
     public static final String UNSUPPORTED_TYPE_CONVERSION = "Conversion to type %s not supported.";
 
     /**
+     * Error message used in any SQL exception thrown when the conversion to a specific type in a getter method of
+     * {@link CassandraResultSet} failed.
+     */
+    public static final String UNABLE_TO_READ_VALUE = "Unable to read value as %s.";
+
+    /**
      * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
      * {@link CassandraResultSet#getObjectFromJson(int, Class)},
      * {@link CassandraResultSet#getObjectFromJson(String, Class)} and

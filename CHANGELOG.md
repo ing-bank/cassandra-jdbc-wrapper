@@ -5,15 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-### Changed
-- Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
-  effect. This will be removed in the next release.
+### Added
 - Handle additional types and conversions in the methods `CassandraPreparedStatement.setObject()`:
-  - JDBC types `BLOB`, `CLOB`, `NCLOB` and Java types `java.sql.Blob`, `java.sql.Clob`, and `java.sql.NClob` handled as 
+  - JDBC types `BLOB`, `CLOB`, `NCLOB` and Java types `java.sql.Blob`, `java.sql.Clob`, and `java.sql.NClob` handled as
     arrays of bytes (CQL type `blob`)
-  - JDBC types `LONGVARCHAR`, `NCHAR`, `NVARCHAR`, `LONGNVARCHAR` and `DATALINK` and Java type `java.net.URL` handled 
+  - JDBC types `LONGVARCHAR`, `NCHAR`, `NVARCHAR`, `LONGNVARCHAR` and `DATALINK` and Java type `java.net.URL` handled
     as string (CQL types `text`, `varchar` and `ascii`)
-  - JDBC type `TIME_WITH_TIMEZONE` and Java types `java.time.OffsetTime` and `java.time.LocalTime` handled as 
+  - JDBC type `TIME_WITH_TIMEZONE` and Java types `java.time.OffsetTime` and `java.time.LocalTime` handled as
     `LocalTime` (CQL type `time`)
   - JDBC type `TIMESTAMP_WITH_TIMEZONE` and Java types `java.util.OffsetDateTime`, `java.time.LocalDateTime`,
     `java.util.Date` and `java.util.Calendar` handled as `Instant` (CQL type `timestamp`)
@@ -21,6 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - JDBC type `BIT` handled as boolean (CQL type `boolean`)
   - JDBC type `NUMERIC` handled as `BigDecimal` (CQL type `decimal`)
   - JDBC type `REAL` handled as float number (CQL type `float`)
+- Handle `java.util.Calendar` in the methods `CassandraResultSet.getObject(int | String, Class)`.
+- Implement the following methods in `CassandraResultSet`: `getAsciiStream(int | String)`, 
+  `getCharacterStream(int | String)`, `getClob(int | String)`, `getNClob(int | String)`.
+### Changed
+- Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
+  effect. This will be removed in the next release.
 - Update Apache Commons IO to version 2.15.0.
 - Update Jackson dependencies to version 2.15.3.
 - Use Apache Cassandra® 5.0 image to run tests.

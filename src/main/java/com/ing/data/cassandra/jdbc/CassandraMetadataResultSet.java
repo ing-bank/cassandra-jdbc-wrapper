@@ -204,11 +204,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    public boolean absolute(final int row) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
     public void afterLast() throws SQLException {
         if (this.resultSetType == TYPE_FORWARD_ONLY) {
             throw new SQLNonTransientException(FORWARD_ONLY);
@@ -288,11 +283,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             return this.driverResultSet.getColumnDefinitions().getIndexOf(columnLabel) + 1;
         }
         throw new SQLSyntaxErrorException(String.format(VALID_LABELS, columnLabel));
-    }
-
-    @Override
-    public boolean first() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -1016,11 +1006,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    public boolean last() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
     public synchronized boolean next() {
         if (hasMoreRows()) {
             // 'populateColumns()' is called upon init to set up the metadata fields; so skip the first call.
@@ -1032,16 +1017,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
         this.rowNumber = Integer.MAX_VALUE;
         return false;
-    }
-
-    @Override
-    public boolean previous() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public boolean relative(final int arg0) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

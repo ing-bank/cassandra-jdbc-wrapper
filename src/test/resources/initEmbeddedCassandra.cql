@@ -27,6 +27,24 @@ t3iValue int,
 PRIMARY KEY(keyname, t3iValue))
 WITH comment = 'Third table in the keyspace';
 
+CREATE TABLE tbl_test_timestamps (
+keyname text PRIMARY KEY,
+col_ts timestamp);
+
+INSERT INTO tbl_test_timestamps (keyname, col_ts) VALUES('key1', '2023-11-01T11:30:25.789+0100');
+
+CREATE TABLE tbl_test_blobs (
+keyname text PRIMARY KEY,
+col_blob blob);
+
+INSERT INTO tbl_test_blobs (keyname, col_blob) VALUES('key1', textAsBlob('testValueAsClobInUtf8 with accents: Äîéè'));
+
+CREATE TABLE tbl_test_texts (
+keyname text PRIMARY KEY,
+col_ascii ascii);
+
+INSERT INTO tbl_test_texts (keyname, col_ascii) VALUES('key1', 'testValueAscii');
+
 CREATE TYPE CustomType1 (
 key1 int,
 value1 text,
