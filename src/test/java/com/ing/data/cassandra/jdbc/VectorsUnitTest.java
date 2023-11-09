@@ -16,7 +16,6 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.data.CqlVector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
@@ -69,7 +68,6 @@ class VectorsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    @Disabled("ANN OF not supported in the version of Cassandra currently used by the test class (5.0.0-alpha1)")
     void givenVectorTable_whenSimilaritySearch_shouldReturnResults() throws Exception {
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(
             "SELECT product_id, product_vector,"

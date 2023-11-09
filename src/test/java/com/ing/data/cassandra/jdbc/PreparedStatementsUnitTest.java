@@ -13,10 +13,10 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.JdbcAscii;
 import com.ing.data.cassandra.jdbc.types.JdbcBoolean;
@@ -140,7 +140,7 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         preparedStatement.setObject(2, aTuple, Types.OTHER);
         preparedStatement.setObject(3, InetAddress.getByName("127.0.0.1"), Types.OTHER);
         preparedStatement.setObject(4, CqlDuration.from("15s"), Types.OTHER);
-        final UUID generatedUuid = UUIDs.random();
+        final UUID generatedUuid = Uuids.random();
         preparedStatement.setObject(5, generatedUuid, Types.OTHER);
         preparedStatement.execute();
 
