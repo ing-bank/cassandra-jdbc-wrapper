@@ -34,6 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   codebase to Apache Software Foundation (see: 
   [IP clearance status](https://incubator.apache.org/ip-clearance/cassandra-java-driver.html) and
   [CEP-8](https://cwiki.apache.org/confluence/x/5Y1rDQ))
+### Fixed
+- Add null safety on some methods of `CassandraMetadataResultSet`.
 
 ## [4.10.2] - 2023-11-01
 ### Fixed

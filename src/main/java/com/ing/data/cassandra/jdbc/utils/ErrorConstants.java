@@ -258,6 +258,12 @@ public final class ErrorConstants {
     public static final String UNSUPPORTED_JSON_TYPE_CONVERSION =
         "Unable to convert the column of index %d to an instance of %s";
 
+    /**
+     * Error message used in any SQL exception thrown when it is not possible to retrieve metadata of any
+     * {@link ResultSet}.
+     */
+    public static final String UNABLE_TO_RETRIEVE_METADATA = "Unable to retrieve metadata for result set.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }
