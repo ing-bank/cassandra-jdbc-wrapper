@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   effect. This will be removed in the next release.
 - The index type returned by `CassandraDatabaseMetaData.getIndexInfo(String, String, String, boolean, boolean)` is
   now always `tableIndexOther`.
+- Improve the accuracy of the JDBC metadata of the collection types (`list`, `map`, `set` and `vector`).
 - Update Apache Commons IO to version 2.15.0.
 - Update Jackson dependencies to version 2.15.3.
 - Use Apache Cassandra® 5.0 image to run tests.

@@ -557,11 +557,11 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             foundColumns.get(18));
         assertEquals("inet;1111;39;null;null;null;1;false;2;false;true;false;null;0;0;null;null;39",
             foundColumns.get(19));
-        assertEquals("list;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("list;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
             foundColumns.get(20));
-        assertEquals("map;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("map;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
             foundColumns.get(21));
-        assertEquals("set;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("set;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
             foundColumns.get(22));
         assertEquals("timeuuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
             foundColumns.get(23));
@@ -571,7 +571,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             foundColumns.get(25));
         assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
             foundColumns.get(26));
-        assertEquals(VECTOR.cqlType.concat(";1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1"),
+        assertEquals(VECTOR.cqlType.concat(";1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1"),
             foundColumns.get(27));
     }
 

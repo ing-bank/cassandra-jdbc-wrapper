@@ -40,6 +40,9 @@ public final class TypesMap {
         TYPES_MAP.put("org.apache.cassandra.db.marshal.Int32Type", JdbcInt32.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.LexicalUUIDType", JdbcLexicalUUID.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.LongType", JdbcLong.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.ListType", JdbcList.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.MapType", JdbcMap.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.SetType", JdbcSet.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.ShortType", JdbcShort.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.TimeType", JdbcTime.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.TimestampType", JdbcTimestamp.INSTANCE);
@@ -48,6 +51,7 @@ public final class TypesMap {
         TYPES_MAP.put("org.apache.cassandra.db.marshal.UserType", JdbcUdt.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.UTF8Type", JdbcUTF8.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.UUIDType", JdbcUUID.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.VectorType", JdbcVector.INSTANCE);
 
         TYPES_MAP.put("org.apache.cassandra.db.marshal.ascii", JdbcAscii.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.bigint", JdbcLong.INSTANCE);
@@ -61,6 +65,9 @@ public final class TypesMap {
         TYPES_MAP.put("org.apache.cassandra.db.marshal.float", JdbcFloat.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.inet", JdbcInetAddress.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.int", JdbcInt32.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.list", JdbcList.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.map", JdbcList.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.set", JdbcList.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.smallint", JdbcShort.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.text", JdbcUTF8.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.time", JdbcTime.INSTANCE);
@@ -72,6 +79,7 @@ public final class TypesMap {
         TYPES_MAP.put("org.apache.cassandra.db.marshal.uuid", JdbcUUID.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.varchar", JdbcUTF8.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.varint", JdbcInteger.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.vector", JdbcVector.INSTANCE);
     }
 
     private TypesMap() {

@@ -215,8 +215,6 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
             if (jdbcType.needsQuotes()) {
                 literalQuotingSymbol = "'";
             }
-            /* FIXME: some values should be adapted for list, set, map, vector, tuple and UDTs (JDBC type OTHER).
-                      Special JDBC types similar to JdbcCounterColumn should be used for that. */
             final MetadataRow row = new MetadataRow()
                 .addEntry(TYPE_NAME, dataType.cqlType)
                 .addEntry(DATA_TYPE, String.valueOf(jdbcType.getJdbcType()))
