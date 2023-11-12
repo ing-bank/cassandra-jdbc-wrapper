@@ -36,6 +36,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   [IP clearance status](https://incubator.apache.org/ip-clearance/cassandra-java-driver.html) and
   [CEP-8](https://cwiki.apache.org/confluence/x/5Y1rDQ))
 ### Fixed
+- Fix `NullPointerException` issue [#38](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/38) when a null 
+  type name pattern is specified in a call to `CassandraDatabaseMetaData.getUDTs(String, String, String, int[])`.
 - Add null safety on some methods of `CassandraMetadataResultSet`.
 
 ## [4.10.2] - 2023-11-01

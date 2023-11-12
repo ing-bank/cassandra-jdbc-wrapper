@@ -465,6 +465,24 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    void givenStatement_whenBuildUDTsNotSpecifyingTypeNamePattern_returnExpectedResultSet() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildUDTs(KEYSPACE, null,
+            new int[]{Types.JAVA_OBJECT});
+        assertNotNull(result);
+        final List<String> foundColumns = new ArrayList<>();
+        int resultSize = 0;
+        while (result.next()) {
+            ++resultSize;
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3)));
+        }
+        assertEquals(3, resultSize);
+        assertEquals(KEYSPACE.concat(";customtype1"), foundColumns.get(0));
+        assertEquals(KEYSPACE.concat(";customtype2"), foundColumns.get(1));
+        assertEquals(KEYSPACE.concat(";type_in_different_ks"), foundColumns.get(2));
+    }
+
+    @Test
     void givenStatement_whenBuildUDTsNotSpecifyingSchemaPattern_returnExpectedResultSet() throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
         final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildUDTs(null, "type_in_different_ks",

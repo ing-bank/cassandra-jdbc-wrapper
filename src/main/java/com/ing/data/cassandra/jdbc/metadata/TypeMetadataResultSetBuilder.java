@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
@@ -115,8 +116,8 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
 
         // Parse the fully-qualified type name, if necessary.
         String schemaName = schemaPattern;
-        final AtomicReference<String> typeName = new AtomicReference<>(typeNamePattern);
-        if (typeNamePattern.contains(".")) {
+        final AtomicReference<String> typeName = new AtomicReference<>(Objects.toString(typeNamePattern, "%"));
+        if (typeName.get().contains(".")) {
             final String[] fullyQualifiedTypeNameParts = typeNamePattern.split("\\.");
             schemaName = fullyQualifiedTypeNameParts[0];
             typeName.set(fullyQualifiedTypeNameParts[1]);
