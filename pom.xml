@@ -276,6 +276,26 @@
             <version>${lombok.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>us.fatehi</groupId>
+          <artifactId>schemacrawler</artifactId>
+          <version>16.20.5</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>us.fatehi</groupId>
+          <artifactId>schemacrawler-api</artifactId>
+          <version>16.20.5</version>
+          <type>test-jar</type>
+          <scope>test</scope>
+        </dependency>   
+        <dependency>
+          <groupId>us.fatehi</groupId>
+          <artifactId>schemacrawler-tools</artifactId>
+          <version>16.20.5</version>
+          <type>test-jar</type>
+          <scope>test</scope>
+        </dependency>             
     </dependencies>
 
     <build>
