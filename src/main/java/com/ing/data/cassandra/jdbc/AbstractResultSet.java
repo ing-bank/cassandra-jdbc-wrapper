@@ -55,8 +55,9 @@ abstract class AbstractResultSet implements Wrapper {
      * @param columnIndex The column index (first column is 1).
      * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    boolean isCqlType(final int columnIndex, @Nonnull final DataTypeEnum type) {
+    boolean isCqlType(final int columnIndex, @Nonnull final DataTypeEnum type) throws SQLException {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnIndex)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
@@ -67,8 +68,9 @@ abstract class AbstractResultSet implements Wrapper {
      * @param columnLabel The column name.
      * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    boolean isCqlType(final String columnLabel, @Nonnull final DataTypeEnum type) {
+    boolean isCqlType(final String columnLabel, @Nonnull final DataTypeEnum type) throws SQLException {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnLabel)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
@@ -78,16 +80,18 @@ abstract class AbstractResultSet implements Wrapper {
      *
      * @param columnIndex The column index (first column is 1).
      * @return The CQL data type of the column.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    abstract DataType getCqlDataType(int columnIndex);
+    abstract DataType getCqlDataType(int columnIndex) throws SQLException;
 
     /**
      * Gets the CQL type of the column with the given name.
      *
      * @param columnLabel The column name.
      * @return The CQL data type of the column.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    abstract DataType getCqlDataType(String columnLabel);
+    abstract DataType getCqlDataType(String columnLabel) throws SQLException;
 
     public boolean absolute(final int row) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);

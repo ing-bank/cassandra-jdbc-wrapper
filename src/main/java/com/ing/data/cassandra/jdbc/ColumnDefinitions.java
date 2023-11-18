@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataType;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -308,6 +309,17 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
             this.table = table;
             this.name = name;
             this.type = type;
+        }
+
+        /**
+         * Builds a column definition in an anonymous table (useful for metadata result sets built programmatically).
+         *
+         * @param name The column name.
+         * @param type The column type.
+         * @return A new column definition instance.
+         */
+        public static Definition buildDefinitionInAnonymousTable(final String name, final DataType type) {
+            return new Definition(StringUtils.EMPTY, StringUtils.EMPTY, name, type);
         }
 
         /**

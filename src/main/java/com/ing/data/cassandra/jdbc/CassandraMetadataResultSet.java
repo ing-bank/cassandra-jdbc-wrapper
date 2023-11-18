@@ -196,13 +196,25 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    DataType getCqlDataType(final int columnIndex) {
-        return this.currentRow.getColumnDefinitions().getType(columnIndex - 1);
+    DataType getCqlDataType(final int columnIndex) throws SQLException {
+        if (this.currentRow != null && this.currentRow.getColumnDefinitions() != null) {
+            return this.currentRow.getColumnDefinitions().getType(columnIndex - 1);
+        }
+        if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
+            return this.driverResultSet.getColumnDefinitions().getType(columnIndex - 1);
+        }
+        throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
     }
 
     @Override
-    DataType getCqlDataType(final String columnLabel) {
-        return this.currentRow.getColumnDefinitions().getType(columnLabel);
+    DataType getCqlDataType(final String columnLabel) throws SQLException {
+        if (this.currentRow != null && this.currentRow.getColumnDefinitions() != null) {
+            return this.currentRow.getColumnDefinitions().getType(columnLabel);
+        }
+        if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
+            return this.driverResultSet.getColumnDefinitions().getType(columnLabel);
+        }
+        throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
     }
 
     @Override
@@ -1071,7 +1083,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
 
         @Override
         public String getColumnName(final int column) throws SQLException {
-            if (currentRow != null) {
+            if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                 return currentRow.getColumnDefinitions().getName(column - 1);
             }
             if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
@@ -1085,7 +1097,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 final AbstractJdbcType<?> jdbcEquivalentType;
                 final ColumnDefinitions.Definition columnDefinition;
-                if (currentRow != null) {
+                if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                     columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
                 } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                     columnDefinition = driverResultSet.getColumnDefinitions().asList().get(column - 1);
@@ -1105,7 +1117,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public int getColumnType(final int column) {
+        public int getColumnType(final int column) throws SQLException {
             final DataType type;
             if (currentRow != null) {
                 type = getCqlDataType(column);
@@ -1118,7 +1130,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public String getColumnTypeName(final int column) {
+        public String getColumnTypeName(final int column) throws SQLException {
             // Specification says "database specific type name"; for Cassandra this means the AbstractType.
             final DataType type;
             if (currentRow != null) {
@@ -1141,7 +1153,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 final AbstractJdbcType<?> jdbcEquivalentType;
                 final ColumnDefinitions.Definition columnDefinition;
-                if (currentRow != null) {
+                if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                     columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
                 } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                     columnDefinition = driverResultSet.getColumnDefinitions().asList().get(column - 1);
@@ -1171,7 +1183,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         @Override
         public String getTableName(final int column) {
             final String tableName;
-            if (currentRow != null) {
+            if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                 tableName = currentRow.getColumnDefinitions().getTable(column - 1);
             } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                 tableName = driverResultSet.getColumnDefinitions().getTable(column - 1);
@@ -1231,9 +1243,16 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 return false;
             }
             final String columnName = getColumnName(column);
+            final String schemaName = getSchemaName(column);
+            final String tableName = getTableName(column);
+            // If the schema or table name is not defined, always returns false since we cannot determine if the column
+            // is searchable in this context.
+            if (StringUtils.isEmpty(schemaName) || StringUtils.isEmpty(tableName)) {
+                return false;
+            }
             final AtomicBoolean searchable = new AtomicBoolean(false);
-            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
-                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+            statement.connection.getSession().getMetadata().getKeyspace(schemaName)
+                .flatMap(metadata -> metadata.getTable(tableName))
                 .ifPresent(tableMetadata -> {
                     boolean result;
                     // Check first if the column is a clustering column or in a partitioning key.
@@ -1250,7 +1269,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public boolean isSigned(final int column) {
+        public boolean isSigned(final int column) throws SQLException {
             final DataType type;
             if (currentRow != null) {
                 type = getCqlDataType(column);

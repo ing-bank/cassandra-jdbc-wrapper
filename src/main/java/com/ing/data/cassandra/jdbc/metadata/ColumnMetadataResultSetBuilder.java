@@ -15,6 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 
@@ -138,7 +140,32 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
                                                    final String columnNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> columns = new ArrayList<>();
-
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_DEFAULT, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_TABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(IS_AUTOINCREMENT, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(IS_GENERATED_COLUMN, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schemaPattern, keyspaceMetadata ->
             filterByTableNamePattern(tableNamePattern, keyspaceMetadata, tableMetadata -> {
@@ -170,31 +197,31 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
                             columnMetadata.getType(), e.getMessage());
                     }
 
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(TABLE_CATALOG_SHORTNAME, catalog)
-                        .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                        .addEntry(COLUMN_NAME, columnMetadata.getName().asInternal())
-                        .addEntry(DATA_TYPE, String.valueOf(jdbcType))
-                        .addEntry(TYPE_NAME, columnMetadata.getType().toString())
-                        .addEntry(COLUMN_SIZE, String.valueOf(columnSize))
-                        .addEntry(BUFFER_LENGTH, String.valueOf(0))
-                        .addEntry(DECIMAL_DIGITS, null)
-                        .addEntry(NUM_PRECISION_RADIX, String.valueOf(radix))
-                        .addEntry(NULLABLE, String.valueOf(DatabaseMetaData.columnNoNulls))
-                        .addEntry(REMARKS, null)
-                        .addEntry(COLUMN_DEFAULT, null)
-                        .addEntry(SQL_DATA_TYPE, null)
-                        .addEntry(SQL_DATETIME_SUB, null)
-                        .addEntry(CHAR_OCTET_LENGTH, String.valueOf(Integer.MAX_VALUE))
-                        .addEntry(ORDINAL_POSITION, String.valueOf(colIndex.getAndIncrement()))
-                        .addEntry(IS_NULLABLE, StringUtils.EMPTY)
-                        .addEntry(SCOPE_CATALOG, null)
-                        .addEntry(SCOPE_SCHEMA, null)
-                        .addEntry(SCOPE_TABLE, null)
-                        .addEntry(SOURCE_DATA_TYPE, null)
-                        .addEntry(IS_AUTOINCREMENT, NO_VALUE)
-                        .addEntry(IS_GENERATED_COLUMN, NO_VALUE);
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                        // TABLE_CAT
+                        keyspaceMetadata.getName().asInternal(),        // TABLE_SCHEM
+                        tableMetadata.getName().asInternal(),           // TABLE_NAME
+                        columnMetadata.getName().asInternal(),          // COLUMN_NAME
+                        String.valueOf(jdbcType),                       // DATA_TYPE
+                        columnMetadata.getType().toString(),            // TYPE_NAME
+                        String.valueOf(columnSize),                     // COLUMN_SIZE
+                        String.valueOf(0),                              // BUFFER_LENGTH
+                        null,                                           // DECIMAL_DIGITS
+                        String.valueOf(radix),                          // NUM_PREC_RADIX
+                        String.valueOf(DatabaseMetaData.columnNoNulls), // NULLABLE
+                        null,                                           // REMARKS
+                        null,                                           // COLUMN_DEF
+                        null,                                           // SQL_DATA_TYPE
+                        null,                                           // SQL_DATETIME_SUB
+                        String.valueOf(Integer.MAX_VALUE),              // CHAR_OCTET_LENGTH
+                        String.valueOf(colIndex.getAndIncrement()),     // ORDINAL_POSITION
+                        StringUtils.EMPTY,                              // IS_NULLABLE
+                        null,                                           // SCOPE_CATALOG
+                        null,                                           // SCOPE_SCHEMA
+                        null,                                           // SCOPE_TABLE
+                        null,                                           // SOURCE_DATA_TYPE
+                        NO_VALUE,                                       // IS_AUTOINCREMENT
+                        NO_VALUE);                                      // IS_GENERATED_COLUMN
                     columns.add(row);
                 }, columnMetadata -> colIndex.getAndIncrement());
             }, null), null);
@@ -204,7 +231,8 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
         columns.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TABLE_NAME))
             .thenComparing(row -> ((MetadataRow) row).getString(ORDINAL_POSITION)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(columns));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(columns));
     }
 
 }
