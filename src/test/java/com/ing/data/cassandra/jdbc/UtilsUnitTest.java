@@ -15,6 +15,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,7 +27,10 @@ import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -36,27 +40,28 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CONTACT_POINT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.DEFAULT_PORT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECTION_RETRIES;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PORT_NUMBER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERVER_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -66,64 +71,56 @@ class UtilsUnitTest {
     static Stream<Arguments> buildUrlParsingTestCases() {
         return Stream.of(
             Arguments.of("jdbc:cassandra://localhost:9042/astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, "astra");
                     put(TAG_CLOUD_SECURE_CONNECT_BUNDLE, "/path/to/location/filename.extn");
                     put(TAG_USER, "user1");
                     put(TAG_PASSWORD, "password1");
                 }}),
             Arguments.of("jdbc:cassandra:dbaas:///astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, null);
-                    put(TAG_PORT_NUMBER, String.valueOf(DEFAULT_PORT));
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, null);
                     put(TAG_DATABASE_NAME, "astra");
                     put(TAG_CLOUD_SECURE_CONNECT_BUNDLE, "/path/to/location/filename.extn");
                     put(TAG_USER, "user1");
                     put(TAG_PASSWORD, "password1");
                 }}),
             Arguments.of("jdbc:cassandra://localhost:9042/Keyspace1?consistency=QUORUM",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_CONSISTENCY_LEVEL, "QUORUM");
                 }}),
             Arguments.of("jdbc:cassandra://localhost/Keyspace1?consistency=QUORUM",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_CONSISTENCY_LEVEL, "QUORUM");
                 }}),
             Arguments.of("jdbc:cassandra://localhost/Keyspace1",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_CONSISTENCY_LEVEL, null);
                 }}),
             Arguments.of("jdbc:cassandra://localhost",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, null);
                     put(TAG_CONSISTENCY_LEVEL, null);
                 }}),
             Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("localhost", 9042)));
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_LOCAL_DATACENTER, "DC1");
                 }}),
-            Arguments.of("jdbc:cassandra://localhost/Keyspace1?localdatacenter=DC1&debug=true"
+            Arguments.of("jdbc:cassandra://127.0.0.1/Keyspace1?localdatacenter=DC1&debug=true"
                     + "&retries=5&requesttimeout=3000&loadbalancing=com.company.package.CustomLBPolicy"
                     + "&retry=com.company.package.CustomRetryPolicy&reconnection=ConstantReconnectionPolicy()",
-                new HashMap<String, String>() {{
-                    put(TAG_SERVER_NAME, "localhost");
-                    put(TAG_PORT_NUMBER, "9042");
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Collections.singletonList(ContactPoint.of("127.0.0.1", 9042)));
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_LOCAL_DATACENTER, "DC1");
                     put(TAG_DEBUG, "true");
@@ -132,17 +129,46 @@ class UtilsUnitTest {
                     put(TAG_RETRY_POLICY, "com.company.package.CustomRetryPolicy");
                     put(TAG_RECONNECT_POLICY, "ConstantReconnectionPolicy()");
                     put(TAG_REQUEST_TIMEOUT, "3000");
+                }}),
+            Arguments.of("jdbc:cassandra://host1--host2",
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Arrays.asList(ContactPoint.of("host1", 9042),
+                        ContactPoint.of("host2", 9042)));
+                }}),
+            Arguments.of("jdbc:cassandra://host1--host2:9043",
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Arrays.asList(ContactPoint.of("host1", 9043),
+                        ContactPoint.of("host2", 9043)));
+                }}),
+            Arguments.of("jdbc:cassandra://host1:9042--host2:9043",
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Arrays.asList(ContactPoint.of("host1", 9042),
+                        ContactPoint.of("host2", 9043)));
+                }}),
+            Arguments.of("jdbc:cassandra://host1:9042--host2--host3:9043",
+                new HashMap<String, Object>() {{
+                    put(TAG_CONTACT_POINTS, Arrays.asList(ContactPoint.of("host1", 9042),
+                        ContactPoint.of("host2", 9043), ContactPoint.of("host3", 9043)));
                 }})
         );
     }
 
+    @SuppressWarnings("unchecked")
     @ParameterizedTest
     @MethodSource("buildUrlParsingTestCases")
     void givenJdbcUrl_whenParseUrl_returnExpectedProperties(final String jdbcUrl,
-                                                            final Map<String, String> expectedProperties)
+                                                            final Map<String, Object> expectedProperties)
         throws SQLException {
         final Properties result = parseURL(jdbcUrl);
-        expectedProperties.forEach((key, value) -> assertEquals(value, result.getProperty(key)));
+        expectedProperties.forEach((key, value) -> {
+            if (TAG_CONTACT_POINTS.equals(key) && value instanceof List) {
+                final List<ContactPoint> expectedContactPoints = (List<ContactPoint>) value;
+                assertThat((List<ContactPoint>) result.get(key),
+                    containsInAnyOrder(expectedContactPoints.toArray(new ContactPoint[0])));
+            } else {
+                assertEquals(value, result.getProperty(key));
+            }
+        });
     }
 
     static Stream<Arguments> buildReconnectionPolicyParsingTestCases() {
@@ -196,6 +222,15 @@ class UtilsUnitTest {
     }
 
     @Test
+    void testCreateSubNameWithMultipleContactPoints() throws Exception {
+        final String jdbcUrl = "jdbc:cassandra://host1:9042--host2--host3:9043/Keyspace1?consistency=QUORUM";
+        final Properties props = parseURL(jdbcUrl);
+        final String result = createSubName(props);
+        assertEquals("jdbc:cassandra://host1:9042--host2:9043--host3:9043/Keyspace1?consistency=QUORUM",
+            PROTOCOL + result);
+    }
+
+    @Test
     void testCreateSubNameWithoutParams() throws Exception {
         final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1";
         final Properties props = parseURL(jdbcUrl);
@@ -216,6 +251,13 @@ class UtilsUnitTest {
     }
 
     @Test
+    void testInvalidPort() {
+        final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
+            () -> parseURL("jdbc:cassandra://localhost:badPort"));
+        assertEquals(String.format(INVALID_CONTACT_POINT, "localhost:badPort"), exception.getMessage());
+    }
+
+    @Test
     void testInvalidKeyspaceName() {
         final String invalidKeyspaceName = "bad-keyspace";
         final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
@@ -231,21 +273,13 @@ class UtilsUnitTest {
     }
 
     @Test
-    void testCreateSubNameWithoutHost() throws Exception {
+    void testCreateSubNameWithoutContactPoints() throws Exception {
         final String jdbcUrl = "jdbc:cassandra://localhost:9042/Keyspace1";
         final Properties props = parseURL(jdbcUrl);
-        props.remove(TAG_SERVER_NAME);
+        props.remove(TAG_CONTACT_POINTS);
         final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
             () -> createSubName(props));
         assertEquals(HOST_REQUIRED, exception.getMessage());
-    }
-
-    @Test
-    void testCreateSubNameWithInvalidPortNumber() throws Exception {
-        final String jdbcUrl = "jdbc:cassandra://localhost/Keyspace1";
-        final Properties props = parseURL(jdbcUrl);
-        props.put(TAG_PORT_NUMBER, "-9042");
-        assertThrows(SQLNonTransientConnectionException.class, () -> createSubName(props));
     }
 
     @ParameterizedTest

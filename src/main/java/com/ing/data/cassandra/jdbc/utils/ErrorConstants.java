@@ -172,6 +172,13 @@ public final class ErrorConstants {
         "Connection url must specify a host, e.g. jdbc:cassandra://localhost:9042/keyspace";
 
     /**
+     * Error message used in any SQL exception thrown when the contact points in the JDBC URL cannot be parsed. This
+     * message is a template expecting the value of the invalid contact point as placeholder (example:
+     * {@code String.format(INVALID_CONTACT_POINT, "invalid:host")}).
+     */
+    public static final String INVALID_CONTACT_POINT = "Invalid contact point: %s";
+
+    /**
      * Error message used in any SQL exception thrown when a connection cannot be established due to a missing host
      * name.
      */

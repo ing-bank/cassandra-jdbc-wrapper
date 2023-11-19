@@ -40,19 +40,18 @@ import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CON
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ENABLE_SSL;
@@ -77,11 +77,9 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_KEEP_ALIVE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PORT_NUMBER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERVER_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
@@ -181,6 +179,7 @@ class SessionHolder {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Session createSession(final Properties properties) throws SQLException {
         File configurationFile = null;
         boolean configurationFileExists = false;
@@ -209,8 +208,7 @@ class SessionHolder {
             }
         }
 
-        final String hosts = properties.getProperty(TAG_SERVER_NAME);
-        final int port = Integer.parseInt(properties.getProperty(TAG_PORT_NUMBER));
+        final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.get(TAG_CONTACT_POINTS);
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
         final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);
@@ -243,12 +241,14 @@ class SessionHolder {
         if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
             driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
                 cloudSecureConnectBundle);
-            LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.", hosts);
+            LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.",
+                    contactPoints.stream()
+                        .map(ContactPoint::toString)
+                        .collect(Collectors.joining(", ")));
         } else {
-            builder.addContactPoints(Arrays.stream(hosts.split("--"))
-	            .map(host -> InetSocketAddress.createUnresolved(host, port))
-	            .collect(Collectors.toList())
-            );
+            builder.addContactPoints(contactPoints.stream()
+                .map(ContactPoint::toInetSocketAddress)
+                .collect(Collectors.toList()));
         }
 
         // Set request timeout (in milliseconds) if defined.

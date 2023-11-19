@@ -31,15 +31,20 @@ import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CONTACT_POINT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 
@@ -310,15 +315,11 @@ public final class JdbcUrlUtil {
      * Property name used to retrieve the contact points when the connection to Cassandra is established. This property
      * is mapped from the JDBC URL host.
      */
-    public static final String TAG_SERVER_NAME = "serverName";
-
-    /**
-     * Property name used to retrieve the port used when the connection to Cassandra is established. This property
-     * is mapped from the JDBC URL port.
-     */
-    public static final String TAG_PORT_NUMBER = "portNumber";
+    public static final String TAG_CONTACT_POINTS = "contactPoints";
 
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
+
+    private static final String HOST_SEPARATOR = "--";
 
     private JdbcUrlUtil() {
         // Private constructor to hide the public one.
@@ -344,7 +345,6 @@ public final class JdbcUrlUtil {
         final Properties props = new Properties();
 
         if (url != null) {
-            props.setProperty(TAG_PORT_NUMBER, String.valueOf(DEFAULT_PORT));
             boolean isDbaasConnection = false;
             int uriStartIndex = PROTOCOL.length();
             if (url.startsWith(PROTOCOL_DBAAS)) {
@@ -360,17 +360,18 @@ public final class JdbcUrlUtil {
             }
 
             if (!isDbaasConnection) {
-                final String host = uri.getHost();
-                if (host == null) {
-                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                try {
+                    if (StringUtils.isBlank(uri.getAuthority())) {
+                        throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                    }
+                    final List<ContactPoint> contactPoints = parseContactPoints(uri.getAuthority());
+                    if (contactPoints.isEmpty()) {
+                        throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                    }
+                    props.put(TAG_CONTACT_POINTS, contactPoints);
+                } catch (final RuntimeException e) {
+                    throw new SQLNonTransientConnectionException(e.getMessage());
                 }
-                props.setProperty(TAG_SERVER_NAME, host);
-
-                int port = DEFAULT_PORT;
-                if (uri.getPort() >= 0) {
-                    port = uri.getPort();
-                }
-                props.setProperty(TAG_PORT_NUMBER, String.valueOf(port));
             }
 
             String keyspace = uri.getPath();
@@ -465,6 +466,36 @@ public final class JdbcUrlUtil {
         return props;
     }
 
+    private static List<ContactPoint> parseContactPoints(final String toParse) {
+        // Check whether the value to parse ends with a port. If yes, we'll use this port as the common port for all
+        // the hosts except if another port is specified for the host. When no port is specified at all, use the default
+        // Cassandra port.
+        final AtomicInteger defaultPort = new AtomicInteger(DEFAULT_PORT);
+        final Pattern endWithPort = Pattern.compile(":(\\d{1,5})$");
+        final Matcher endWithPortMatcher = endWithPort.matcher(toParse);
+        if (endWithPortMatcher.find()) {
+            final String portValue = endWithPortMatcher.group(1);
+            if (portValue != null) {
+                defaultPort.set(Integer.parseInt(portValue));
+            }
+        }
+
+        return Arrays.stream(toParse.split(HOST_SEPARATOR))
+            .map(part -> {
+                try {
+                    int port = defaultPort.get();
+                    final String[] splitPart = part.split(":");
+                    if (splitPart.length > 1) {
+                        port = Integer.parseInt(splitPart[1]);
+                    }
+                    return ContactPoint.of(splitPart[0], port);
+                } catch (final Exception e) {
+                    throw new RuntimeException(String.format(INVALID_CONTACT_POINT, part));
+                }
+            })
+            .collect(Collectors.toList());
+    }
+
     /**
      * Creates a "sub-name" portion of a JDBC URL from properties.
      *
@@ -473,6 +504,7 @@ public final class JdbcUrlUtil {
      * @throws SQLException when something went wrong during the "sub-name" creation.
      * @throws SQLNonTransientConnectionException when the host name is missing.
      */
+    @SuppressWarnings("unchecked")
     public static String createSubName(final Properties props) throws SQLException {
         // Make the keyspace always start with a "/" for URI.
         String keyspace = props.getProperty(TAG_DATABASE_NAME);
@@ -480,19 +512,21 @@ public final class JdbcUrlUtil {
             keyspace = StringUtils.prependIfMissing(keyspace, "/");
         }
 
-        final String host = props.getProperty(TAG_SERVER_NAME);
-        if (host == null) {
+        String hostsAndPorts = null;
+        final List<ContactPoint> contactPoints = (List<ContactPoint>) props.get(TAG_CONTACT_POINTS);
+        if (contactPoints != null && !contactPoints.isEmpty()) {
+            hostsAndPorts = contactPoints.stream()
+                .map(ContactPoint::toString)
+                .collect(Collectors.joining(HOST_SEPARATOR));
+        }
+        if (hostsAndPorts == null) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);
         }
 
         // Build a valid URI from parts.
         final URI uri;
-        int port = DEFAULT_PORT;
-        if (StringUtils.isNotBlank(props.getProperty(TAG_PORT_NUMBER))) {
-            port = Integer.parseInt(props.getProperty(TAG_PORT_NUMBER));
-        }
         try {
-            uri = new URI(null, null, host, port, keyspace, makeQueryString(props), null);
+            uri = new URI(null, hostsAndPorts, keyspace, makeQueryString(props), null);
         } catch (final Exception e) {
             throw new SQLNonTransientConnectionException(e);
         }

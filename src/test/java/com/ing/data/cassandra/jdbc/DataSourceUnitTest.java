@@ -13,10 +13,12 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.Collections;
 
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,15 +37,19 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
         final CassandraDataSource cds = new CassandraDataSource(
-            "localhost", 9042, KEYSPACE, USER, PASSWORD, CONSISTENCY);
-        assertEquals("localhost", cds.getServerName());
-        assertEquals(9042, cds.getPortNumber());
+            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER, PASSWORD, CONSISTENCY);
+        assertNotNull(cds.getContactPoints());
+        assertEquals(1, cds.getContactPoints().size());
+        final ContactPoint dsContactPoint = cds.getContactPoints().get(0);
+        assertEquals("localhost", dsContactPoint.getHost());
+        assertEquals(9042, dsContactPoint.getPort());
         assertEquals(KEYSPACE, cds.getDatabaseName());
         assertEquals(USER, cds.getUser());
         assertEquals(PASSWORD, cds.getPassword());
 
-        final DataSource ds = new CassandraDataSource(cassandraContainer.getContactPoint().getHostName(),
-            cassandraContainer.getContactPoint().getPort(), KEYSPACE, USER, PASSWORD, CONSISTENCY);
+        final DataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
+            KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertNotNull(ds);
 
         // null username and password
@@ -60,11 +66,10 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals(5, ds.getLoginTimeout());
     }
 
-
     @Test
     void givenCassandraDataSource_whenIsWrapperFor_returnExpectedValue() throws Exception {
-        final DataSource ds = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+        final DataSource ds =new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, CONSISTENCY);
 
         // Assert it is a wrapper for DataSource.
@@ -76,16 +81,16 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenCassandraDataSource_whenUnwrap_returnUnwrappedDatasource() throws Exception {
-        final DataSource ds = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+        final DataSource ds =new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertNotNull(ds.unwrap(DataSource.class));
     }
 
     @Test
     void givenCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
-        final DataSource ds = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+        final DataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, CONSISTENCY);
         assertThrows(SQLException.class, () -> ds.unwrap(this.getClass()));
     }

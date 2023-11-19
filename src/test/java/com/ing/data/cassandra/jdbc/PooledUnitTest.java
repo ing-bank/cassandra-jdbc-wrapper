@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -21,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,7 +42,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
 
@@ -55,7 +58,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledDataSource_whenExecute5ThousandsPreparedStatements_getExpectedResults() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
@@ -79,7 +83,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledDataSource_whenExecuteStatement_getExpectedResults() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
@@ -97,7 +102,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledCassandraDataSource_whenUnwrap_returnUnwrappedDataSource() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         assertNotNull(connectionPoolDataSource.unwrap(DataSource.class));
     }
@@ -105,7 +111,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort(),
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, VERSION, CONSISTENCY, LOCAL_DATACENTER);
         assertThrows(SQLException.class, () -> connectionPoolDataSource.unwrap(this.getClass()));
     }

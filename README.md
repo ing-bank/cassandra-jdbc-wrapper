@@ -114,15 +114,27 @@ Connect to a Cassandra cluster using the following arguments:
   please read the section "[Connecting to DBaaS](#connecting-to-dbaas)"; to use a configuration file, please read the 
   section "[Using a configuration file](#using-a-configuration-file)")
 
-You can give the driver any number of hosts you want separated by "--".
+You can give the driver any number of hosts you want separated by "--". You can optionally specify a port for each host.
+If only one port is specified after all the listed hosts, it applies to all hosts. If no port is specified at all, the
+default Cassandra port (9042) is used.
 They will be used as contact points for the driver to discover the entire cluster.
 Give enough hosts taking into account that some nodes may be unavailable upon establishing the JDBC connection.
+
+Here are some examples of connection strings with single or multiple contact points:
+
+| Valid JDBC URL                                               | Contact points used for connection |
+|--------------------------------------------------------------|------------------------------------|
+| jdbc:cassandra://localhost/keyspace                          | localhost:9042                     |
+| jdbc:cassandra://localhost:9043/keyspace                     | localhost:9043                     |
+| jdbc:cassandra://host1--host2/keyspace                       | host1:9042, host2:9042             |
+| jdbc:cassandra://host1--host2:9043/keyspace                  | host1:9043, host2:9043             |
+| jdbc:cassandra://host1:9042--host2--host3:9043/keyspace      | host1:9042, host2:9043, host3:9043 |
 
 You also have to specify the name of the local data center to use when the default load balancing policy is defined 
 (see paragraph below about load balancing policies) and no configuration file is specified. 
 
 Statements and prepared statements can be executed as with any JDBC driver, but note that queries must be expressed in 
-CQL3.
+CQL3 (Cassandra Query Language).
 
 Java example:
 ```java

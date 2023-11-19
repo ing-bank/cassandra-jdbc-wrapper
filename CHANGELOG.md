@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## Unreleased
 ### Added
+- Add support for connections with multiple contact points using different ports (see feature request 
+  [#41](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/41)).
 - Handle additional types and conversions in the methods `CassandraPreparedStatement.setObject()`:
   - JDBC types `BLOB`, `CLOB`, `NCLOB` and Java types `java.sql.Blob`, `java.sql.Clob`, and `java.sql.NClob` handled as
     arrays of bytes (CQL type `blob`)
