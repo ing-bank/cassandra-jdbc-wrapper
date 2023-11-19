@@ -50,6 +50,11 @@ To compile and run tests, execute the following Maven command:
 mvn clean package
 ```
 
+To build a bundled version of the JDBC wrapper, run the following command:
+```bash
+mvn clean package -Pbundle
+```
+
 #### Some considerations about running tests
 
 If for some reason the tests using DataStax Enterprise server (`*DseContainerTest`) fail in your local environment, you 
@@ -89,6 +94,17 @@ JetBrains DataGrip, you can have a look to the following links:
 * [connecting DataGrip to Cassandra cluster](https://awesome-astra.github.io/docs/pages/data/explore/datagrip/); note 
   this example uses Astra JDBC driver (based on this project), so refer to the "Usage" section below to adapt driver
   class and JDBC URL values.
+
+This JDBC wrapper for Apache Cassandra® is also used to run 
+[Liquibase for Cassandra databases](https://github.com/liquibase/liquibase-cassandra) (from Liquibase 4.25.0). To execute Liquibase scripts on
+your Cassandra database, specify the following properties in your Liquibase properties file:
+```
+driver: com.ing.data.cassandra.jdbc.CassandraDriver
+url: jdbc:cassandra://<host>:<port>/<keyspaceName>?compliancemode=Liquibase
+```
+See the "Usage" section below for further details about the allowed parameters in the JDBC URL.
+For further details about Liquibase usage, please check the 
+[official documentation](https://contribute.liquibase.com/extensions-integrations/directory/database-tutorials/cassandra/).
 
 ## Usage
 

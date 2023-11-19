@@ -52,6 +52,12 @@ To run the tests, execute the following command:
 ```
 mvn test
 ```
+Regarding the tests, you need **Docker** installed on your machine.
+Indeed, most of the tests in this project are based on 
+[Testcontainers for Cassandra](https://java.testcontainers.org/modules/databases/cassandra/), because testing a JDBC API
+implementation requires ensuring that the driver is able to connect to a database and execute queries correctly. 
+For example, very common JDBC drivers like those for [PostgreSQL](https://github.com/pgjdbc/pgjdbc) or
+[MS SQL Server](https://github.com/Microsoft/mssql-jdbc/) are also tested against a real database.
 
 ### Submit a pull request
 
@@ -63,12 +69,20 @@ Once your changes and tests are ready for review, submit them:
    to verify it or simply run `mvn clean install` and check the logs).
 
 3. Rebase your changes: update your local repository with the most recent code from the original repository, and rebase
-your branch on top of the latest `release/next` branch. It is better that your initial changes are squashed into a
-single commit. If more changes are required to validate the pull request, we invite you to add them as separate commits.
+   your branch on top of the latest `release/next` branch. It is better that your initial changes are squashed into a
+   single commit. If more changes are required to validate the pull request, we invite you to add them as separate 
+   commits.
 
 4. Finally, push your local changes to your forked repository and submit a pull request into the branch `release/next`
-with a title which sums up the changes that you have made (try to not exceed 50 characters), and provide more details in
-the body. If necessary, also mention the number of the issue solved by your changes, e.g. "Closes #123".
+   with a title which sums up the changes that you have made (try to not exceed 50 characters), and provide more details
+   in the body. If necessary, also mention the number of the issue solved by your changes, e.g. "Closes #123".
+
+### About dependencies
+
+If your changes require to add a new dependency or update an existing one, be sure to check these points first of all:
+* the dependency is the latest stable version of the library compatible with JDK 8
+* the dependency does not introduce vulnerabilities
+* the version of the dependency is specified in a property `<artifactId>.version` in `pom.xml`.
 
 ### License headers
 
