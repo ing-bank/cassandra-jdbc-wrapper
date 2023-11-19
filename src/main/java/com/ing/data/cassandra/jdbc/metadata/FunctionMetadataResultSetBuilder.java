@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc.metadata;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.functionColumnIn;
 import static java.sql.DatabaseMetaData.functionReturn;
@@ -96,17 +98,25 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                                                      final String functionNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> functionsRows = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(FUNCTION_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SPECIFIC_NAME, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schemaPattern, keyspaceMetadata ->
             filterByFunctionNamePattern(functionNamePattern, keyspaceMetadata,
                 (functionSignature, functionMetadata) -> {
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(FUNCTION_CATALOG, catalog)
-                        .addEntry(FUNCTION_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(FUNCTION_NAME, functionSignature.getName().asInternal())
-                        .addEntry(REMARKS, StringUtils.EMPTY)
-                        .addEntry(FUNCTION_TYPE, String.valueOf(DatabaseMetaData.functionNoTable))
-                        .addEntry(SPECIFIC_NAME, functionSignature.getName().asInternal());
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                          // FUNCTION_CAT
+                        keyspaceMetadata.getName().asInternal(),          // FUNCTION_SCHEM
+                        functionSignature.getName().asInternal(),         // FUNCTION_NAME
+                        StringUtils.EMPTY,                                // REMARKS
+                        String.valueOf(DatabaseMetaData.functionNoTable), // FUNCTION_TYPE
+                        functionSignature.getName().asInternal());        // SPECIFIC_NAME
                     functionsRows.add(row);
                 }), null);
 
@@ -114,7 +124,8 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
         // here SPECIFIC_NAME is equal to FUNCTION_NAME).
         functionsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(functionsRows));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(functionsRows));
     }
 
     /**
@@ -200,6 +211,25 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                                                            final String columnNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> functionParamsRows = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(FUNCTION_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PRECISION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCALE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(RADIX, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SPECIFIC_NAME, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schemaPattern, keyspaceMetadata ->
             filterByFunctionNamePattern(functionNamePattern, keyspaceMetadata,
@@ -207,24 +237,24 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                     // Function return type.
                     final AbstractJdbcType<?> returnJdbcType =
                         getTypeForComparator(functionMetadata.getReturnType().asCql(false, true));
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(FUNCTION_CATALOG, catalog)
-                        .addEntry(FUNCTION_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(FUNCTION_NAME, functionSignature.getName().asInternal())
-                        .addEntry(COLUMN_NAME, StringUtils.EMPTY)
-                        .addEntry(COLUMN_TYPE, String.valueOf(functionReturn))
-                        .addEntry(DATA_TYPE, String.valueOf(returnJdbcType.getJdbcType()))
-                        .addEntry(TYPE_NAME, functionMetadata.getReturnType().toString())
-                        .addEntry(PRECISION, String.valueOf(returnJdbcType.getPrecision(null)))
-                        .addEntry(LENGTH, String.valueOf(Integer.MAX_VALUE))
-                        .addEntry(SCALE, String.valueOf(returnJdbcType.getScale(null)))
-                        .addEntry(RADIX, String.valueOf(returnJdbcType.getPrecision(null)))
-                        .addEntry(NULLABLE, String.valueOf(typeNullable))
-                        .addEntry(REMARKS, StringUtils.EMPTY)
-                        .addEntry(CHAR_OCTET_LENGTH, null)
-                        .addEntry(ORDINAL_POSITION, "0")
-                        .addEntry(IS_NULLABLE, YES_VALUE)
-                        .addEntry(SPECIFIC_NAME, functionSignature.getName().asInternal());
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                           // FUNCTION_CAT
+                        keyspaceMetadata.getName().asInternal(),           // FUNCTION_SCHEM
+                        functionSignature.getName().asInternal(),          // FUNCTION_NAME
+                        StringUtils.EMPTY,                                 // COLUMN_NAME
+                        String.valueOf(functionReturn),                    // COLUMN_TYPE
+                        String.valueOf(returnJdbcType.getJdbcType()),      // DATA_TYPE
+                        functionMetadata.getReturnType().toString(),       // TYPE_NAME
+                        String.valueOf(returnJdbcType.getPrecision(null)), // PRECISION
+                        String.valueOf(Integer.MAX_VALUE),                 // LENGTH
+                        String.valueOf(returnJdbcType.getScale(null)),     // SCALE
+                        String.valueOf(returnJdbcType.getPrecision(null)), // RADIX
+                        String.valueOf(typeNullable),                      // NULLABLE
+                        StringUtils.EMPTY,                                 // REMARKS
+                        null,                                              // CHAR_OCTET_LENGTH
+                        "0",                                               // ORDINAL_POSITION
+                        YES_VALUE,                                         // IS_NULLABLE
+                        functionSignature.getName().asInternal());         // SPECIFIC_NAME
                     functionParamsRows.add(row);
 
                     // Function input parameters.
@@ -234,24 +264,24 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                             || matchesPattern(columnNamePattern, paramNames.get(i).asInternal())) {
                             final AbstractJdbcType<?> paramJdbcType = getTypeForComparator(
                                 functionSignature.getParameterTypes().get(i).asCql(false, true));
-                            final MetadataRow paramRow = new MetadataRow()
-                                .addEntry(FUNCTION_CATALOG, catalog)
-                                .addEntry(FUNCTION_SCHEMA, keyspaceMetadata.getName().asInternal())
-                                .addEntry(FUNCTION_NAME, functionSignature.getName().asInternal())
-                                .addEntry(COLUMN_NAME, paramNames.get(i).asInternal())
-                                .addEntry(COLUMN_TYPE, String.valueOf(functionColumnIn))
-                                .addEntry(DATA_TYPE, String.valueOf(paramJdbcType.getJdbcType()))
-                                .addEntry(TYPE_NAME, functionSignature.getParameterTypes().get(i).toString())
-                                .addEntry(PRECISION, String.valueOf(paramJdbcType.getPrecision(null)))
-                                .addEntry(LENGTH, String.valueOf(Integer.MAX_VALUE))
-                                .addEntry(SCALE, String.valueOf(paramJdbcType.getScale(null)))
-                                .addEntry(RADIX, String.valueOf(paramJdbcType.getPrecision(null)))
-                                .addEntry(NULLABLE, String.valueOf(typeNullable))
-                                .addEntry(REMARKS, StringUtils.EMPTY)
-                                .addEntry(CHAR_OCTET_LENGTH, null)
-                                .addEntry(ORDINAL_POSITION, String.valueOf(i + 1))
-                                .addEntry(IS_NULLABLE, YES_VALUE)
-                                .addEntry(SPECIFIC_NAME, functionSignature.getName().asInternal());
+                            final MetadataRow paramRow = new MetadataRow().withTemplate(rowTemplate,
+                                catalog,                                                 // FUNCTION_CAT
+                                keyspaceMetadata.getName().asInternal(),                 // FUNCTION_SCHEM
+                                functionSignature.getName().asInternal(),                // FUNCTION_NAME
+                                paramNames.get(i).asInternal(),                          // COLUMN_NAME
+                                String.valueOf(functionColumnIn),                        // COLUMN_TYPE
+                                String.valueOf(paramJdbcType.getJdbcType()),             // DATA_TYPE
+                                functionSignature.getParameterTypes().get(i).toString(), // TYPE_NAME
+                                String.valueOf(paramJdbcType.getPrecision(null)),        // PRECISION
+                                String.valueOf(Integer.MAX_VALUE),                       // LENGTH
+                                String.valueOf(paramJdbcType.getScale(null)),            // SCALE
+                                String.valueOf(paramJdbcType.getPrecision(null)),        // RADIX
+                                String.valueOf(typeNullable),                            // NULLABLE
+                                StringUtils.EMPTY,                                       // REMARKS
+                                null,                                                    // CHAR_OCTET_LENGTH
+                                String.valueOf(i + 1),                                   // ORDINAL_POSITION
+                                YES_VALUE,                                               // IS_NULLABLE
+                                functionSignature.getName().asInternal());               // SPECIFIC_NAME
                             functionParamsRows.add(paramRow);
                         }
                     }
@@ -264,7 +294,7 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
             .thenComparing(row -> ((MetadataRow) row).getString(SPECIFIC_NAME))
             .thenComparing(row -> Integer.valueOf(((MetadataRow) row).getString(ORDINAL_POSITION))));
         return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet().setRows(functionParamsRows));
+            new MetadataResultSet(rowTemplate).setRows(functionParamsRows));
     }
 
 }

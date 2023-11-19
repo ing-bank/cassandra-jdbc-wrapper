@@ -15,6 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 
@@ -22,6 +23,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
+
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to schemas.
@@ -63,17 +66,22 @@ public class SchemaMetadataResultSetBuilder extends AbstractMetadataResultSetBui
         throws SQLException {
         final ArrayList<MetadataRow> schemas = new ArrayList<>();
         final String catalog = this.connection.getCatalog();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_CATALOG, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schemaPattern, keyspaceMetadata -> {
-            final MetadataRow row = new MetadataRow()
-                .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                .addEntry(TABLE_CATALOG, catalog);
+            final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                keyspaceMetadata.getName().asInternal(), // TABLE_SCHEM
+                catalog);                                // TABLE_CATALOG
             schemas.add(row);
         }, null);
 
         // Results should all have the same TABLE_CATALOG, so just sort them by TABLE_SCHEM.
         schemas.sort(Comparator.comparing(row -> row.getString(TABLE_SCHEMA)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(schemas));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(schemas));
     }
 
 }

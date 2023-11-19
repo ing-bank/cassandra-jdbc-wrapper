@@ -100,6 +100,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_READ_VALUE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_RETRIEVE_METADATA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
@@ -270,12 +271,18 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     DataType getCqlDataType(final int columnIndex) {
-        return this.currentRow.getColumnDefinitions().get(columnIndex - 1).getType();
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().get(columnIndex - 1).getType();
+        }
+        return this.driverResultSet.getColumnDefinitions().get(columnIndex - 1).getType();
     }
 
     @Override
     DataType getCqlDataType(final String columnLabel) {
-        return this.currentRow.getColumnDefinitions().get(columnLabel).getType();
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().get(columnLabel).getType();
+        }
+        return this.driverResultSet.getColumnDefinitions().get(columnLabel).getType();
     }
 
     @Override
@@ -1780,9 +1787,16 @@ public class CassandraResultSet extends AbstractResultSet
                 return false;
             }
             final String columnName = getColumnName(column);
+            final String schemaName = getSchemaName(column);
+            final String tableName = getTableName(column);
+            // If the schema or table name is not defined (this should not happen here, but better to be careful),
+            // always returns false since we cannot determine if the column is searchable in this context.
+            if (StringUtils.isEmpty(schemaName) || StringUtils.isEmpty(tableName)) {
+                return false;
+            }
             final AtomicBoolean searchable = new AtomicBoolean(false);
-            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
-                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+            statement.connection.getSession().getMetadata().getKeyspace(schemaName)
+                .flatMap(metadata -> metadata.getTable(tableName))
                 .ifPresent(tableMetadata -> {
                     boolean result;
                     // Check first if the column is a clustering column or in a partitioning key.

@@ -38,7 +38,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix `NullPointerException` issue [#38](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/38) when a null 
   type name pattern is specified in a call to `CassandraDatabaseMetaData.getUDTs(String, String, String, int[])`.
-- Add null safety on some methods of `CassandraMetadataResultSet`.
+- Fix issue [#39](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/39): return `false` when the method 
+  `isSearchable(int)` is called on the metadata of a result set without table or schema name (typically on 
+  `CassandraMetadataResultSet`s).
+- Fix issue preventing to retrieve the metadata of an empty `CassandraMetadataResultSet`.
+- Add null safety on some methods of `CassandraResultSet` and `CassandraMetadataResultSet`.
 
 ## [4.10.2] - 2023-11-01
 ### Fixed

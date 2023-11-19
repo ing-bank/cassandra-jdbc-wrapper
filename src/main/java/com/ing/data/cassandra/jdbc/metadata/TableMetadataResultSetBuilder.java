@@ -18,8 +18,10 @@ package com.ing.data.cassandra.jdbc.metadata;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
+import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.bestRowNotPseudo;
@@ -67,9 +70,14 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
      */
     public CassandraMetadataResultSet buildTableTypes() throws SQLException {
         final ArrayList<MetadataRow> tableTypes = new ArrayList<>();
-        final MetadataRow row = new MetadataRow().addEntry(TABLE_TYPE, TABLE);
-        tableTypes.add(row);
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(tableTypes));
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_TYPE, DataTypes.TEXT)
+        );
+
+        tableTypes.add(new MetadataRow().withTemplate(rowTemplate, TABLE));
+
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(tableTypes));
     }
 
     /**
@@ -113,28 +121,40 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                                                   final String tableNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> tables = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SELF_REFERENCING_COL_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REF_GENERATION, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schemaPattern, keyspaceMetadata ->
             filterByTableNamePattern(tableNamePattern, keyspaceMetadata, tableMetadata -> {
-                final MetadataRow row = new MetadataRow()
-                    .addEntry(TABLE_CATALOG_SHORTNAME, catalog)
-                    .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                    .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                    .addEntry(TABLE_TYPE, TABLE)
-                    .addEntry(REMARKS, tableMetadata.getOptions()
-                        .get(CqlIdentifier.fromCql(CQL_OPTION_COMMENT)).toString())
-                    .addEntry(TYPE_CATALOG, null)
-                    .addEntry(TYPE_SCHEMA, null)
-                    .addEntry(TYPE_NAME, null)
-                    .addEntry(SELF_REFERENCING_COL_NAME, null)
-                    .addEntry(REF_GENERATION, null);
+                final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                    catalog,                                   // TABLE_CAT
+                    keyspaceMetadata.getName().asInternal(),   // TABLE_SCHEM
+                    tableMetadata.getName().asInternal(),      // TABLE_NAME
+                    TABLE,                                     // TABLE_TYPE
+                    tableMetadata.getOptions().get(CqlIdentifier.fromCql(CQL_OPTION_COMMENT)).toString(), // REMARKS
+                    null,                                      // TYPE_CAT
+                    null,                                      // TYPE_SCHEM
+                    null,                                      // TYPE_NAME
+                    null,                                      // SELF_REFERENCING_COL_NAME
+                    null);                                     // REF_GENERATION
                 tables.add(row);
             }, null), null);
 
         // Results should all have the same TABLE_CAT, so just sort them by TABLE_SCHEM then TABLE_NAME.
         tables.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TABLE_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(tables));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(tables));
     }
 
     /**
@@ -203,32 +223,48 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                                                    final boolean approximate) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> indexes = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NON_UNIQUE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(INDEX_QUALIFIER, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(INDEX_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ASC_OR_DESC, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CARDINALITY, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PAGES, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FILTER_CONDITION, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schema, keyspaceMetadata ->
             filterByTableNamePattern(tableName, keyspaceMetadata, tableMetadata -> {
                 for (final Map.Entry<CqlIdentifier, IndexMetadata> index : tableMetadata.getIndexes().entrySet()) {
                     final IndexMetadata indexMetadata = index.getValue();
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(TABLE_CATALOG_SHORTNAME, catalog)
-                        .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                        .addEntry(NON_UNIQUE, Boolean.TRUE.toString())
-                        .addEntry(INDEX_QUALIFIER, catalog)
-                        .addEntry(INDEX_NAME, indexMetadata.getName().asInternal())
-                        .addEntry(TYPE, String.valueOf(DatabaseMetaData.tableIndexOther))
-                        .addEntry(ORDINAL_POSITION, String.valueOf(1))
-                        .addEntry(COLUMN_NAME, indexMetadata.getTarget())
-                        .addEntry(ASC_OR_DESC, null)
-                        .addEntry(CARDINALITY, String.valueOf(-1))
-                        .addEntry(PAGES, String.valueOf(-1))
-                        .addEntry(FILTER_CONDITION, null);
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                          // TABLE_CAT
+                        keyspaceMetadata.getName().asInternal(),          // TABLE_SCHEM
+                        tableMetadata.getName().asInternal(),             // TABLE_NAME
+                        Boolean.TRUE.toString(),                          // NON_UNIQUE
+                        catalog,                                          // INDEX_QUALIFIER
+                        indexMetadata.getName().asInternal(),             // INDEX_NAME
+                        String.valueOf(DatabaseMetaData.tableIndexOther), // TYPE
+                        String.valueOf(1),                                // ORDINAL_POSITION
+                        indexMetadata.getTarget(),                        // COLUMN_NAME
+                        null,                                             // ASC_OR_DESC
+                        String.valueOf(-1),                               // CARDINALITY
+                        String.valueOf(-1),                               // PAGES
+                        null);                                            // FILTER_CONDITION
                     indexes.add(row);
                 }
             }, null), null);
 
         // Results should all have the same NON_UNIQUE, TYPE and ORDINAL_POSITION, so just sort them by INDEX_NAME.
         indexes.sort(Comparator.comparing(row -> row.getString(INDEX_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(indexes));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(indexes));
     }
 
     /**
@@ -264,18 +300,26 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
         throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> primaryKeys = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(KEY_SEQ, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PRIMARY_KEY_NAME, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schema, keyspaceMetadata ->
             filterByTableNamePattern(tableName, keyspaceMetadata, tableMetadata -> {
                 int seq = 1;
                 for (final ColumnMetadata col : tableMetadata.getPrimaryKey()) {
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(TABLE_CATALOG_SHORTNAME, catalog)
-                        .addEntry(TABLE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(TABLE_NAME, tableMetadata.getName().asInternal())
-                        .addEntry(COLUMN_NAME, col.getName().asInternal())
-                        .addEntry(KEY_SEQ, String.valueOf(seq))
-                        .addEntry(PRIMARY_KEY_NAME, null);
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                  // TABLE_CAT
+                        keyspaceMetadata.getName().asInternal(),  // TABLE_SCHEM
+                        tableMetadata.getName().asInternal(),     // TABLE_NAME
+                        col.getName().asInternal(),               // COLUMN_NAME
+                        String.valueOf(seq),                      // KEY_SEQ
+                        null);                                    // PK_NAME
                     primaryKeys.add(row);
                     seq++;
                 }
@@ -283,7 +327,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
 
         // Sort the results by COLUMN_NAME.
         primaryKeys.sort(Comparator.comparing(row -> row.getString(COLUMN_NAME)));
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(primaryKeys));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(primaryKeys));
     }
 
     /**
@@ -342,6 +387,16 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
     public CassandraMetadataResultSet buildBestRowIdentifier(final String schema, final String table, final int scope)
         throws SQLException {
         final ArrayList<MetadataRow> bestRowIdentifiers = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(SCOPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PSEUDO_COLUMN, DataTypes.TEXT)
+        );
 
         filterBySchemaNamePattern(schema, keyspaceMetadata ->
             filterByTableNamePattern(table, keyspaceMetadata, tableMetadata -> {
@@ -365,20 +420,21 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                             columnMetadata.getType(), e.getMessage());
                     }
 
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(SCOPE, String.valueOf(scope))
-                        .addEntry(COLUMN_NAME, columnMetadata.getName().asInternal())
-                        .addEntry(DATA_TYPE, String.valueOf(jdbcType))
-                        .addEntry(TYPE_NAME, columnMetadata.getType().toString())
-                        .addEntry(COLUMN_SIZE, String.valueOf(columnSize))
-                        .addEntry(BUFFER_LENGTH, String.valueOf(0))
-                        .addEntry(DECIMAL_DIGITS, null)
-                        .addEntry(PSEUDO_COLUMN, String.valueOf(bestRowNotPseudo));
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                            String.valueOf(scope),                 // SCOPE
+                            columnMetadata.getName().asInternal(), // COLUMN_NAME
+                            String.valueOf(jdbcType),              // DATA_TYPE
+                            columnMetadata.getType().toString(),   // TYPE_NAME
+                            String.valueOf(columnSize),            // COLUMN_SIZE
+                            String.valueOf(0),                     // BUFFER_LENGTH
+                            null,                                  // DECIMAL_DIGITS
+                            String.valueOf(bestRowNotPseudo));     // PSEUDO_COLUMN
                     bestRowIdentifiers.add(row);
                 }
             }, null), null);
 
         // All the rows of the result set have the same scope, so there is no need to perform an additional sort.
-        return CassandraMetadataResultSet.buildFrom(statement, new MetadataResultSet().setRows(bestRowIdentifiers));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(bestRowIdentifiers));
     }
 }

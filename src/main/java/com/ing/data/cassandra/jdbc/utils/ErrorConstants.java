@@ -17,6 +17,7 @@ package com.ing.data.cassandra.jdbc.utils;
 
 import com.ing.data.cassandra.jdbc.CassandraPreparedStatement;
 import com.ing.data.cassandra.jdbc.CassandraResultSet;
+import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.net.URI;
 import java.sql.Connection;
@@ -259,10 +260,16 @@ public final class ErrorConstants {
         "Unable to convert the column of index %d to an instance of %s";
 
     /**
-     * Error message used in any SQL exception thrown when it is not possible to retrieve metadata of any
+     * Error message used in any SQL exception thrown when it is not possible to retrieve some metadata of any
      * {@link ResultSet}.
      */
     public static final String UNABLE_TO_RETRIEVE_METADATA = "Unable to retrieve metadata for result set.";
+
+    /**
+     * Error message used in any runtime exception thrown when populating a {@link MetadataRow} failed due to a mismatch
+     * between the number of provided values and the number of columns in the row.
+     */
+    public static final String UNABLE_TO_POPULATE_METADATA_ROW = "Unable to populate a metadata row.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

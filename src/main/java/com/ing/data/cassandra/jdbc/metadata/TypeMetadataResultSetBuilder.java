@@ -18,6 +18,7 @@ package com.ing.data.cassandra.jdbc.metadata;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
@@ -113,6 +115,15 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                                                 final int[] types) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> udtsRows = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TYPE_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CLASS_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(BASE_TYPE, DataTypes.TEXT)
+        );
 
         // Parse the fully-qualified type name, if necessary.
         String schemaName = schemaPattern;
@@ -129,14 +140,14 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                 final UserDefinedType udtMetadata = udt.getValue();
                 if (matchesPattern(typeName.get(), udtMetadata.getName().asInternal())
                     && (types == null || Arrays.stream(types).anyMatch(type -> type == JAVA_OBJECT))) {
-                    final MetadataRow row = new MetadataRow()
-                        .addEntry(TYPE_CATALOG, catalog)
-                        .addEntry(TYPE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                        .addEntry(TYPE_NAME, udtMetadata.getName().asInternal())
-                        .addEntry(CLASS_NAME, UdtValue.class.getName())
-                        .addEntry(DATA_TYPE, String.valueOf(JAVA_OBJECT))
-                        .addEntry(REMARKS, StringUtils.EMPTY)
-                        .addEntry(BASE_TYPE, null);
+                    final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                        catalog,                                 // TYPE_CAT
+                        keyspaceMetadata.getName().asInternal(), // TYPE_SCHEM
+                        udtMetadata.getName().asInternal(),      // TYPE_NAME
+                        UdtValue.class.getName(),                // CLASS_NAME
+                        String.valueOf(JAVA_OBJECT),             // DATA_TYPE
+                        StringUtils.EMPTY,                       // REMARKS
+                        null);                                   // BASE_TYPE
                     udtsRows.add(row);
                 }
             }
@@ -145,7 +156,8 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         // Results should all have the same DATA_TYPE and TYPE_CAT so just sort them by TYPE_SCHEM then TYPE_NAME.
         udtsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(udtsRows));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(udtsRows));
     }
 
     /**
@@ -210,37 +222,59 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
      */
     public CassandraMetadataResultSet buildTypes() throws SQLException {
         final ArrayList<MetadataRow> types = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PRECISION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(LITERAL_PREFIX, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(LITERAL_SUFFIX, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CREATE_PARAMS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CASE_SENSITIVE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SEARCHABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(UNSIGNED_ATTRIBUTE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FIXED_PRECISION_SCALE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(AUTO_INCREMENT, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(LOCALIZED_TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(MINIMUM_SCALE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(MAXIMUM_SCALE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT)
+        );
+
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
             final AbstractJdbcType<?> jdbcType = getTypeForComparator(dataType.asLowercaseCql());
             String literalQuotingSymbol = null;
             if (jdbcType.needsQuotes()) {
                 literalQuotingSymbol = "'";
             }
-            final MetadataRow row = new MetadataRow()
-                .addEntry(TYPE_NAME, dataType.cqlType)
-                .addEntry(DATA_TYPE, String.valueOf(jdbcType.getJdbcType()))
-                .addEntry(PRECISION, String.valueOf(jdbcType.getPrecision(null)))
-                .addEntry(LITERAL_PREFIX, literalQuotingSymbol)
-                .addEntry(LITERAL_SUFFIX, literalQuotingSymbol)
-                .addEntry(CREATE_PARAMS, null)
-                .addEntry(NULLABLE, String.valueOf(typeNullable)) // absence is the equivalent of null in Cassandra
-                .addEntry(CASE_SENSITIVE, String.valueOf(jdbcType.isCaseSensitive()))
-                .addEntry(SEARCHABLE, String.valueOf(typePredBasic))
-                .addEntry(UNSIGNED_ATTRIBUTE, String.valueOf(!jdbcType.isSigned()))
-                .addEntry(FIXED_PRECISION_SCALE, String.valueOf(!jdbcType.isCurrency()))
-                .addEntry(AUTO_INCREMENT, String.valueOf(false))
-                .addEntry(LOCALIZED_TYPE_NAME, null)
-                .addEntry(MINIMUM_SCALE, String.valueOf(DEFAULT_SCALE))
-                .addEntry(MAXIMUM_SCALE, String.valueOf(jdbcType.getScale(null)))
-                .addEntry(SQL_DATA_TYPE, null)
-                .addEntry(SQL_DATETIME_SUB, null)
-                .addEntry(NUM_PRECISION_RADIX, String.valueOf(jdbcType.getPrecision(null)));
+            final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                dataType.cqlType,                             // TYPE_NAME
+                String.valueOf(jdbcType.getJdbcType()),       // DATA_TYPE
+                String.valueOf(jdbcType.getPrecision(null)),  // PRECISION
+                literalQuotingSymbol,                         // LITERAL_PREFIX
+                literalQuotingSymbol,                         // LITERAL_SUFFIX
+                null,                                         // CREATE_PARAMS
+                String.valueOf(typeNullable),                 // NULLABLE, absence is equivalent of null in Cassandra
+                String.valueOf(jdbcType.isCaseSensitive()),   // CASE_SENSITIVE
+                String.valueOf(typePredBasic),                // SEARCHABLE
+                String.valueOf(!jdbcType.isSigned()),         // UNSIGNED_ATTRIBUTE
+                String.valueOf(!jdbcType.isCurrency()),       // FIXED_PREC_SCALE
+                String.valueOf(false),                        // AUTO_INCREMENT
+                null,                                         // LOCAL_TYPE_NAME
+                String.valueOf(DEFAULT_SCALE),                // MINIMUM_SCALE
+                String.valueOf(jdbcType.getScale(null)),      // MAXIMUM_SCALE
+                null,                                         // SQL_DATA_TYPE
+                null,                                         // SQL_DATETIME_SUB
+                String.valueOf(jdbcType.getPrecision(null))); // NUM_PREC_RADIX
             types.add(row);
         }
 
         // Sort results by DATA_TYPE.
         types.sort(Comparator.comparing(row -> Integer.valueOf(row.getString(DATA_TYPE))));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(types));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(types));
     }
 
     /**
@@ -322,6 +356,29 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                                                       final String attributesNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> attributesRows = new ArrayList<>();
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TYPE_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ATTRIBUTE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ATTRIBUTE_TYPE_NAME, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ATTRIBUTE_SIZE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ATTRIBUTE_DEFAULT, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_CATALOG, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_SCHEMA, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE_TABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.TEXT)
+        );
 
         // Parse the fully-qualified type name, if necessary.
         String schemaName = schemaPattern;
@@ -370,28 +427,28 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                             LOG.warn("Unable to get JDBC type for comparator [{}]: {}", attrType, e.getMessage());
                         }
 
-                        final MetadataRow row = new MetadataRow()
-                            .addEntry(TYPE_CATALOG, catalog)
-                            .addEntry(TYPE_SCHEMA, keyspaceMetadata.getName().asInternal())
-                            .addEntry(TYPE_NAME, udtMetadata.getName().asInternal())
-                            .addEntry(ATTRIBUTE_NAME, attrName)
-                            .addEntry(DATA_TYPE, String.valueOf(jdbcType))
-                            .addEntry(ATTRIBUTE_TYPE_NAME, attrType.toString())
-                            .addEntry(ATTRIBUTE_SIZE, String.valueOf(columnSize))
-                            .addEntry(DECIMAL_DIGITS, null)
-                            .addEntry(NUM_PRECISION_RADIX, String.valueOf(radix))
-                            .addEntry(NULLABLE, String.valueOf(DatabaseMetaData.attributeNoNulls))
-                            .addEntry(REMARKS, null)
-                            .addEntry(ATTRIBUTE_DEFAULT, null)
-                            .addEntry(SQL_DATA_TYPE, null)
-                            .addEntry(SQL_DATETIME_SUB, null)
-                            .addEntry(CHAR_OCTET_LENGTH, String.valueOf(Integer.MAX_VALUE))
-                            .addEntry(ORDINAL_POSITION, String.valueOf(i + 1))
-                            .addEntry(IS_NULLABLE, StringUtils.EMPTY)
-                            .addEntry(SCOPE_CATALOG, null)
-                            .addEntry(SCOPE_SCHEMA, null)
-                            .addEntry(SCOPE_TABLE, null)
-                            .addEntry(SOURCE_DATA_TYPE, null);
+                        final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
+                            catalog,                                           // TYPE_CATALOG
+                            keyspaceMetadata.getName().asInternal(),           // TYPE_SCHEMA
+                            udtMetadata.getName().asInternal(),                // TYPE_NAME
+                            attrName,                                          // ATTR_NAME
+                            String.valueOf(jdbcType),                          // DATA_TYPE
+                            attrType.toString(),                               // ATTR_TYPE_NAME
+                            String.valueOf(columnSize),                        // ATTR_SIZE
+                            null,                                              // DECIMAL_DIGITS
+                            String.valueOf(radix),                             // NUM_PREC_RADIX
+                            String.valueOf(DatabaseMetaData.attributeNoNulls), // NULLABLE
+                            null,                                              // REMARKS
+                            null,                                              // ATTR_DEF
+                            null,                                              // SQL_DATA_TYPE
+                            null,                                              // SQL_DATETIME_SUB
+                            String.valueOf(Integer.MAX_VALUE),                 // CHAR_OCTET_LENGTH
+                            String.valueOf(i + 1),                             // ORDINAL_POSITION
+                            StringUtils.EMPTY,                                 // IS_NULLABLE
+                            null,                                              // SCOPE_CATALOG
+                            null,                                              // SCOPE_SCHEMA
+                            null,                                              // SCOPE_TABLE
+                            null);                                             // SOURCE_DATA_TYPE
                         attributesRows.add(row);
                     }
                 });
@@ -402,7 +459,8 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         attributesRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME))
             .thenComparing(row -> ((MetadataRow) row).getString(ORDINAL_POSITION)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(attributesRows));
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(attributesRows));
     }
 
 }
