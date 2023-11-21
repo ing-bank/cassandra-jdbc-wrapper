@@ -121,6 +121,7 @@
         <slf4j.version>1.7.36</slf4j.version>
         <testcontainers.version>1.19.2</testcontainers.version>
         <astra-sdk.version>0.6.11</astra-sdk.version>
+        <schemacrawler.version>16.20.6</schemacrawler.version>
         <!-- Versions for plugins -->
         <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.3.1</maven-clean-plugin.version>
@@ -279,20 +280,20 @@
         <dependency>
           <groupId>us.fatehi</groupId>
           <artifactId>schemacrawler</artifactId>
-          <version>16.20.5</version>
+          <version>${schemacrawler.version}</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>us.fatehi</groupId>
           <artifactId>schemacrawler-api</artifactId>
-          <version>16.20.5</version>
+          <version>${schemacrawler.version}</version>
           <type>test-jar</type>
           <scope>test</scope>
         </dependency>   
         <dependency>
           <groupId>us.fatehi</groupId>
           <artifactId>schemacrawler-tools</artifactId>
-          <version>16.20.5</version>
+          <version>${schemacrawler.version}</version>
           <type>test-jar</type>
           <scope>test</scope>
         </dependency>             

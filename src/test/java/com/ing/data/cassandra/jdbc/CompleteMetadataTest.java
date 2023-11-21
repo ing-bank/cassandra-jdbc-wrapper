@@ -1,5 +1,5 @@
 
-package com.ing.data.cassandra.jdbc.metadata;
+package com.ing.data.cassandra.jdbc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -11,10 +11,6 @@ import java.net.InetSocketAddress;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.CassandraContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import schemacrawler.schemacrawler.InfoLevel;
 import schemacrawler.schemacrawler.LimitOptionsBuilder;
 import schemacrawler.schemacrawler.LoadOptionsBuilder;
@@ -29,55 +25,48 @@ import us.fatehi.utility.datasource.DatabaseConnectionSources;
 import us.fatehi.utility.datasource.MultiUseUserCredentials;
 
 /****
-	* Runs extensive database metadata tests.
-****/
-@Testcontainers
-public class CompleteMetadataTest {
-
-    private final DockerImageName imageName = DockerImageName.parse("cassandra");
-
-    @Container
-    private final CassandraContainer<?> dbContainer =
-            new CassandraContainer<>(imageName.withTag("5.0")).withInitScript("initEmbeddedDse.cql");
+ * Runs extensive database metadata tests.
+ ****/
+public class CompleteMetadataTest extends UsingCassandraContainerTest {
 
     private DatabaseConnectionSource dbConnectionSource;
 
     /****
-        * Sets up a data source to connect to the Cassandra database.
-        *
-    ****/
+     * Sets up a data source to connect to the Cassandra database.
+     *
+     ****/
     @BeforeEach
     public void createDatabase() {
 
-        if (!dbContainer.isRunning()) {
+        if (!cassandraContainer.isRunning()) {
             fail("Testcontainer for database is not available");
         }
 
-        final InetSocketAddress contactPoint = dbContainer.getContactPoint();
+        final InetSocketAddress contactPoint = cassandraContainer.getContactPoint();
         final String host = contactPoint.getHostName();
         final int port = contactPoint.getPort();
-        final String keyspace = "test_keyspace_vect";
-        final String localDatacenter = dbContainer.getLocalDatacenter();
-        final String connectionUrl = String.format("jdbc:cassandra://%s:%d/%s?localdatacenter=%s", host,
-                port, keyspace, localDatacenter);
+        final String keyspace = "test_keyspace";
+        final String localDatacenter = cassandraContainer.getLocalDatacenter();
+        final String connectionUrl = String.format("jdbc:cassandra://%s:%d/%s?localdatacenter=%s",
+                host, port, keyspace, localDatacenter);
         System.out.printf("url=%s%n", connectionUrl);
         createDataSource(connectionUrl);
     }
 
     /****
-        * Uses SchemaCrawler to obtain database metadata in "maximum" mode. 
-        * Compares actual results to an expected file with results. The test will
-        * produce a new expected results file if the actual and expected results
-        * do not match.
-		*
-		* @throws Exception on an error when running the test
-    ****/
+     * Uses SchemaCrawler to obtain database metadata in "maximum" mode. Compares actual results to
+     * an expected file with results. The test will produce a new expected results file if the
+     * actual and expected results do not match.
+     *
+     * @throws Exception on an error when running the test
+     ****/
     @Test
     public void givenDatabase_whenCompleteMetadataExtracted_shouldMatchExpectedOutput()
             throws Exception {
 
         final LimitOptionsBuilder limitOptionsBuilder =
-                LimitOptionsBuilder.builder().includeSchemas(Pattern.compile("test_keyspace_vect"));
+                LimitOptionsBuilder.builder().includeSchemas(Pattern.compile("test_keyspace.*"));
+        // .includeRoutines(new IncludeAll());
         final SchemaInfoLevelBuilder schemaInfoLevelBuilder =
                 SchemaInfoLevelBuilder.builder().withInfoLevel(InfoLevel.maximum);
         final LoadOptionsBuilder loadOptionsBuilder =
@@ -91,7 +80,8 @@ public class CompleteMetadataTest {
 
         final SchemaCrawlerExecutable executable = new SchemaCrawlerExecutable("details");
         executable.setSchemaCrawlerOptions(schemaCrawlerOptions);
-        executable.setAdditionalConfiguration(SchemaTextOptionsBuilder.builder(textOptions).toConfig());
+        executable.setAdditionalConfiguration(
+                SchemaTextOptionsBuilder.builder(textOptions).toConfig());
 
         final String expectedResource = "expected_metadata_output.txt";
         assertThat(outputOf(executableExecution(getDataSource(), executable)),
@@ -100,7 +90,8 @@ public class CompleteMetadataTest {
 
     private void createDataSource(final String connectionUrl) {
         dbConnectionSource = DatabaseConnectionSources.newDatabaseConnectionSource(connectionUrl,
-                new MultiUseUserCredentials(dbContainer.getUsername(), dbContainer.getPassword()));
+                new MultiUseUserCredentials(cassandraContainer.getUsername(),
+                        cassandraContainer.getPassword()));
 
     }
 
