@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import schemacrawler.inclusionrule.IncludeAll;
 import schemacrawler.schemacrawler.InfoLevel;
 import schemacrawler.schemacrawler.LimitOptionsBuilder;
 import schemacrawler.schemacrawler.LoadOptionsBuilder;
@@ -49,7 +50,6 @@ public class CompleteMetadataTest extends UsingCassandraContainerTest {
         final String localDatacenter = cassandraContainer.getLocalDatacenter();
         final String connectionUrl = String.format("jdbc:cassandra://%s:%d/%s?localdatacenter=%s",
                 host, port, keyspace, localDatacenter);
-        System.out.printf("url=%s%n", connectionUrl);
         createDataSource(connectionUrl);
     }
 
@@ -65,8 +65,8 @@ public class CompleteMetadataTest extends UsingCassandraContainerTest {
             throws Exception {
 
         final LimitOptionsBuilder limitOptionsBuilder =
-                LimitOptionsBuilder.builder().includeSchemas(Pattern.compile("test_keyspace.*"));
-        // .includeRoutines(new IncludeAll());
+                LimitOptionsBuilder.builder().includeSchemas(Pattern.compile("test_keyspace.*"))
+                        .includeRoutines(new IncludeAll());
         final SchemaInfoLevelBuilder schemaInfoLevelBuilder =
                 SchemaInfoLevelBuilder.builder().withInfoLevel(InfoLevel.maximum);
         final LoadOptionsBuilder loadOptionsBuilder =
