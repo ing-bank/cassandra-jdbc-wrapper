@@ -47,12 +47,12 @@ git clone https://github.com/ing-bank/cassandra-jdbc-wrapper.git
 
 To compile and run tests, execute the following Maven command:
 ```bash
-mvn clean package
+./mvnw clean package
 ```
 
 To build a bundled version of the JDBC wrapper, run the following command:
 ```bash
-mvn clean package -Pbundle
+./mvnw clean package -Pbundle
 ```
 
 #### Some considerations about running tests
@@ -60,7 +60,7 @@ mvn clean package -Pbundle
 If for some reason the tests using DataStax Enterprise server (`*DseContainerTest`) fail in your local environment, you 
 might disable them using the Maven profile `disableDseTests`: 
 ```bash
-mvn clean package -PdisableDseTests
+./mvnw clean package -PdisableDseTests
 ```
 
 The test suite also includes integration tests with AstraDB (`DbaasAstraIntegrationTest`). These tests require an
