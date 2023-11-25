@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
@@ -110,12 +110,12 @@ public class CassandraDriver implements Driver {
 
     @Override
     public int getMajorVersion() {
-        return parseVersion(getDriverProperty("driver.version"), 0);
+        return safeParseVersion(getDriverProperty("driver.version")).getMajor();
     }
 
     @Override
     public int getMinorVersion() {
-        return parseVersion(getDriverProperty("driver.version"), 1);
+        return safeParseVersion(getDriverProperty("driver.version")).getMinor();
     }
 
     @Override

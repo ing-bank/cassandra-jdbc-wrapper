@@ -43,6 +43,7 @@ import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefi
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static java.sql.DatabaseMetaData.typeNullable;
 import static java.sql.DatabaseMetaData.typePredBasic;
 import static java.sql.Types.JAVA_OBJECT;
@@ -217,10 +218,11 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
      * is returned for data types where the column size is not applicable.
      * </p>
      *
+     * @param databaseVersion The database version the driver is currently connected to.
      * @return A valid result set for implementation of {@link DatabaseMetaData#getTypeInfo()}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet buildTypes() throws SQLException {
+    public CassandraMetadataResultSet buildTypes(final String databaseVersion) throws SQLException {
         final ArrayList<MetadataRow> types = new ArrayList<>();
         final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
@@ -244,6 +246,11 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         );
 
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
+            // Only include types existing in the current database version.
+            if (!existsInDatabaseVersion(databaseVersion, dataType)) {
+                continue;
+            }
+
             final AbstractJdbcType<?> jdbcType = getTypeForComparator(dataType.asLowercaseCql());
             String literalQuotingSymbol = null;
             if (jdbcType.needsQuotes()) {

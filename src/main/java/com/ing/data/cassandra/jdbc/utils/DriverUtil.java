@@ -15,13 +15,18 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.apache.commons.lang3.StringUtils;
+import org.semver4j.RangesExpression;
+import org.semver4j.Semver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * A set of static utility methods and constants used by the JDBC driver.
@@ -63,6 +68,16 @@ public final class DriverUtil {
      */
     public static final String NULL_KEYWORD = "NULL";
 
+    /**
+     * Cassandra version 5.0. Used for types and built-in functions versioning.
+     */
+    public static final String CASSANDRA_5 = "5.0";
+
+    /**
+     * Cassandra version 4.0. Used for types and built-in functions versioning.
+     */
+    public static final String CASSANDRA_4 = "4.0";
+
     static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
 
     private DriverUtil() {
@@ -88,27 +103,64 @@ public final class DriverUtil {
     }
 
     /**
-     * Gets a part of a version string.
+     * Gets the {@link Semver} representation of a version string.
      * <p>
      *     It uses the dot character as separator to parse the different parts of a version (major, minor, patch).
      * </p>
      *
      * @param version The version string (for example X.Y.Z).
-     * @param part The part of the version to extract (for the semantic versioning, use 0 for the major version, 1 for
-     *             the minor and 2 for the patch).
-     * @return The requested part of the version, or 0 if the requested part cannot be parsed correctly.
+     * @return The parsed version, or {@link Semver#ZERO} if the string cannot be parsed correctly.
      */
-    public static int parseVersion(final String version, final int part) {
-        if (StringUtils.isBlank(version) || StringUtils.countMatches(version, ".") < part || part < 0) {
-            return 0;
+    public static Semver safeParseVersion(final String version) {
+        if (StringUtils.isBlank(version)) {
+            return Semver.ZERO;
         } else {
-            try {
-                return Integer.parseInt(version.split("\\.")[part]);
-            } catch (final NumberFormatException ex) {
-                LOG.error("Unable to parse version: {}", version);
-                return 0;
+            final Semver parsedVersion = Semver.coerce(version);
+            if (parsedVersion == null) {
+                return Semver.ZERO;
             }
+            return parsedVersion;
         }
+    }
+
+    /**
+     * Checks whether the database metadata (CQL type or built-in function) exists in the current database version.
+     *
+     * @param dbVersion         The version of the Cassandra database the driver is currently connected to.
+     * @param versionedMetadata The database metadata to check.
+     * @return {@code true} if the database metadata exists in the current database version, {@code false} otherwise.
+     */
+    public static boolean existsInDatabaseVersion(final String dbVersion,
+                                                  final VersionedMetadata versionedMetadata) {
+        final Semver parseDatabaseVersion = Semver.coerce(dbVersion);
+        if (parseDatabaseVersion == null) {
+            return false;
+        }
+        Semver minVersion = Semver.ZERO;
+        if (versionedMetadata.isValidFrom() != null) {
+            minVersion = versionedMetadata.isValidFrom();
+        }
+        final RangesExpression validRange = RangesExpression.greaterOrEqual(minVersion);
+        if (versionedMetadata.isInvalidFrom() != null) {
+            validRange.and(RangesExpression.less(versionedMetadata.isInvalidFrom()));
+        }
+        return parseDatabaseVersion.satisfies(validRange);
+    }
+
+    /**
+     * Builds an alphabetically sorted and comma-separated list of metadata (such as built-in functions or CQL
+     * keywords) existing in the specified Cassandra version.
+     *
+     * @param metadataList The list of possible metadata to format.
+     * @param dbVersion    The version of the Cassandra database the driver is currently connected to.
+     * @return The formatted list of metadata.
+     */
+    public static String buildMetadataList(final List<VersionedMetadata> metadataList, final String dbVersion) {
+        return metadataList.stream()
+            .filter(metadata -> existsInDatabaseVersion(dbVersion, metadata))
+            .map(VersionedMetadata::getName)
+            .sorted()
+            .collect(Collectors.joining(","));
     }
 
 }

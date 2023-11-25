@@ -30,8 +30,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - The index type returned by `CassandraDatabaseMetaData.getIndexInfo(String, String, String, boolean, boolean)` is
   now always `tableIndexOther`.
 - Improve the accuracy of the JDBC metadata of the collection types (`list`, `map`, `set` and `vector`).
+- Update the following methods of `CassandraDatabaseMetaData`: `getNumericFunctions()`, `getSQLKeywords()`,
+  `getSystemFunctions()`, `getTimeDateFunctions()` and `getTypeInfo()` to add the new math, date/time and
+  [data masking](https://cwiki.apache.org/confluence/display/CASSANDRA/CEP-20%3A+Dynamic+Data+Masking) 
+  functions introduced in Cassandra 5.0 and take into account the version of the database the driver in connected to.
 - Update Apache Commons IO to version 2.15.0.
-- Update Jackson dependencies to version 2.15.3.
+- Update Apache Commons Lang to version 3.14.0.
+- Update Jackson dependencies to version 2.16.0.
 - Use Apache Cassandra® 5.0 image to run tests.
 - Replace references to "DataStax Java driver" by "Java Driver for Apache Cassandra®" following the transfer of the 
   codebase to Apache Software Foundation (see: 

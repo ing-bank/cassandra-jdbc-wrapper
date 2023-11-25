@@ -23,6 +23,9 @@ import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +37,11 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.VECTOR;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_4;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
@@ -500,10 +506,19 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertEquals(ANOTHER_KEYSPACE.concat(";type_in_different_ks"), foundColumns.get(1));
     }
 
-    @Test
-    void givenStatement_whenBuildTypes_returnExpectedResultSet() throws SQLException {
+    static Stream<Arguments> buildCqlTypesTestCases() {
+        return Stream.of(
+            Arguments.of(CASSANDRA_5, DataTypeEnum.values().length),
+            Arguments.of(CASSANDRA_4, DataTypeEnum.values().length - 1) // Type VECTOR appears in Cassandra 5.0
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildCqlTypesTestCases")
+    void givenStatement_whenBuildTypes_returnExpectedResultSet(final String dbVersion, final int expectedNbOfTypes)
+        throws SQLException {
         final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
-        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildTypes();
+        final ResultSet result = new TypeMetadataResultSetBuilder(statement).buildTypes(dbVersion);
         assertNotNull(result);
         assertEquals(18, result.getMetaData().getColumnCount());
         assertEquals("TYPE_NAME", result.getMetaData().getColumnName(1));
@@ -534,7 +549,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             }
             foundColumns.add(String.join(";", results));
         }
-        assertEquals(DataTypeEnum.values().length, resultSize);
+        assertEquals(expectedNbOfTypes, resultSize);
         assertEquals("tinyint;-6;4;null;null;null;1;false;2;false;true;false;null;0;0;null;null;4",
             foundColumns.get(0));
         assertEquals("bigint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
@@ -589,8 +604,11 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             foundColumns.get(25));
         assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
             foundColumns.get(26));
-        assertEquals(VECTOR.cqlType.concat(";1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1"),
-            foundColumns.get(27));
+        if (CASSANDRA_5.equals(dbVersion)) {
+            assertEquals(VECTOR.cqlType
+                    .concat(";1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1"),
+                foundColumns.get(27));
+        }
     }
 
     @Test

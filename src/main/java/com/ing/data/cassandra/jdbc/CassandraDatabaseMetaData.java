@@ -16,12 +16,15 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.metadata.BasicVersionedMetadata;
+import com.ing.data.cassandra.jdbc.metadata.BuiltInFunctionsMetadataBuilder;
 import com.ing.data.cassandra.jdbc.metadata.CatalogMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.ColumnMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.FunctionMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -35,8 +38,10 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 
@@ -287,12 +292,12 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDriverMajorVersion() {
-        return parseVersion(getDriverVersion(), 0);
+        return safeParseVersion(getDriverVersion()).getMajor();
     }
 
     @Override
     public int getDriverMinorVersion() {
-        return parseVersion(getDriverVersion(), 1);
+        return safeParseVersion(getDriverVersion()).getMinor();
     }
 
     @Override
@@ -399,12 +404,12 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getJDBCMajorVersion() {
-        return parseVersion(getDriverProperty("driver.jdbcVersion"), 0);
+        return safeParseVersion(getDriverProperty("driver.jdbcVersion")).getMajor();
     }
 
     @Override
     public int getJDBCMinorVersion() {
-        return parseVersion(getDriverProperty("driver.jdbcVersion"), 1);
+        return safeParseVersion(getDriverProperty("driver.jdbcVersion")).getMinor();
     }
 
     @Override
@@ -511,9 +516,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getNumericFunctions() throws SQLException {
         checkStatementClosed();
-        // We consider here the vectors similarity functions introduced by CEP-30 as numeric functions (see
-        // https://issues.apache.org/jira/browse/CASSANDRA-18640).
-        return "similarity_cosine,similarity_euclidean,similarity_dot_product";
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildNumericFunctionsList();
     }
 
     @Override
@@ -634,16 +637,71 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         // SQL:2003 standard keywords (see: https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#xref-keywords).
         // The CQL keywords are listed here:
         // https://cassandra.apache.org/doc/latest/cassandra/cql/appendices.html#appendix-A
-        // Also add new keywords relative to vector type introduced by CEP-30:
+        // Also add new keywords relative to vector type introduced by CEP-30 in Cassandra 5.0:
         // https://cwiki.apache.org/confluence/x/OQ40Dw
-        final List<String> cqlKeywords = Arrays.asList("AGGREGATE", "ALLOW", "ANN OF", "APPLY", "ASCII", "AUTHORIZE",
-            "BATCH", "CLUSTERING", "COLUMNFAMILY", "COMPACT", "COUNTER", "CUSTOM", "ENTRIES", "FILTERING", "FINALFUNC",
-            "FROZEN", "FUNCTIONS", "IF", "INDEX", "INET", "INFINITY", "INITCOND", "JSON", "KEYS", "KEYSPACE",
-            "KEYSPACES", "LIMIT", "LIST", "LOGIN", "MODIFY", "NAN", "NOLOGIN", "NORECURSIVE", "NOSUPERUSER", "PASSWORD",
-            "PERMISSION", "PERMISSIONS", "RENAME", "REPLACE", "RETURNS", "ROLES", "SFUNC", "SMALLINT", "STORAGE",
-            "STYPE", "SUPERUSER", "TEXT", "TIMEUUID", "TINYINT", "TOKEN", "TRUNCATE", "TTL", "TUPLE", "UNLOGGED", "USE",
-            "USERS", "UUID", "VARINT", "VECTOR", "WRITETIME");
-        return String.join(",", cqlKeywords);
+        final List<VersionedMetadata> cqlKeywords = Arrays.asList(
+            new BasicVersionedMetadata("AGGREGATE"),
+            new BasicVersionedMetadata("ALLOW"),
+            new BasicVersionedMetadata("ANN OF", CASSANDRA_5),
+            new BasicVersionedMetadata("APPLY"),
+            new BasicVersionedMetadata("ASCII"),
+            new BasicVersionedMetadata("AUTHORIZE"),
+            new BasicVersionedMetadata("BATCH"),
+            new BasicVersionedMetadata("CLUSTERING"),
+            new BasicVersionedMetadata("COLUMNFAMILY"),
+            new BasicVersionedMetadata("COMPACT"),
+            new BasicVersionedMetadata("COUNTER"),
+            new BasicVersionedMetadata("CUSTOM"),
+            new BasicVersionedMetadata("ENTRIES"),
+            new BasicVersionedMetadata("FILTERING"),
+            new BasicVersionedMetadata("FINALFUNC"),
+            new BasicVersionedMetadata("FROZEN"),
+            new BasicVersionedMetadata("FUNCTIONS"),
+            new BasicVersionedMetadata("IF"),
+            new BasicVersionedMetadata("INDEX"),
+            new BasicVersionedMetadata("INET"),
+            new BasicVersionedMetadata("INFINITY"),
+            new BasicVersionedMetadata("INITCOND"),
+            new BasicVersionedMetadata("JSON"),
+            new BasicVersionedMetadata("KEYS"),
+            new BasicVersionedMetadata("KEYSPACE"),
+            new BasicVersionedMetadata("KEYSPACES"),
+            new BasicVersionedMetadata("LIMIT"),
+            new BasicVersionedMetadata("LIST"),
+            new BasicVersionedMetadata("LOGIN"),
+            new BasicVersionedMetadata("MODIFY"),
+            new BasicVersionedMetadata("NAN"),
+            new BasicVersionedMetadata("NOLOGIN"),
+            new BasicVersionedMetadata("NORECURSIVE"),
+            new BasicVersionedMetadata("NOSUPERUSER"),
+            new BasicVersionedMetadata("PASSWORD"),
+            new BasicVersionedMetadata("PERMISSION"),
+            new BasicVersionedMetadata("PERMISSIONS"),
+            new BasicVersionedMetadata("RENAME"),
+            new BasicVersionedMetadata("REPLACE"),
+            new BasicVersionedMetadata("RETURNS"),
+            new BasicVersionedMetadata("ROLES"),
+            new BasicVersionedMetadata("SFUNC"),
+            new BasicVersionedMetadata("SMALLINT"),
+            new BasicVersionedMetadata("STORAGE"),
+            new BasicVersionedMetadata("STYPE"),
+            new BasicVersionedMetadata("SUPERUSER"),
+            new BasicVersionedMetadata("TEXT"),
+            new BasicVersionedMetadata("TIMEUUID"),
+            new BasicVersionedMetadata("TINYINT"),
+            new BasicVersionedMetadata("TOKEN"),
+            new BasicVersionedMetadata("TRUNCATE"),
+            new BasicVersionedMetadata("TTL"),
+            new BasicVersionedMetadata("TUPLE"),
+            new BasicVersionedMetadata("UNLOGGED"),
+            new BasicVersionedMetadata("USE"),
+            new BasicVersionedMetadata("USERS"),
+            new BasicVersionedMetadata("UUID"),
+            new BasicVersionedMetadata("VARINT"),
+            new BasicVersionedMetadata("VECTOR", CASSANDRA_5),
+            new BasicVersionedMetadata("WRITETIME")
+        );
+        return buildMetadataList(cqlKeywords, this.getDatabaseProductVersion());
     }
 
     @Override
@@ -679,8 +737,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getStringFunctions() throws SQLException {
         checkStatementClosed();
-        // Cassandra does not implement natively string functions.
-        return StringUtils.EMPTY;
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildSystemFunctionsList();
     }
 
     /**
@@ -725,7 +782,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getSystemFunctions() throws SQLException {
         checkStatementClosed();
-        return "TOKEN,TTL,WRITETIME";
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildSystemFunctionsList();
     }
 
     /**
@@ -778,15 +835,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getTimeDateFunctions() throws SQLException {
         checkStatementClosed();
-        // See: https://cassandra.apache.org/doc/latest/cassandra/cql/functions.html
-        return "dateOf,now,minTimeuuid,maxTimeuuid,unixTimestampOf,toDate,toTimestamp,toUnixTimestamp,currentTimestamp,"
-            + "currentDate,currentTime,currentTimeUUID";
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildTimeDateFunctionsList();
     }
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
         checkStatementClosed();
-        return new TypeMetadataResultSetBuilder(this.statement).buildTypes();
+        return new TypeMetadataResultSetBuilder(this.statement).buildTypes(this.getDatabaseProductVersion());
     }
 
     /**

@@ -15,6 +15,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.ing.data.cassandra.jdbc.metadata.BasicVersionedMetadata;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.semver4j.Semver;
 
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
@@ -35,8 +37,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_4;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
@@ -63,8 +69,10 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UtilsUnitTest {
 
@@ -297,13 +305,29 @@ class UtilsUnitTest {
     }
 
     @Test
-    void testParseVersion() {
-        assertEquals(0, parseVersion(StringUtils.EMPTY, 0));
-        assertEquals(0, parseVersion("1.0.0", 3));
-        assertEquals(0, parseVersion("1.0.0", -1));
-        assertEquals(1, parseVersion("1.2.3", 0));
-        assertEquals(2, parseVersion("1.2.3", 1));
-        assertEquals(3, parseVersion("1.2.3", 2));
-        assertEquals(0, parseVersion("1.a", 1));
+    void testSafeParseVersion() {
+        assertEquals(Semver.ZERO, safeParseVersion(StringUtils.EMPTY));
+        assertEquals(Semver.ZERO, safeParseVersion("alpha"));
+        assertEquals(Semver.parse("1.0.0"), safeParseVersion("1"));
+        assertEquals(Semver.parse("1.0.0"), safeParseVersion("1.0"));
+        assertEquals(Semver.parse("1.2.3"), safeParseVersion("1.2.3"));
+    }
+
+    @Test
+    void testExistsInDatabaseVersion() {
+        assertTrue(existsInDatabaseVersion(CASSANDRA_4, new BasicVersionedMetadata("TEST")));
+        assertTrue(existsInDatabaseVersion(CASSANDRA_5, new BasicVersionedMetadata("TEST", CASSANDRA_4)));
+        assertFalse(existsInDatabaseVersion(CASSANDRA_5, new BasicVersionedMetadata("TEST", null, CASSANDRA_5)));
+        assertFalse(existsInDatabaseVersion(CASSANDRA_4, new BasicVersionedMetadata("TEST", CASSANDRA_5)));
+    }
+
+    @Test
+    void testBuildMetadataList() {
+        assertEquals("a,b,d", buildMetadataList(Arrays.asList(
+            new BasicVersionedMetadata("a"),
+            new BasicVersionedMetadata("d", CASSANDRA_4),
+            new BasicVersionedMetadata("b", null, CASSANDRA_5),
+            new BasicVersionedMetadata("c", CASSANDRA_5)
+        ), CASSANDRA_4));
     }
 }
