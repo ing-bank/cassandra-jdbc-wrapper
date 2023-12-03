@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.10.2</version>
+    <version>4.11.0</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>

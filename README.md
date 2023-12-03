@@ -106,6 +106,10 @@ See the "Usage" section below for further details about the allowed parameters i
 For further details about Liquibase usage, please check the 
 [official documentation](https://contribute.liquibase.com/extensions-integrations/directory/database-tutorials/cassandra/).
 
+> _Note:_ The version 4.25.0 of Liquibase extension for Cassandra is currently affected by an issue preventing it
+> working correctly. See [this issue](https://github.com/liquibase/liquibase-cassandra/issues/242) for further 
+> information.
+
 ## Usage
 
 Connect to a Cassandra cluster using the following arguments:

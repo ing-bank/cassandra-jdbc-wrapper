@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.11.0] - 2023-12-03
 ### Added
 - Add support for connections with multiple contact points using different ports (see feature request 
   [#41](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/41)).
@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix issue [#39](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/39): return `false` when the method 
   `isSearchable(int)` is called on the metadata of a result set without table or schema name (typically on 
   `CassandraMetadataResultSet`s).
+- Fix incorrect consistency level used to execute simple prepared statements.
 - Fix issue preventing to retrieve the metadata of an empty `CassandraMetadataResultSet`.
 - Add null safety on some methods of `CassandraResultSet` and `CassandraMetadataResultSet`.
 
@@ -218,6 +219,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.11.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.2...v4.11.0
 [4.10.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.1...v4.10.2
 [4.10.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.0...v4.10.1
 [4.10.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.1...v4.10.0

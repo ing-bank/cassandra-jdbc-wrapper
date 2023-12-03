@@ -213,9 +213,9 @@ public class CassandraPreparedStatement extends CassandraStatement
             }
             // Force paging to avoid timeout and node harm.
             if (this.boundStatement.getPageSize() == 0) {
-                this.boundStatement.setPageSize(DEFAULT_FETCH_SIZE);
+                this.boundStatement = this.boundStatement.setPageSize(DEFAULT_FETCH_SIZE);
             }
-            this.boundStatement.setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+            this.boundStatement = this.boundStatement.setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
             for (int i = 0; i < getBoundStatementVariableDefinitions().size(); i++) {
                 // Set parameters to null if unset.
                 if (!this.boundStatement.isSet(i)) {
