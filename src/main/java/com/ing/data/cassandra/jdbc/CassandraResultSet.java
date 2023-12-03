@@ -35,12 +35,16 @@ import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.TypesMap;
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.CharArrayReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -48,6 +52,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
@@ -71,6 +76,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -79,7 +85,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -94,6 +99,10 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_READ_VALUE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_RETRIEVE_METADATA;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
@@ -262,17 +271,18 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     DataType getCqlDataType(final int columnIndex) {
-        return this.currentRow.getColumnDefinitions().get(columnIndex - 1).getType();
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().get(columnIndex - 1).getType();
+        }
+        return this.driverResultSet.getColumnDefinitions().get(columnIndex - 1).getType();
     }
 
     @Override
     DataType getCqlDataType(final String columnLabel) {
-        return this.currentRow.getColumnDefinitions().get(columnLabel).getType();
-    }
-
-    @Override
-    public boolean absolute(final int row) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        if (this.currentRow != null) {
+            return this.currentRow.getColumnDefinitions().get(columnLabel).getType();
+        }
+        return this.driverResultSet.getColumnDefinitions().get(columnLabel).getType();
     }
 
     @Override
@@ -353,8 +363,25 @@ public class CassandraResultSet extends AbstractResultSet
     }
 
     @Override
-    public boolean first() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    public InputStream getAsciiStream(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final String s = this.currentRow.getString(columnIndex - 1);
+        if (s != null) {
+            return new ByteArrayInputStream(s.getBytes(StandardCharsets.US_ASCII));
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public InputStream getAsciiStream(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final String s = this.currentRow.getString(columnLabel);
+        if (s != null) {
+            return new ByteArrayInputStream(s.getBytes(StandardCharsets.US_ASCII));
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -501,6 +528,70 @@ public class CassandraResultSet extends AbstractResultSet
             return byteBuffer.array();
         }
         return null;
+    }
+
+    @Override
+    public Reader getCharacterStream(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final byte[] byteArray = this.getBytes(columnIndex);
+        if (byteArray != null) {
+            final InputStream inputStream = new ByteArrayInputStream(byteArray);
+            try {
+                return new CharArrayReader(IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8));
+            } catch (final IOException e) {
+                throw new SQLException(String.format(UNABLE_TO_READ_VALUE, Reader.class.getSimpleName()), e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Reader getCharacterStream(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final byte[] byteArray = this.getBytes(columnLabel);
+        if (byteArray != null) {
+            final InputStream inputStream = new ByteArrayInputStream(byteArray);
+            try {
+                return new CharArrayReader(IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8));
+            } catch (final IOException e) {
+                throw new SQLException(String.format(UNABLE_TO_READ_VALUE, Reader.class.getSimpleName()), e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Clob getClob(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final byte[] byteArray = getBytes(columnIndex);
+        if (byteArray != null) {
+            final InputStream inputStream = new ByteArrayInputStream(byteArray);
+            try {
+                return new javax.sql.rowset.serial.SerialClob(IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8));
+            } catch (final IOException e) {
+                throw new SQLException(String.format(UNABLE_TO_READ_VALUE, Clob.class.getSimpleName()), e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Clob getClob(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final byte[] byteArray = getBytes(columnLabel);
+        if (byteArray != null) {
+            final InputStream inputStream = new ByteArrayInputStream(byteArray);
+            try {
+                return new javax.sql.rowset.serial.SerialClob(IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8));
+            } catch (final IOException e) {
+                throw new SQLException(String.format(UNABLE_TO_READ_VALUE, Clob.class.getSimpleName()), e);
+            }
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -753,6 +844,16 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public ResultSetMetaData getMetaData() {
         return this.metadata;
+    }
+
+    @Override
+    public NClob getNClob(final int columnIndex) throws SQLException {
+        return (NClob) getClob(columnIndex);
+    }
+
+    @Override
+    public NClob getNClob(final String columnLabel) throws SQLException {
+        return (NClob) getClob(columnLabel);
     }
 
     @Override
@@ -1063,16 +1164,18 @@ public class CassandraResultSet extends AbstractResultSet
             returnValue = getTimestamp(columnIndex);
         } else if (type == LocalDate.class) {
             returnValue = getLocalDate(columnIndex);
-        } else if (type == LocalDateTime.class || type == LocalTime.class) {
-            final Timestamp timestamp = getTimestamp(columnIndex, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+        } else if (type == LocalDateTime.class || type == LocalTime.class || type == Calendar.class) {
+            final Timestamp timestamp = getTimestamp(columnIndex, Calendar.getInstance());
             if (timestamp == null) {
                 returnValue = null;
             } else {
                 final LocalDateTime ldt = LocalDateTime.ofInstant(timestamp.toInstant(), ZoneId.of("UTC"));
                 if (type == java.time.LocalDateTime.class) {
                     returnValue = ldt;
-                } else {
+                } else if (type == java.time.LocalTime.class) {
                     returnValue = ldt.toLocalTime();
+                } else {
+                    returnValue = new Calendar.Builder().setInstant(ldt.toEpochSecond(ZoneOffset.UTC)).build();
                 }
             }
         } else if (type == java.time.OffsetDateTime.class) {
@@ -1115,7 +1218,7 @@ public class CassandraResultSet extends AbstractResultSet
         } else if (type == CqlVector.class) {
             returnValue = getVector(columnIndex);
         } else {
-            throw new SQLException(String.format("Conversion to type %s not supported.", type.getSimpleName()));
+            throw new SQLException(String.format(UNSUPPORTED_TYPE_CONVERSION, type.getSimpleName()));
         }
 
         return type.cast(returnValue);
@@ -1144,8 +1247,7 @@ public class CassandraResultSet extends AbstractResultSet
             try {
                 return getObjectMapper().readValue(json, type);
             } catch (final JsonProcessingException e) {
-                throw new SQLException(String.format("Unable to convert the column of index %d to an instance of %s",
-                    columnIndex, type.getName()), e);
+                throw new SQLException(String.format(UNSUPPORTED_JSON_TYPE_CONVERSION, columnIndex, type.getName()), e);
             }
         }
         return null;
@@ -1463,11 +1565,6 @@ public class CassandraResultSet extends AbstractResultSet
     }
 
     @Override
-    public boolean last() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
     public synchronized boolean next() {
         if (hasMoreRows()) {
             // 'populateColumns()' is called upon init to set up the metadata fields; so skip the first call.
@@ -1479,16 +1576,6 @@ public class CassandraResultSet extends AbstractResultSet
         }
         this.rowNumber = Integer.MAX_VALUE;
         return false;
-    }
-
-    @Override
-    public boolean previous() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public boolean relative(final int arg0) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     /**
@@ -1700,9 +1787,16 @@ public class CassandraResultSet extends AbstractResultSet
                 return false;
             }
             final String columnName = getColumnName(column);
+            final String schemaName = getSchemaName(column);
+            final String tableName = getTableName(column);
+            // If the schema or table name is not defined (this should not happen here, but better to be careful),
+            // always returns false since we cannot determine if the column is searchable in this context.
+            if (StringUtils.isEmpty(schemaName) || StringUtils.isEmpty(tableName)) {
+                return false;
+            }
             final AtomicBoolean searchable = new AtomicBoolean(false);
-            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
-                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+            statement.connection.getSession().getMetadata().getKeyspace(schemaName)
+                .flatMap(metadata -> metadata.getTable(tableName))
                 .ifPresent(tableMetadata -> {
                     boolean result;
                     // Check first if the column is a clustering column or in a partitioning key.

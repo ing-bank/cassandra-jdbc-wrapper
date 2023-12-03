@@ -13,7 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.ing.data.cassandra.jdbc.utils.CustomObject;
 import com.ing.data.cassandra.jdbc.utils.CustomObjectStringOnly;
 import com.ing.data.cassandra.jdbc.utils.JsonResult;
@@ -59,7 +59,7 @@ class JsonSupportUnitTest extends UsingCassandraContainerTest {
 
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
-        initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
     }
 
     @Test
@@ -117,11 +117,11 @@ class JsonSupportUnitTest extends UsingCassandraContainerTest {
             }})
             .textValue("example text")
             .timeValue(nowTime)
-            .timeuuidValue(UUIDs.timeBased())
+            .timeuuidValue(Uuids.timeBased())
             .tsValue(nowDateTime)
             .tinyintValue((byte) 12)
             .tupleValue(Arrays.asList("10", "ten"))
-            .uuidValue(UUIDs.random())
+            .uuidValue(Uuids.random())
             .varcharValue("varchar example")
             .varintValue(BigInteger.valueOf(987123L))
             .build());

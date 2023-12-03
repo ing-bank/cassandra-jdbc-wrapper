@@ -23,6 +23,8 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
+import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import org.semver4j.Semver;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -38,10 +40,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
+
 /**
  * Enumeration of CQL data types and the corresponding Java types.
  */
-public enum DataTypeEnum {
+public enum DataTypeEnum implements VersionedMetadata {
 
     /**
      * {@code ascii} CQL type (type {@value DataType#ASCII} in CQL native protocol) mapped to {@link String} Java type.
@@ -170,7 +174,7 @@ public enum DataTypeEnum {
      * {@code vector} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link CqlVector} Java
      * type.
      */
-    VECTOR(DataType.LIST, CqlVector.class, "Vector");
+    VECTOR(DataType.LIST, CqlVector.class, "Vector", CASSANDRA_5, null);
 
     static final String VECTOR_CLASSNAME = "org.apache.cassandra.db.marshal.VectorType";
 
@@ -186,6 +190,8 @@ public enum DataTypeEnum {
     public final String cqlType;
 
     final int protocolId;
+    final Semver validFrom;
+    final Semver invalidFrom;
 
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
@@ -197,6 +203,43 @@ public enum DataTypeEnum {
     /**
      * Constructs a {@code DataTypeEnum} item.
      *
+     * @param protocolId  The type ID as defined in CQL binary protocol. (see
+     *                    <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
+     *                    CQL binary protocol definition</a> and {@link DataType}).
+     * @param javaType    The corresponding Java type.
+     * @param cqlType     The CQL type name.
+     * @param validFrom   The minimal Cassandra version from which the CQL type exists. If {@code null}, we consider the
+     *                    type exists in any version of the Cassandra database.
+     * @param invalidFrom The first Cassandra version in which the CQL type does not exist anymore. If {@code null},
+     *                    we consider the type exists in any version of the Cassandra database greater than
+     *                    {@code validFrom}.
+     */
+    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom,
+                 final String invalidFrom) {
+        this.protocolId = protocolId;
+        this.javaType = javaType;
+        this.cqlType = cqlType;
+        this.validFrom = Semver.coerce(validFrom);
+        this.invalidFrom = Semver.coerce(invalidFrom);
+    }
+
+    /**
+     * Constructs a {@code DataTypeEnum} item valid from the specified version of Cassandra.
+     *
+     * @param protocolId The type ID as defined in CQL binary protocol. (see
+     *                   <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
+     *                   CQL binary protocol definition</a> and {@link DataType}).
+     * @param javaType   The corresponding Java type.
+     * @param cqlType    The CQL type name.
+     * @param validFrom  The minimal Cassandra version from which the CQL type exists.
+     */
+    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom) {
+        this(protocolId, javaType, cqlType, validFrom, null);
+    }
+
+    /**
+     * Constructs a {@code DataTypeEnum} item valid in any version of Cassandra.
+     *
      * @param protocolId The type ID as defined in CQL binary protocol. (see
      *                   <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
      *                   CQL binary protocol definition</a> and {@link DataType}).
@@ -204,9 +247,7 @@ public enum DataTypeEnum {
      * @param cqlType    The CQL type name.
      */
     DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType) {
-        this.protocolId = protocolId;
-        this.javaType = javaType;
-        this.cqlType = cqlType;
+        this(protocolId, javaType, cqlType, null);
     }
 
     /**
@@ -326,6 +367,21 @@ public enum DataTypeEnum {
     @Override
     public String toString() {
         return super.toString().toLowerCase();
+    }
+
+    @Override
+    public String getName() {
+        return this.cqlType;
+    }
+
+    @Override
+    public Semver isValidFrom() {
+        return this.validFrom;
+    }
+
+    @Override
+    public Semver isInvalidFrom() {
+        return this.invalidFrom;
     }
 
     /**

@@ -4,12 +4,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.11.0] - 2023-12-03
+### Added
+- Add support for connections with multiple contact points using different ports (see feature request 
+  [#41](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/41)).
+- Handle additional types and conversions in the methods `CassandraPreparedStatement.setObject()`:
+  - JDBC types `BLOB`, `CLOB`, `NCLOB` and Java types `java.sql.Blob`, `java.sql.Clob`, and `java.sql.NClob` handled as
+    arrays of bytes (CQL type `blob`)
+  - JDBC types `LONGVARCHAR`, `NCHAR`, `NVARCHAR`, `LONGNVARCHAR` and `DATALINK` and Java type `java.net.URL` handled
+    as string (CQL types `text`, `varchar` and `ascii`)
+  - JDBC type `TIME_WITH_TIMEZONE` and Java types `java.time.OffsetTime` and `java.time.LocalTime` handled as
+    `LocalTime` (CQL type `time`)
+  - JDBC type `TIMESTAMP_WITH_TIMEZONE` and Java types `java.util.OffsetDateTime`, `java.time.LocalDateTime`,
+    `java.util.Date` and `java.util.Calendar` handled as `Instant` (CQL type `timestamp`)
+  - Java type `java.time.LocalDate` (CQL type `date`)
+  - JDBC type `BIT` handled as boolean (CQL type `boolean`)
+  - JDBC type `NUMERIC` handled as `BigDecimal` (CQL type `decimal`)
+  - JDBC type `REAL` handled as float number (CQL type `float`)
+- Handle `java.util.Calendar` in the methods `CassandraResultSet.getObject(int | String, Class)`.
+- Implement the following methods in `CassandraResultSet`: `getAsciiStream(int | String)`, 
+  `getCharacterStream(int | String)`, `getClob(int | String)`, `getNClob(int | String)`.
+### Changed
+- Deprecate the parameter `version` (CQL version) in JDBC URL because this one is purely informational and has no 
+  effect. This will be removed in the next release.
+- The index type returned by `CassandraDatabaseMetaData.getIndexInfo(String, String, String, boolean, boolean)` is
+  now always `tableIndexOther`.
+- Improve the accuracy of the JDBC metadata of the collection types (`list`, `map`, `set` and `vector`).
+- Update the following methods of `CassandraDatabaseMetaData`: `getNumericFunctions()`, `getSQLKeywords()`,
+  `getSystemFunctions()`, `getTimeDateFunctions()` and `getTypeInfo()` to add the new math, date/time and
+  [data masking](https://cwiki.apache.org/confluence/display/CASSANDRA/CEP-20%3A+Dynamic+Data+Masking) 
+  functions introduced in Cassandra 5.0 and take into account the version of the database the driver in connected to.
+- Update Apache Commons IO to version 2.15.0.
+- Update Apache Commons Lang to version 3.14.0.
+- Update Jackson dependencies to version 2.16.0.
+- Use Apache Cassandra® 5.0 image to run tests.
+- Replace references to "DataStax Java driver" by "Java Driver for Apache Cassandra®" following the transfer of the 
+  codebase to Apache Software Foundation (see: 
+  [IP clearance status](https://incubator.apache.org/ip-clearance/cassandra-java-driver.html) and
+  [CEP-8](https://cwiki.apache.org/confluence/x/5Y1rDQ))
+### Fixed
+- Fix `NullPointerException` issue [#38](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/38) when a null 
+  type name pattern is specified in a call to `CassandraDatabaseMetaData.getUDTs(String, String, String, int[])`.
+- Fix issue [#39](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/39): return `false` when the method 
+  `isSearchable(int)` is called on the metadata of a result set without table or schema name (typically on 
+  `CassandraMetadataResultSet`s).
+- Fix incorrect consistency level used to execute simple prepared statements.
+- Fix issue preventing to retrieve the metadata of an empty `CassandraMetadataResultSet`.
+- Add null safety on some methods of `CassandraResultSet` and `CassandraMetadataResultSet`.
+
 ## [4.10.2] - 2023-11-01
 ### Fixed
 - Fix issue [#33](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/33) to handle `VARBINARY` and 
   `LONGVARBINARY` types with either `ByteArrayInputStream` or `byte[]` in the methods
   `CassandraPreparedStatement.setObject()`.
-- Fix issue [#35](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/35) to fix configuration of the local
+- Fix issue [#35](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/35): configuration of the local
   datacenter using the one from the configuration file when such a file is used.
 
 ## [4.10.1] - 2023-10-07
@@ -33,7 +81,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Implement the following methods of `CassandraDatabaseMetaData`: 
   `getBestRowIdentifier(String, String, String, int, boolean)` and `getAttributes(String, String, String, String)`.
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.17.0.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.17.0.
 - Update Apache Commons IO to version 2.13.0.
 - Update Apache Commons Lang to version 3.13.0.
 - Update Jackson dependencies to version 2.15.2.
@@ -71,7 +119,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `getUDTs(String, String, String, int[])`.
 ### Changed
 - Harmonize the implementations of `Wrapper` interface.
-- Rewrite the tests using Testcontainers with Apache Cassandra(R) 4.1.0 image.
+- Rewrite the tests using Testcontainers with Apache Cassandra® 4.1.0 image.
 - Modify the implementation of `setQueryTimeout(int)` and `getQueryTimeout()` in `CassandraStatement` to update the
   request timeout on a specific statement.
 ### Removed
@@ -90,7 +138,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `CassandraPreparedStatement` of `PreparedStatement` interface. It fixes the issue
   [#19](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/19) of the [original project].
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.15.0.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.15.0.
 - Fully implement methods from `Wrapper` interface for Cassandra connections, results sets and statements (see pull 
   request [#14](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/14)).
 ### Fixed
@@ -108,7 +156,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add an additional `CassandraConnection` constructor using a pre-existing session (see pull request
   [#8](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/8)).
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.14.1.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.14.1.
 
 ## [4.6.0] - 2022-03-20
 ### Added
@@ -118,7 +166,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add query parameter `requesttimeout` to specify a non-default timeout for queries. 
   See the feature request [#5](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/5).
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.14.0.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.14.0.
 - Update Apache Commons Lang to version 3.12.0.
 ### Removed
 - Remove `cassandra-all` and `libthrift` dependencies to limit exposure to vulnerable libraries (see pull request
@@ -138,7 +186,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add codecs for conversions between `Integer` and CQL types `varint`, `smallint` and `tinyint`. It also fixes the issue
   [#33](https://github.com/adejanovski/cassandra-jdbc-wrapper/issues/33) of the [original project].
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.10.0.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.10.0.
 - Update `cassandra-all` to version 3.11.9.
 - Improve documentation and code quality (refactoring, removing dead code, adding tests, ...).
 - Improve the implementation of the metadata precision/size for the columns.
@@ -159,7 +207,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## 4.4.0 - 2020-12-23
 For this version, the changelog lists the main changes comparatively to the latest version of the [original project].
 ### Changed
-- Update DataStax Java Driver for Apache Cassandra(R) to version 4.9.0.
+- Update DataStax Java Driver for Apache Cassandra® to version 4.9.0.
 - Update `cassandra-all` to version 3.11.8.
 - Force using `libthrift` 0.13.0 instead of the vulnerable version included into `cassandra-all`.
 - Manage separately the type `LocalDate` in `CassandraResultSet`.
@@ -171,6 +219,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.11.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.2...v4.11.0
 [4.10.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.1...v4.10.2
 [4.10.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.0...v4.10.1
 [4.10.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.9.1...v4.10.0

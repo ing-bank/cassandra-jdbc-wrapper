@@ -30,7 +30,7 @@ public class Default extends AbstractOptionSet {
 
     @Override
     public String getCatalog() {
-        // It requires a query to table system.local since DataStax driver 4+.
+        // It requires a query to table system.local since Java Driver for Apache Cassandra® 4+.
         // If the query fails, return null.
         try (final Statement stmt = getConnection().createStatement()) {
             final ResultSet rs = stmt.executeQuery("SELECT cluster_name FROM system.local");

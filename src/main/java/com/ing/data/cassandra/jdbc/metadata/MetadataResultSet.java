@@ -37,6 +37,16 @@ public class MetadataResultSet {
     }
 
     /**
+     * Constructor including the columns definitions from a metadata row template.
+     *
+     * @param rowTemplate The metadata row template from which the columns definitions of the metadata result set
+     *                    are extracted.
+     */
+    public MetadataResultSet(final MetadataRow.MetadataRowTemplate rowTemplate) {
+        this.columnDefinitions = new ColumnDefinitions(rowTemplate.getColumnDefinitions());
+    }
+
+    /**
      * Add rows to the metadata result set.
      *
      * @param metadataRows A list of {@code MetadataRows}.

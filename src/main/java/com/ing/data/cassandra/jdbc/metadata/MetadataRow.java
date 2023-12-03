@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_POPULATE_METADATA_ROW;
+
 /**
  * The content of a metadata row returned in a {@link CassandraMetadataResultSet}.
  */
@@ -70,6 +72,29 @@ public class MetadataRow {
         this.names.put(key, this.entries.size());
         this.entries.add(value);
         this.definitions.add(new Definition(StringUtils.EMPTY, StringUtils.EMPTY, key, DataTypes.TEXT));
+        return this;
+    }
+
+    /**
+     * Populates a metadata row defined by a row template with the specified values.
+     * <p>
+     *     The number of values must match the number of columns defined in the row template, otherwise a runtime
+     *     exception will be thrown.
+     * </p>
+     *
+     * @param template The row template.
+     * @param values   The values used to populate the metadata row.
+     * @return The updated {@code MetadataRow} instance.
+     * @throws RuntimeException when the number of values does not match the number of columns defined in the row
+     * template.
+     */
+    public MetadataRow withTemplate(final MetadataRowTemplate template, final String... values) {
+        if (template.getColumnDefinitions().length != values.length) {
+            throw new RuntimeException(UNABLE_TO_POPULATE_METADATA_ROW);
+        }
+        for (int i = 0; i < template.getColumnDefinitions().length; i++) {
+            this.addEntry(template.getColumnDefinitions()[i].getName(), values[i]);
+        }
         return this;
     }
 
@@ -617,6 +642,36 @@ public class MetadataRow {
             throw new IllegalArgumentException(name + " is not a column defined in this row.");
         }
         return idx;
+    }
+
+    /**
+     * A template of metadata row.
+     * <p>
+     *     This is useful to define the columns of a row in a metadata result set and populate it.
+     * </p>
+     */
+    public static class MetadataRowTemplate {
+
+        private final Definition[] columnDefinitions;
+
+        /**
+         * Constructor.
+         *
+         * @param columnDefinitions The definitions of each column of the row template.
+         */
+        public MetadataRowTemplate(final Definition... columnDefinitions) {
+            this.columnDefinitions = columnDefinitions;
+        }
+
+        /**
+         * Gets the definitions of the columns in the row template.
+         *
+         * @return The array of columns definitions.
+         */
+        public Definition[] getColumnDefinitions() {
+            return this.columnDefinitions;
+        }
+
     }
 
 }

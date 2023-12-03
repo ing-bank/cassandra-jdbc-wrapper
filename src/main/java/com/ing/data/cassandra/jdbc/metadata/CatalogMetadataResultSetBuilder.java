@@ -15,12 +15,15 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to catalogs.
@@ -52,10 +55,14 @@ public class CatalogMetadataResultSetBuilder extends AbstractMetadataResultSetBu
      */
     public CassandraMetadataResultSet buildCatalogs() throws SQLException {
         final ArrayList<MetadataRow> catalogs = new ArrayList<>();
-        final MetadataRow row = new MetadataRow().addEntry(TABLE_CATALOG_SHORTNAME,
-            this.statement.getConnection().getCatalog());
-        catalogs.add(row);
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet().setRows(catalogs));
+        final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
+            buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT)
+        );
+
+        catalogs.add(new MetadataRow().withTemplate(rowTemplate, this.statement.getConnection().getCatalog()));
+
+        return CassandraMetadataResultSet.buildFrom(this.statement,
+            new MetadataResultSet(rowTemplate).setRows(catalogs));
     }
 
 }

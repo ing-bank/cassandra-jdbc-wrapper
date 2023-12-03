@@ -142,7 +142,7 @@ public class CassandraStatement extends AbstractStatement
      */
     protected boolean escapeProcessing = true;
     /**
-     * The Datastax Java driver statement.
+     * The Java Driver for Apache Cassandra® statement.
      */
     protected com.datastax.oss.driver.api.core.cql.Statement<?> statement;
     /**

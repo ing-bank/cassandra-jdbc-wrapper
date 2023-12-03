@@ -51,6 +51,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -70,6 +71,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_RETRIEVE_METADATA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
 
@@ -194,18 +196,25 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    DataType getCqlDataType(final int columnIndex) {
-        return this.currentRow.getColumnDefinitions().getType(columnIndex - 1);
+    DataType getCqlDataType(final int columnIndex) throws SQLException {
+        if (this.currentRow != null && this.currentRow.getColumnDefinitions() != null) {
+            return this.currentRow.getColumnDefinitions().getType(columnIndex - 1);
+        }
+        if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
+            return this.driverResultSet.getColumnDefinitions().getType(columnIndex - 1);
+        }
+        throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
     }
 
     @Override
-    DataType getCqlDataType(final String columnLabel) {
-        return this.currentRow.getColumnDefinitions().getType(columnLabel);
-    }
-
-    @Override
-    public boolean absolute(final int row) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    DataType getCqlDataType(final String columnLabel) throws SQLException {
+        if (this.currentRow != null && this.currentRow.getColumnDefinitions() != null) {
+            return this.currentRow.getColumnDefinitions().getType(columnLabel);
+        }
+        if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
+            return this.driverResultSet.getColumnDefinitions().getType(columnLabel);
+        }
+        throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
     }
 
     @Override
@@ -284,15 +293,10 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkName(columnLabel);
         if (this.currentRow != null) {
             return this.currentRow.getColumnDefinitions().getIndexOf(columnLabel) + 1;
-        } else if (this.driverResultSet != null) {
+        } else if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
             return this.driverResultSet.getColumnDefinitions().getIndexOf(columnLabel) + 1;
         }
         throw new SQLSyntaxErrorException(String.format(VALID_LABELS, columnLabel));
-    }
-
-    @Override
-    public boolean first() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -1016,11 +1020,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     }
 
     @Override
-    public boolean last() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
     public synchronized boolean next() {
         if (hasMoreRows()) {
             // 'populateColumns()' is called upon init to set up the metadata fields; so skip the first call.
@@ -1032,16 +1031,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
         this.rowNumber = Integer.MAX_VALUE;
         return false;
-    }
-
-    @Override
-    public boolean previous() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public boolean relative(final int arg0) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -1063,14 +1052,17 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public String getColumnClassName(final int column) {
+        public String getColumnClassName(final int column) throws SQLException {
             if (currentRow != null) {
                 return DataTypeEnum.fromCqlTypeName(getCqlDataType(column).asCql(false, false)).asJavaClass()
                     .getCanonicalName();
             }
-            return DataTypeEnum.fromCqlTypeName(
-                driverResultSet.getColumnDefinitions().asList().get(column - 1).getType().asCql(false, false))
-                .asJavaClass().getCanonicalName();
+            if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
+                return DataTypeEnum.fromCqlTypeName(
+                        driverResultSet.getColumnDefinitions().asList().get(column - 1).getType().asCql(false, false))
+                    .asJavaClass().getCanonicalName();
+            }
+            throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
         }
 
         @Override
@@ -1085,16 +1077,19 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public String getColumnLabel(final int column) {
+        public String getColumnLabel(final int column) throws SQLException {
             return getColumnName(column);
         }
 
         @Override
-        public String getColumnName(final int column) {
-            if (currentRow != null) {
+        public String getColumnName(final int column) throws SQLException {
+            if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                 return currentRow.getColumnDefinitions().getName(column - 1);
             }
-            return driverResultSet.getColumnDefinitions().asList().get(column - 1).getName();
+            if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
+                return driverResultSet.getColumnDefinitions().asList().get(column - 1).getName();
+            }
+            throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
         }
 
         @Override
@@ -1102,10 +1097,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 final AbstractJdbcType<?> jdbcEquivalentType;
                 final ColumnDefinitions.Definition columnDefinition;
-                if (currentRow != null) {
+                if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                     columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
-                } else {
+                } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                     columnDefinition = driverResultSet.getColumnDefinitions().asList().get(column - 1);
+                } else {
+                    return DEFAULT_PRECISION;
                 }
                 jdbcEquivalentType = TypesMap.getTypeForComparator(columnDefinition.getType().toString());
 
@@ -1120,24 +1117,28 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public int getColumnType(final int column) {
+        public int getColumnType(final int column) throws SQLException {
             final DataType type;
             if (currentRow != null) {
                 type = getCqlDataType(column);
-            } else {
+            } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                 type = driverResultSet.getColumnDefinitions().asList().get(column - 1).getType();
+            } else {
+                return Types.OTHER;
             }
             return TypesMap.getTypeForComparator(type.toString()).getJdbcType();
         }
 
         @Override
-        public String getColumnTypeName(final int column) {
+        public String getColumnTypeName(final int column) throws SQLException {
             // Specification says "database specific type name"; for Cassandra this means the AbstractType.
             final DataType type;
             if (currentRow != null) {
                 type = getCqlDataType(column);
-            } else {
+            } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                 type = driverResultSet.getColumnDefinitions().getType(column - 1);
+            } else {
+                return StringUtils.EMPTY;
             }
             return type.toString();
         }
@@ -1152,10 +1153,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 final AbstractJdbcType<?> jdbcEquivalentType;
                 final ColumnDefinitions.Definition columnDefinition;
-                if (currentRow != null) {
+                if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                     columnDefinition = currentRow.getColumnDefinitions().asList().get(column - 1);
-                } else {
+                } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                     columnDefinition = driverResultSet.getColumnDefinitions().asList().get(column - 1);
+                } else {
+                    return DEFAULT_SCALE;
                 }
                 jdbcEquivalentType = TypesMap.getTypeForComparator(columnDefinition.getType().toString());
 
@@ -1180,10 +1183,12 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         @Override
         public String getTableName(final int column) {
             final String tableName;
-            if (currentRow != null) {
+            if (currentRow != null && currentRow.getColumnDefinitions() != null) {
                 tableName = currentRow.getColumnDefinitions().getTable(column - 1);
-            } else {
+            } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                 tableName = driverResultSet.getColumnDefinitions().getTable(column - 1);
+            } else {
+                return StringUtils.EMPTY;
             }
             return tableName;
         }
@@ -1238,9 +1243,16 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
                 return false;
             }
             final String columnName = getColumnName(column);
+            final String schemaName = getSchemaName(column);
+            final String tableName = getTableName(column);
+            // If the schema or table name is not defined, always returns false since we cannot determine if the column
+            // is searchable in this context.
+            if (StringUtils.isEmpty(schemaName) || StringUtils.isEmpty(tableName)) {
+                return false;
+            }
             final AtomicBoolean searchable = new AtomicBoolean(false);
-            statement.connection.getSession().getMetadata().getKeyspace(getSchemaName(column))
-                .flatMap(metadata -> metadata.getTable(getTableName(column)))
+            statement.connection.getSession().getMetadata().getKeyspace(schemaName)
+                .flatMap(metadata -> metadata.getTable(tableName))
                 .ifPresent(tableMetadata -> {
                     boolean result;
                     // Check first if the column is a clustering column or in a partitioning key.
@@ -1257,12 +1269,14 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         }
 
         @Override
-        public boolean isSigned(final int column) {
+        public boolean isSigned(final int column) throws SQLException {
             final DataType type;
             if (currentRow != null) {
                 type = getCqlDataType(column);
-            } else {
+            } else if (driverResultSet != null && driverResultSet.getColumnDefinitions() != null) {
                 type = driverResultSet.getColumnDefinitions().asList().get(column - 1).getType();
+            } else {
+                return false;
             }
             return TypesMap.getTypeForComparator(type.toString()).isSigned();
         }

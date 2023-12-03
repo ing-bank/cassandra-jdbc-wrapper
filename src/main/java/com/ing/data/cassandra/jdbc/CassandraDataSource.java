@@ -17,7 +17,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil;
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
@@ -25,22 +25,20 @@ import java.io.PrintWriter;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLNonTransientConnectionException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.DEFAULT_PORT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PORT_NUMBER;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERVER_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
@@ -63,13 +61,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     protected static final String DATA_SOURCE_DESCRIPTION = "Cassandra Data Source";
     /**
-     * The server host name where the data source is located.
+     * The contact points of the data source.
      */
-    protected String serverName;
-    /**
-     * The port number of the data source, by default {@value JdbcUrlUtil#DEFAULT_PORT}.
-     */
-    protected int portNumber = DEFAULT_PORT;
+    protected List<ContactPoint> contactPoints;
     /**
      * The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */
@@ -84,7 +78,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     protected String password;
     /**
      * The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
     protected String version = null;
     /**
      * The consistency level.
@@ -107,34 +103,64 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param keyspace      The keyspace.
      * @param user          The username used to connect.
      * @param password      The password used to connect.
-     * @param version       The CQL version.
+     * @param consistency   The consistency level.
+     * @deprecated For removal. Use {@link #CassandraDataSource(List, String, String, String, String)} instead.
+     */
+    @Deprecated
+    public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
+                               final String password, final String consistency) {
+        this(Collections.singletonList(ContactPoint.of(host, port)), keyspace, user, password, null, consistency, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param contactPoints The contact points.
+     * @param keyspace      The keyspace.
+     * @param user          The username used to connect.
+     * @param password      The password used to connect.
      * @param consistency   The consistency level.
      */
+    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
+                               final String password, final String consistency) {
+        this(contactPoints, keyspace, user, password, null, consistency, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param host          The host name.
+     * @param port          The port.
+     * @param keyspace      The keyspace.
+     * @param user          The username used to connect.
+     * @param password      The password used to connect.
+     * @param version       The CQL version. Deprecated, do not use anymore.
+     * @param consistency   The consistency level.
+     * @deprecated For removal. Use {@link #CassandraDataSource(List, String, String, String, String)} instead.
+     */
+    @Deprecated
     public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
                                final String password, final String version, final String consistency) {
-        this(host, port, keyspace, user, password, version, consistency, null);
+        this(Collections.singletonList(ContactPoint.of(host, port)),
+            keyspace, user, password, version, consistency, null);
     }
 
     /**
      * Constructor specifying a local datacenter (required to use {@link DefaultLoadBalancingPolicy}).
      *
-     * @param host              The host name.
-     * @param port              The port.
+     * @param contactPoints     The contact points.
      * @param keyspace          The keyspace.
      * @param user              The username used to connect.
      * @param password          The password used to connect.
-     * @param version           The CQL version.
+     * @param version           The CQL version. Deprecated, do not use anymore.
      * @param consistency       The consistency level.
      * @param localDataCenter   The local datacenter.
      */
-    public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
+    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
                                final String password, final String version, final String consistency,
                                final String localDataCenter) {
-        if (host != null) {
-            setServerName(host);
-        }
-        if (port >= 0) {
-            setPortNumber(port);
+        if (contactPoints != null && !contactPoints.isEmpty()) {
+            setContactPoints(contactPoints);
         }
         if (version != null) {
             setVersion(version);
@@ -160,28 +186,31 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     }
 
     /**
-     * Gets the server host name where the data source is located.
+     * Gets the contact points of the data source.
      *
-     * @return The server host name where the data source is located.
+     * @return The contact points of the data source.
      */
-    public String getServerName() {
-        return this.serverName;
+    public List<ContactPoint> getContactPoints() {
+        return this.contactPoints;
     }
 
     /**
-     * Sets the server host name where the data source is located.
+     * Sets the contact points of the data source.
      *
-     * @param serverName The host name.
+     * @param contactPoints The contact points of the data source.
      */
-    public void setServerName(final String serverName) {
-        this.serverName = serverName;
+    public void setContactPoints(final List<ContactPoint> contactPoints) {
+        this.contactPoints = contactPoints;
     }
 
     /**
      * Gets the CQL version.
      *
      * @return The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public String getVersion() {
         return this.version;
     }
@@ -190,7 +219,10 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Sets the CQL version.
      *
      * @param version The CQL version.
+     * @deprecated For removal.
      */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public void setVersion(final String version) {
         this.version = version;
     }
@@ -219,24 +251,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setConsistency(final String consistency) {
         this.consistency = consistency;
-    }
-
-    /**
-     * Gets the port number of the data source.
-     *
-     * @return The port number of the data source.
-     */
-    public int getPortNumber() {
-        return this.portNumber;
-    }
-
-    /**
-     * Sets the port number of the data source.
-     *
-     * @param portNumber The port number of the data source.
-     */
-    public void setPortNumber(final int portNumber) {
-        this.portNumber = portNumber;
     }
 
     /**
@@ -322,12 +336,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         this.user = user;
         this.password = password;
 
-        if (this.serverName != null) {
-            props.setProperty(TAG_SERVER_NAME, this.serverName);
-        } else {
-            throw new SQLNonTransientConnectionException(HOST_REQUIRED);
+        if (this.contactPoints != null && !this.contactPoints.isEmpty()) {
+            props.put(TAG_CONTACT_POINTS, this.contactPoints);
         }
-        props.setProperty(TAG_PORT_NUMBER, String.valueOf(this.portNumber));
         if (this.databaseName != null) {
             props.setProperty(TAG_DATABASE_NAME, this.databaseName);
         }

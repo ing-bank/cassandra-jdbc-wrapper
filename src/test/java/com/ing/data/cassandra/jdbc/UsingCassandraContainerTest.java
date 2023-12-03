@@ -28,13 +28,14 @@ import java.sql.DriverManager;
 abstract class UsingCassandraContainerTest {
 
     // For the official Cassandra image, see here: https://hub.docker.com/_/cassandra
-    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:4.1.3");
+    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:5.0");
 
     static CassandraConnection sqlConnection = null;
 
     // Using @Container annotation restarts a new container for each test of the class, so as it takes ~20/30 sec. to
     // start a Cassandra container, we just want to have one container instance for all the tests of the class. See:
     // https://www.testcontainers.org/test_framework_integration/manual_lifecycle_control/#singleton-containers
+    @SuppressWarnings("resource")
     static final CassandraContainer<?> cassandraContainer = new CassandraContainer<>(CASSANDRA_IMAGE)
         .withEnv("CASSANDRA_DC", "datacenter1")
         .withEnv("CASSANDRA_CLUSTER_NAME", "embedded_test_cluster")

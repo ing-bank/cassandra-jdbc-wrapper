@@ -43,8 +43,8 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
-        initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
-        sqlConnection2 = newConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
+        sqlConnection2 = newConnection(KEYSPACE, "localdatacenter=datacenter1");
     }
 
     @AfterAll

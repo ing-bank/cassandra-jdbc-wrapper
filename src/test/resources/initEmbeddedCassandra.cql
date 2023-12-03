@@ -27,6 +27,24 @@ t3iValue int,
 PRIMARY KEY(keyname, t3iValue))
 WITH comment = 'Third table in the keyspace';
 
+CREATE TABLE tbl_test_timestamps (
+keyname text PRIMARY KEY,
+col_ts timestamp);
+
+INSERT INTO tbl_test_timestamps (keyname, col_ts) VALUES('key1', '2023-11-01T11:30:25.789+0100');
+
+CREATE TABLE tbl_test_blobs (
+keyname text PRIMARY KEY,
+col_blob blob);
+
+INSERT INTO tbl_test_blobs (keyname, col_blob) VALUES('key1', textAsBlob('testValueAsClobInUtf8 with accents: Äîéè'));
+
+CREATE TABLE tbl_test_texts (
+keyname text PRIMARY KEY,
+col_ascii ascii);
+
+INSERT INTO tbl_test_texts (keyname, col_ascii) VALUES('key1', 'testValueAscii');
+
 CREATE TYPE CustomType1 (
 key1 int,
 value1 text,
@@ -59,6 +77,9 @@ keyname text PRIMARY KEY,
 t2bValue boolean,
 t2iValue int)
 WITH comment = 'Second table in the keyspace';
+
+CREATE INDEX IF NOT EXISTS int_values_idx
+ON cf_test2 (t2iValue);
 
 CREATE TYPE type_in_different_ks (
 t_key int,
@@ -156,6 +177,20 @@ col_inet inet,
 col_duration duration,
 col_uuid uuid);
 
+CREATE TABLE test_ps_blobs (
+col_key text PRIMARY KEY,
+col_blob blob);
+
+CREATE TABLE test_ps_texts (
+col_key text PRIMARY KEY,
+col_text text);
+
+CREATE TABLE test_ps_datetimes (
+col_key text PRIMARY KEY,
+col_time time,
+col_date date,
+col_ts timestamp);
+
 /* Init keyspaces, UDTs and tables for JsonSupportUnitTest */
 DROP KEYSPACE IF EXISTS test_json_support;
 CREATE KEYSPACE "test_json_support" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
@@ -222,10 +257,37 @@ varintValue: 4321
 DROP KEYSPACE IF EXISTS test_keyspace_vect;
 CREATE KEYSPACE "test_keyspace_vect" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
-/* FIXME: Uncomment this script part when Cassandra 5.0 is available.
 USE test_keyspace_vect;
 CREATE TABLE vectors_test (
 keyValue int PRIMARY KEY,
 intsVector vector<int, 3>,
 floatsVector vector<float, 4>);
-*/
+
+CREATE TABLE IF NOT EXISTS pet_supply_vectors (
+    product_id     TEXT PRIMARY KEY,
+    product_name   TEXT,
+    product_vector vector<float, 14>
+);
+
+/* Ni similarity search without the SAI INDEX. */
+CREATE CUSTOM INDEX IF NOT EXISTS idx_vector
+ON pet_supply_vectors(product_vector)
+USING 'StorageAttachedIndex';
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pf1843','HealthyFresh - Chicken raw dog food',[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pf1844','HealthyFresh - Beef raw dog food',[1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pt0021','Dog Tennis Ball Toy',[0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]);
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pt0041','Dog Ring Chew Toy',[0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]);
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pf7043','PupperSausage Bacon dog Treats',[0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1]);
+
+INSERT INTO pet_supply_vectors (product_id, product_name, product_vector)
+VALUES ('pf7044','PupperSausage Beef dog Treats',[0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0]);

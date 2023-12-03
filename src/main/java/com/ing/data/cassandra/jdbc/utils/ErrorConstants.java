@@ -15,7 +15,9 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.ing.data.cassandra.jdbc.CassandraPreparedStatement;
 import com.ing.data.cassandra.jdbc.CassandraResultSet;
+import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.net.URI;
 import java.sql.Connection;
@@ -88,7 +90,7 @@ public final class ErrorConstants {
 
     /**
      * Error message used in any SQL exception thrown because a {@code null} result set has been returned by the
-     * DataStax driver when a query is executed.
+     * Java Driver for Apache Cassandra® when a query is executed.
      */
     public static final String NO_RESULT_SET =
         "No ResultSet returned from the CQL statement passed in an 'executeQuery()' method.";
@@ -170,6 +172,13 @@ public final class ErrorConstants {
         "Connection url must specify a host, e.g. jdbc:cassandra://localhost:9042/keyspace";
 
     /**
+     * Error message used in any SQL exception thrown when the contact points in the JDBC URL cannot be parsed. This
+     * message is a template expecting the value of the invalid contact point as placeholder (example:
+     * {@code String.format(INVALID_CONTACT_POINT, "invalid:host")}).
+     */
+    public static final String INVALID_CONTACT_POINT = "Invalid contact point: %s";
+
+    /**
      * Error message used in any SQL exception thrown when a connection cannot be established due to a missing host
      * name.
      */
@@ -222,6 +231,52 @@ public final class ErrorConstants {
      * {@link CassandraResultSet#getVector(String)} is invoked on a column containing an invalid CQL vector.
      */
     public static final String VECTOR_ELEMENTS_NOT_NUMBERS = "Vector elements are not numbers.";
+
+    /**
+     * Error message used in any SQL exception thrown when the target JDBC type specified in the method
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     */
+    public static final String UNSUPPORTED_JDBC_TYPE = "Unsupported JDBC type: %s";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion of the specified object in the method
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     */
+    public static final String UNSUPPORTED_PARAMETER_TYPE = "Unsupported parameter type: %s";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
+     * {@link CassandraResultSet#getObject(int, Class)} and {@link CassandraResultSet#getObject(String, Class)} is not
+     * supported.
+     */
+    public static final String UNSUPPORTED_TYPE_CONVERSION = "Conversion to type %s not supported.";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion to a specific type in a getter method of
+     * {@link CassandraResultSet} failed.
+     */
+    public static final String UNABLE_TO_READ_VALUE = "Unable to read value as %s.";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
+     * {@link CassandraResultSet#getObjectFromJson(int, Class)},
+     * {@link CassandraResultSet#getObjectFromJson(String, Class)} and
+     * {@link CassandraResultSet#getObjectFromJson(Class)} is not supported.
+     */
+    public static final String UNSUPPORTED_JSON_TYPE_CONVERSION =
+        "Unable to convert the column of index %d to an instance of %s";
+
+    /**
+     * Error message used in any SQL exception thrown when it is not possible to retrieve some metadata of any
+     * {@link ResultSet}.
+     */
+    public static final String UNABLE_TO_RETRIEVE_METADATA = "Unable to retrieve metadata for result set.";
+
+    /**
+     * Error message used in any runtime exception thrown when populating a {@link MetadataRow} failed due to a mismatch
+     * between the number of provided values and the number of columns in the row.
+     */
+    public static final String UNABLE_TO_POPULATE_METADATA_ROW = "Unable to populate a metadata row.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

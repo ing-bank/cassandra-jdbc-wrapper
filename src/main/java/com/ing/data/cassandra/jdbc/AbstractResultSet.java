@@ -55,8 +55,9 @@ abstract class AbstractResultSet implements Wrapper {
      * @param columnIndex The column index (first column is 1).
      * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    boolean isCqlType(final int columnIndex, @Nonnull final DataTypeEnum type) {
+    boolean isCqlType(final int columnIndex, @Nonnull final DataTypeEnum type) throws SQLException {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnIndex)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
@@ -67,8 +68,9 @@ abstract class AbstractResultSet implements Wrapper {
      * @param columnLabel The column name.
      * @param type        The data type to check.
      * @return {@code true} if the column CQL data type is the given one, {@code false} otherwise.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    boolean isCqlType(final String columnLabel, @Nonnull final DataTypeEnum type) {
+    boolean isCqlType(final String columnLabel, @Nonnull final DataTypeEnum type) throws SQLException {
         final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnLabel)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
@@ -78,22 +80,32 @@ abstract class AbstractResultSet implements Wrapper {
      *
      * @param columnIndex The column index (first column is 1).
      * @return The CQL data type of the column.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    abstract DataType getCqlDataType(int columnIndex);
+    abstract DataType getCqlDataType(int columnIndex) throws SQLException;
 
     /**
      * Gets the CQL type of the column with the given name.
      *
      * @param columnLabel The column name.
      * @return The CQL data type of the column.
+     * @throws SQLException when the CQL type cannot be determined for the given column.
      */
-    abstract DataType getCqlDataType(String columnLabel);
+    abstract DataType getCqlDataType(String columnLabel) throws SQLException;
+
+    public boolean absolute(final int row) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
 
     public void cancelRowUpdates() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     public void deleteRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean first() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -165,11 +177,11 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
+    public <T> T getObject(final int columnIndex, final Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public <T> T getObject(final int columnIndex, final Class<T> type) throws SQLException {
+    public <T> T getObject(final String columnLabel, final Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -201,6 +213,10 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    public boolean last() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
     public void moveToCurrentRow() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -209,7 +225,15 @@ abstract class AbstractResultSet implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    public boolean previous() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
     public void refreshRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean relative(final int arg0) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

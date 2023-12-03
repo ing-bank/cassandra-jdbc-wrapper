@@ -5,11 +5,11 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.10.2</version>
+    <version>4.11.0</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
-    <description>JDBC wrapper of the DataStax Java Driver for Apache Cassandra.</description>
+    <description>JDBC wrapper of the Java Driver for Apache Cassandra®.</description>
     <url>https://github.com/ing-bank/cassandra-jdbc-wrapper</url>
     <inceptionYear>2020</inceptionYear>
 
@@ -108,18 +108,19 @@
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <commons-collections.version>4.4</commons-collections.version>
-        <commons-io.version>2.14.0</commons-io.version>
-        <commons-lang3.version>3.13.0</commons-lang3.version>
-        <datastax.java.driver.version>4.17.0</datastax.java.driver.version>
-        <jackson.version>2.15.2</jackson.version>
+        <commons-io.version>2.15.0</commons-io.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <java.driver.version>4.17.0</java.driver.version>
+        <jackson.version>2.16.0</jackson.version>
+        <semver4j.version>5.2.2</semver4j.version>
         <!-- Versions for test dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
-        <junit5.version>5.10.0</junit5.version>
-        <junit-platform.version>1.10.0</junit-platform.version>
+        <junit5.version>5.10.1</junit5.version>
+        <junit-platform.version>1.10.1</junit-platform.version>
         <lombok.version>1.18.30</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <testcontainers.version>1.19.0</testcontainers.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
         <astra-sdk.version>0.6.11</astra-sdk.version>
         <!-- Versions for plugins -->
         <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
@@ -138,7 +139,7 @@
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
-            <version>${datastax.java.driver.version}</version>
+            <version>${java.driver.version}</version>
         </dependency>
 
         <!-- Apache Commons Lang 3 -->
@@ -184,6 +185,13 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- Semver for operations on versions -->
+        <dependency>
+            <groupId>org.semver4j</groupId>
+            <artifactId>semver4j</artifactId>
+            <version>${semver4j.version}</version>
         </dependency>
 
         <!-- Unit tests libraries -->
@@ -259,7 +267,7 @@
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-query-builder</artifactId>
-            <version>${datastax.java.driver.version}</version>
+            <version>${java.driver.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging for tests -->

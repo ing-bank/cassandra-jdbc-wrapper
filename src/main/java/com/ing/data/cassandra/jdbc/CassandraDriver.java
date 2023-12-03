@@ -33,9 +33,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.parseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 
@@ -75,7 +76,9 @@ public class CassandraDriver implements Driver {
             final Enumeration<Object> keys = properties.keys();
             while (keys.hasMoreElements()) {
                 final String key = (String) keys.nextElement();
-                params.put(key, properties.getProperty(key));
+                if (!TAG_CONTACT_POINTS.equals(key)) {
+                    params.put(key, properties.getProperty(key));
+                }
             }
             params.put(SessionHolder.URL_KEY, url);
 
@@ -107,12 +110,12 @@ public class CassandraDriver implements Driver {
 
     @Override
     public int getMajorVersion() {
-        return parseVersion(getDriverProperty("driver.version"), 0);
+        return safeParseVersion(getDriverProperty("driver.version")).getMajor();
     }
 
     @Override
     public int getMinorVersion() {
-        return parseVersion(getDriverProperty("driver.version"), 1);
+        return safeParseVersion(getDriverProperty("driver.version")).getMinor();
     }
 
     @Override

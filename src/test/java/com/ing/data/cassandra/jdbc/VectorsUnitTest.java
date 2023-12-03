@@ -14,8 +14,8 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.CqlVector;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
@@ -29,15 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Test CQL Vector data type
  */
-// FIXME: Implement vector testing when Cassandra 5.0 is available.
-@Disabled
 class VectorsUnitTest extends UsingCassandraContainerTest {
 
     private static final String KEYSPACE = "test_keyspace_vect";
 
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
-        initConnection(KEYSPACE, "version=3.0.0", "localdatacenter=datacenter1");
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
     }
 
     @Test
@@ -61,12 +59,25 @@ class VectorsUnitTest extends UsingCassandraContainerTest {
         assertEquals(8, intsVector.get(2));
         final CqlVector<?> floatsVector = ((CassandraResultSet) resultSet).getVector(2);
         assertEquals(4, floatsVector.size());
-        assertEquals(2.1, floatsVector.get(0));
-        assertEquals(3.7, floatsVector.get(1));
-        assertEquals(9.0, floatsVector.get(2));
-        assertEquals(5.5, floatsVector.get(2));
+        assertEquals(2.1f, floatsVector.get(0));
+        assertEquals(3.7f, floatsVector.get(1));
+        assertEquals(9.0f, floatsVector.get(2));
+        assertEquals(5.5f, floatsVector.get(3));
 
         statement.close();
+    }
+
+    @Test
+    void givenVectorTable_whenSimilaritySearch_shouldReturnResults() throws Exception {
+        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(
+            "SELECT product_id, product_vector,"
+                + "similarity_dot_product(product_vector,[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) as similarity "
+                + "FROM pet_supply_vectors ORDER BY product_vector ANN OF [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] "
+                + "LIMIT 2");
+        java.sql.ResultSet rs = prepStatement.executeQuery();
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNotNull(rs.getObject("product_vector"));
+        Assertions.assertEquals(3.0d, rs.getDouble("similarity"));
     }
 
 }
