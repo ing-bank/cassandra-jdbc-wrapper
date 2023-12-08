@@ -99,8 +99,9 @@ JetBrains DataGrip, you can have a look to the following links:
   class and JDBC URL values.
 
 This JDBC wrapper for Apache Cassandra® is also used to run 
-[Liquibase for Cassandra databases](https://github.com/liquibase/liquibase-cassandra) (from Liquibase 4.25.0). To execute Liquibase scripts on
-your Cassandra database, specify the following properties in your Liquibase properties file:
+[Liquibase for Cassandra databases](https://github.com/liquibase/liquibase-cassandra) (from Liquibase 4.25.0.1). 
+To execute Liquibase scripts on your Cassandra database, specify the following properties in your Liquibase properties 
+file:
 ```
 driver: com.ing.data.cassandra.jdbc.CassandraDriver
 url: jdbc:cassandra://<host>:<port>/<keyspaceName>?compliancemode=Liquibase
@@ -108,11 +109,7 @@ url: jdbc:cassandra://<host>:<port>/<keyspaceName>?compliancemode=Liquibase
 See the [documentation about JDBC connection string](https://github.com/ing-bank/cassandra-jdbc-wrapper/wiki/JDBC-driver-and-connection-string) 
 for further details about the allowed parameters in the JDBC URL. 
 For further details about Liquibase usage, please check the
-[official documentation](https://contribute.liquibase.com/extensions-integrations/directory/database-tutorials/cassandra/).
-
-> _Note:_ The version 4.25.0 of Liquibase extension for Cassandra is currently affected by an issue preventing it
-> working correctly. See [this issue](https://github.com/liquibase/liquibase-cassandra/issues/242) for further 
-> information.
+[official documentation](https://contribute.liquibase.com/extensions-integrations/directory/database-tutorials/cassandra/apache-cassandra/).
 
 ## Usage
 
