@@ -70,33 +70,6 @@ public final class JdbcUrlUtil {
     public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
 
     /**
-     * JDBC URL parameter key for the CQL version.
-     * @deprecated For removal.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public static final String KEY_VERSION = "version";
-
-    /**
-     * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
-     * property is mapped from the JDBC URL parameter {@code version} or from the default value defined in the
-     * property {@code database.defaultCqlVersion} of the resource file 'jdbc-driver.properties'.
-     * @deprecated For removal, because {@link #KEY_VERSION} and {@link #TAG_CQL_VERSION} are deprecated.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public static final String TAG_ACTIVE_CQL_VERSION = "activeCqlVersion";
-
-    /**
-     * Property name used to retrieve the active CQL version when the connection to Cassandra is established. This
-     * property is mapped from the JDBC URL parameter {@code version}.
-     * @deprecated For removal.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public static final String TAG_CQL_VERSION = "cqlVersion";
-
-    /**
      * JDBC URL parameter key for the consistency.
      */
     public static final String KEY_CONSISTENCY = "consistency";
@@ -392,9 +365,6 @@ public final class JdbcUrlUtil {
             final String query = uri.getQuery();
             if (query != null && !query.isEmpty()) {
                 final Map<String, String> params = parseQueryPart(query);
-                if (params.containsKey(KEY_VERSION)) {
-                    props.setProperty(TAG_CQL_VERSION, params.get(KEY_VERSION));
-                }
                 if (params.containsKey(KEY_DEBUG)) {
                     props.setProperty(TAG_DEBUG, params.get(KEY_DEBUG));
                 }

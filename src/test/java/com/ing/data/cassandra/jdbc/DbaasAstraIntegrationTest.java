@@ -15,7 +15,7 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
-import com.dtsx.astra.sdk.db.AstraDbClient;
+import com.dtsx.astra.sdk.db.AstraDBOpsClient;
 import com.dtsx.astra.sdk.db.domain.DatabaseStatusType;
 import com.dtsx.astra.sdk.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -56,7 +56,7 @@ class DbaasAstraIntegrationTest {
             /*
              * Devops API Client (create database, resume, delete)
              */
-            final AstraDbClient astraDbClient = new AstraDbClient(TestUtils.getAstraToken());
+            final AstraDBOpsClient astraDbClient = new AstraDBOpsClient(TestUtils.getAstraToken());
             LOG.debug("Connected the DBaaS API.");
 
             /*

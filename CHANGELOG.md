@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- Update Apache Commons IO to version 2.15.1.
+### Removed
+- Remove the parameter `version` (CQL version) in JDBC URL and the deprecated constructors of `CassandraDataSource`
+  using this parameter.
+
 ## [4.11.0] - 2023-12-03
 ### Added
 - Add support for connections with multiple contact points using different ports (see feature request 

@@ -25,7 +25,6 @@ import java.io.PrintWriter;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -35,7 +34,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
@@ -77,12 +75,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     protected String password;
     /**
-     * The CQL version.
-     * @deprecated For removal.
-     */
-    @Deprecated
-    protected String version = null;
-    /**
      * The consistency level.
      * <p>
      *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.x/cassandra/dml/dmlConfigConsistency.html">
@@ -98,23 +90,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     /**
      * Constructor.
      *
-     * @param host          The host name.
-     * @param port          The port.
-     * @param keyspace      The keyspace.
-     * @param user          The username used to connect.
-     * @param password      The password used to connect.
-     * @param consistency   The consistency level.
-     * @deprecated For removal. Use {@link #CassandraDataSource(List, String, String, String, String)} instead.
-     */
-    @Deprecated
-    public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
-                               final String password, final String consistency) {
-        this(Collections.singletonList(ContactPoint.of(host, port)), keyspace, user, password, null, consistency, null);
-    }
-
-    /**
-     * Constructor.
-     *
      * @param contactPoints The contact points.
      * @param keyspace      The keyspace.
      * @param user          The username used to connect.
@@ -123,26 +98,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
                                final String password, final String consistency) {
-        this(contactPoints, keyspace, user, password, null, consistency, null);
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param host          The host name.
-     * @param port          The port.
-     * @param keyspace      The keyspace.
-     * @param user          The username used to connect.
-     * @param password      The password used to connect.
-     * @param version       The CQL version. Deprecated, do not use anymore.
-     * @param consistency   The consistency level.
-     * @deprecated For removal. Use {@link #CassandraDataSource(List, String, String, String, String)} instead.
-     */
-    @Deprecated
-    public CassandraDataSource(final String host, final int port, final String keyspace, final String user,
-                               final String password, final String version, final String consistency) {
-        this(Collections.singletonList(ContactPoint.of(host, port)),
-            keyspace, user, password, version, consistency, null);
+        this(contactPoints, keyspace, user, password, consistency, null);
     }
 
     /**
@@ -152,18 +108,13 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param keyspace          The keyspace.
      * @param user              The username used to connect.
      * @param password          The password used to connect.
-     * @param version           The CQL version. Deprecated, do not use anymore.
      * @param consistency       The consistency level.
      * @param localDataCenter   The local datacenter.
      */
     public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String version, final String consistency,
-                               final String localDataCenter) {
+                               final String password, final String consistency, final String localDataCenter) {
         if (contactPoints != null && !contactPoints.isEmpty()) {
             setContactPoints(contactPoints);
-        }
-        if (version != null) {
-            setVersion(version);
         }
         if (consistency != null) {
             setConsistency(consistency);
@@ -201,30 +152,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setContactPoints(final List<ContactPoint> contactPoints) {
         this.contactPoints = contactPoints;
-    }
-
-    /**
-     * Gets the CQL version.
-     *
-     * @return The CQL version.
-     * @deprecated For removal.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public String getVersion() {
-        return this.version;
-    }
-
-    /**
-     * Sets the CQL version.
-     *
-     * @param version The CQL version.
-     * @deprecated For removal.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public void setVersion(final String version) {
-        this.version = version;
     }
 
     /**
@@ -347,9 +274,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         }
         if (password != null) {
             props.setProperty(TAG_PASSWORD, password);
-        }
-        if (this.version != null) {
-            props.setProperty(TAG_CQL_VERSION, version);
         }
         if (this.consistency != null) {
             props.setProperty(TAG_CONSISTENCY_LEVEL, consistency);

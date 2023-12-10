@@ -67,16 +67,13 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CQL_VERSION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
@@ -151,9 +148,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
             defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
-        final String cqlVersion = sessionProperties.getProperty(TAG_CQL_VERSION,
-            getDriverProperty("database.defaultCqlVersion"));
-        this.connectionProperties.setProperty(TAG_ACTIVE_CQL_VERSION, cqlVersion);
         this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
                 defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
