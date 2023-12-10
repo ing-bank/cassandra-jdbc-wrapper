@@ -6,9 +6,11 @@ Check out ways to contribute to this project...
 
 When you have an idea on how we could improve, please check our 
 [discussions](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions) to see if there are similar ideas or 
-feature requests. If there are none, please [start](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/new) 
-your feature request as a new discussion topic. Add the title `[Feature Request] My awesome feature` and a description 
-of what you expect from the improvement and what the use case is.
+feature requests. You can also check if your idea is not already planned in the 
+[roadmap](https://github.com/ing-bank/cassandra-jdbc-wrapper/wiki/Roadmap). If there are none, please 
+[start](https://github.com/ing-bank/cassandra-jdbc-wrapper/discussions/new) your feature request as a new discussion 
+topic. Add the title `[Feature Request] My awesome feature` and a description of what you expect from the improvement 
+and what the use case is.
 
 ## Report a bug
 
@@ -45,7 +47,7 @@ Once you cloned the repository to your local machine, open the project in your f
 
 To build the project, execute the following command:
 ```
-mvn clean install
+mvn clean install -DskipTests
 ```
 
 To run the tests, execute the following command:
@@ -76,6 +78,35 @@ Once your changes and tests are ready for review, submit them:
 4. Finally, push your local changes to your forked repository and submit a pull request into the branch `release/next`
    with a title which sums up the changes that you have made (try to not exceed 50 characters), and provide more details
    in the body. If necessary, also mention the number of the issue solved by your changes, e.g. "Closes #123".
+
+### Coding conventions
+
+As previously stated, this project comes with a set of Checkstyle rules and an `.editorconfig` file to ease the respect 
+of some basic formatting rules. We invite you to follow them when you contribute to this project.
+
+Please find here some of the main coding guidelines:
+
+* Java indent is 4 whitespaces.
+* Maximal line length is 120 characters.
+* The trailing whitespaces must be trimmed.
+* Respect the standard Java naming conventions.
+* Wildcards imports (e.g. import com.foo.bar.*) and redundant ones are forbidden.
+* Empty catch blocks aren't allowed.
+* Left braces are located at the end of the line.
+* Braces are mandatory around conditional and loops blocks.
+* Don't write more than one statement by line.
+
+### Javadoc
+
+Good Javadoc can help with navigating and understanding code. That's why we provide here some guidelines to write 
+Javadoc for this project.
+
+1. Always add Javadoc to new code.
+2. Javadoc must explain the purpose of a feature/function/class (the "why"), not the "how" (i.e. the implementation 
+   itself), except if it is really helpful for the understanding of the "why".
+3. All the public classes and methods must be documented.
+4. Use `@link` and `@see` to add references, either to related resources in the codebase or to relevant external 
+   resources.
 
 ### About dependencies
 
