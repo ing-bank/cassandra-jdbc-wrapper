@@ -121,9 +121,9 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
             buildDefinitionInAnonymousTable(TYPE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(CLASS_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
             buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(BASE_TYPE, DataTypes.TEXT)
+            buildDefinitionInAnonymousTable(BASE_TYPE, DataTypes.SMALLINT)
         );
 
         // Parse the fully-qualified type name, if necessary.
@@ -146,7 +146,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                         keyspaceMetadata.getName().asInternal(), // TYPE_SCHEM
                         udtMetadata.getName().asInternal(),      // TYPE_NAME
                         UdtValue.class.getName(),                // CLASS_NAME
-                        String.valueOf(JAVA_OBJECT),             // DATA_TYPE
+                        JAVA_OBJECT,                             // DATA_TYPE
                         StringUtils.EMPTY,                       // REMARKS
                         null);                                   // BASE_TYPE
                     udtsRows.add(row);
@@ -206,7 +206,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
      *         <li><b>MAXIMUM_SCALE</b> short => maximum scale supported.</li>
      *         <li><b>SQL_DATA_TYPE</b> int => not used.</li>
      *         <li><b>SQL_DATETIME_SUB</b> int => not used.</li>
-     *         <li><b>NUM_PREC_RADIX</b> String => precision radix (typically either 10 or 2).</li>
+     *         <li><b>NUM_PREC_RADIX</b> int => precision radix (typically either 10 or 2).</li>
      *     </ol>
      * </p>
      * <p>
@@ -226,23 +226,23 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         final ArrayList<MetadataRow> types = new ArrayList<>();
         final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(PRECISION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(PRECISION, DataTypes.INT),
             buildDefinitionInAnonymousTable(LITERAL_PREFIX, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(LITERAL_SUFFIX, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(CREATE_PARAMS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(CASE_SENSITIVE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SEARCHABLE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(UNSIGNED_ATTRIBUTE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(FIXED_PRECISION_SCALE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(AUTO_INCREMENT, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(CASE_SENSITIVE, DataTypes.BOOLEAN),
+            buildDefinitionInAnonymousTable(SEARCHABLE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(UNSIGNED_ATTRIBUTE, DataTypes.BOOLEAN),
+            buildDefinitionInAnonymousTable(FIXED_PRECISION_SCALE, DataTypes.BOOLEAN),
+            buildDefinitionInAnonymousTable(AUTO_INCREMENT, DataTypes.BOOLEAN),
             buildDefinitionInAnonymousTable(LOCALIZED_TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(MINIMUM_SCALE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(MAXIMUM_SCALE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT)
+            buildDefinitionInAnonymousTable(MINIMUM_SCALE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(MAXIMUM_SCALE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.INT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.INT)
         );
 
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
@@ -258,30 +258,29 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
             }
             final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
                 dataType.cqlType,                             // TYPE_NAME
-                String.valueOf(jdbcType.getJdbcType()),       // DATA_TYPE
-                String.valueOf(jdbcType.getPrecision(null)),  // PRECISION
+                jdbcType.getJdbcType(),                       // DATA_TYPE
+                jdbcType.getPrecision(null),                  // PRECISION
                 literalQuotingSymbol,                         // LITERAL_PREFIX
                 literalQuotingSymbol,                         // LITERAL_SUFFIX
                 null,                                         // CREATE_PARAMS
-                String.valueOf(typeNullable),                 // NULLABLE, absence is equivalent of null in Cassandra
-                String.valueOf(jdbcType.isCaseSensitive()),   // CASE_SENSITIVE
-                String.valueOf(typePredBasic),                // SEARCHABLE
-                String.valueOf(!jdbcType.isSigned()),         // UNSIGNED_ATTRIBUTE
-                String.valueOf(!jdbcType.isCurrency()),       // FIXED_PREC_SCALE
-                String.valueOf(false),                        // AUTO_INCREMENT
+                (short) typeNullable,                         // NULLABLE, absence is equivalent of null in Cassandra
+                jdbcType.isCaseSensitive(),                   // CASE_SENSITIVE
+                (short) typePredBasic,                        // SEARCHABLE
+                !jdbcType.isSigned(),                         // UNSIGNED_ATTRIBUTE
+                !jdbcType.isCurrency(),                       // FIXED_PREC_SCALE
+                false,                                        // AUTO_INCREMENT
                 null,                                         // LOCAL_TYPE_NAME
-                String.valueOf(DEFAULT_SCALE),                // MINIMUM_SCALE
-                String.valueOf(jdbcType.getScale(null)),      // MAXIMUM_SCALE
+                (short) DEFAULT_SCALE,                        // MINIMUM_SCALE
+                (short) jdbcType.getScale(null),              // MAXIMUM_SCALE
                 null,                                         // SQL_DATA_TYPE
                 null,                                         // SQL_DATETIME_SUB
-                String.valueOf(jdbcType.getPrecision(null))); // NUM_PREC_RADIX
+                jdbcType.getPrecision(null));                 // NUM_PREC_RADIX
             types.add(row);
         }
 
         // Sort results by DATA_TYPE.
-        types.sort(Comparator.comparing(row -> Integer.valueOf(row.getString(DATA_TYPE))));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(types));
+        types.sort(Comparator.comparing(row -> row.getInt(DATA_TYPE)));
+        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(types));
     }
 
     /**
@@ -368,23 +367,23 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
             buildDefinitionInAnonymousTable(TYPE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(ATTRIBUTE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
             buildDefinitionInAnonymousTable(ATTRIBUTE_TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(ATTRIBUTE_SIZE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(ATTRIBUTE_SIZE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.INT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.INT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.INT),
             buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(ATTRIBUTE_DEFAULT, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.INT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.INT),
             buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_CATALOG, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_TABLE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.TEXT)
+            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.SMALLINT)
         );
 
         // Parse the fully-qualified type name, if necessary.
@@ -439,18 +438,18 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                             keyspaceMetadata.getName().asInternal(),           // TYPE_SCHEMA
                             udtMetadata.getName().asInternal(),                // TYPE_NAME
                             attrName,                                          // ATTR_NAME
-                            String.valueOf(jdbcType),                          // DATA_TYPE
+                            jdbcType,                                          // DATA_TYPE
                             attrType.toString(),                               // ATTR_TYPE_NAME
-                            String.valueOf(columnSize),                        // ATTR_SIZE
+                            columnSize,                                        // ATTR_SIZE
                             null,                                              // DECIMAL_DIGITS
-                            String.valueOf(radix),                             // NUM_PREC_RADIX
-                            String.valueOf(DatabaseMetaData.attributeNoNulls), // NULLABLE
+                            radix,                                             // NUM_PREC_RADIX
+                            DatabaseMetaData.attributeNoNulls,                 // NULLABLE
                             null,                                              // REMARKS
                             null,                                              // ATTR_DEF
                             null,                                              // SQL_DATA_TYPE
                             null,                                              // SQL_DATETIME_SUB
-                            String.valueOf(Integer.MAX_VALUE),                 // CHAR_OCTET_LENGTH
-                            String.valueOf(i + 1),                             // ORDINAL_POSITION
+                            Integer.MAX_VALUE,                                 // CHAR_OCTET_LENGTH
+                            i + 1,                                             // ORDINAL_POSITION
                             StringUtils.EMPTY,                                 // IS_NULLABLE
                             null,                                              // SCOPE_CATALOG
                             null,                                              // SCOPE_SCHEMA
@@ -465,7 +464,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         // Results should all have the same TYPE_CAT so just sort them by TYPE_SCHEM, TYPE_NAME then ORDINAL_POSITION.
         attributesRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME))
-            .thenComparing(row -> ((MetadataRow) row).getString(ORDINAL_POSITION)));
+            .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
         return CassandraMetadataResultSet.buildFrom(this.statement,
             new MetadataResultSet(rowTemplate).setRows(attributesRows));
     }

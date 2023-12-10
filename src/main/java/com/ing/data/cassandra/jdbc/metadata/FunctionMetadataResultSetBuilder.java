@@ -32,6 +32,7 @@ import java.util.List;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.functionColumnIn;
+import static java.sql.DatabaseMetaData.functionNoTable;
 import static java.sql.DatabaseMetaData.functionReturn;
 import static java.sql.DatabaseMetaData.typeNullable;
 
@@ -103,7 +104,7 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
             buildDefinitionInAnonymousTable(FUNCTION_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(FUNCTION_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(FUNCTION_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(FUNCTION_TYPE, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(SPECIFIC_NAME, DataTypes.TEXT)
         );
 
@@ -115,7 +116,7 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                         keyspaceMetadata.getName().asInternal(),          // FUNCTION_SCHEM
                         functionSignature.getName().asInternal(),         // FUNCTION_NAME
                         StringUtils.EMPTY,                                // REMARKS
-                        String.valueOf(DatabaseMetaData.functionNoTable), // FUNCTION_TYPE
+                        (short) functionNoTable,                          // FUNCTION_TYPE
                         functionSignature.getName().asInternal());        // SPECIFIC_NAME
                     functionsRows.add(row);
                 }), null);
@@ -216,17 +217,17 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
             buildDefinitionInAnonymousTable(FUNCTION_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(FUNCTION_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(COLUMN_TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_TYPE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(PRECISION, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SCALE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(RADIX, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(PRECISION, DataTypes.INT),
+            buildDefinitionInAnonymousTable(LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(SCALE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(RADIX, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.INT),
             buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SPECIFIC_NAME, DataTypes.TEXT)
         );
@@ -242,17 +243,17 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                         keyspaceMetadata.getName().asInternal(),           // FUNCTION_SCHEM
                         functionSignature.getName().asInternal(),          // FUNCTION_NAME
                         StringUtils.EMPTY,                                 // COLUMN_NAME
-                        String.valueOf(functionReturn),                    // COLUMN_TYPE
-                        String.valueOf(returnJdbcType.getJdbcType()),      // DATA_TYPE
+                        (short) functionReturn,                            // COLUMN_TYPE
+                        returnJdbcType.getJdbcType(),                      // DATA_TYPE
                         functionMetadata.getReturnType().toString(),       // TYPE_NAME
-                        String.valueOf(returnJdbcType.getPrecision(null)), // PRECISION
-                        String.valueOf(Integer.MAX_VALUE),                 // LENGTH
-                        String.valueOf(returnJdbcType.getScale(null)),     // SCALE
-                        String.valueOf(returnJdbcType.getPrecision(null)), // RADIX
-                        String.valueOf(typeNullable),                      // NULLABLE
+                        returnJdbcType.getPrecision(null),                 // PRECISION
+                        Integer.MAX_VALUE,                                 // LENGTH
+                        returnJdbcType.getScale(null),                     // SCALE
+                        (short) returnJdbcType.getPrecision(null),         // RADIX
+                        (short) typeNullable,                              // NULLABLE
                         StringUtils.EMPTY,                                 // REMARKS
                         null,                                              // CHAR_OCTET_LENGTH
-                        "0",                                               // ORDINAL_POSITION
+                        0,                                                 // ORDINAL_POSITION
                         YES_VALUE,                                         // IS_NULLABLE
                         functionSignature.getName().asInternal());         // SPECIFIC_NAME
                     functionParamsRows.add(row);
@@ -269,17 +270,17 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
                                 keyspaceMetadata.getName().asInternal(),                 // FUNCTION_SCHEM
                                 functionSignature.getName().asInternal(),                // FUNCTION_NAME
                                 paramNames.get(i).asInternal(),                          // COLUMN_NAME
-                                String.valueOf(functionColumnIn),                        // COLUMN_TYPE
-                                String.valueOf(paramJdbcType.getJdbcType()),             // DATA_TYPE
+                                (short) functionColumnIn,                                // COLUMN_TYPE
+                                paramJdbcType.getJdbcType(),                             // DATA_TYPE
                                 functionSignature.getParameterTypes().get(i).toString(), // TYPE_NAME
-                                String.valueOf(paramJdbcType.getPrecision(null)),        // PRECISION
-                                String.valueOf(Integer.MAX_VALUE),                       // LENGTH
-                                String.valueOf(paramJdbcType.getScale(null)),            // SCALE
-                                String.valueOf(paramJdbcType.getPrecision(null)),        // RADIX
-                                String.valueOf(typeNullable),                            // NULLABLE
+                                paramJdbcType.getPrecision(null),                        // PRECISION
+                                Integer.MAX_VALUE,                                       // LENGTH
+                                paramJdbcType.getScale(null),                            // SCALE
+                                (short) paramJdbcType.getPrecision(null),                // RADIX
+                                (short) typeNullable,                                    // NULLABLE
                                 StringUtils.EMPTY,                                       // REMARKS
                                 null,                                                    // CHAR_OCTET_LENGTH
-                                String.valueOf(i + 1),                                   // ORDINAL_POSITION
+                                i + 1,                                                   // ORDINAL_POSITION
                                 YES_VALUE,                                               // IS_NULLABLE
                                 functionSignature.getName().asInternal());               // SPECIFIC_NAME
                             functionParamsRows.add(paramRow);
@@ -292,7 +293,7 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
         functionParamsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME))
             .thenComparing(row -> ((MetadataRow) row).getString(SPECIFIC_NAME))
-            .thenComparing(row -> Integer.valueOf(((MetadataRow) row).getString(ORDINAL_POSITION))));
+            .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
         return CassandraMetadataResultSet.buildFrom(this.statement,
             new MetadataResultSet(rowTemplate).setRows(functionParamsRows));
     }

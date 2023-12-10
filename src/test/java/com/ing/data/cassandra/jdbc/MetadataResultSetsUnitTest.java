@@ -164,13 +164,14 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         int resultSize = 0;
         while (result.next()) {
             ++resultSize;
-            foundColumns.add(String.join(";", result.getString(1), result.getString(2), result.getString(3),
-                result.getString(4), result.getString(5), result.getString(6), result.getString(7),
-                result.getString(8)));
+            foundColumns.add(String.join(";", String.valueOf(result.getShort(1)), result.getString(2),
+                String.valueOf(result.getInt(3)), result.getString(4), String.valueOf(result.getInt(5)),
+                String.valueOf(result.getInt(6)),  String.valueOf(result.getInt(7)),
+                String.valueOf(result.getShort(8))));
         }
         assertEquals(2, resultSize);
-        assertThat(foundColumns, hasItem(is("0;keyname;12;TEXT;2147483647;0;null;1")));
-        assertThat(foundColumns, hasItem(is("0;t3ivalue;4;INT;11;0;null;1")));
+        assertThat(foundColumns, hasItem(is("0;keyname;12;TEXT;2147483647;0;0;1")));
+        assertThat(foundColumns, hasItem(is("0;t3ivalue;4;INT;11;0;0;1")));
     }
 
     /*
@@ -255,7 +256,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         while (result.next()) {
             ++resultSize;
             foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(6), result.getString(7)));
+                result.getString(6), String.valueOf(result.getInt(7))));
         }
         assertEquals(3, resultSize);
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";cf_test1;keyname;TEXT;2147483647"))));
@@ -447,11 +448,11 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         while (result.next()) {
             ++resultSize;
             foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(5), result.getString(6), result.getString(7)));
+                String.valueOf(result.getInt(5)), result.getString(6), String.valueOf(result.getShort(7))));
         }
         assertEquals(1, resultSize);
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";customtype1;").concat(UdtValue.class.getName())
-            .concat(";2000;;null"))));
+            .concat(";2000;;0"))));
 
         // Using a fully-qualified type name.
         final ResultSet resultFullyQualifiedName = new TypeMetadataResultSetBuilder(statement)
@@ -545,68 +546,76 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             ++resultSize;
             List<String> results = new ArrayList<>();
             for (int i = 1; i <= 18; i++) {
-                results.add(result.getString(i));
+                if (i == 1 || i > 3 && i < 7 || i == 13) {
+                    results.add(result.getString(i));
+                } else if (i == 8 || i > 9 && i < 13) {
+                    results.add(String.valueOf(result.getBoolean(i)));
+                } else if (i == 7 || i == 9 || i > 13 && i < 16) {
+                    results.add(String.valueOf(result.getShort(i)));
+                } else {
+                    results.add(String.valueOf(result.getInt(i)));
+                }
             }
             foundColumns.add(String.join(";", results));
         }
         assertEquals(expectedNbOfTypes, resultSize);
-        assertEquals("tinyint;-6;4;null;null;null;1;false;2;false;true;false;null;0;0;null;null;4",
+        assertEquals("tinyint;-6;4;null;null;null;1;false;2;false;true;false;null;0;0;0;0;4",
             foundColumns.get(0));
-        assertEquals("bigint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+        assertEquals("bigint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;0;0;20",
             foundColumns.get(1));
-        assertEquals("counter;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+        assertEquals("counter;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;0;0;20",
             foundColumns.get(2));
-        assertEquals("varint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;null;null;20",
+        assertEquals("varint;-5;20;null;null;null;1;false;2;false;true;false;null;0;0;0;0;20",
             foundColumns.get(3));
-        assertEquals("blob;-2;1073741823;';';null;1;false;2;true;true;false;null;0;0;null;null;1073741823",
+        assertEquals("blob;-2;1073741823;';';null;1;false;2;true;true;false;null;0;0;0;0;1073741823",
             foundColumns.get(4));
-        assertEquals("decimal;3;0;null;null;null;1;false;2;false;true;false;null;0;0;null;null;0",
+        assertEquals("decimal;3;0;null;null;null;1;false;2;false;true;false;null;0;0;0;0;0",
             foundColumns.get(5));
-        assertEquals("int;4;11;null;null;null;1;false;2;false;true;false;null;0;0;null;null;11",
+        assertEquals("int;4;11;null;null;null;1;false;2;false;true;false;null;0;0;0;0;11",
             foundColumns.get(6));
-        assertEquals("smallint;5;6;null;null;null;1;false;2;false;true;false;null;0;0;null;null;6",
+        assertEquals("smallint;5;6;null;null;null;1;false;2;false;true;false;null;0;0;0;0;6",
             foundColumns.get(7));
-        assertEquals("float;6;7;null;null;null;1;false;2;false;true;false;null;0;40;null;null;7",
+        assertEquals("float;6;7;null;null;null;1;false;2;false;true;false;null;0;40;0;0;7",
             foundColumns.get(8));
-        assertEquals("double;8;300;null;null;null;1;false;2;false;true;false;null;0;300;null;null;300",
+        assertEquals("double;8;300;null;null;null;1;false;2;false;true;false;null;0;300;0;0;300",
             foundColumns.get(9));
-        assertEquals("ascii;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+        assertEquals("ascii;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;0;0;2147483647",
             foundColumns.get(10));
-        assertEquals("text;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+        assertEquals("text;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;0;0;2147483647",
             foundColumns.get(11));
-        assertEquals("VARCHAR;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;null;null;2147483647",
+        assertEquals("VARCHAR;12;2147483647;';';null;1;true;2;true;true;false;null;0;0;0;0;2147483647",
             foundColumns.get(12));
-        assertEquals("boolean;16;5;null;null;null;1;false;2;true;true;false;null;0;0;null;null;5",
+        assertEquals("boolean;16;5;null;null;null;1;false;2;true;true;false;null;0;0;0;0;5",
             foundColumns.get(13));
-        assertEquals("date;91;10;null;null;null;1;false;2;true;true;false;null;0;0;null;null;10",
+        assertEquals("date;91;10;null;null;null;1;false;2;true;true;false;null;0;0;0;0;10",
             foundColumns.get(14));
-        assertEquals("time;92;18;null;null;null;1;false;2;true;true;false;null;0;0;null;null;18",
+        assertEquals("time;92;18;null;null;null;1;false;2;true;true;false;null;0;0;0;0;18",
             foundColumns.get(15));
-        assertEquals("timestamp;93;31;null;null;null;1;false;2;true;true;false;null;0;0;null;null;31",
+        assertEquals("timestamp;93;31;null;null;null;1;false;2;true;true;false;null;0;0;0;0;31",
             foundColumns.get(16));
-        assertEquals("CUSTOM;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("CUSTOM;1111;-1;';';null;1;true;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(17));
-        assertEquals("duration;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("duration;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(18));
-        assertEquals("inet;1111;39;null;null;null;1;false;2;false;true;false;null;0;0;null;null;39",
+        assertEquals("inet;1111;39;null;null;null;1;false;2;false;true;false;null;0;0;0;0;39",
             foundColumns.get(19));
-        assertEquals("list;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("list;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(20));
-        assertEquals("map;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("map;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(21));
-        assertEquals("set;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("set;1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(22));
-        assertEquals("timeuuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
+        assertEquals("timeuuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;0;0;36",
             foundColumns.get(23));
-        assertEquals("tuple;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("tuple;1111;-1;';';null;1;true;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(24));
-        assertEquals("UDT;1111;-1;';';null;1;true;2;true;true;false;null;0;0;null;null;-1",
+        assertEquals("UDT;1111;-1;';';null;1;true;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(25));
-        assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;null;null;36",
+        assertEquals("uuid;1111;36;null;null;null;1;false;2;true;true;false;null;0;0;0;0;36",
             foundColumns.get(26));
         if (CASSANDRA_5.equals(dbVersion)) {
             assertEquals(VECTOR.cqlType
-                    .concat(";1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;null;null;-1"),
+                    .concat(";1111;-1;null;null;null;1;false;2;true;true;false;null;0;0;0;0;-1"),
                 foundColumns.get(27));
         }
     }
@@ -644,7 +653,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         while (result.next()) {
             ++resultSize;
             foundAttrs.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(6), result.getString(16)));
+                result.getString(6), String.valueOf(result.getInt(16))));
         }
         assertEquals(2, resultSize);
         assertThat(foundAttrs, hasItem(is(KEYSPACE.concat(";type_in_different_ks;t_key;INT;1"))));
@@ -673,7 +682,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         while (result.next()) {
             ++resultSize;
             foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(5), result.getString(6)));
+                String.valueOf(result.getShort(5)), result.getString(6)));
         }
         assertEquals(1, resultSize);
         assertThat(foundColumns, hasItem(is(KEYSPACE.concat(";function_test1;;1;function_test1"))));
@@ -710,18 +719,24 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             ++resultSize;
             List<String> results = new ArrayList<>();
             for (int i = 2; i <= 17; i++) {
-                results.add(result.getString(i));
+                if (i == 5 || i == 11 || i == 12) {
+                    results.add(String.valueOf(result.getShort(i)));
+                } else if (i == 6 || i > 7 && i < 11 || i > 13 && i < 16) {
+                    results.add(String.valueOf(result.getInt(i)));
+                } else {
+                    results.add(result.getString(i));
+                }
             }
             foundColumns.add(String.join(";", results));
         }
         assertEquals(3, resultSize);
         assertEquals(KEYSPACE.concat(
-            ";function_test1;;4;4;INT;11;2147483647;0;11;1;;null;0;YES;function_test1"), foundColumns.get(0));
+            ";function_test1;;4;4;INT;11;2147483647;0;11;1;;0;0;YES;function_test1"), foundColumns.get(0));
         assertEquals(KEYSPACE.concat(
-            ";function_test1;var1;1;4;INT;11;2147483647;0;11;1;;null;1;YES;function_test1"),
+            ";function_test1;var1;1;4;INT;11;2147483647;0;11;1;;0;1;YES;function_test1"),
             foundColumns.get(1));
         assertEquals(KEYSPACE.concat(
-            ";function_test1;var2;1;12;TEXT;2147483647;2147483647;0;2147483647;1;;null;2;YES;function_test1"),
+            ";function_test1;var2;1;12;TEXT;2147483647;2147483647;0;-1;1;;0;2;YES;function_test1"),
             foundColumns.get(2));
     }
 
@@ -753,8 +768,9 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         int resultSize = 0;
         while (result.next()) {
             ++resultSize;
-            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(6), result.getString(7), result.getString(8), result.getString(9)));
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3),
+                String.valueOf(result.getBoolean(4)), result.getString(6), String.valueOf(result.getShort(7)),
+                String.valueOf(result.getInt(8)), result.getString(9)));
         }
         assertEquals(1, resultSize);
         assertThat(foundColumns,
@@ -766,8 +782,9 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         resultSize = 0;
         while (result.next()) {
             ++resultSize;
-            foundColumns.add(String.join(";", result.getString(2), result.getString(3), result.getString(4),
-                result.getString(6), result.getString(7), result.getString(8), result.getString(9)));
+            foundColumns.add(String.join(";", result.getString(2), result.getString(3),
+                String.valueOf(result.getBoolean(4)), result.getString(6), String.valueOf(result.getShort(7)),
+                String.valueOf(result.getInt(8)), result.getString(9)));
         }
         assertEquals(1, resultSize);
         assertThat(foundColumns, hasItem(is(ANOTHER_KEYSPACE.concat(";cf_test2;true;int_values_idx;3;1;t2ivalue"))));

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## Unreleased
 ### Changed
+- Modify the types of some columns in the result sets of the following methods of `CassandraDatabaseMetadata` to respect
+  the JDBC API specifications:
+  - `getAttributes(String, String, String, String)`
+  - `getBestRowIdentifier(String, String, String, int, boolean)`
+  - `getColumns(String, String, String, String)` 
+  - `getFunctions(String, String, String)` 
+  - `getFunctionColumns(String, String, String, String)` 
+  - `getIndexInfo(String, String, String, boolean, boolean)`
+  - `getPrimaryKeys(String, String, String)`
+  - `getTypeInfo()`
+  - `getUDTs(String, String, String, int[])` 
 - Update Apache Commons IO to version 2.15.1.
 ### Removed
 - Remove the parameter `version` (CQL version) in JDBC URL and the deprecated constructors of `CassandraDataSource`

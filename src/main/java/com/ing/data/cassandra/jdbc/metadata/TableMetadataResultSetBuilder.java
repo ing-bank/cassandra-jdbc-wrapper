@@ -21,7 +21,6 @@ import com.datastax.oss.driver.api.core.metadata.schema.IndexMetadata;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
-import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,15 +226,15 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             buildDefinitionInAnonymousTable(TABLE_CATALOG_SHORTNAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NON_UNIQUE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(NON_UNIQUE, DataTypes.BOOLEAN),
             buildDefinitionInAnonymousTable(INDEX_QUALIFIER, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(INDEX_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(TYPE, DataTypes.SMALLINT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(ASC_OR_DESC, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(CARDINALITY, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(PAGES, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(CARDINALITY, DataTypes.INT),
+            buildDefinitionInAnonymousTable(PAGES, DataTypes.INT),
             buildDefinitionInAnonymousTable(FILTER_CONDITION, DataTypes.TEXT)
         );
 
@@ -247,15 +246,15 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                         catalog,                                          // TABLE_CAT
                         keyspaceMetadata.getName().asInternal(),          // TABLE_SCHEM
                         tableMetadata.getName().asInternal(),             // TABLE_NAME
-                        Boolean.TRUE.toString(),                          // NON_UNIQUE
+                        true,                                             // NON_UNIQUE
                         catalog,                                          // INDEX_QUALIFIER
                         indexMetadata.getName().asInternal(),             // INDEX_NAME
-                        String.valueOf(DatabaseMetaData.tableIndexOther), // TYPE
-                        String.valueOf(1),                                // ORDINAL_POSITION
+                        DatabaseMetaData.tableIndexOther,                 // TYPE
+                        1,                                                // ORDINAL_POSITION
                         indexMetadata.getTarget(),                        // COLUMN_NAME
                         null,                                             // ASC_OR_DESC
-                        String.valueOf(-1),                               // CARDINALITY
-                        String.valueOf(-1),                               // PAGES
+                        -1,                                               // CARDINALITY
+                        -1,                                               // PAGES
                         null);                                            // FILTER_CONDITION
                     indexes.add(row);
                 }
@@ -305,7 +304,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(KEY_SEQ, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(KEY_SEQ, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(PRIMARY_KEY_NAME, DataTypes.TEXT)
         );
 
@@ -318,7 +317,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                         keyspaceMetadata.getName().asInternal(),  // TABLE_SCHEM
                         tableMetadata.getName().asInternal(),     // TABLE_NAME
                         col.getName().asInternal(),               // COLUMN_NAME
-                        String.valueOf(seq),                      // KEY_SEQ
+                        seq,                                      // KEY_SEQ
                         null);                                    // PK_NAME
                     primaryKeys.add(row);
                     seq++;
@@ -388,14 +387,14 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
         throws SQLException {
         final ArrayList<MetadataRow> bestRowIdentifiers = new ArrayList<>();
         final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
-            buildDefinitionInAnonymousTable(SCOPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SCOPE, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(PSEUDO_COLUMN, DataTypes.TEXT)
+            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.INT),
+            buildDefinitionInAnonymousTable(PSEUDO_COLUMN, DataTypes.SMALLINT)
         );
 
         filterBySchemaNamePattern(schema, keyspaceMetadata ->
@@ -421,14 +420,14 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                     }
 
                     final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
-                            String.valueOf(scope),                 // SCOPE
+                            (short) scope,                         // SCOPE
                             columnMetadata.getName().asInternal(), // COLUMN_NAME
-                            String.valueOf(jdbcType),              // DATA_TYPE
+                            jdbcType,                              // DATA_TYPE
                             columnMetadata.getType().toString(),   // TYPE_NAME
-                            String.valueOf(columnSize),            // COLUMN_SIZE
-                            String.valueOf(0),                     // BUFFER_LENGTH
+                            columnSize,                            // COLUMN_SIZE
+                            0,                                     // BUFFER_LENGTH
                             null,                                  // DECIMAL_DIGITS
-                            String.valueOf(bestRowNotPseudo));     // PSEUDO_COLUMN
+                            (short) bestRowNotPseudo);             // PSEUDO_COLUMN
                     bestRowIdentifiers.add(row);
                 }
             }, null), null);

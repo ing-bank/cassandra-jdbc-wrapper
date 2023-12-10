@@ -16,11 +16,13 @@
 package com.ing.data.cassandra.jdbc.metadata;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
-import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.DataType;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -43,8 +45,10 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_POPULAT
 @SuppressWarnings("unused")
 public class MetadataRow {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataRow.class);
+
     // The 'entries' contains the ordered list of metadata values.
-    private final ArrayList<String> entries;
+    private final ArrayList<Object> entries;
     // The 'names' map contains the metadata names as keys and the position of the corresponding value in the list
     // 'entries' as values. Each metadata key is a column of the metadata row.
     private final HashMap<String, Integer> names;
@@ -64,14 +68,15 @@ public class MetadataRow {
      *
      * @param key   The metadata key.
      * @param value The metadata value.
+     * @param type  The metadata column type.
      * @return The updated {@code MetadataRow} instance.
      */
-    public MetadataRow addEntry(final String key, final String value) {
+    public MetadataRow addEntry(final String key, final Object value, final DataType type) {
         // The 'names' map contains the metadata keys and the position of the value in the list 'entries', that's why
         // we first insert the key name with the value 'entries.size()' to define the index of the metadata value.
         this.names.put(key, this.entries.size());
         this.entries.add(value);
-        this.definitions.add(new Definition(StringUtils.EMPTY, StringUtils.EMPTY, key, DataTypes.TEXT));
+        this.definitions.add(new Definition(StringUtils.EMPTY, StringUtils.EMPTY, key, type));
         return this;
     }
 
@@ -88,12 +93,13 @@ public class MetadataRow {
      * @throws RuntimeException when the number of values does not match the number of columns defined in the row
      * template.
      */
-    public MetadataRow withTemplate(final MetadataRowTemplate template, final String... values) {
+    public MetadataRow withTemplate(final MetadataRowTemplate template, final Object... values) {
         if (template.getColumnDefinitions().length != values.length) {
             throw new RuntimeException(UNABLE_TO_POPULATE_METADATA_ROW);
         }
         for (int i = 0; i < template.getColumnDefinitions().length; i++) {
-            this.addEntry(template.getColumnDefinitions()[i].getName(), values[i]);
+            this.addEntry(template.getColumnDefinitions()[i].getName(), values[i],
+                template.getColumnDefinitions()[i].getType());
         }
         return this;
     }
@@ -135,18 +141,27 @@ public class MetadataRow {
      * Retrieves the value of the {@code i}th column of the metadata row as {@code boolean}.
      *
      * @param i The column index (the first column is 0).
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is {@code false}.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public boolean getBool(final int i) {
-        return Boolean.parseBoolean(this.entries.get(i));
+        if (isNull(i)) {
+            return false;
+        }
+        final Object entryValue = this.entries.get(i);
+        try {
+            return (Boolean) entryValue;
+        } catch (final ClassCastException e) {
+            LOG.warn("Unable to cast [{}] (index {}) as boolean, it will return false.", entryValue, i);
+            return false;
+        }
     }
 
     /**
      * Retrieves the value of the column {@code name} of the metadata row as {@code boolean}.
      *
      * @param name The column name.
-     * @return The metadata value.
+     * @return The metadata value. If the underlying value is {@code NULL}, the value returned is {@code false}.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
      */
     public boolean getBool(final String name) {
@@ -161,7 +176,16 @@ public class MetadataRow {
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public byte getByte(final int i) {
-        return (byte) getInt(i);
+        if (isNull(i)) {
+            return 0;
+        }
+        final Object entryValue = this.entries.get(i);
+        try {
+            return (byte) entryValue;
+        } catch (final ClassCastException e) {
+            LOG.warn("Unable to cast [{}] (index {}) as byte, it will return 0.", entryValue, i);
+            return 0;
+        }
     }
 
     /**
@@ -183,7 +207,16 @@ public class MetadataRow {
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public short getShort(final int i) {
-        return (short) getInt(i);
+        if (isNull(i)) {
+            return 0;
+        }
+        final Object entryValue = this.entries.get(i);
+        try {
+            return (short) entryValue;
+        } catch (final ClassCastException e) {
+            LOG.warn("Unable to cast [{}] (index {}) as short, it will return 0.", entryValue, i);
+            return 0;
+        }
     }
 
     /**
@@ -203,13 +236,18 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @throws NumberFormatException if the value is not a parsable {@code int} value.
      */
     public int getInt(final int i) {
         if (isNull(i)) {
             return 0;
         }
-        return Integer.parseInt(this.entries.get(i));
+        final Object entryValue = this.entries.get(i);
+        try {
+            return (int) entryValue;
+        } catch (final ClassCastException e) {
+            LOG.warn("Unable to cast [{}] (index {}) as integer, it will return 0.", entryValue, i);
+            return 0;
+        }
     }
 
     /**
@@ -218,9 +256,8 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @throws NumberFormatException if the value is not a parsable {@code int} value.
      */
-    public int getInt(final String name) {
+    public Integer getInt(final String name) {
         return getInt(getIndex(name));
     }
 
@@ -230,13 +267,18 @@ public class MetadataRow {
      * @param i The column index (the first column is 0).
      * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
-     * @throws NumberFormatException if the value is not a parsable {@code long} value.
      */
     public long getLong(final int i) {
         if (isNull(i)) {
             return 0;
         }
-        return Long.parseLong(this.entries.get(i));
+        final Object entryValue = this.entries.get(i);
+        try {
+            return (long) entryValue;
+        } catch (final ClassCastException e) {
+            LOG.warn("Unable to cast [{}] (index {}) as long, it will return 0.", entryValue, i);
+            return 0;
+        }
     }
 
     /**
@@ -245,7 +287,6 @@ public class MetadataRow {
      * @param name The column name.
      * @return The metadata value. If the underlying value is {@code NULL}, the value returned is 0.
      * @throws IllegalArgumentException if {@code name} is not a valid metadata name for this row.
-     * @throws NumberFormatException if the value is not a parsable {@code long} value.
      */
     public long getLong(final String name) {
         return getLong(getIndex(name));
@@ -415,7 +456,7 @@ public class MetadataRow {
      * @throws IndexOutOfBoundsException if {@code i < 0} or {@code i >= size()}.
      */
     public String getString(final int i) {
-        return this.entries.get(i);
+        return (String) this.entries.get(i);
     }
 
     /**
@@ -630,7 +671,7 @@ public class MetadataRow {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        for (final String entry : this.entries) {
+        for (final Object entry : this.entries) {
             sb.append(entry).append(" -- ");
         }
         return "[" + sb + "]";

@@ -145,24 +145,24 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
             buildDefinitionInAnonymousTable(TABLE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(TABLE_NAME, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(COLUMN_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(DATA_TYPE, DataTypes.INT),
             buildDefinitionInAnonymousTable(TYPE_NAME, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(COLUMN_SIZE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(BUFFER_LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(DECIMAL_DIGITS, DataTypes.INT),
+            buildDefinitionInAnonymousTable(NUM_PRECISION_RADIX, DataTypes.INT),
+            buildDefinitionInAnonymousTable(NULLABLE, DataTypes.INT),
             buildDefinitionInAnonymousTable(REMARKS, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(COLUMN_DEFAULT, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SQL_DATA_TYPE, DataTypes.INT),
+            buildDefinitionInAnonymousTable(SQL_DATETIME_SUB, DataTypes.INT),
+            buildDefinitionInAnonymousTable(CHAR_OCTET_LENGTH, DataTypes.INT),
+            buildDefinitionInAnonymousTable(ORDINAL_POSITION, DataTypes.INT),
             buildDefinitionInAnonymousTable(IS_NULLABLE, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_CATALOG, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_SCHEMA, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(SCOPE_TABLE, DataTypes.TEXT),
-            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.TEXT),
+            buildDefinitionInAnonymousTable(SOURCE_DATA_TYPE, DataTypes.SMALLINT),
             buildDefinitionInAnonymousTable(IS_AUTOINCREMENT, DataTypes.TEXT),
             buildDefinitionInAnonymousTable(IS_GENERATED_COLUMN, DataTypes.TEXT)
         );
@@ -202,19 +202,19 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
                         keyspaceMetadata.getName().asInternal(),        // TABLE_SCHEM
                         tableMetadata.getName().asInternal(),           // TABLE_NAME
                         columnMetadata.getName().asInternal(),          // COLUMN_NAME
-                        String.valueOf(jdbcType),                       // DATA_TYPE
+                        jdbcType,                                       // DATA_TYPE
                         columnMetadata.getType().toString(),            // TYPE_NAME
-                        String.valueOf(columnSize),                     // COLUMN_SIZE
-                        String.valueOf(0),                              // BUFFER_LENGTH
+                        columnSize,                                     // COLUMN_SIZE
+                        0,                                              // BUFFER_LENGTH
                         null,                                           // DECIMAL_DIGITS
-                        String.valueOf(radix),                          // NUM_PREC_RADIX
-                        String.valueOf(DatabaseMetaData.columnNoNulls), // NULLABLE
+                        radix,                                          // NUM_PREC_RADIX
+                        DatabaseMetaData.columnNoNulls,                 // NULLABLE
                         null,                                           // REMARKS
                         null,                                           // COLUMN_DEF
                         null,                                           // SQL_DATA_TYPE
                         null,                                           // SQL_DATETIME_SUB
-                        String.valueOf(Integer.MAX_VALUE),              // CHAR_OCTET_LENGTH
-                        String.valueOf(colIndex.getAndIncrement()),     // ORDINAL_POSITION
+                        Integer.MAX_VALUE,                              // CHAR_OCTET_LENGTH
+                        colIndex.getAndIncrement(),                     // ORDINAL_POSITION
                         StringUtils.EMPTY,                              // IS_NULLABLE
                         null,                                           // SCOPE_CATALOG
                         null,                                           // SCOPE_SCHEMA
@@ -230,7 +230,7 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
         // ORDINAL_POSITION.
         columns.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TABLE_NAME))
-            .thenComparing(row -> ((MetadataRow) row).getString(ORDINAL_POSITION)));
+            .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
         return CassandraMetadataResultSet.buildFrom(this.statement,
             new MetadataResultSet(rowTemplate).setRows(columns));
     }
