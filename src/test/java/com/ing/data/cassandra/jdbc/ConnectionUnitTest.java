@@ -28,13 +28,7 @@ import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionP
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
 import com.ing.data.cassandra.jdbc.optionset.Liquibase;
-import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
-import com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy;
-import com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy;
-import com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory;
-import org.apache.commons.lang3.StringUtils;
+import com.ing.data.cassandra.jdbc.utils.*;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -45,40 +39,22 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLNonTransientConnectionException;
-import java.sql.SQLTimeoutException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.*;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class ConnectionUnitTest extends UsingCassandraContainerTest {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionUnitTest.class);
@@ -94,6 +70,18 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistencyLevel);
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenNoLocalDataCenter_whenInferringLoadBalancingPolicySpecified_createConnectionWithExpectedConfig() throws Exception {
+        initConnection(KEYSPACE, "loadBalancing=DcInferringLoadBalancingPolicy");
+        assertNotNull(sqlConnection);
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet resultSet = statement.executeQuery("SELECT * FROM system.local");
+        assertNotNull(resultSet);
+        resultSet.close();
+        statement.close();
         sqlConnection.close();
     }
 
@@ -164,7 +152,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenRequestTimeout_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "requesttimeout=10000");
+        initConnection(KEYSPACE, "requesttimeout=10000", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -176,7 +164,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenConnectTimeout_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "connecttimeout=8000");
+        initConnection(KEYSPACE, "connecttimeout=8000", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -193,7 +181,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenNonDefaultSocketOptions_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "tcpnodelay=false", "keepalive=true");
+        initConnection(KEYSPACE, "tcpnodelay=false", "keepalive=true", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -207,7 +195,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenNoLoadBalancingPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, StringUtils.EMPTY);
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -240,7 +228,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenNoRetryPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, StringUtils.EMPTY);
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -253,7 +241,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenCustomRetryPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy");
+        initConnection(KEYSPACE, "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -273,7 +261,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenConstantReconnectionPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "reconnection=ConstantReconnectionPolicy((long)10)");
+        initConnection(KEYSPACE, "reconnection=ConstantReconnectionPolicy((long)10)", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -286,7 +274,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenExponentialReconnectionPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "reconnection=ExponentialReconnectionPolicy((long)10,(long)100)");
+        initConnection(KEYSPACE, "reconnection=ExponentialReconnectionPolicy((long)10,(long)100)", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -300,7 +288,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenCustomReconnectionPolicy_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()");
+        initConnection(KEYSPACE, "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
+            "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -312,7 +301,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenInvalidReconnectionPolicy_whenGetConnection_createConnectionWithDefaultPolicyConfig() throws Exception {
-        initConnection(KEYSPACE, "reconnection=ExponentialReconnectionPolicy((int)100)");
+        initConnection(KEYSPACE, "reconnection=ExponentialReconnectionPolicy((int)100)", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -334,7 +323,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenDisabledSsl_whenGetConnection_createConnectionWithExpectedConfig() throws Exception {
-        initConnection(KEYSPACE, "enablessl=false");
+        initConnection(KEYSPACE, "enablessl=false", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getSession());
         assertNotNull(sqlConnection.getSession().getContext());
@@ -415,7 +404,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     void givenSslEngineFactory_whenConfigureSsl_addGivenSslEngineFactoryToSessionBuilder() throws Exception {
         final SessionHolder sessionHolder = new SessionHolder(Collections.singletonMap(URL_KEY,
             buildJdbcUrl(cassandraContainer.getContactPoint().getHostName(),
-                cassandraContainer.getContactPoint().getPort(), KEYSPACE)), null);
+                cassandraContainer.getContactPoint().getPort(), KEYSPACE, "localdatacenter=datacenter1")), null);
         final CqlSessionBuilder cqlSessionBuilder = spy(new CqlSessionBuilder());
         sessionHolder.configureSslEngineFactory(cqlSessionBuilder,
             "com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
@@ -456,7 +445,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenConnection_whenGetMetaData_getExpectedResultSet() throws Exception {
-        initConnection(KEYSPACE);
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertNotNull(sqlConnection.getMetaData());
 
@@ -484,13 +473,13 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
     @Test
     void givenCassandraConnection_whenUnwrap_returnUnwrappedConnection() throws Exception {
-        initConnection(KEYSPACE);
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
         assertNotNull(sqlConnection.unwrap(Connection.class));
     }
 
     @Test
     void givenCassandraConnection_whenUnwrapToInvalidInterface_throwException() throws Exception {
-        initConnection(KEYSPACE);
+        initConnection(KEYSPACE, "localdatacenter=datacenter1");
         assertThrows(SQLException.class, () -> sqlConnection.unwrap(this.getClass()));
     }
 

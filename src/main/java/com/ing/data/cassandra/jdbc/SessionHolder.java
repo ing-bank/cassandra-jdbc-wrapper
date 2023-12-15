@@ -214,7 +214,7 @@ class SessionHolder {
         final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);
         final String password = properties.getProperty(TAG_PASSWORD, StringUtils.EMPTY);
         final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
-        final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, StringUtils.EMPTY);
+        final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, null);
         final String retryPolicy = properties.getProperty(TAG_RETRY_POLICY, StringUtils.EMPTY);
         final String reconnectPolicy = properties.getProperty(TAG_RECONNECT_POLICY, StringUtils.EMPTY);
         final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(TAG_DEBUG,
@@ -270,7 +270,7 @@ class SessionHolder {
         // When a configuration file is used, we rely on the property 'basic.load-balancing-policy.local-datacenter'
         // of the configuration file, so we must not call withLocalDatacenter() method because when both are specified,
         // the programmatic value takes precedence.
-        if (configurationFile == null || !configurationFileExists) {
+        if ((configurationFile == null || !configurationFileExists) && localDatacenter != null) {
             builder.withLocalDatacenter(localDatacenter);
         }
         if (!loadBalancingPolicy.isEmpty()) {
