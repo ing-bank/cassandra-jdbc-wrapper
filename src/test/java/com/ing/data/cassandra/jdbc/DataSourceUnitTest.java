@@ -37,7 +37,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
         final CassandraDataSource cds = new CassandraDataSource(
-            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER, PASSWORD, CONSISTENCY);
+            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
         assertNotNull(cds.getContactPoints());
         assertEquals(1, cds.getContactPoints().size());
         final ContactPoint dsContactPoint = cds.getContactPoints().get(0);
@@ -49,7 +49,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
 
         final DataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
         assertNotNull(ds);
 
         // null username and password
