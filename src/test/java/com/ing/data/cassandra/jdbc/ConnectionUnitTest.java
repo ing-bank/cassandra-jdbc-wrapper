@@ -97,7 +97,26 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenNoLocalDataCenter_whenInferringLoadBalancingPolicySpecified_createConnectionWithExpectedConfig() throws Exception {
+    void givenInvalidFetchSize_whenGetConnection_createConnectionWithFallbackFetchSize() throws Exception {
+        initConnection(KEYSPACE, "fetchsize=NaN", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        final int fetchSize = sqlConnection.getDefaultFetchSize();
+        assertEquals(5000, fetchSize);
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenFetchSize_whenGetConnection_createConnectionWithExpectedFetchSize() throws Exception {
+        initConnection(KEYSPACE, "fetchsize=2000", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        final int fetchSize = sqlConnection.getDefaultFetchSize();
+        assertEquals(2000, fetchSize);
+        sqlConnection.close();
+    }
+
+    @Test
+    void givenNoLocalDataCenter_whenInferringLoadBalancingPolicySpecified_createConnectionWithExpectedConfig()
+        throws Exception {
         initConnection(KEYSPACE, "loadBalancing=DcInferringLoadBalancingPolicy");
         assertNotNull(sqlConnection);
         final Statement statement = sqlConnection.createStatement();
@@ -116,7 +135,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         }
         initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
             "user=aTestUser", "password=aTestPassword", "requesttimeout=5000",
-            "connectimeout=8000", "keepalive=false", "tcpnodelay=true",
+            "connectimeout=8000", "keepalive=false", "tcpnodelay=true", "fetchsize=2000",
             "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
             "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
             "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
@@ -130,6 +149,9 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.TWO, consistencyLevel);
+
+        final int fetchSize = sqlConnection.getDefaultFetchSize();
+        assertEquals(5000, fetchSize);
 
         final String localDC = sqlConnection.getSession().getContext().getConfig()
             .getDefaultProfile().getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER);

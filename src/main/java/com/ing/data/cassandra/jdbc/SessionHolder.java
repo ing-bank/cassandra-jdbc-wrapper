@@ -73,6 +73,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ENABLE_SSL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_KEEP_ALIVE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
@@ -191,6 +192,7 @@ class SessionHolder {
                 // We remove some parameters to use the values defined into the specified configuration file
                 // instead.
                 this.properties.remove(TAG_CONSISTENCY_LEVEL);
+                this.properties.remove(TAG_FETCH_SIZE);
                 this.properties.remove(TAG_LOCAL_DATACENTER);
                 this.properties.remove(TAG_USER);
                 this.properties.remove(TAG_PASSWORD);

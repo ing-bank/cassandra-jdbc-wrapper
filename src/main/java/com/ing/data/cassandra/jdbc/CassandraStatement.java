@@ -98,14 +98,14 @@ public class CassandraStatement extends AbstractStatement
      */
     protected ArrayList<String> batchQueries;
     /**
-     * The direction for fetching rows from database. By default: {@link ResultSet#FETCH_FORWARD}.
+     * The direction for fetching rows from database. By default, {@link ResultSet#FETCH_FORWARD}.
      */
     protected int fetchDirection = ResultSet.FETCH_FORWARD;
     /**
      * The number of result set rows that is the default fetch size for {@link ResultSet} objects generated from this
-     * statement. By default: {@value #DEFAULT_FETCH_SIZE}.
+     * statement.
      */
-    protected int fetchSize = DEFAULT_FETCH_SIZE;
+    protected int fetchSize;
     /**
      * The maximum number of bytes that can be returned for character and binary column values in a {@link ResultSet}
      * object produced by this statement. By default, there is no limit (0).
@@ -222,6 +222,7 @@ public class CassandraStatement extends AbstractStatement
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
         this.consistencyLevel = connection.getDefaultConsistencyLevel();
+        this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
 
         if (!(resultSetType == ResultSet.TYPE_FORWARD_ONLY

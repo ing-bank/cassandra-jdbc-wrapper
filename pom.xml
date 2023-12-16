@@ -81,6 +81,13 @@
                 <role>developer</role>
             </roles>
         </contributor>
+        <contributor>
+            <name>Liudmila Kornilova</name>
+            <url>https://github.com/kornilova203</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>

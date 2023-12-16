@@ -150,6 +150,14 @@ public final class ErrorConstants {
     public static final String BAD_FETCH_SIZE = "Fetch size of: %d rows may not be negative.";
 
     /**
+     * Error message used when the fetch size parameter is invalid and cannot be parsed. This message is a template
+     * expecting the value of the invalid fetch size as first placeholder and the fallback value as second placeholder
+     * (example: {@code String.format(INVALID_FETCH_SIZE_PARAMETER, "invalid_size", 5000)}).
+     */
+    public static final String INVALID_FETCH_SIZE_PARAMETER =
+        "Invalid fetch size parameter: '%s'. The default fetch size (%d) will be used instead.";
+
+    /**
      * Error message used in any SQL exception thrown when the specified column index in a {@link ResultSet}
      * is not strictly positive or greater than the number of columns in the result set. This message is a template
      * expecting the value of the invalid index value as placeholder (example:

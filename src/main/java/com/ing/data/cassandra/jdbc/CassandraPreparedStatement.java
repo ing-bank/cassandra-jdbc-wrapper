@@ -211,11 +211,9 @@ public class CassandraPreparedStatement extends CassandraStatement
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
                 LOG.trace("CQL: {}", this.cql);
             }
-            // Force paging to avoid timeout and node harm.
-            if (this.boundStatement.getPageSize() == 0) {
-                this.boundStatement = this.boundStatement.setPageSize(DEFAULT_FETCH_SIZE);
-            }
-            this.boundStatement = this.boundStatement.setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+            this.boundStatement = this.boundStatement
+                .setPageSize(this.getFetchSize()) // Set paging to avoid timeout and node harm.
+                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
             for (int i = 0; i < getBoundStatementVariableDefinitions().size(); i++) {
                 // Set parameters to null if unset.
                 if (!this.boundStatement.isSet(i)) {

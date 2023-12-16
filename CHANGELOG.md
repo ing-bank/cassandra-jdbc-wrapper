@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Add a parameter `fetchsize` to specify a default fetch size for all the queries returning result sets. This value is 
+  the number of rows the server will return in each network frame (see 
+  [paging documentation](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/paging/)).
 ### Changed
 - Modify the types of some columns in the result sets of the following methods of `CassandraDatabaseMetadata` to respect
   the JDBC API specifications:
@@ -17,10 +21,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - `getPrimaryKeys(String, String, String)`
   - `getTypeInfo()`
   - `getUDTs(String, String, String, int[])` 
+- In prepared statements, force the page size to the configured one (from JDBC URL or configuration file if present), or 
+  the default page size. 
 - Update Apache Commons IO to version 2.15.1.
 ### Removed
 - Remove the parameter `version` (CQL version) in JDBC URL and the deprecated constructors of `CassandraDataSource`
   using this parameter.
+### Fixed
+- Fix issue preventing a correct usage of `DCInferringLoadBalancingPolicy` (see PR 
+  [#49](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/49)).
 
 ## [4.11.0] - 2023-12-03
 ### Added

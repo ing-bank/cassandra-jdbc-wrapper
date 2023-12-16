@@ -81,6 +81,17 @@ public final class JdbcUrlUtil {
     public static final String TAG_CONSISTENCY_LEVEL = "consistencyLevel";
 
     /**
+     * JDBC URL parameter key for the fetch size (request page size).
+     */
+    public static final String KEY_FETCH_SIZE = "fetchsize";
+
+    /**
+     * Property name used to retrieve the fetch size (request page size) when the connection to Cassandra is
+     * established. This property is mapped from the JDBC URL parameter {@code fetchsize}.
+     */
+    public static final String TAG_FETCH_SIZE = "fetchSize";
+
+    /**
      * JDBC URL parameter key for the connection number of retries.
      */
     public static final String KEY_CONNECTION_RETRIES = "retries";
@@ -370,6 +381,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_CONSISTENCY)) {
                     props.setProperty(TAG_CONSISTENCY_LEVEL, params.get(KEY_CONSISTENCY));
+                }
+                if (params.containsKey(KEY_FETCH_SIZE)) {
+                    props.setProperty(TAG_FETCH_SIZE, params.get(KEY_FETCH_SIZE));
                 }
                 if (params.containsKey(KEY_CONNECTION_RETRIES)) {
                     props.setProperty(TAG_CONNECTION_RETRIES, params.get(KEY_CONNECTION_RETRIES));

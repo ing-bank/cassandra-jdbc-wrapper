@@ -69,6 +69,7 @@ import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_FETCH_SIZE_PARAMETER;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
@@ -76,6 +77,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
@@ -102,6 +104,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     public static volatile int dbPatchVersion = 0;
 
+    /**
+     * The default fetch size when it's not configured neither in JDBC URL nor in a configuration file and the default
+     * fetch size (request page size) cannot be retrieved from the configuration profile.
+     */
+    protected static final int FALLBACK_FETCH_SIZE = 100;
+
     private static final Logger LOG = LoggerFactory.getLogger(CassandraConnection.class);
     private static final boolean AUTO_COMMIT_DEFAULT = true;
 
@@ -123,6 +131,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
     private final ConsistencyLevel defaultConsistencyLevel;
+    private int defaultFetchSize = FALLBACK_FETCH_SIZE;
     private String currentKeyspace;
     private final boolean debugMode;
     private Properties clientInfo;
@@ -135,7 +144,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @param sessionHolder The session holder.
      * @throws SQLException if something went wrong during the initialisation of the connection.
      */
-    public CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
+    CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;
         final Properties sessionProperties = sessionHolder.properties;
         final DriverExecutionProfile defaultConfigProfile =
@@ -152,6 +161,19 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
                 defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
                     ConsistencyLevel.LOCAL_ONE.name())));
+        final int fetchSizeFromProfile = defaultConfigProfile.getInt(DefaultDriverOption.REQUEST_PAGE_SIZE,
+            FALLBACK_FETCH_SIZE);
+        final String fetchSizeParameter = sessionProperties.getProperty(TAG_FETCH_SIZE);
+        try {
+            if (fetchSizeParameter == null) {
+                this.defaultFetchSize = fetchSizeFromProfile;
+            } else {
+                this.defaultFetchSize = Integer.parseInt(fetchSizeParameter);
+            }
+        } catch (final NumberFormatException e) {
+            LOG.warn(String.format(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile));
+            this.defaultFetchSize = fetchSizeFromProfile;
+        }
         this.cSession = sessionHolder.session;
         this.metadata = this.cSession.getMetadata();
 
@@ -359,6 +381,15 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     public ConsistencyLevel getDefaultConsistencyLevel() {
         return this.defaultConsistencyLevel;
+    }
+
+    /**
+     * Gets the default fetch size applied to this connection.
+     *
+     * @return The default fetch size applied to this connection.
+     */
+    public int getDefaultFetchSize() {
+        return this.defaultFetchSize;
     }
 
     @Override
