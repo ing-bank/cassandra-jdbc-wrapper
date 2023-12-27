@@ -28,7 +28,7 @@ import java.sql.DriverManager;
 abstract class UsingCassandraContainerTest {
 
     // For the official Cassandra image, see here: https://hub.docker.com/_/cassandra
-    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:5.0");
+    static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:5");
 
     static CassandraConnection sqlConnection = null;
 
