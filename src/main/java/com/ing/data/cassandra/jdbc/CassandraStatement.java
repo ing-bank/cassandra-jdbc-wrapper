@@ -24,7 +24,6 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +57,9 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TYPE_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_GEN_KEYS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_MULTIPLE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_STMT;
+import static org.apache.commons.lang3.StringUtils.countMatches;
 
 /**
  * Cassandra statement: implementation class for {@link Statement}.
@@ -292,21 +293,50 @@ public class CassandraStatement extends AbstractStatement
         return 1;
     }
 
+    private List<String> splitStatements(final String cql) {
+        final String[] cqlQueries = cql.split(STATEMENTS_SEPARATOR_REGEX);
+        final List<String> cqlQueriesToExecute = new ArrayList<>(cqlQueries.length);
+
+        // If a query contains a semicolon character in a string value (for example 'abc;xyz'), re-merge queries
+        // wrongly split.
+        final String singleQuote = "'";
+        StringBuilder prevCqlQuery = new StringBuilder();
+        for (final String cqlQuery : cqlQueries) {
+            final boolean hasStringValues = cqlQuery.contains(singleQuote);
+            final boolean isFirstQueryPartWithIncompleteStringValue =
+                countMatches(cqlQuery, singleQuote) % 2 == 1 && prevCqlQuery.length() == 0;
+            final boolean isNotFirstQueryPartWithCompleteStringValue =
+                countMatches(cqlQuery, singleQuote) % 2 == 0 && prevCqlQuery.length() > 0;
+            final boolean isNotFirstQueryPartWithoutStringValue =
+                !prevCqlQuery.toString().isEmpty() && !cqlQuery.contains(singleQuote);
+
+            if ((hasStringValues && (isFirstQueryPartWithIncompleteStringValue
+                || isNotFirstQueryPartWithCompleteStringValue)) || isNotFirstQueryPartWithoutStringValue) {
+                prevCqlQuery.append(cqlQuery).append(";");
+            } else {
+                prevCqlQuery.append(cqlQuery);
+                cqlQueriesToExecute.add(prevCqlQuery.toString());
+                prevCqlQuery = new StringBuilder();
+            }
+        }
+        return cqlQueriesToExecute;
+    }
+
     private void doExecute(final String cql) throws SQLException {
         final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
 
         try {
-            final String[] cqlQueries = cql.split(STATEMENTS_SEPARATOR_REGEX);
-            if (cqlQueries.length > 1
+            final List<String> cqlQueries = splitStatements(cql);
+            final int nbQueriesToExecute = cqlQueries.size();
+            if (nbQueriesToExecute > 1
                 && !(cql.trim().toLowerCase().startsWith("begin")
                 && cql.toLowerCase().contains("batch") && cql.toLowerCase().contains("apply"))) {
                 final ArrayList<com.datastax.oss.driver.api.core.cql.ResultSet> results = new ArrayList<>();
 
-                // Several statements in the query to execute asynchronously...
-                if (cqlQueries.length > MAX_ASYNC_QUERIES * 1.1) {
+                // Several statements in the query to execute potentially asynchronously...
+                if (nbQueriesToExecute > MAX_ASYNC_QUERIES * 1.1) {
                     // Protect the cluster from receiving too many queries at once and force the dev to split the load
-                    throw new SQLNonTransientException("Too many queries at once (" + cqlQueries.length
-                        + "). You must split your queries into more batches !");
+                    throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, nbQueriesToExecute));
                 }
 
                 // If we should not execute the queries asynchronously, for example if they must be executed in the
@@ -318,29 +348,19 @@ public class CassandraStatement extends AbstractStatement
                         results.add(rs);
                     }
                 } else {
-                    StringBuilder prevCqlQuery = new StringBuilder();
                     for (final String cqlQuery : cqlQueries) {
-                        if ((cqlQuery.contains("'") && ((StringUtils.countMatches(cqlQuery, "'") % 2 == 1
-                            && prevCqlQuery.length() == 0)
-                            || (StringUtils.countMatches(cqlQuery, "'") % 2 == 0 && prevCqlQuery.length() > 0)))
-                            || (!prevCqlQuery.toString().isEmpty() && !cqlQuery.contains("'"))) {
-                            prevCqlQuery.append(cqlQuery).append(";");
-                        } else {
-                            prevCqlQuery.append(cqlQuery);
-                            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                                LOG.debug("CQL: {}", prevCqlQuery);
-                            }
-                            SimpleStatement stmt = SimpleStatement.newInstance(prevCqlQuery.toString())
-                                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
-                                .setPageSize(this.fetchSize);
-                            if (this.customTimeoutProfile != null) {
-                                stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
-                            }
-                            final CompletionStage<AsyncResultSet> resultSetFuture =
-                                ((CqlSession) this.connection.getSession()).executeAsync(stmt);
-                            futures.add(resultSetFuture);
-                            prevCqlQuery = new StringBuilder();
+                        if (LOG.isDebugEnabled() || this.connection.isDebugMode()) {
+                            LOG.debug("CQL: {}", cqlQuery);
                         }
+                        SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
+                            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+                            .setPageSize(this.fetchSize);
+                        if (this.customTimeoutProfile != null) {
+                            stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
+                        }
+                        final CompletionStage<AsyncResultSet> resultSetFuture =
+                            ((CqlSession) this.connection.getSession()).executeAsync(stmt);
+                        futures.add(resultSetFuture);
                     }
 
                     for (final CompletionStage<AsyncResultSet> future : futures) {

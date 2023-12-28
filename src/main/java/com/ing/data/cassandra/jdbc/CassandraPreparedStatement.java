@@ -79,6 +79,7 @@ import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToInstant
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalDate;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
@@ -233,8 +234,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         this.batchStatements.add(this.boundStatement);
         this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
         if (this.batchStatements.size() > MAX_ASYNC_QUERIES) {
-            throw new SQLNonTransientException("Too many queries at once (" + batchStatements.size() + "). You must "
-                + "split your queries into more batches!");
+            throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, batchStatements.size()));
         }
     }
 

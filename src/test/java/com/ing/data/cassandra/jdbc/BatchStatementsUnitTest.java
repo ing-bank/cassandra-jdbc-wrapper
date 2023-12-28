@@ -28,6 +28,7 @@ import java.sql.SQLTransientException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -246,5 +247,47 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
             }
         }
         assertThrows(SQLTransientException.class, () -> stmt2.execute(queryBuilder.toString()));
+    }
+
+    @SuppressWarnings("unchecked")
+    @ParameterizedTest
+    @Order(7)
+    @ValueSource(strings = {"Default", "Liquibase"})
+    void givenStatementWithValuesIncludingSemicolons_whenExecute_returnExpectedResult(final String complianceMode)
+        throws Exception {
+        sqlConnection2 = newConnection(KEYSPACE, "localdatacenter=datacenter1", "compliancemode=" + complianceMode);
+        final Statement truncateStmt = sqlConnection2.createStatement();
+        truncateStmt.execute("TRUNCATE collections_test");
+
+        final Statement statement = sqlConnection2.createStatement();
+        final StringBuilder queryBuilder = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            queryBuilder.append("INSERT INTO collections_test (keyValue, setValue) VALUES( ").append(i)
+                .append(", {'test;0', 'val;").append(i).append("'} );");
+        }
+        statement.execute(queryBuilder.toString());
+        statement.close();
+
+        final StringBuilder query = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            query.append("SELECT * FROM collections_test WHERE keyValue = ").append(i).append(";");
+        }
+        final Statement selectStatement = sqlConnection2.createStatement();
+        final ResultSet result = selectStatement.executeQuery(query.toString());
+        int nbRowsInResult = 0;
+        final ArrayList<Integer> foundKeyValues = new ArrayList<>();
+        final ArrayList<String> foundSetValues = new ArrayList<>();
+        while (result.next()) {
+            nbRowsInResult++;
+            foundKeyValues.add(result.getInt("keyValue"));
+            final Set<String> setValues = (Set<String>) result.getObject("setValue");
+            foundSetValues.addAll(setValues);
+        }
+        assertEquals(20, nbRowsInResult);
+        for (int i = 0; i < 20; i++) {
+            assertTrue(foundKeyValues.contains(i));
+            assertTrue(foundSetValues.contains("val;" + i));
+        }
+        selectStatement.close();
     }
 }
