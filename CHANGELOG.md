@@ -31,6 +31,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix issue preventing a correct usage of `DCInferringLoadBalancingPolicy` (see PR 
   [#49](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/49)).
 
+## [4.11.1] - 2023-12-28
+### Fixed
+- Fix issue [#50](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/50) preventing a correct execution of
+  multiple statements separated by semicolon characters (`;`) when at least one of the CQL queries contains a semicolon
+  character which is not a query separator.
+
 ## [4.11.0] - 2023-12-03
 ### Added
 - Add support for connections with multiple contact points using different ports (see feature request 
@@ -246,6 +252,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.11.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.0...v4.11.1
 [4.11.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.2...v4.11.0
 [4.10.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.1...v4.10.2
 [4.10.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.0...v4.10.1

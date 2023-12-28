@@ -17,6 +17,7 @@ package com.ing.data.cassandra.jdbc.utils;
 
 import com.ing.data.cassandra.jdbc.CassandraPreparedStatement;
 import com.ing.data.cassandra.jdbc.CassandraResultSet;
+import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.net.URI;
@@ -285,6 +286,16 @@ public final class ErrorConstants {
      * between the number of provided values and the number of columns in the row.
      */
     public static final String UNABLE_TO_POPULATE_METADATA_ROW = "Unable to populate a metadata row.";
+
+    /**
+     * Error message used in any SQL exception thrown when the number of CQL queries included in a single batch of
+     * statements is greater than the allowed limit ({@value CassandraStatement#MAX_ASYNC_QUERIES} for a prepared batch
+     * statement or 1.1 {@code *} {@value CassandraStatement#MAX_ASYNC_QUERIES} for a split single statement).
+     * This message is a template expecting the number of CQL queries to execute as placeholder (example:
+     * {@code String.format(TOO_MANY_QUERIES, 10000)}).
+     */
+    public static final String TOO_MANY_QUERIES =
+        "Too many queries at once (%d). You must split your queries into more batches!";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.
