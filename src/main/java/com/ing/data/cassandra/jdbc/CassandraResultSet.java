@@ -95,12 +95,12 @@ import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromDataType;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_READ_VALUE;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_RETRIEVE_METADATA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
@@ -676,7 +676,7 @@ public class CassandraResultSet extends AbstractResultSet
 
         if (direction == FETCH_FORWARD || direction == FETCH_REVERSE || direction == FETCH_UNKNOWN) {
             if (getType() == TYPE_FORWARD_ONLY && direction != FETCH_FORWARD) {
-                throw new SQLSyntaxErrorException("attempt to set an illegal direction: " + direction);
+                throw new SQLSyntaxErrorException(String.format(ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY, direction));
             }
             this.fetchDirection = direction;
         }

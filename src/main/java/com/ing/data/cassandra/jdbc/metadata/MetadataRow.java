@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_POPULATE_METADATA_ROW;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 
 /**
  * The content of a metadata row returned in a {@link CassandraMetadataResultSet}.
@@ -680,7 +681,7 @@ public class MetadataRow {
     private Integer getIndex(final String name) {
         final Integer idx = this.names.get(name);
         if (idx == null) {
-            throw new IllegalArgumentException(name + " is not a column defined in this row.");
+            throw new IllegalArgumentException(String.format(VALID_LABELS, name));
         }
         return idx;
     }

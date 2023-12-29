@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+
 /**
  * Metadata describing the columns returned in a {@link CassandraResultSet} or a {@link CassandraPreparedStatement}.
  * <p>
@@ -277,7 +279,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
     int[] getAllIdx(final String name) {
         final int[] indexes = findAllIdx(name);
         if (indexes == null) {
-            throw new IllegalArgumentException(name + " is not a column defined in these metadata.");
+            throw new IllegalArgumentException(String.format(VALID_LABELS, name));
         }
         return indexes;
     }

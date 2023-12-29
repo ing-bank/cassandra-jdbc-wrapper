@@ -42,6 +42,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CATALOG_NAME;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 
@@ -724,7 +725,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getSchemas(final String catalog, final String schemaPattern) throws SQLException {
         checkStatementClosed();
         if (!(catalog == null || catalog.equals(this.statement.connection.getCatalog()))) {
-            throw new SQLSyntaxErrorException("Catalog name must exactly match or be null.");
+            throw new SQLSyntaxErrorException(INVALID_CATALOG_NAME);
         }
         return new SchemaMetadataResultSetBuilder(this.statement).buildSchemas(schemaPattern);
     }

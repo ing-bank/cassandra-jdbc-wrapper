@@ -22,6 +22,7 @@ import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.net.URI;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -168,9 +169,25 @@ public final class ErrorConstants {
         "Index must be a positive number less or equal the count of returned columns: %d";
 
     /**
-     * Error message used in any SQL exception thrown when the specified column name in a {@link ResultSet}
-     * is invalid. This message is a template expecting the value of the invalid column name as placeholder (example:
-     * {@code String.format(VALID_LABELS, "invalid_column")}).
+     * Error message used in any SQL exception thrown when the specified index for a variable binding in a
+     * {@link PreparedStatement} is greater than the number of binding variable markers in the CQL query. This message
+     * is a template expecting the value of the invalid index and the number of markers as placeholders (example:
+     * {@code String.format(OUT_OF_BOUNDS_BINDING_INDEX, 5, 3)}).
+     */
+    public static final String OUT_OF_BOUNDS_BINDING_INDEX =
+        "The index %d is greater than the count of bound variable markers in the CQL: %d";
+
+    /**
+     * Error message used in any SQL exception thrown when the specified index for a variable binding in a
+     * {@link PreparedStatement} is not strictly positive. This message is a template expecting the value of the
+     * invalid index value as placeholder (example: {@code String.format(MUST_BE_POSITIVE_BINDING_INDEX, 0)}).
+     */
+    public static final String MUST_BE_POSITIVE_BINDING_INDEX = "The binding index must be a positive number: %d";
+
+    /**
+     * Error message used in any exception thrown when the specified column name in a {@link ResultSet} or a row
+     * definition is invalid. This message is a template expecting the value of the invalid column name as placeholder
+     * (example: {@code String.format(VALID_LABELS, "invalid_column")}).
      */
     public static final String VALID_LABELS = "Name provided was not in the list of valid column labels: %s";
 
@@ -276,6 +293,13 @@ public final class ErrorConstants {
         "Unable to convert the column of index %d to an instance of %s";
 
     /**
+     * Error message used in any SQL exception thrown when the conversion to JSON for the specified object in the method
+     * {@link CassandraPreparedStatement#setJson(int, Object)} is not supported.
+     */
+    public static final String UNSUPPORTED_CONVERSION_TO_JSON =
+        "Unable to convert the object of type %s to bind the column of index %d";
+
+    /**
      * Error message used in any SQL exception thrown when it is not possible to retrieve some metadata of any
      * {@link ResultSet}.
      */
@@ -296,6 +320,27 @@ public final class ErrorConstants {
      */
     public static final String TOO_MANY_QUERIES =
         "Too many queries at once (%d). You must split your queries into more batches!";
+
+    /**
+     * Error message used in any SQL exception thrown when the fetch direction specified on a ResultSet is not
+     * supported for the type {@code TYPE_FORWARD_ONLY}. This message is a template expecting the illegal fetch
+     * direction as placeholder (example:
+     * {@code String.format(ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY, FETCH_UNKNOWN)}).
+     */
+    public static final String ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY =
+        "Attempt to set an illegal fetch direction for TYPE_FORWARD_ONLY: %d";
+
+    /**
+     * Error message used in any SQL exception thrown when retrieving metadata related to a catalog and the given one
+     * is not {@code null} or does not match the one of the current connection.
+     */
+    public static final String INVALID_CATALOG_NAME = "Catalog name must exactly match or be null.";
+
+    /**
+     * Error message used in any SQL exception thrown when the creation of the connection to the database fails for
+     * any reason. The underlying exception should be logged in this case.
+     */
+    public static final String CONNECTION_CREATION_FAILED = "Unexpected error while creating connection.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

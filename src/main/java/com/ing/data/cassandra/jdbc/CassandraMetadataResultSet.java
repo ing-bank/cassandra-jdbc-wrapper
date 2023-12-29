@@ -67,6 +67,7 @@ import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
@@ -524,7 +525,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkNotClosed();
         if (direction == FETCH_FORWARD || direction == FETCH_REVERSE || direction == FETCH_UNKNOWN) {
             if (getType() == TYPE_FORWARD_ONLY && direction != FETCH_FORWARD) {
-                throw new SQLSyntaxErrorException("Attempt to set an illegal direction: " + direction);
+                throw new SQLSyntaxErrorException(String.format(ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY, direction));
             }
             this.fetchDirection = direction;
         }

@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CONNECTION_CREATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
@@ -101,7 +102,7 @@ public class CassandraDriver implements Driver {
                 if (cause instanceof SQLException) {
                     throw (SQLException) cause;
                 }
-                throw new SQLNonTransientConnectionException("Unexpected error while creating connection.", e);
+                throw new SQLNonTransientConnectionException(CONNECTION_CREATION_FAILED, e);
             }
         }
         // Signal it is the wrong driver for this <protocol:sub_protocol>.

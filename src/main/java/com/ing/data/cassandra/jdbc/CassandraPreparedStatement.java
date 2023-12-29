@@ -78,8 +78,11 @@ import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToByteArr
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToInstant;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalDate;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalTime;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE_BINDING_INDEX;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.OUT_OF_BOUNDS_BINDING_INDEX;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_CONVERSION_TO_JSON;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
@@ -151,12 +154,10 @@ public class CassandraPreparedStatement extends CassandraStatement
 
     private void checkIndex(final int index) throws SQLException {
         if (index > this.count) {
-            throw new SQLRecoverableException(String.format(
-                "The column index: %d is greater than the count of bound variable markers in the CQL: %d", index,
-                this.count));
+            throw new SQLRecoverableException(String.format(OUT_OF_BOUNDS_BINDING_INDEX, index, this.count));
         }
         if (index < 1) {
-            throw new SQLRecoverableException(String.format("The column index must be a positive number: %d", index));
+            throw new SQLRecoverableException(String.format(MUST_BE_POSITIVE_BINDING_INDEX, index));
         }
     }
 
@@ -764,8 +765,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             setString(parameterIndex, json);
         } catch (final JsonProcessingException e) {
             throw new SQLException(
-                String.format("Unable to convert the object of type %s to bind the column of index %d",
-                    x.getClass().getName(), parameterIndex));
+                String.format(UNSUPPORTED_CONVERSION_TO_JSON, x.getClass().getName(), parameterIndex));
         }
     }
 
