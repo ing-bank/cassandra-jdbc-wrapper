@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.12.0] - 2024-05-05
 ### Added
 - Add a parameter `fetchsize` to specify a default fetch size for all the queries returning result sets. This value is 
   the number of rows the server will return in each network frame (see 
@@ -24,7 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - `getUDTs(String, String, String, int[])` 
 - In prepared statements, force the page size to the configured one (from JDBC URL or configuration file if present), or 
   the default page size. 
-- Update Apache Commons IO to version 2.15.1.
+- Update Apache Commons IO to version 2.16.1.
+- Update Jackson dependencies to version 2.17.0.
+- Update Semver4j to version 5.3.0.
 ### Removed
 - Remove the parameter `version` (CQL version) in JDBC URL and the deprecated constructors of `CassandraDataSource`
   using this parameter.
@@ -253,6 +255,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.12.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.1...v4.12.0
 [4.11.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.0...v4.11.1
 [4.11.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.2...v4.11.0
 [4.10.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.1...v4.10.2
