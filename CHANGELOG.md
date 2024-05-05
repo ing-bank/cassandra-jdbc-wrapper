@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add a parameter `fetchsize` to specify a default fetch size for all the queries returning result sets. This value is 
   the number of rows the server will return in each network frame (see 
   [paging documentation](https://docs.datastax.com/en/developer/java-driver/latest/manual/core/paging/)).
+- Add support for Kerberos authentication provider.
 ### Changed
 - Modify the types of some columns in the result sets of the following methods of `CassandraDatabaseMetadata` to respect
   the JDBC API specifications:

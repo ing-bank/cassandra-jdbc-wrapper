@@ -224,6 +224,17 @@ public final class JdbcUrlUtil {
     public static final String TAG_PASSWORD = "password";
 
     /**
+     * JDBC URL parameter key for Kerberos auth provider enabling.
+     */
+    public static final String KEY_USE_KERBEROS = "usekrb5";
+
+    /**
+     * Property name used to retrieve the Kerberos auth provider enabling when the connection to Cassandra is
+     * established. This property is mapped from the JDBC URL parameter {@code usekrb5}.
+     */
+    public static final String TAG_USE_KERBEROS = "useKerberos";
+
+    /**
      * JDBC URL parameter key for the request timeout.
      */
     public static final String KEY_REQUEST_TIMEOUT = "requesttimeout";
@@ -419,6 +430,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_PASSWORD)) {
                     props.setProperty(TAG_PASSWORD, params.get(KEY_PASSWORD));
+                }
+                if (params.containsKey(KEY_USE_KERBEROS)) {
+                    props.setProperty(TAG_USE_KERBEROS, params.get(KEY_USE_KERBEROS));
                 }
                 if (params.containsKey(KEY_REQUEST_TIMEOUT)) {
                     props.setProperty(TAG_REQUEST_TIMEOUT, params.get(KEY_REQUEST_TIMEOUT));

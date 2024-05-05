@@ -114,6 +114,7 @@
         <!-- Versions for dependencies -->
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
+        <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-io.version>2.15.1</commons-io.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
@@ -199,6 +200,13 @@
             <groupId>org.semver4j</groupId>
             <artifactId>semver4j</artifactId>
             <version>${semver4j.version}</version>
+        </dependency>
+
+        <!-- Kerberos Auth provider support -->
+        <dependency>
+            <groupId>com.instaclustr</groupId>
+            <artifactId>cassandra-driver-kerberos</artifactId>
+            <version>${cassandra-driver-krb5.version}</version>
         </dependency>
 
         <!-- Unit tests libraries -->

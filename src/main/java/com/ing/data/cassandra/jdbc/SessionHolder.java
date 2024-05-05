@@ -41,6 +41,8 @@ import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
+import com.instaclustr.cassandra.driver.auth.KerberosAuthProviderBase;
+import com.instaclustr.cassandra.driver.auth.ProgrammaticKerberosAuthProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -65,6 +67,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERT
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
@@ -203,6 +206,7 @@ class SessionHolder {
                 this.properties.remove(TAG_CONNECT_TIMEOUT);
                 this.properties.remove(TAG_KEEP_ALIVE);
                 this.properties.remove(TAG_TCP_NO_DELAY);
+                this.properties.remove(TAG_USE_KERBEROS);
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
@@ -234,6 +238,8 @@ class SessionHolder {
         if (NumberUtils.isParsable(requestTimeoutRawValue)) {
             requestTimeout = Integer.parseInt(requestTimeoutRawValue);
         }
+        final boolean useKerberosAuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_KERBEROS,
+            StringUtils.EMPTY));
 
         // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();
@@ -326,6 +332,13 @@ class SessionHolder {
                 }
                 LOG.warn("Error occurred while parsing reconnection policy: {} / skipping...", e.getMessage());
             }
+        }
+
+        // Set Kerberos Auth provider if required.
+        if (useKerberosAuthProvider) {
+            builder.withAuthProvider(new ProgrammaticKerberosAuthProvider(
+                KerberosAuthProviderBase.KerberosAuthOptions.builder().build()
+            ));
         }
 
         // Declare and register codecs.
