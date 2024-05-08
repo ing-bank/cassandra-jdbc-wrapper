@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
+import static com.ing.data.cassandra.jdbc.StatementExecutor.EXECUTORS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_AUTO_GEN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_CONCURRENCY_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
@@ -222,7 +223,7 @@ public class CassandraStatement extends AbstractStatement
         this.connection = connection;
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
-        this.consistencyLevel = connection.getDefaultConsistencyLevel();
+        this.consistencyLevel = connection.getConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
 
@@ -323,7 +324,22 @@ public class CassandraStatement extends AbstractStatement
         return cqlQueriesToExecute;
     }
 
+    private boolean doExecuteCustom(final String cql) throws SQLException {
+        for (StatementExecutor executor : EXECUTORS) {
+            StatementExecutor.ExecutionResult result = executor.execute(connection, cql);
+            if (result != null) {
+                this.currentResultSet = result.resultSet;
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void doExecute(final String cql) throws SQLException {
+        if (doExecuteCustom(cql)) {
+            return;
+        }
+
         final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
 
         try {
@@ -354,7 +370,7 @@ public class CassandraStatement extends AbstractStatement
                             LOG.debug("CQL: {}", cqlQuery);
                         }
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
-                            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+                            .setConsistencyLevel(this.connection.getConsistencyLevel())
                             .setPageSize(this.fetchSize);
                         if (this.customTimeoutProfile != null) {
                             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -394,7 +410,7 @@ public class CassandraStatement extends AbstractStatement
             LOG.debug("CQL: {}", cql);
         }
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
-            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+            .setConsistencyLevel(this.connection.getConsistencyLevel())
             .setPageSize(this.fetchSize);
         if (this.customTimeoutProfile != null) {
             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -408,7 +424,8 @@ public class CassandraStatement extends AbstractStatement
         doExecute(query);
         // Return true if the first result is a non-null ResultSet object; false if the first result is an update count
         // or there is no result.
-        return this.currentResultSet != null && ((CassandraResultSet) this.currentResultSet).isQuery();
+        return this.currentResultSet != null &&
+            (!(this.currentResultSet instanceof CassandraResultSet) || ((CassandraResultSet) this.currentResultSet).isQuery());
     }
 
     @Override
@@ -436,7 +453,7 @@ public class CassandraStatement extends AbstractStatement
                 LOG.debug("CQL: {}", query);
             }
             SimpleStatement stmt = SimpleStatement.newInstance(query)
-                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+                .setConsistencyLevel(this.connection.getConsistencyLevel());
             if (this.customTimeoutProfile != null) {
                 stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
             }

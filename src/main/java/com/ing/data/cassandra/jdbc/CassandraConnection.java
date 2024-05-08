@@ -130,7 +130,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
-    private final ConsistencyLevel defaultConsistencyLevel;
+    private ConsistencyLevel consistencyLevel;
     private int defaultFetchSize = FALLBACK_FETCH_SIZE;
     private String currentKeyspace;
     private final boolean debugMode;
@@ -157,7 +157,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
             defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
-        this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
+        this.consistencyLevel = DefaultConsistencyLevel.valueOf(
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
                 defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
                     ConsistencyLevel.LOCAL_ONE.name())));
@@ -219,7 +219,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.currentKeyspace = currentKeyspace;
         this.cSession = cSession;
         this.metadata = cSession.getMetadata();
-        this.defaultConsistencyLevel = defaultConsistencyLevel;
+        this.consistencyLevel = defaultConsistencyLevel;
         this.debugMode = debugMode;
         final List<TypeCodec<?>> codecs = new ArrayList<>();
         codecs.add(new TimestampToLongCodec());
@@ -379,8 +379,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      *
      * @return The default consistency level applied to this connection.
      */
-    public ConsistencyLevel getDefaultConsistencyLevel() {
-        return this.defaultConsistencyLevel;
+    public ConsistencyLevel getConsistencyLevel() {
+        return this.consistencyLevel;
     }
 
     /**
@@ -404,6 +404,10 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         // The rationale is there are no holdability to set in this implementation, so we are "silently ignoring" the
         // request, but it still throws an exception when called on closed connection.
         checkNotClosed();
+    }
+
+    public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+        this.consistencyLevel = consistencyLevel;
     }
 
     @Override

@@ -89,8 +89,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "configfile=wrong_application.conf", "consistency=LOCAL_QUORUM",
             "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
-        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
-        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(sqlConnection.getConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistencyLevel);
         sqlConnection.close();
@@ -145,8 +145,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection.getSession().getContext());
         assertNotNull(sqlConnection.getSession().getContext().getConfig());
         assertNotNull(sqlConnection.getSession().getContext().getConfig().getDefaultProfile());
-        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
-        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(sqlConnection.getConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.TWO, consistencyLevel);
 

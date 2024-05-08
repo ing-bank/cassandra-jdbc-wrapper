@@ -215,7 +215,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             }
             this.boundStatement = this.boundStatement
                 .setPageSize(this.getFetchSize()) // Set paging to avoid timeout and node harm.
-                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+                .setConsistencyLevel(this.connection.getConsistencyLevel());
             for (int i = 0; i < getBoundStatementVariableDefinitions().size(); i++) {
                 // Set parameters to null if unset.
                 if (!this.boundStatement.isSet(i)) {
@@ -271,7 +271,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                     LOG.trace("CQL: {}", this.cql);
                 }
                 final BoundStatement boundStatement = statement.setConsistencyLevel(
-                    this.connection.getDefaultConsistencyLevel());
+                    this.connection.getConsistencyLevel());
                 final CompletionStage<AsyncResultSet> resultSetFuture = getCqlSession().executeAsync(boundStatement);
                 futures.add(resultSetFuture);
             }
