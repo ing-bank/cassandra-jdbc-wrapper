@@ -34,6 +34,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.TypesMap;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +54,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
@@ -371,6 +373,21 @@ public class CassandraResultSet extends AbstractResultSet
         } else {
             return null;
         }
+    }
+
+    public Array getArray(int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        Object o = currentRow.getObject(columnIndex - 1);
+        if (!(o instanceof List)) return null;
+        return toArray((List<?>) o);
+    }
+
+    private Array toArray(List<?> list) {
+        Object[] array = new Object[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
+        return new ArrayImpl(array);
     }
 
     @Override
