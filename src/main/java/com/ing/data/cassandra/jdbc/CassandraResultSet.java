@@ -1535,6 +1535,10 @@ public class CassandraResultSet extends AbstractResultSet
             && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null));
     }
 
+    boolean isQuery() {
+        return this.driverResultSet != null && this.driverResultSet.getColumnDefinitions().size() > 0;
+    }
+
     @Override
     public boolean isAfterLast() throws SQLException {
         checkNotClosed();

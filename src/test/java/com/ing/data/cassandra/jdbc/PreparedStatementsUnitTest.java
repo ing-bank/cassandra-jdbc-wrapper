@@ -92,11 +92,21 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    void givenPreparedStatement_whenReturnsNoRows_returnTrueFromExecute() throws SQLException {
+        final String cql = "SELECT keyname FROM cf_test_ps WHERE t1iValue = ? ALLOW FILTERING";
+        final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(cql);
+        prepStatement.setInt(1, 99999);
+        boolean isResultSet = prepStatement.execute();
+        assertTrue(isResultSet);
+    }
+
+    @Test
     void givenPreparedStatement_whenGetResultSetMetaData_returnExpectedMetadataResultSet() throws SQLException {
         final String cql = "SELECT keyname AS resKeyname, t1iValue FROM cf_test_ps WHERE t1bValue = ?";
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(cql);
         prepStatement.setBoolean(1, true);
-        prepStatement.execute();
+        boolean isResultSet = prepStatement.execute();
+        assertTrue(isResultSet);
         final ResultSetMetaData rsMetaData = prepStatement.getMetaData();
         assertNotNull(rsMetaData);
         assertEquals(2, rsMetaData.getColumnCount());
