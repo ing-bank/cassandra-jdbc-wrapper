@@ -375,14 +375,21 @@ public class CassandraResultSet extends AbstractResultSet
         }
     }
 
-    public Array getArray(int columnIndex) throws SQLException {
+    @Override
+    public Array getArray(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         Object o = currentRow.getObject(columnIndex - 1);
-        if (!(o instanceof List)) return null;
-        return toArray((List<?>) o);
+        return o instanceof List ? toArray((List<?>) o) : null;
     }
 
-    private Array toArray(List<?> list) {
+    @Override
+    public Array getArray(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        Object o = currentRow.getObject(columnLabel);
+        return o instanceof List ? toArray((List<?>) o) : null;
+    }
+
+    private Array toArray(final List<?> list) {
         Object[] array = new Object[list.size()];
         for (int i = 0; i < list.size(); i++) {
             array[i] = list.get(i);
