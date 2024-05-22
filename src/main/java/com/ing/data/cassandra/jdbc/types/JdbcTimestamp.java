@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
  * represented as a string, such as 2015-05-03 13:30:54.234 (yyyy-MM-dd hh:mm:ss.SSS).</p>
  */
 public class JdbcTimestamp extends AbstractJdbcType<Timestamp> {
+    private static final int TIMESTAMP_SCALE = 3;
 
     /**
      * Gets a {@code JdbcTimestamp} instance.
@@ -41,7 +42,7 @@ public class JdbcTimestamp extends AbstractJdbcType<Timestamp> {
 
     @Override
     public int getScale(final Timestamp obj) {
-        return DEFAULT_SCALE;
+        return TIMESTAMP_SCALE;
     }
 
     @Override

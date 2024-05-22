@@ -110,6 +110,16 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    void givenTimestampColumn_whenFetchingMetadata_columnScaleShouldBeCorrect() throws Exception {
+        final String cql = "select (timestamp) null from system.local";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        int scale = rs.getMetaData().getScale(1);
+        assertEquals(3, scale);
+    }
+
+    @Test
     void givenResultSetWithRows_whenGetClob_returnExpectedValue() throws Exception {
         final String cql = "SELECT col_blob FROM tbl_test_blobs WHERE keyname = 'key1'";
         final Statement statement = sqlConnection.createStatement();
