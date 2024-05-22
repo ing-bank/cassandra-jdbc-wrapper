@@ -189,7 +189,7 @@ public class ListResultSet extends AbstractResultSet implements ResultSet {
             throw new SQLException("Use of columnLabel requires setColumnNames to be called first.");
         }
         for (int i = 0; i < columns.length; i++) {
-            if (columnLabel.equals(columns[i])) {
+            if (columnLabel.equals(columns[i].name)) {
                 index = i;
                 break;
             }
@@ -302,7 +302,7 @@ public class ListResultSet extends AbstractResultSet implements ResultSet {
     @Override
     public int findColumn(String columnLabel) throws SQLException {
         for (int i = 0; i < columns.length; i++) {
-            if (columns[i].equals(columnLabel)) {
+            if (columns[i].name.equals(columnLabel)) {
                 return i + 1;
             }
         }
