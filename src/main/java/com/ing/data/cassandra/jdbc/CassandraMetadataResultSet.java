@@ -686,8 +686,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             case ASCII:
             case TEXT:
                 return this.currentRow.getString(columnIndex - 1);
-            case INT:
             case VARINT:
+                return this.currentRow.getVarint(columnIndex - 1);
+            case INT:
                 return this.currentRow.getInt(columnIndex - 1);
             case SMALLINT:
                 return this.currentRow.getShort(columnIndex - 1);
@@ -734,8 +735,9 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             case ASCII:
             case TEXT:
                 return this.currentRow.getString(columnLabel);
-            case INT:
             case VARINT:
+                return this.currentRow.getVarint(columnLabel);
+            case INT:
                 return this.currentRow.getInt(columnLabel);
             case SMALLINT:
                 return this.currentRow.getShort(columnLabel);
