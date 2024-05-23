@@ -1026,6 +1026,10 @@ public class CassandraResultSet extends AbstractResultSet
         final DataType cqlDataType = getCqlDataType(columnLabel);
         final DataTypeEnum dataType = fromDataType(cqlDataType);
 
+        if (currentRow.isNull(columnLabel)) {
+            return null;
+        }
+
         // User-defined types
         if (isCqlType(columnLabel, DataTypeEnum.UDT)) {
             return this.currentRow.getUdtValue(columnLabel);
