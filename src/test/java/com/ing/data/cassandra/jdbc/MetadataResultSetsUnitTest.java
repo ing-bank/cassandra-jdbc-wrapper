@@ -591,7 +591,7 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
             foundColumns.get(14));
         assertEquals("time;92;18;null;null;null;1;false;2;true;true;false;null;0;0;0;0;18",
             foundColumns.get(15));
-        assertEquals("timestamp;93;31;null;null;null;1;false;2;true;true;false;null;0;0;0;0;31",
+        assertEquals("timestamp;93;31;null;null;null;1;false;2;true;true;false;null;0;3;0;0;31",
             foundColumns.get(16));
         assertEquals("CUSTOM;1111;-1;';';null;1;true;2;true;true;false;null;0;0;0;0;-1",
             foundColumns.get(17));
