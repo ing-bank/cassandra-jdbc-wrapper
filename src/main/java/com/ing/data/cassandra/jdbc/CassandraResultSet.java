@@ -890,16 +890,6 @@ public class CassandraResultSet extends AbstractResultSet
             return null;
         }
 
-        // User-defined types
-        if (isCqlType(columnIndex, DataTypeEnum.UDT)) {
-            return this.currentRow.getUdtValue(columnIndex - 1);
-        }
-
-        // Tuples
-        if (isCqlType(columnIndex, DataTypeEnum.TUPLE)) {
-            return currentRow.getTupleValue(columnIndex - 1);
-        }
-
         // Collections: sets, lists, vectors & maps
         if (dataType.isCollection()) {
             // Sets
@@ -1015,6 +1005,10 @@ public class CassandraResultSet extends AbstractResultSet
                 case UUID:
                 case TIMEUUID:
                     return this.currentRow.getUuid(columnIndex - 1);
+                case UDT:
+                    return this.currentRow.getUdtValue(columnIndex - 1);
+                case TUPLE:
+                    return this.currentRow.getTupleValue(columnIndex - 1);
             }
         }
 
@@ -1029,16 +1023,6 @@ public class CassandraResultSet extends AbstractResultSet
 
         if (currentRow.isNull(columnLabel)) {
             return null;
-        }
-
-        // User-defined types
-        if (isCqlType(columnLabel, DataTypeEnum.UDT)) {
-            return this.currentRow.getUdtValue(columnLabel);
-        }
-
-        // Tuples
-        if (isCqlType(columnLabel, DataTypeEnum.TUPLE)) {
-            return currentRow.getTupleValue(columnLabel);
         }
 
         // Collections: sets, lists, vectors & maps
@@ -1156,6 +1140,10 @@ public class CassandraResultSet extends AbstractResultSet
                 case UUID:
                 case TIMEUUID:
                     return this.currentRow.getUuid(columnLabel);
+                case UDT:
+                    return this.currentRow.getUdtValue(columnLabel);
+                case TUPLE:
+                    return this.currentRow.getTupleValue(columnLabel);
             }
         }
 

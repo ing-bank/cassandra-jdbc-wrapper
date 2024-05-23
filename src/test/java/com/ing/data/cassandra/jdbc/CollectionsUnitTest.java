@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -343,6 +344,10 @@ class CollectionsUnitTest extends UsingCassandraContainerTest {
         assertEquals(1, udtValue.getInt("key"));
         assertEquals("test", udtValue.getString("value1"));
         assertTrue(udtValue.getBoolean("value2"));
+
+        Object outerUdt = resultSet.getObject("outerUdt");
+        assertInstanceOf(UdtValue.class, outerUdt);
+        assertEquals(1, ((UdtValue) outerUdt).getInt("key"));
 
         statement.close();
     }
