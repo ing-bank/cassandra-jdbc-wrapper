@@ -1077,7 +1077,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsBatchUpdates() {
-        return false;
+        return true;
     }
 
     @Override
