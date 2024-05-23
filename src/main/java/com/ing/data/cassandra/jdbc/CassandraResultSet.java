@@ -886,6 +886,10 @@ public class CassandraResultSet extends AbstractResultSet
         final DataType cqlDataType = getCqlDataType(columnIndex);
         final DataTypeEnum dataType = fromDataType(cqlDataType);
 
+        if (currentRow.isNull(columnIndex - 1)) {
+            return null;
+        }
+
         // User-defined types
         if (isCqlType(columnIndex, DataTypeEnum.UDT)) {
             return this.currentRow.getUdtValue(columnIndex - 1);
@@ -1021,6 +1025,10 @@ public class CassandraResultSet extends AbstractResultSet
         checkName(columnLabel);
         final DataType cqlDataType = getCqlDataType(columnLabel);
         final DataTypeEnum dataType = fromDataType(cqlDataType);
+
+        if (currentRow.isNull(columnLabel)) {
+            return null;
+        }
 
         // User-defined types
         if (isCqlType(columnLabel, DataTypeEnum.UDT)) {

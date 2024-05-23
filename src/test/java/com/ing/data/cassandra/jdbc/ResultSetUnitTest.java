@@ -30,6 +30,7 @@ import java.util.Calendar;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -140,4 +141,13 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         assertArrayEquals("testValueAsClobInUtf8 with accents: Äîéè".getBytes(StandardCharsets.UTF_8), byteArray);
     }
 
+    @Test
+    void givenNullValue_whenFetchingValue_returnNull() throws Exception {
+        final String cql = "select (int) null from system.local";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        Object result = rs.getObject(1);
+        assertNull(result);
+    }
 }
