@@ -981,8 +981,9 @@ public class CassandraResultSet extends AbstractResultSet
                 case ASCII:
                 case TEXT:
                     return this.currentRow.getString(columnIndex - 1);
-                case INT:
                 case VARINT:
+                    return this.currentRow.getBigInteger(columnIndex - 1);
+                case INT:
                     return this.currentRow.getInt(columnIndex - 1);
                 case SMALLINT:
                     return this.currentRow.getShort(columnIndex - 1);
@@ -1121,8 +1122,9 @@ public class CassandraResultSet extends AbstractResultSet
                 case ASCII:
                 case TEXT:
                     return this.currentRow.getString(columnLabel);
-                case INT:
                 case VARINT:
+                    return this.currentRow.getBigInteger(columnLabel);
+                case INT:
                     return this.currentRow.getInt(columnLabel);
                 case SMALLINT:
                     return this.currentRow.getShort(columnLabel);

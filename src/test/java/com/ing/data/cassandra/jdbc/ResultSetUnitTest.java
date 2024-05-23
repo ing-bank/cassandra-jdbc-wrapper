@@ -18,6 +18,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLSyntaxErrorException;
@@ -129,6 +130,17 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         assertTrue(rs.next());
         final byte[] byteArray = IOUtils.toByteArray(rs.getAsciiStream("col_ascii"));
         assertArrayEquals("testValueAscii".getBytes(StandardCharsets.US_ASCII), byteArray);
+    }
+
+    @Test
+    void givenVarintValue_whenFetching_returnExpectedValue() throws Exception {
+        final String cql = "select (varint) 1 from system.local";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        Object result = rs.getObject(1);
+        assertNotNull(result);
+        assertEquals(BigInteger.valueOf(1), result);
     }
 
     @Test
