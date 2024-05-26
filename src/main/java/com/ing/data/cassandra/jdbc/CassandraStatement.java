@@ -408,7 +408,7 @@ public class CassandraStatement extends AbstractStatement
         doExecute(query);
         // Return true if the first result is a non-null ResultSet object; false if the first result is an update count
         // or there is no result.
-        return this.currentResultSet != null && ((CassandraResultSet) this.currentResultSet).isQuery();
+        return this.currentResultSet != null && ((CassandraResultSet) this.currentResultSet).isQueryResult();
     }
 
     @Override

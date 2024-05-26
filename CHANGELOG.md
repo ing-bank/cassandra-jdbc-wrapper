@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
+  [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
+### Changed
+- Modify the scale value returned for the type `TIMESTAMP` (see PR
+  [#58](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/58)).
+- Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see PR
+  [#60](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/60)).
+### Fixed
+- Fix implementation of the methods `CassandraStatement.execute(String)` and `CassandraPreparedStatement.execute()` to
+  return `true` even when the result set is empty (see 
+  PR [#54](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/54)).
+- Fix fetching null values in `CassandraResultSet.getObject(int | String)` (see PR 
+  [#57](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/57)).
+- Fix handling of `VARINT` values in `CassandraResultSet.getObject(int | String)` and 
+  `CassandraMetadataResultSet.getObject(int | String)` (see PR 
+  [#59](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/59)).
+- Fix return value of `CassandraDatabaseMetaData.supportsBatchUpdates()` (see PR
+  [#61](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/61)).
+
 ## [4.12.0] - 2024-05-05
 ### Added
 - Add a parameter `fetchsize` to specify a default fetch size for all the queries returning result sets. This value is 

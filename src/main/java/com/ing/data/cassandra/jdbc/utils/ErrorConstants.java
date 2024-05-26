@@ -21,6 +21,7 @@ import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.net.URI;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -341,6 +342,12 @@ public final class ErrorConstants {
      * any reason. The underlying exception should be logged in this case.
      */
     public static final String CONNECTION_CREATION_FAILED = "Unexpected error while creating connection.";
+
+    /**
+     * Error message used in any SQL exception thrown when trying to access to an {@link Array} object previously
+     * freed.
+     */
+    public static final String ARRAY_WAS_FREED = "Array was freed.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

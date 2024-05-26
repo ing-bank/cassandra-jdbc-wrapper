@@ -38,6 +38,7 @@ import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -376,28 +377,6 @@ public class CassandraResultSet extends AbstractResultSet
     }
 
     @Override
-    public Array getArray(final int columnIndex) throws SQLException {
-        checkIndex(columnIndex);
-        Object o = currentRow.getObject(columnIndex - 1);
-        return o instanceof List ? toArray((List<?>) o) : null;
-    }
-
-    @Override
-    public Array getArray(final String columnLabel) throws SQLException {
-        checkName(columnLabel);
-        Object o = currentRow.getObject(columnLabel);
-        return o instanceof List ? toArray((List<?>) o) : null;
-    }
-
-    private Array toArray(final List<?> list) {
-        Object[] array = new Object[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            array[i] = list.get(i);
-        }
-        return new ArrayImpl(array);
-    }
-
-    @Override
     public InputStream getAsciiStream(final String columnLabel) throws SQLException {
         checkName(columnLabel);
         final String s = this.currentRow.getString(columnLabel);
@@ -406,6 +385,26 @@ public class CassandraResultSet extends AbstractResultSet
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Array getArray(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        final Object o = this.currentRow.getObject(columnIndex - 1);
+        if (o instanceof List) {
+            return new ArrayImpl((List<?>) o);
+        }
+        return null;
+    }
+
+    @Override
+    public Array getArray(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        final Object o = this.currentRow.getObject(columnLabel);
+        if (o instanceof List) {
+            return new ArrayImpl((List<?>) o);
+        }
+        return null;
     }
 
     @Override
@@ -886,7 +885,7 @@ public class CassandraResultSet extends AbstractResultSet
         final DataType cqlDataType = getCqlDataType(columnIndex);
         final DataTypeEnum dataType = fromDataType(cqlDataType);
 
-        if (currentRow.isNull(columnIndex - 1)) {
+        if (this.currentRow.isNull(columnIndex - 1)) {
             return null;
         }
 
@@ -1021,7 +1020,7 @@ public class CassandraResultSet extends AbstractResultSet
         final DataType cqlDataType = getCqlDataType(columnLabel);
         final DataTypeEnum dataType = fromDataType(cqlDataType);
 
-        if (currentRow.isNull(columnLabel)) {
+        if (this.currentRow.isNull(columnLabel)) {
             return null;
         }
 
@@ -1557,7 +1556,13 @@ public class CassandraResultSet extends AbstractResultSet
             && (this.rowsIterator.hasNext() || (this.rowNumber == 0 && this.currentRow != null));
     }
 
-    boolean isQuery() {
+    /**
+     * Gets whether the result set is non-null and result of a query (even if has no rows).
+     *
+     * @return {@code true} if the result set is non-null and has at least one column (so it's the result of a query),
+     * {@code false} otherwise.
+     */
+    protected boolean isQueryResult() {
         return this.driverResultSet != null && this.driverResultSet.getColumnDefinitions().size() > 0;
     }
 

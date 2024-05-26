@@ -19,12 +19,28 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ARRAY_WAS_FREED;
+
+/**
+ * Implementation of {@link Array} interface.
+ */
 public class ArrayImpl implements Array {
+
     private Object[] array;
 
-    public ArrayImpl(Object[] array) {
+    /**
+     * Constructor.
+     *
+     * @param list The list of object to wrap in a {@link Array} object.
+     */
+    public ArrayImpl(final List<?> list) {
+        final Object[] array = new Object[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
         this.array = array;
     }
 
@@ -40,24 +56,24 @@ public class ArrayImpl implements Array {
 
     @Override
     public Object[] getArray() throws SQLException {
-        if (array == null) {
-            throw new SQLException("Array was freed");
+        if (this.array == null) {
+            throw new SQLException(ARRAY_WAS_FREED);
         }
-        return array;
+        return this.array;
     }
 
     @Override
-    public Object getArray(Map<String, Class<?>> map) throws SQLException {
+    public Object getArray(final Map<String, Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
-    public Object getArray(long index, int count) throws SQLException {
+    public Object getArray(final long index, final int count) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
-    public Object getArray(long index, int count, Map<String, Class<?>> map) throws SQLException {
+    public Object getArray(final long index, final int count, final Map<String, Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
@@ -67,24 +83,26 @@ public class ArrayImpl implements Array {
     }
 
     @Override
-    public ResultSet getResultSet(Map<String, Class<?>> map) throws SQLException {
+    public ResultSet getResultSet(final Map<String, Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
-    public ResultSet getResultSet(long index, int count) throws SQLException {
+    public ResultSet getResultSet(final long index, final int count) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
-    public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map) throws SQLException {
+    public ResultSet getResultSet(final long index, final int count, final Map<String, Class<?>> map)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void free() {
-        if (array != null) {
-            array = null;
+        if (this.array != null) {
+            this.array = null;
         }
     }
+
 }
