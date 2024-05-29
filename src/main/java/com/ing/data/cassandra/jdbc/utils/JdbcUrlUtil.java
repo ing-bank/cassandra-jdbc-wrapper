@@ -482,11 +482,17 @@ public final class JdbcUrlUtil {
             .map(part -> {
                 try {
                     int port = defaultPort.get();
-                    final String[] splitPart = part.split(":");
-                    if (splitPart.length > 1) {
-                        port = Integer.parseInt(splitPart[1]);
+                    final String host;
+
+                    int lastIndex = part.lastIndexOf(':');
+                    if (lastIndex == -1) {
+                        host = part;
+                    } else {
+                        host = part.substring(0, lastIndex);
+                        port = Integer.parseInt(part.substring(lastIndex + 1));
                     }
-                    return ContactPoint.of(splitPart[0], port);
+
+                    return ContactPoint.of(host, port);
                 } catch (final Exception e) {
                     throw new RuntimeException(String.format(INVALID_CONTACT_POINT, part));
                 }
