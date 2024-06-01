@@ -27,7 +27,7 @@ import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -225,7 +225,7 @@ public class CassandraStatement extends AbstractStatement
         this.connection = connection;
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
-        this.consistencyLevel = connection.getDefaultConsistencyLevel();
+        this.consistencyLevel = connection.getConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
 
@@ -357,7 +357,7 @@ public class CassandraStatement extends AbstractStatement
                             LOG.debug("CQL: {}", cqlQuery);
                         }
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
-                            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+                            .setConsistencyLevel(this.connection.getConsistencyLevel())
                             .setPageSize(this.fetchSize);
                         if (this.customTimeoutProfile != null) {
                             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -397,7 +397,7 @@ public class CassandraStatement extends AbstractStatement
             LOG.debug("CQL: {}", cql);
         }
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
-            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+            .setConsistencyLevel(this.connection.getConsistencyLevel())
             .setPageSize(this.fetchSize);
         if (this.customTimeoutProfile != null) {
             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -440,7 +440,7 @@ public class CassandraStatement extends AbstractStatement
                     LOG.debug("CQL: {}", query);
                 }
                 SimpleStatement stmt = SimpleStatement.newInstance(query)
-                    .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+                    .setConsistencyLevel(this.connection.getConsistencyLevel());
                 if (this.customTimeoutProfile != null) {
                     stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
                 }

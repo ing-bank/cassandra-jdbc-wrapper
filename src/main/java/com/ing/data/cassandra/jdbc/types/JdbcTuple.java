@@ -17,7 +17,7 @@ package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.Types;
 
 /**

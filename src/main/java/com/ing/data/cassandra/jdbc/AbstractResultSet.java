@@ -19,7 +19,7 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;

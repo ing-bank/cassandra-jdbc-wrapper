@@ -9,10 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
   [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
 ### Changed
+- Update Java Driver for Apache Cassandra® to version 4.18.1.
+- Update Jackson dependencies to version 2.17.1.
 - Modify the scale value returned for the type `TIMESTAMP` (see PR
   [#58](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/58)).
 - Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see PR
   [#60](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/60)).
+- Replace Javax Annotations API by Jakarta Annotations API.
 ### Fixed
 - Fix implementation of the methods `CassandraStatement.execute(String)` and `CassandraPreparedStatement.execute()` to
   return `true` even when the result set is empty (see 

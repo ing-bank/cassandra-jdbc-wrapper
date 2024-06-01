@@ -15,7 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.types;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.Types;
 import java.util.UUID;
 
