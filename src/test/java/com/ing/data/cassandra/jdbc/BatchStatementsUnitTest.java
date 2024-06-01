@@ -75,6 +75,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
     void givenBatchSimpleStatement_whenExecute_returnExpectedResult() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE collections_test");
+        stmt.close();
         final Statement stmt2 = sqlConnection.createStatement();
         final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
 
@@ -112,6 +113,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
     void givenBatchSimpleSplitStatement_whenExecute_returnExpectedResult() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE collections_test");
+        stmt.close();
         final Statement stmt2 = sqlConnection.createStatement();
         final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
 
@@ -148,6 +150,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
     void givenBatchPreparedStatement_whenExecute_returnExpectedResult() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE collections_test");
+        stmt.close();
         final PreparedStatement stmt2 = sqlConnection.prepareStatement("INSERT INTO collections_test " +
             "(keyValue, listValue) VALUES(?, ?)");
         final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
@@ -188,6 +191,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
     void givenBatchPreparedStatementWithUnsetParameter_whenExecute_returnExpectedResult() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE collections_test");
+        stmt.close();
         final PreparedStatement stmt2 = sqlConnection.prepareStatement("INSERT INTO collections_test " +
             "(keyValue, listValue, mapValue) VALUES(?, ?, ?)");
         final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
@@ -241,34 +245,15 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
         }
 
         statement.close();
+        selectStatement.close();
     }
 
     @Test
     @Order(6)
-    void givenBatchSimpleSplitStatementWithErrors_whenExecute_throwException() throws Exception {
-        final Statement stmt = sqlConnection.createStatement();
-        stmt.execute("TRUNCATE collections_test");
-        final Statement stmt2 = sqlConnection.createStatement();
-        final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
-
-        final StringBuilder queryBuilder = new StringBuilder();
-        for (int i = 0; i < nbRows; i++) {
-            if (i % 100 == 0) {
-                queryBuilder.append("INSERT INTO collections_test (keyValue, listValue, mapValue) VALUES( ").append(i)
-                    .append(", [1, 3, 12345], 0);");
-            } else {
-                queryBuilder.append("INSERT INTO collections_test (keyValue, listValue) VALUES( ").append(i)
-                    .append(", [1, 3, 12345]);");
-            }
-        }
-        assertThrows(SQLTransientException.class, () -> stmt2.execute(queryBuilder.toString()));
-    }
-
-    @Test
-    @Order(7)
     void givenBatchSimpleStatementWithErrors_whenExecute_throwException() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE tbl_batch_test");
+        stmt.close();
         final Statement stmt2 = sqlConnection.createStatement();
 
         // Randomly put a statement inserting a null primary key (not allowed) into the batch.
@@ -303,10 +288,11 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     void givenPreparedBatchStatementWithErrors_whenExecute_throwException() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         stmt.execute("TRUNCATE tbl_batch_test");
+        stmt.close();
         final PreparedStatement statement = sqlConnection2.prepareStatement("INSERT INTO tbl_batch_test " +
             "(keyValue, listValue) VALUES(?, ?)");
 
@@ -340,7 +326,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
     @SuppressWarnings("unchecked")
     @ParameterizedTest
-    @Order(9)
+    @Order(8)
     @ValueSource(strings = {"Default", "Liquibase"})
     void givenStatementWithValuesIncludingSemicolons_whenExecute_returnExpectedResult(final String complianceMode)
         throws Exception {
@@ -378,5 +364,33 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
             assertTrue(foundSetValues.contains("val;" + i));
         }
         selectStatement.close();
+    }
+
+    @Test
+    @Order(9)
+    void givenBatchSimpleSplitStatementWithErrors_whenExecute_throwException() throws Exception {
+        final Statement stmt = sqlConnection.createStatement();
+        stmt.execute("TRUNCATE collections_test");
+        stmt.close();
+        final Statement stmt2 = sqlConnection2.createStatement();
+        final int nbRows = CassandraStatement.MAX_ASYNC_QUERIES;
+
+        final StringBuilder queryBuilder = new StringBuilder();
+        for (int i = 0; i < nbRows; i++) {
+            if (i % 100 == 0) {
+                queryBuilder.append("INSERT INTO collections_test (keyValue, listValue, mapValue) VALUES( ").append(i)
+                    .append(", [1, 3, 12345], 0);");
+            } else {
+                queryBuilder.append("INSERT INTO collections_test (keyValue, listValue) VALUES( ").append(i)
+                    .append(", [1, 3, 12345]);");
+            }
+        }
+        assertThrows(SQLTransientException.class, () -> {
+            try {
+                stmt2.execute(queryBuilder.toString());
+            } finally {
+                stmt2.close();
+            }
+        });
     }
 }
