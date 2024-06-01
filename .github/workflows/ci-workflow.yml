@@ -8,6 +8,8 @@ on:
   pull_request:
     branches:
       - 'release/next'
+  schedule:
+    - cron: '0 0 1 * *'  # Run this workflow at midnight on the first day of each month.
 
 jobs:
   build:
