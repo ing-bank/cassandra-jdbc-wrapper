@@ -18,7 +18,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataType;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;

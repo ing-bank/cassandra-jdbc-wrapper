@@ -18,7 +18,7 @@ package com.ing.data.cassandra.jdbc.codec;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
 

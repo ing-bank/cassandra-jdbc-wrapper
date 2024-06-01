@@ -27,7 +27,7 @@ import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;

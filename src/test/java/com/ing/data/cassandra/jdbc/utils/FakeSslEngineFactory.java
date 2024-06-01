@@ -16,7 +16,7 @@ package com.ing.data.cassandra.jdbc.utils;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLEngine;
 
 public class FakeSslEngineFactory implements SslEngineFactory {

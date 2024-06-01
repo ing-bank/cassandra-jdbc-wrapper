@@ -26,7 +26,7 @@ import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.semver4j.Semver;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;

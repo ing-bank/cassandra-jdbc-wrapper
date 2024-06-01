@@ -22,7 +22,7 @@ import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
-import jakarta.annotation.Nonnull;
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
