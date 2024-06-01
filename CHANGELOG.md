@@ -24,6 +24,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   [#59](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/59)).
 - Fix return value of `CassandraDatabaseMetaData.supportsBatchUpdates()` (see PR
   [#61](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/61)).
+- Fix implementation of `Statement.executeBatch()` (see issue 
+  [#63](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/63)) to conform with JDBC specifications: 
+  - throws a `BatchUpdateException` when at least one statement in the batch fails or attempts to return a result set.
+  - the returned array contains `SUCCESS_NO_INFO` for successful statements and `EXECUTE_FAILED` for statements that
+    threw a `BatchUpdateException`.
 
 ## [4.12.0] - 2024-05-05
 ### Added

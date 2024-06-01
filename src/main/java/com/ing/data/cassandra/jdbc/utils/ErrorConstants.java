@@ -349,6 +349,25 @@ public final class ErrorConstants {
      */
     public static final String ARRAY_WAS_FREED = "Array was freed.";
 
+    /**
+     * Error message used in any batch update exception thrown when at least one statement fails or attempts to return
+     * a result set in the method {@link Statement#executeBatch()}. This message should be followed by the details for
+     * each failed statement (example: {@code BATCH_UPDATE_FAILED + "Statement failed"}).
+     *
+     * @see #BATCH_STATEMENT_FAILURE_MSG
+     */
+    public static final String BATCH_UPDATE_FAILED = "At least one statement in batch has failed:";
+
+    /**
+     * Template used to report a statement failure or attempting to return a result set in the method
+     * {@link Statement#executeBatch()}. This template should be used in {@link #BATCH_UPDATE_FAILED} and expects
+     * the statement index in the batch and the error message (example:
+     * {@code String.format(BATCH_STATEMENT_FAILURE_MSG, 1, "Statement failed"}).
+     *
+     * @see #BATCH_UPDATE_FAILED
+     */
+    public static final String BATCH_STATEMENT_FAILURE_MSG = "\n - Statement #%d: %s";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

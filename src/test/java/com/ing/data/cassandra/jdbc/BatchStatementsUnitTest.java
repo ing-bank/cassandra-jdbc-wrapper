@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -21,15 +22,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLTransientException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.Set;
 
+import static java.sql.Statement.EXECUTE_FAILED;
+import static java.sql.Statement.SUCCESS_NO_INFO;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // query" if several tests are executed simultaneously.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BatchStatementsUnitTest extends UsingCassandraContainerTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BatchStatementsUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace_batch";
     private static CassandraConnection sqlConnection2 = null;
@@ -73,6 +84,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         final int[] counts = stmt2.executeBatch();
         assertEquals(nbRows, counts.length);
+        assertTrue(Arrays.stream(counts).allMatch(c -> c == SUCCESS_NO_INFO));
 
         final StringBuilder queries = new StringBuilder();
         for (int i = 0; i < nbRows + 10; i++) {
@@ -148,6 +160,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         final int[] counts = stmt2.executeBatch();
         assertEquals(nbRows, counts.length);
+        assertTrue(Arrays.stream(counts).allMatch(c -> c == SUCCESS_NO_INFO));
 
         final StringBuilder queries = new StringBuilder();
         for (int i = 0; i < nbRows; i++) {
@@ -187,6 +200,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         final int[] counts = stmt2.executeBatch();
         assertEquals(nbRows, counts.length);
+        assertTrue(Arrays.stream(counts).allMatch(c -> c == SUCCESS_NO_INFO));
     }
 
     @ParameterizedTest
@@ -204,6 +218,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         final int[] counts = statement.executeBatch();
         assertEquals(nbRows, counts.length);
+        assertTrue(Arrays.stream(counts).allMatch(c -> c == SUCCESS_NO_INFO));
 
         final StringBuilder query = new StringBuilder();
         for (int i = 0; i < nbRows; i++) {
@@ -289,5 +304,79 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
             assertTrue(foundSetValues.contains("val;" + i));
         }
         selectStatement.close();
+    }
+
+    @Test
+    @Order(8)
+    void givenBatchSimpleStatementWithErrors_whenExecute_throwException() throws Exception {
+        final Statement stmt = sqlConnection.createStatement();
+        stmt.execute("TRUNCATE tbl_batch_test");
+        final Statement stmt2 = sqlConnection.createStatement();
+
+        // Randomly put a statement inserting a null primary key (not allowed) into the batch.
+        final int invalidStmtIndex = new Random().nextInt(7) + 1;
+        LOG.debug("Invalid statement at batch index: {}", invalidStmtIndex);
+        for (int i = 0; i < 10; i++) {
+            if (i == invalidStmtIndex) {
+                stmt2.addBatch("INSERT INTO tbl_batch_test (keyValue, listValue) VALUES(NULL, [1, 3, 12345])");
+            } else {
+                stmt2.addBatch("INSERT INTO tbl_batch_test (keyValue, listValue) VALUES('" + i + "', [1, 3, 12345])");
+            }
+        }
+        LOG.debug("Add a statement returning values at the end of the batch (not allowed by executeBatch() method)");
+        stmt2.addBatch("SELECT keyValue, listValue FROM tbl_batch_test");
+
+        final BatchUpdateException ex = assertThrows(BatchUpdateException.class, stmt2::executeBatch);
+        assertThat(ex.getMessage(),
+            matchesPattern("^At least one statement in batch has failed:"
+                + "\n - Statement #" + invalidStmtIndex + ": .*"
+                + "\n - Statement #10: attempts to return a result set$")
+        );
+        final int[] counts = ex.getUpdateCounts();
+        assertEquals(11, counts.length);
+        assertTrue(Arrays.stream(ArrayUtils.subarray(counts, 0, invalidStmtIndex))
+            .allMatch(c -> c == SUCCESS_NO_INFO));
+        assertTrue(Arrays.stream(ArrayUtils.subarray(counts, invalidStmtIndex + 1, 9))
+            .allMatch(c -> c == SUCCESS_NO_INFO));
+        assertEquals(EXECUTE_FAILED, counts[invalidStmtIndex]);
+        assertEquals(EXECUTE_FAILED, counts[10]);
+
+        stmt2.close();
+    }
+
+    @Test
+    @Order(9)
+    void givenPreparedBatchStatementWithErrors_whenExecute_throwException() throws Exception {
+        final Statement stmt = sqlConnection.createStatement();
+        stmt.execute("TRUNCATE tbl_batch_test");
+        final PreparedStatement statement = sqlConnection2.prepareStatement("INSERT INTO tbl_batch_test " +
+            "(keyValue, listValue) VALUES(?, ?)");
+
+        // Randomly put a statement inserting a null primary key (not allowed) into the batch.
+        final int invalidStmtIndex = new Random().nextInt(7) + 1;
+        LOG.debug("Invalid statement at batch index: {}", invalidStmtIndex);
+        for (int i = 0; i < 10; i++) {
+            if (i == invalidStmtIndex) {
+                statement.setString(1, null);
+            } else {
+                statement.setString(1, String.valueOf(i));
+            }
+            statement.setObject(2, Arrays.asList(1, 3, 8));
+            statement.addBatch();
+        }
+
+        final BatchUpdateException ex = assertThrows(BatchUpdateException.class, statement::executeBatch);
+        assertThat(ex.getMessage(),
+            matchesPattern("^At least one statement in batch has failed:\n - Statement #" + invalidStmtIndex + ": .*$")
+        );
+        final int[] counts = ex.getUpdateCounts();
+        assertEquals(10, counts.length);
+        assertTrue(Arrays.stream(ArrayUtils.subarray(counts, 0, invalidStmtIndex))
+            .allMatch(c -> c == SUCCESS_NO_INFO));
+        assertTrue(Arrays.stream(ArrayUtils.subarray(counts, invalidStmtIndex + 1, 9))
+            .allMatch(c -> c == SUCCESS_NO_INFO));
+        assertEquals(EXECUTE_FAILED, counts[invalidStmtIndex]);
+
+        statement.close();
     }
 }
