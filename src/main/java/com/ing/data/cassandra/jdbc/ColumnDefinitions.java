@@ -16,6 +16,8 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.protocol.internal.response.result.ColumnSpec;
+import com.datastax.oss.protocol.internal.response.result.RawType;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -322,6 +324,17 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
          */
         public static Definition buildDefinitionInAnonymousTable(final String name, final DataType type) {
             return new Definition(StringUtils.EMPTY, StringUtils.EMPTY, name, type);
+        }
+
+        /**
+         * Builds a {@link ColumnSpec} instance based on this column definition.
+         *
+         * @param idx The index of the column in its table.
+         * @return The corresponding {@link ColumnSpec} instance.
+         */
+        public ColumnSpec toColumnSpec(final int idx) {
+            return new ColumnSpec(this.keyspace, this.table, this.name, idx,
+                RawType.PRIMITIVES.get(this.type.getProtocolCode()));
         }
 
         /**

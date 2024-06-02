@@ -62,6 +62,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_MULTIPLE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_STMT;
+import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.containsSpecialCommands;
+import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.getCommandExecutor;
 import static org.apache.commons.lang3.StringUtils.countMatches;
 
 /**
@@ -332,6 +334,11 @@ public class CassandraStatement extends AbstractStatement
         try {
             final List<String> cqlQueries = splitStatements(cql);
             final int nbQueriesToExecute = cqlQueries.size();
+
+            // If the list of statements contains at least one special command, all the statements must be executed
+            // synchronously.
+            final boolean containsSpecialCommands = containsSpecialCommands(cql);
+
             if (nbQueriesToExecute > 1
                 && !(cql.trim().toLowerCase().startsWith("begin")
                 && cql.toLowerCase().contains("batch") && cql.toLowerCase().contains("apply"))) {
@@ -339,14 +346,15 @@ public class CassandraStatement extends AbstractStatement
 
                 // Several statements in the query to execute potentially asynchronously...
                 if (nbQueriesToExecute > MAX_ASYNC_QUERIES * 1.1) {
-                    // Protect the cluster from receiving too many queries at once and force the dev to split the load
+                    // Protect the cluster from receiving too many queries at once and force the dev to split the load.
                     throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, nbQueriesToExecute));
                 }
 
                 // If we should not execute the queries asynchronously, for example if they must be executed in the
                 // specified order (e.g. in Liquibase scripts with queries such as CREATE TABLE t, then
-                // INSERT INTO t ...).
-                if (!this.connection.getOptionSet().executeMultipleQueriesByStatementAsync()) {
+                // INSERT INTO t ...; or if it contains special commands such as CONSISTENCY <level>).
+                if (!this.connection.getOptionSet().executeMultipleQueriesByStatementAsync()
+                    || containsSpecialCommands) {
                     for (final String cqlQuery : cqlQueries) {
                         final com.datastax.oss.driver.api.core.cql.ResultSet rs = executeSingleStatement(cqlQuery);
                         results.add(rs);
@@ -392,10 +400,19 @@ public class CassandraStatement extends AbstractStatement
         }
     }
 
-    private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql) {
+    private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql)
+        throws SQLException {
         if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
             LOG.debug("CQL: {}", cql);
         }
+
+        // If the CQL statement is a special command, execute it using the appropriate special command executor and
+        // return the result. Otherwise, execute the statement through the driver.
+        final SpecialCommands.SpecialCommandExecutor commandExecutor = getCommandExecutor(cql);
+        if (commandExecutor != null) {
+            return commandExecutor.execute(this, cql);
+        }
+
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
             .setConsistencyLevel(this.connection.getConsistencyLevel())
             .setPageSize(this.fetchSize);

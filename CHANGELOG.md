@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
   [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
+- Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by PR
+  [#56](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/56)). 
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.18.1.
 - Update Jackson dependencies to version 2.17.1.
