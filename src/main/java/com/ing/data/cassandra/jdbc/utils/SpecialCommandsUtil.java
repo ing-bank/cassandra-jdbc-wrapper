@@ -59,7 +59,7 @@ public final class SpecialCommandsUtil {
      * supported.
      */
     public static SpecialCommands.SpecialCommandExecutor getCommandExecutor(final String cql) {
-        final Matcher matcher = Pattern.compile(CMD_CONSISTENCY_PATTERN).matcher(cql.trim());
+        final Matcher matcher = Pattern.compile(CMD_CONSISTENCY_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE).matcher(cql.trim());
         if (!matcher.matches()) {
             LOG.trace("CQL statement is not a supported special command: {}", cql);
             return null;

@@ -120,4 +120,11 @@ public class ConsistencyLevelStatementsTest extends UsingCassandraContainerTest 
         batchStatement.close();
     }
 
+    @Test
+    @Order(7)
+    void givenConsistencyLevel_whenSetConsistencyLevelViaLowercaseCommand_updateConsistencyLevel() throws Exception {
+        assertNotNull(sqlConnection);
+        sqlConnection.createStatement().execute("consistency LOCAL_SERIAL");
+        assertConsistencyLevelViaExecute(sqlConnection, "LOCAL_SERIAL");
+    }
 }
