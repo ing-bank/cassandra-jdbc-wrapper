@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## Unreleased
 ### Added
+- Add support for switching execution profiles.
 - Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
   [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
 - Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by PR

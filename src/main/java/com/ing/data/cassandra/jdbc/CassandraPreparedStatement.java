@@ -147,7 +147,9 @@ public class CassandraPreparedStatement extends CassandraStatement
         }
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
-            this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+            this.boundStatement = this.preparedStatement.boundStatementBuilder()
+                .setExecutionProfile(this.connection.getActiveExecutionProfile())
+                .build();
             this.batchStatements = new ArrayList<>();
             this.count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
         } catch (final Exception e) {
@@ -234,7 +236,9 @@ public class CassandraPreparedStatement extends CassandraStatement
     @Override
     public void addBatch() throws SQLException {
         this.batchStatements.add(this.boundStatement);
-        this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+        this.boundStatement = this.preparedStatement.boundStatementBuilder()
+            .setExecutionProfile(this.connection.getActiveExecutionProfile())
+            .build();
         if (this.batchStatements.size() > MAX_ASYNC_QUERIES) {
             throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, batchStatements.size()));
         }

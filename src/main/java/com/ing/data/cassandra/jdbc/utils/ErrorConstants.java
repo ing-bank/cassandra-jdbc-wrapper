@@ -368,6 +368,14 @@ public final class ErrorConstants {
      */
     public static final String BATCH_STATEMENT_FAILURE_MSG = "\n - Statement #%d: %s";
 
+    /**
+     * Error message used when the given execution profile does not exist and cannot be applied. This message is a
+     * template expecting the name of the invalid profile (example:
+     * {@code String.format(INVALID_PROFILE_NAME, "undefined_profile")}).
+     */
+    public static final String INVALID_PROFILE_NAME =
+        "No execution profile named [%s], keep the current active profile.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

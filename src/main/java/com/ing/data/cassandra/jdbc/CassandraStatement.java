@@ -365,6 +365,7 @@ public class CassandraStatement extends AbstractStatement
                             LOG.debug("CQL: {}", cqlQuery);
                         }
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
+                            .setExecutionProfile(this.connection.getActiveExecutionProfile())
                             .setConsistencyLevel(this.connection.getConsistencyLevel())
                             .setPageSize(this.fetchSize);
                         if (this.customTimeoutProfile != null) {
@@ -414,6 +415,7 @@ public class CassandraStatement extends AbstractStatement
         }
 
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
+            .setExecutionProfile(this.connection.getActiveExecutionProfile())
             .setConsistencyLevel(this.connection.getConsistencyLevel())
             .setPageSize(this.fetchSize);
         if (this.customTimeoutProfile != null) {
@@ -457,6 +459,7 @@ public class CassandraStatement extends AbstractStatement
                     LOG.debug("CQL: {}", query);
                 }
                 SimpleStatement stmt = SimpleStatement.newInstance(query)
+                    .setExecutionProfile(this.connection.getActiveExecutionProfile())
                     .setConsistencyLevel(this.connection.getConsistencyLevel());
                 if (this.customTimeoutProfile != null) {
                     stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -686,8 +689,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getQueryTimeout() throws SQLException {
         checkNotClosed();
-        DriverExecutionProfile activeProfile =
-            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        DriverExecutionProfile activeProfile = this.connection.getActiveExecutionProfile();
         if (this.customTimeoutProfile != null) {
             activeProfile = this.customTimeoutProfile;
         }
@@ -710,10 +712,9 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public void setQueryTimeout(final int seconds) throws SQLException {
         checkNotClosed();
-        final DriverExecutionProfile defaultProfile =
-            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        final DriverExecutionProfile activeProfile = this.connection.getActiveExecutionProfile();
         this.customTimeoutProfile =
-            defaultProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
+            activeProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
     }
 
     @Override

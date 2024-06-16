@@ -312,6 +312,17 @@ public final class JdbcUrlUtil {
      */
     public static final String TAG_CONTACT_POINTS = "contactPoints";
 
+    /**
+     * Property name used to retrieve the execution profile to use when the connection to Cassandra is created.
+     * This property is mapped from the JDBC URL parameter {@code activeprofile}.
+     */
+    public static final String TAG_ACTIVE_PROFILE = "activeProfile";
+
+    /**
+     * JDBC URL parameter key for the active execution profile.
+     */
+    public static final String KEY_ACTIVE_PROFILE = "activeprofile";
+
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
     private static final String HOST_SEPARATOR = "--";
@@ -451,6 +462,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_COMPLIANCE_MODE)) {
                     props.setProperty(TAG_COMPLIANCE_MODE, params.get(KEY_COMPLIANCE_MODE));
+                }
+                if (params.containsKey(KEY_ACTIVE_PROFILE)) {
+                    props.setProperty(TAG_ACTIVE_PROFILE, params.get(KEY_ACTIVE_PROFILE));
                 }
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
