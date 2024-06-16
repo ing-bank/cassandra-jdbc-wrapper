@@ -23,15 +23,25 @@ Copyright 2001-2023 The Apache Software Foundation
 This product includes software developed as part of the Apache Commons Lang project
 ( https://github.com/apache/commons-lang ).
 
+Caffeine
+Copyright 2018 Ben Manes
+This product includes software developed as part of the Caffeine project
+( https://github.com/ben-manes/caffeine ).
+
+Cassandra Java Driver Kerberos Authenticator
+Copyright 2018 Instaclustr Pty. Ltd.
+This product includes software developed as part of the Cassandra Java Driver Kerberos Authenticator project
+( https://github.com/instaclustr/cassandra-java-driver-kerberos ).
+
 FasterXML Jackson
 Copyright 2012 FasterXML.com
 This product includes software developed as part of the Jackson project
 ( https://github.com/FasterXML/jackson ).
 
-Caffeine
-Copyright 2018 Ben Manes
-This product includes software developed as part of the Caffeine project
-( https://github.com/ben-manes/caffeine ).
+JSR305 Annotations for Findbugs
+Copyright 2009 Google
+This product includes software developed as part of the JSR305 Annotations for Findbugs project
+( https://code.google.com/archive/p/jsr-305/ ).
 
 Semver4j
 Copyright 2022-present Semver4j contributors
