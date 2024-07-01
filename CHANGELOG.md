@@ -34,6 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - throws a `BatchUpdateException` when at least one statement in the batch fails or attempts to return a result set.
   - the returned array contains `SUCCESS_NO_INFO` for successful statements and `EXECUTE_FAILED` for statements that
     threw a `BatchUpdateException`.
+- Fix connection issues to AstraDB when using protocol `jdbc:cassandra:dbaas` without specifying a hostname (see issue 
+  [#67](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/67)).
 
 ## [4.12.0] - 2024-05-05
 ### Added

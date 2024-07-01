@@ -214,7 +214,8 @@ class SessionHolder {
             }
         }
 
-        final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.get(TAG_CONTACT_POINTS);
+        final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.getOrDefault(TAG_CONTACT_POINTS,
+            new ArrayList<>());
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
         final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);

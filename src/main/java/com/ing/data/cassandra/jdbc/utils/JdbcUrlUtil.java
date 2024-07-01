@@ -323,6 +323,13 @@ public final class JdbcUrlUtil {
      */
     public static final String KEY_ACTIVE_PROFILE = "activeprofile";
 
+    /**
+     * Property name used to determine if the current connection is established to a cloud database. In such a case,
+     * the hostname can be ignored.
+     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
+     */
+    public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
+
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
     private static final String HOST_SEPARATOR = "--";
@@ -356,6 +363,7 @@ public final class JdbcUrlUtil {
             if (url.startsWith(PROTOCOL_DBAAS)) {
                 uriStartIndex = PROTOCOL_DBAAS.length();
                 isDbaasConnection = true;
+                props.put(TAG_DBAAS_CONNECTION, true);
             }
             final String rawUri = url.substring(uriStartIndex);
             final URI uri;
@@ -531,7 +539,8 @@ public final class JdbcUrlUtil {
                 .map(ContactPoint::toString)
                 .collect(Collectors.joining(HOST_SEPARATOR));
         }
-        if (hostsAndPorts == null) {
+        final boolean isDbaasConnection = (boolean) props.getOrDefault(TAG_DBAAS_CONNECTION, false);
+        if (hostsAndPorts == null && !isDbaasConnection) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);
         }
 
