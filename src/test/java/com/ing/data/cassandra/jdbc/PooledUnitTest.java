@@ -37,13 +37,14 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     private static final String PASSWORD = "secret";
     private static final String CONSISTENCY = "ONE";
     private static final String LOCAL_DATACENTER = "datacenter1";
+    private static final String COMPLIANCE_MODE = "Liquibase";
 
     @Test
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER, COMPLIANCE_MODE);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
 
         for (int i = 0; i < 2_000_000; i++) {
@@ -59,7 +60,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER, COMPLIANCE_MODE);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
 
@@ -84,7 +85,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER, COMPLIANCE_MODE);
         final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
         final Connection connection = pooledCassandraDataSource.getConnection();
         final Statement statement = connection.createStatement();
@@ -103,7 +104,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER, COMPLIANCE_MODE);
         assertNotNull(connectionPoolDataSource.unwrap(DataSource.class));
     }
 
@@ -112,7 +113,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
                 cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER);
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, LOCAL_DATACENTER, COMPLIANCE_MODE);
         assertThrows(SQLException.class, () -> connectionPoolDataSource.unwrap(this.getClass()));
     }
 }
