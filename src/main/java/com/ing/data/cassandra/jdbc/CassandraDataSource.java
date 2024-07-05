@@ -192,7 +192,8 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
 
     /**
      * Sets the compliance mode.
-     * @param complianceMode Compliance("Liquibase" for ex.).
+     *
+     * @param complianceMode The compliance mode to use for the connection (for example, {@code Liquibase}).
      */
     public void setComplianceMode(final String complianceMode) {
         this.complianceMode = complianceMode;
