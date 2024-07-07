@@ -39,7 +39,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
         final CassandraDataSource cds = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER,
-            PASSWORD, CONSISTENCY, "datacenter1", null);
+            PASSWORD, CONSISTENCY, "datacenter1");
         assertNotNull(cds.getContactPoints());
         assertEquals(1, cds.getContactPoints().size());
         final ContactPoint dsContactPoint = cds.getContactPoints().get(0);
@@ -49,9 +49,11 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals(USER, cds.getUser());
         assertEquals(PASSWORD, cds.getPassword());
 
-        final DataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
-                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1", COMPLIANCE_MODE);
+        CassandraDataSource cds2 = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
+            KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
+         cds2.setComplianceMode(COMPLIANCE_MODE);
+        final DataSource ds = cds2;
         assertNotNull(ds);
 
         // null username and password
@@ -65,7 +67,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
         assertEquals(CONSISTENCY, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_CONSISTENCY_LEVEL));
-        assertEquals(COMPLIANCE_MODE, ((CassandraConnection) cnx).getConnectionProperties().get(KEY_COMPLIANCE_MODE));
+        assertEquals(COMPLIANCE_MODE, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_COMPLIANCE_MODE));
 
         assertEquals(5, ds.getLoginTimeout());
     }
