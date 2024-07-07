@@ -20,7 +20,8 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Collections;
 
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.*;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
