@@ -59,22 +59,27 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * The Cassandra data source description.
      */
     protected static final String DATA_SOURCE_DESCRIPTION = "Cassandra Data Source";
+
     /**
      * The contact points of the data source.
      */
     protected List<ContactPoint> contactPoints;
+
     /**
      * The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */
     protected String databaseName;
+
     /**
      * The username used to connect to the data source.
      */
     protected String user;
+
     /**
      * The password used to connect to the data source.
      */
     protected String password;
+
     /**
      * The consistency level.
      * <p>
@@ -88,6 +93,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * The compliance mode.
      */
     protected String complianceMode = null;
+
     /**
      * The local datacenter.
      */

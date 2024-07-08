@@ -37,7 +37,6 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     private static final String PASSWORD = "secret";
     private static final String CONSISTENCY = "ONE";
     private static final String LOCAL_DATACENTER = "datacenter1";
-    private static final String COMPLIANCE_MODE = "Liquibase";
 
     @Test
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
