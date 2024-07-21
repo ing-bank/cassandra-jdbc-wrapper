@@ -376,6 +376,11 @@ public final class ErrorConstants {
     public static final String INVALID_PROFILE_NAME =
         "No execution profile named [%s], keep the current active profile.";
 
+    /**
+     * Error message used in any SQL exception thrown when trying to extract properties from a JDBC URL.
+     */
+    public static final String PROPERTIES_PARSING_FROM_URL_FAILED = "Failed to extract properties from the given URL.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

@@ -18,7 +18,10 @@ package com.ing.data.cassandra.jdbc;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -26,20 +29,45 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientConnectionException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildPropertyInfo;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CONNECTION_CREATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.PROPERTIES_PARSING_FROM_URL_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ENABLE_SSL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_KEEP_ALIVE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOAD_BALANCING_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_LOCAL_DATACENTER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 
 /**
  * The Cassandra driver implementation.
@@ -56,11 +84,13 @@ public class CassandraDriver implements Driver {
         }
     }
 
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraDriver.class);
+
     // Caching sessions so that multiple CassandraConnections created with the same parameters use the same Session.
     private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = Caffeine.newBuilder()
         .build(new CacheLoader<Map<String, String>, SessionHolder>() {
             @Override
-            public SessionHolder load(final Map<String, String> params) throws Exception {
+            public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
                 return new SessionHolder(params, sessionsCache);
             }
         });
@@ -121,19 +151,30 @@ public class CassandraDriver implements Driver {
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(final String url, final Properties props) {
-        Properties properties = props;
-        if (props == null) {
-            properties = new Properties();
+        Properties properties;
+        try {
+            properties = parseURL(url);
+            for (Map.Entry<Object, Object> propEntry : props.entrySet()) {
+                properties.putIfAbsent(propEntry.getKey(), propEntry.getValue());
+            }
+        } catch (final SQLException e) {
+            LOG.warn(PROPERTIES_PARSING_FROM_URL_FAILED, e);
+            properties = new Properties(props);
         }
-        final DriverPropertyInfo[] info = new DriverPropertyInfo[2];
 
-        info[0] = new DriverPropertyInfo(TAG_USER, properties.getProperty(TAG_USER));
-        info[0].description = "The 'user' property";
+        // Define the list of availableProperties.
+        final List<String> availableProperties = Arrays.asList(TAG_USER, TAG_PASSWORD, TAG_LOCAL_DATACENTER, TAG_DEBUG,
+            TAG_CONSISTENCY_LEVEL, TAG_ACTIVE_PROFILE, TAG_FETCH_SIZE, TAG_LOAD_BALANCING_POLICY, TAG_RETRY_POLICY,
+            TAG_RECONNECT_POLICY, TAG_ENABLE_SSL, TAG_SSL_ENGINE_FACTORY, TAG_SSL_HOSTNAME_VERIFICATION,
+            TAG_CLOUD_SECURE_CONNECT_BUNDLE, TAG_USE_KERBEROS, TAG_REQUEST_TIMEOUT, TAG_CONNECT_TIMEOUT,
+            TAG_TCP_NO_DELAY, TAG_KEEP_ALIVE, TAG_CONFIG_FILE, TAG_COMPLIANCE_MODE);
 
-        info[1] = new DriverPropertyInfo(TAG_PASSWORD, properties.getProperty(TAG_PASSWORD));
-        info[1].description = "The 'password' property";
+        final List<DriverPropertyInfo> info = new ArrayList<>();
+        for (String propertyName : availableProperties) {
+            info.add(buildPropertyInfo(propertyName, properties.get(propertyName)));
+        }
 
-        return info;
+        return info.toArray(new DriverPropertyInfo[]{});
     }
 
     /**

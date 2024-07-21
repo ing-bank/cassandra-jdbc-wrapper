@@ -12,7 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by PR
   [#56](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/56)). 
 - Add a method `setComplianceMode(String)` in `CassandraDataSource` to specify a specific compliance mode when getting
-  the connection from a `DataSource` (see issue [#68](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/68)).
+  the connection from a `DataSource` (see issue [#68](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/68), 
+  PR [#69](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/69)).
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.18.1.
 - Update Jackson dependencies to version 2.17.1.
@@ -20,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   [#58](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/58)).
 - Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see PR
   [#60](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/60)).
+- Fully implement `CassandraDriver.getPropertyInfo(String, Properties)` (see issue
+  [#66](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/66)).
 ### Fixed
 - Fix implementation of the methods `CassandraStatement.execute(String)` and `CassandraPreparedStatement.execute()` to
   return `true` even when the result set is empty (see 

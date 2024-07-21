@@ -112,6 +112,7 @@
         <java.version>1.8</java.version>
 
         <!-- Versions for dependencies -->
+        <approvaltests.version>24.3.0</approvaltests.version>
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
@@ -299,6 +300,13 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Approval tests -->
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
+            <version>${approvaltests.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Lombok (used only for some tests) -->
