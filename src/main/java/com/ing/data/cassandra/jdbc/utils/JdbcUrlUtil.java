@@ -92,17 +92,6 @@ public final class JdbcUrlUtil {
     public static final String TAG_FETCH_SIZE = "fetchSize";
 
     /**
-     * JDBC URL parameter key for the connection number of retries.
-     */
-    public static final String KEY_CONNECTION_RETRIES = "retries";
-
-    /**
-     * Property name used to retrieve the number of retries when the connection to Cassandra is established. This
-     * property is mapped from the JDBC URL parameter {@code retries}.
-     */
-    public static final String TAG_CONNECTION_RETRIES = "retries";
-
-    /**
      * JDBC URL parameter key for the load balancing policy.
      */
     public static final String KEY_LOAD_BALANCING_POLICY = "loadbalancing";
@@ -414,9 +403,6 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_FETCH_SIZE)) {
                     props.setProperty(TAG_FETCH_SIZE, params.get(KEY_FETCH_SIZE));
-                }
-                if (params.containsKey(KEY_CONNECTION_RETRIES)) {
-                    props.setProperty(TAG_CONNECTION_RETRIES, params.get(KEY_CONNECTION_RETRIES));
                 }
                 if (params.containsKey(KEY_LOAD_BALANCING_POLICY)) {
                     props.setProperty(TAG_LOAD_BALANCING_POLICY, params.get(KEY_LOAD_BALANCING_POLICY));

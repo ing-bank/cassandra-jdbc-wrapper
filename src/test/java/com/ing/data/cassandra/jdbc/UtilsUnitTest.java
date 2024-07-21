@@ -53,7 +53,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUND
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECTION_RETRIES;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
@@ -136,7 +135,6 @@ class UtilsUnitTest {
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_LOCAL_DATACENTER, "DC1");
                     put(TAG_DEBUG, "true");
-                    put(TAG_CONNECTION_RETRIES, "5");
                     put(TAG_LOAD_BALANCING_POLICY, "com.company.package.CustomLBPolicy");
                     put(TAG_RETRY_POLICY, "com.company.package.CustomRetryPolicy");
                     put(TAG_RECONNECT_POLICY, "ConstantReconnectionPolicy()");
