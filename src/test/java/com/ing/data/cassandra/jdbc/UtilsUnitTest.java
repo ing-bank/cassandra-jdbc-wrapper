@@ -261,9 +261,12 @@ class UtilsUnitTest {
 
     @Test
     void testHostIsIPv6() {
-        assertDoesNotThrow(
-            () -> parseURL("jdbc:cassandra://[0000:1111:2222:3333:4444:5555:aaaa:ffff]:8080/validKeyspace")
-        );
+        assertDoesNotThrow(() -> {
+            parseURL("jdbc:cassandra://[0000:1111:2222:3333:4444:5555:aaaa:ffff]:9042/validKeyspace");
+            parseURL("jdbc:cassandra://[0000:1111:2222:3333:::ffff]:9043--[0123::456b:789c:ffff]:9042/validKeyspace");
+            parseURL("jdbc:cassandra://[0000:1111:2222:3333:aaaa::ffff]--127.0.0.1--cassandra-host:9042/validKeyspace");
+            parseURL("jdbc:cassandra://[0000::ffff]:9042/validKeyspace");
+        });
     }
 
     @Test

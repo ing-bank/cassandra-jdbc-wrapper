@@ -19,6 +19,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -315,6 +316,7 @@ public final class JdbcUrlUtil {
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
     private static final String HOST_SEPARATOR = "--";
+    private static final String IPV6_FAKE_HOST = "ipv6_addr_%d";
 
     private JdbcUrlUtil() {
         // Private constructor to hide the public one.
@@ -347,19 +349,16 @@ public final class JdbcUrlUtil {
                 isDbaasConnection = true;
             }
             final String rawUri = url.substring(uriStartIndex);
-            final URI uri;
-            try {
-                uri = new URI(rawUri);
-            } catch (final URISyntaxException e) {
-                throw new SQLSyntaxErrorException(e);
-            }
+            final ImmutablePair<URI, Map<String, String>> uriParsingResult = parseToUri(rawUri);
+            final Map<String, String> ipV6Map = uriParsingResult.getRight();
+            final URI uri = uriParsingResult.getLeft();
 
             if (!isDbaasConnection) {
                 try {
                     if (StringUtils.isBlank(uri.getAuthority())) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
                     }
-                    final List<ContactPoint> contactPoints = parseContactPoints(uri.getAuthority());
+                    final List<ContactPoint> contactPoints = parseContactPoints(uri.getAuthority(), ipV6Map);
                     if (contactPoints.isEmpty()) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
                     }
@@ -464,7 +463,34 @@ public final class JdbcUrlUtil {
         return props;
     }
 
-    private static List<ContactPoint> parseContactPoints(final String toParse) {
+    private static ImmutablePair<URI, Map<String, String>> parseToUri(final String rawUriToParse)
+        throws SQLSyntaxErrorException {
+        String rawUri = rawUriToParse;
+        final Map<String, String> ipV6Map = new HashMap<>();
+        final URI uri;
+        try {
+            // If the JDBC URL contains some IPv6 addresses, we'll have to replace them by fake hosts for URI
+            // parsing since combining several IPv6 addresses ([::1]--[::f] for example) is not possible in a valid
+            // URI.
+            // See: https://datatracker.ietf.org/doc/html/rfc2732 and https://datatracker.ietf.org/doc/html/rfc3986
+            final Pattern ipV6AddressesPattern = Pattern.compile("\\[.*?]");
+            final Matcher ipV6AddressesMatcher = ipV6AddressesPattern.matcher(rawUri);
+            int i = 0;
+            while (ipV6AddressesMatcher.find()) {
+                final String ipV6ReplacingHost = String.format(IPV6_FAKE_HOST, i);
+                final String ipV6Address = ipV6AddressesMatcher.group();
+                rawUri = rawUri.replace(ipV6Address, ipV6ReplacingHost);
+                ipV6Map.put(ipV6ReplacingHost, ipV6Address);
+                i++;
+            }
+            uri = new URI(rawUri);
+        } catch (final URISyntaxException e) {
+            throw new SQLSyntaxErrorException(e);
+        }
+        return new ImmutablePair<>(uri, ipV6Map);
+    }
+
+    private static List<ContactPoint> parseContactPoints(final String toParse, final Map<String, String> ipV6Map) {
         // Check whether the value to parse ends with a port. If yes, we'll use this port as the common port for all
         // the hosts except if another port is specified for the host. When no port is specified at all, use the default
         // Cassandra port.
@@ -482,17 +508,12 @@ public final class JdbcUrlUtil {
             .map(part -> {
                 try {
                     int port = defaultPort.get();
-                    final String host;
-
-                    int lastIndex = part.lastIndexOf(':');
-                    if (lastIndex == -1) {
-                        host = part;
-                    } else {
-                        host = part.substring(0, lastIndex);
-                        port = Integer.parseInt(part.substring(lastIndex + 1));
+                    final String[] splitPart = part.split(":");
+                    if (splitPart.length > 1) {
+                        port = Integer.parseInt(splitPart[1]);
                     }
-
-                    return ContactPoint.of(host, port);
+                    final String host = splitPart[0];
+                    return ContactPoint.of(ipV6Map.getOrDefault(host, host), port);
                 } catch (final Exception e) {
                     throw new RuntimeException(String.format(INVALID_CONTACT_POINT, part));
                 }
