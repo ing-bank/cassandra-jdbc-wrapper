@@ -60,13 +60,26 @@ abstract class UsingCassandraContainerTest {
     }
 
     static void initConnection(final String keyspace, final String... parameters) throws Exception {
-        sqlConnection = newConnection(keyspace, parameters);
+        sqlConnection = newConnection(keyspace, false, parameters);
+    }
+
+    static void initConnectionUsingIpV6(final String keyspace, final String... parameters) throws Exception {
+        sqlConnection = newConnection(keyspace, true, parameters);
     }
 
     static CassandraConnection newConnection(final String keyspace, final String... parameters) throws Exception {
+        return newConnection(keyspace, false, parameters);
+    }
+
+    static CassandraConnection newConnection(final String keyspace, final boolean usingIpV6,
+                                             final String... parameters) throws Exception {
         final InetSocketAddress contactPoint = cassandraContainer.getContactPoint();
-        return (CassandraConnection) DriverManager.getConnection(buildJdbcUrl(contactPoint.getHostName(),
-            contactPoint.getPort(), keyspace, parameters));
+        String host = contactPoint.getHostName();
+        if (usingIpV6 && contactPoint.getHostName().contains("localhost")) {
+            host = "[::1]";
+        }
+        return (CassandraConnection) DriverManager.getConnection(buildJdbcUrl(host, contactPoint.getPort(),
+            keyspace, parameters));
     }
 
     static String buildJdbcUrl(final String host, final int port, final String keyspace, final String... parameters) {

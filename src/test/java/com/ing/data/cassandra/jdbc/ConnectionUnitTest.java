@@ -596,6 +596,15 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    void givenJdbcUrlWithIpV6Address_whenGetConnection_createConnection() throws Exception {
+        initConnectionUsingIpV6(KEYSPACE, "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        final ResultSet rs = sqlConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        assertNotNull(rs);
+        sqlConnection.close();
+    }
+
+    @Test
     void givenCassandraConnectionWithCustomExecProfile_whenExecuteStatement_useExpectedProfile() throws Exception {
         final String customProfileName = "customProfile";
         final URL confTestUrl = this.getClass().getClassLoader().getResource("test_application_multiprofiles.conf");
