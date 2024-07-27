@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.12.0</version>
+    <version>4.13.0</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -118,20 +118,20 @@
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <commons-lang3.version>3.15.0</commons-lang3.version>
         <java.driver.version>4.18.1</java.driver.version>
-        <jackson.version>2.17.1</jackson.version>
+        <jackson.version>2.17.2</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
         <semver4j.version>5.3.0</semver4j.version>
         <!-- Versions for test dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
-        <junit5.version>5.10.2</junit5.version>
-        <junit-platform.version>1.10.2</junit-platform.version>
-        <lombok.version>1.18.32</lombok.version>
+        <junit5.version>5.10.3</junit5.version>
+        <junit-platform.version>1.10.3</junit-platform.version>
+        <lombok.version>1.18.34</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
-        <astra-sdk.version>1.2.7</astra-sdk.version>
+        <testcontainers.version>1.20.0</testcontainers.version>
+        <astra-sdk.version>1.2.8</astra-sdk.version>
         <!-- Versions for plugins -->
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
