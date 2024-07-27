@@ -602,6 +602,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ResultSet rs = sqlConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
         assertNotNull(rs);
         sqlConnection.close();
+    }
 
     @Test
     void givenCassandraConnectionWithCustomExecProfile_whenExecuteStatement_useExpectedProfile() throws Exception {
