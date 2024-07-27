@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
@@ -58,22 +59,27 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * The Cassandra data source description.
      */
     protected static final String DATA_SOURCE_DESCRIPTION = "Cassandra Data Source";
+
     /**
      * The contact points of the data source.
      */
     protected List<ContactPoint> contactPoints;
+
     /**
      * The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */
     protected String databaseName;
+
     /**
      * The username used to connect to the data source.
      */
     protected String user;
+
     /**
      * The password used to connect to the data source.
      */
     protected String password;
+
     /**
      * The consistency level.
      * <p>
@@ -82,6 +88,12 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * </p>
      */
     protected String consistency = null;
+
+    /**
+     * The compliance mode.
+     */
+    protected String complianceMode = null;
+
     /**
      * The local datacenter.
      */
@@ -112,7 +124,8 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @param localDataCenter   The local datacenter.
      */
     public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String consistency, final String localDataCenter) {
+                               final String password, final String consistency,
+                               final String localDataCenter) {
         if (contactPoints != null && !contactPoints.isEmpty()) {
             setContactPoints(contactPoints);
         }
@@ -178,6 +191,15 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setConsistency(final String consistency) {
         this.consistency = consistency;
+    }
+
+    /**
+     * Sets the compliance mode.
+     *
+     * @param complianceMode The compliance mode to use for the connection (for example, {@code Liquibase}).
+     */
+    public void setComplianceMode(final String complianceMode) {
+        this.complianceMode = complianceMode;
     }
 
     /**
@@ -280,6 +302,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         }
         if (this.localDataCenter != null) {
             props.setProperty(TAG_LOCAL_DATACENTER, localDataCenter);
+        }
+        if (this.complianceMode != null) {
+            props.setProperty(TAG_COMPLIANCE_MODE, complianceMode);
         }
 
         final String url = PROTOCOL.concat(createSubName(props));

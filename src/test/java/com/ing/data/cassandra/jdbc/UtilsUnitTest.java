@@ -25,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.semver4j.Semver;
 
+import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_4;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildPropertyInfo;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
@@ -51,7 +53,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUND
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECTION_RETRIES;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
@@ -68,8 +69,10 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPol
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -133,7 +136,6 @@ class UtilsUnitTest {
                     put(TAG_DATABASE_NAME, "Keyspace1");
                     put(TAG_LOCAL_DATACENTER, "DC1");
                     put(TAG_DEBUG, "true");
-                    put(TAG_CONNECTION_RETRIES, "5");
                     put(TAG_LOAD_BALANCING_POLICY, "com.company.package.CustomLBPolicy");
                     put(TAG_RETRY_POLICY, "com.company.package.CustomRetryPolicy");
                     put(TAG_RECONNECT_POLICY, "ConstantReconnectionPolicy()");
@@ -340,5 +342,30 @@ class UtilsUnitTest {
             new BasicVersionedMetadata("b", null, CASSANDRA_5),
             new BasicVersionedMetadata("c", CASSANDRA_5)
         ), CASSANDRA_4));
+    }
+
+    @Test
+    void testBuildPropertyInfo() {
+        DriverPropertyInfo propertyInfo = buildPropertyInfo("prop", null);
+        assertEquals("prop", propertyInfo.name);
+        assertEquals(StringUtils.EMPTY, propertyInfo.value);
+        assertFalse(propertyInfo.required);
+        assertEquals(StringUtils.EMPTY, propertyInfo.description);
+        assertNull(propertyInfo.choices);
+
+        propertyInfo = buildPropertyInfo("propInt", 1500);
+        assertEquals("propInt", propertyInfo.name);
+        assertEquals("1500", propertyInfo.value);
+
+        propertyInfo = buildPropertyInfo("propStr", "abc");
+        assertEquals("propStr", propertyInfo.name);
+        assertEquals("abc", propertyInfo.value);
+
+        propertyInfo = buildPropertyInfo("keepAlive", true);
+        assertEquals("keepAlive", propertyInfo.name);
+        assertEquals(Boolean.TRUE.toString(), propertyInfo.value);
+        assertFalse(propertyInfo.required);
+        assertEquals("Whether the TCP keep-alive is enabled. By default, it's disabled.", propertyInfo.description);
+        assertThat(Arrays.asList(propertyInfo.choices), hasItems("true", "false"));
     }
 }

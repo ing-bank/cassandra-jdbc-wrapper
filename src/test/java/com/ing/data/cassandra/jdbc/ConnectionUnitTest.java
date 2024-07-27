@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import com.datastax.driver.core.SimpleStatement;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
@@ -36,6 +37,7 @@ import com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,8 +91,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "configfile=wrong_application.conf", "consistency=LOCAL_QUORUM",
             "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
-        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
-        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(sqlConnection.getConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistencyLevel);
         sqlConnection.close();
@@ -145,8 +147,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection.getSession().getContext());
         assertNotNull(sqlConnection.getSession().getContext().getConfig());
         assertNotNull(sqlConnection.getSession().getContext().getConfig().getDefaultProfile());
-        assertNotNull(sqlConnection.getDefaultConsistencyLevel());
-        final ConsistencyLevel consistencyLevel = sqlConnection.getDefaultConsistencyLevel();
+        assertNotNull(sqlConnection.getConsistencyLevel());
+        final ConsistencyLevel consistencyLevel = sqlConnection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.TWO, consistencyLevel);
 
@@ -464,7 +466,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             .build();
 
         final CassandraConnection jdbcConnection =
-            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null);
+            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null, null);
         final ResultSet resultSet = jdbcConnection.createStatement()
             .executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
@@ -480,7 +482,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
         final Liquibase liquibaseMode = new Liquibase();
         final CassandraConnection jdbcConnection =
-            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, liquibaseMode);
+            new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, liquibaseMode, null);
         liquibaseMode.setConnection(jdbcConnection);
         final ResultSet resultSet = jdbcConnection.createStatement()
             .executeQuery("SELECT release_version FROM system.local");
@@ -565,7 +567,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             .build();
 
         final CassandraConnection jdbcConnection =
-            spy(new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null));
+            spy(new CassandraConnection(session, KEYSPACE, ConsistencyLevel.ALL, false, null, null));
         final CassandraStatement mockStmt = mock(CassandraStatement.class);
         when(mockStmt.execute(anyString())).then(invocationOnMock -> {
             // We test isValid() with a timeout of 1 second, so wait more than 1 second to simulate a query timeout.
@@ -600,6 +602,37 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ResultSet rs = sqlConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
         assertNotNull(rs);
         sqlConnection.close();
+
+    @Test
+    void givenCassandraConnectionWithCustomExecProfile_whenExecuteStatement_useExpectedProfile() throws Exception {
+        final String customProfileName = "customProfile";
+        final URL confTestUrl = this.getClass().getClassLoader().getResource("test_application_multiprofiles.conf");
+        if (confTestUrl == null) {
+            fail("Unable to find test_application_multiprofiles.conf");
+        }
+        initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "activeprofile=" + customProfileName);
+        assertNotNull(sqlConnection);
+        assertNotNull(sqlConnection.getSession());
+        assertNotNull(sqlConnection.getSession().getContext());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig());
+        assertNotNull(sqlConnection.getSession().getContext().getConfig().getProfile(customProfileName));
+        assertEquals(Duration.ofSeconds(1), sqlConnection.getSession().getContext().getConfig()
+            .getProfile(customProfileName).getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
+        assertEquals(Duration.ofSeconds(8), sqlConnection.getSession().getContext().getConfig()
+            .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
+        assertEquals(customProfileName, sqlConnection.getActiveExecutionProfile().getName());
+
+        // Check executing a query on a connection with a specific profile effectively use this profile.
+        final CqlSession spiedSession = spy((CqlSession) sqlConnection.getSession());
+        final CassandraConnection jdbcConnection = new CassandraConnection(spiedSession, KEYSPACE,
+            sqlConnection.getConsistencyLevel(), false, null, customProfileName);
+        jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
+        final ArgumentCaptor<SimpleStatement> stmtCaptor = ArgumentCaptor.forClass(SimpleStatement.class);
+        verify(spiedSession).execute((com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.capture());
+        final com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt =
+            (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
+        assertNotNull(executedStmt.getExecutionProfile());
+        assertEquals(customProfileName, executedStmt.getExecutionProfile().getName());
     }
 
 }

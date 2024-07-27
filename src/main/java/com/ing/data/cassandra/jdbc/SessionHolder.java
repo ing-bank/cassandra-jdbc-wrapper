@@ -67,7 +67,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERT
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
@@ -88,6 +87,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTO
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 
@@ -214,7 +214,8 @@ class SessionHolder {
             }
         }
 
-        final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.get(TAG_CONTACT_POINTS);
+        final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.getOrDefault(TAG_CONTACT_POINTS,
+            new ArrayList<>());
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
         final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);

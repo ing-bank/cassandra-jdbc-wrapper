@@ -4,15 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.13.0] - 2024-07-27
 ### Added
+- Add support for switching execution profiles.
 - Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
   [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
+- Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by PR
+  [#56](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/56)). 
+- Add a method `setComplianceMode(String)` in `CassandraDataSource` to specify a specific compliance mode when getting
+  the connection from a `DataSource` (see issue [#68](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/68), 
+  PR [#69](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/69)).
 ### Changed
+- Update Java Driver for Apache Cassandra® to version 4.18.1.
+- Update Apache Commons Lang to version 3.15.0.
+- Update Jackson dependencies to version 2.17.2.
 - Modify the scale value returned for the type `TIMESTAMP` (see PR
   [#58](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/58)).
 - Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see PR
   [#60](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/60)).
+- Fully implement `CassandraDriver.getPropertyInfo(String, Properties)` (see issue
+  [#66](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/66)).
 ### Fixed
 - Fix implementation of the methods `CassandraStatement.execute(String)` and `CassandraPreparedStatement.execute()` to
   return `true` even when the result set is empty (see 
@@ -24,6 +35,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   [#59](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/59)).
 - Fix return value of `CassandraDatabaseMetaData.supportsBatchUpdates()` (see PR
   [#61](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/61)).
+- Fix implementation of `Statement.executeBatch()` (see issue 
+  [#63](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/63)) to conform with JDBC specifications: 
+  - throws a `BatchUpdateException` when at least one statement in the batch fails or attempts to return a result set.
+  - the returned array contains `SUCCESS_NO_INFO` for successful statements and `EXECUTE_FAILED` for statements that
+    threw a `BatchUpdateException`.
+- Fix connection issues to AstraDB when using protocol `jdbc:cassandra:dbaas` without specifying a hostname (see issue 
+  [#67](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/67)).
 
 ## [4.12.0] - 2024-05-05
 ### Added
@@ -276,6 +294,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.13.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.12.0...v4.13.0
 [4.12.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.1...v4.12.0
 [4.11.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.0...v4.11.1
 [4.11.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.10.2...v4.11.0

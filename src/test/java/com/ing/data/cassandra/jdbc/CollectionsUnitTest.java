@@ -15,9 +15,11 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -72,6 +74,13 @@ class CollectionsUnitTest extends UsingCassandraContainerTest {
         assertThat(listObject, is(instanceOf(ArrayList.class)));
         assertEquals(3, listObject.size());
         assertEquals(789L, listObject.get(2));
+
+        // Get the list as java.sql.Array object.
+        final Array arrayObject = resultSet.getArray("listValue");
+        assertThat(arrayObject, is(instanceOf(ArrayImpl.class)));
+        final Object[] array = ((ArrayImpl) arrayObject).getArray();
+        assertEquals(3, array.length);
+        assertEquals(789L, array[2]);
 
         statement.close();
     }

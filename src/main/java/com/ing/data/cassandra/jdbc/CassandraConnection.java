@@ -70,9 +70,11 @@ import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_FETCH_SIZE_PARAMETER;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_PROFILE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
@@ -130,13 +132,15 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
-    private final ConsistencyLevel defaultConsistencyLevel;
+    private ConsistencyLevel consistencyLevel;
     private int defaultFetchSize = FALLBACK_FETCH_SIZE;
     private String currentKeyspace;
     private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
     private final OptionSet optionSet;
+    private DriverExecutionProfile activeExecutionProfile;
+    private DriverExecutionProfile lastUsedExecutionProfile;
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster.
@@ -147,8 +151,11 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;
         final Properties sessionProperties = sessionHolder.properties;
-        final DriverExecutionProfile defaultConfigProfile =
-            sessionHolder.session.getContext().getConfig().getDefaultProfile();
+        this.cSession = sessionHolder.session;
+        this.metadata = this.cSession.getMetadata();
+        final String executionProfile = sessionProperties.getProperty(TAG_ACTIVE_PROFILE,
+            DriverExecutionProfile.DEFAULT_NAME);
+        setActiveExecutionProfile(executionProfile);
         this.debugMode = Boolean.TRUE.toString().equals(sessionProperties.getProperty(TAG_DEBUG, StringUtils.EMPTY));
         this.connectionProperties = (Properties) sessionProperties.clone();
         this.clientInfo = new Properties();
@@ -156,12 +163,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.currentKeyspace = sessionProperties.getProperty(TAG_DATABASE_NAME);
         this.optionSet = lookupOptionSet(sessionProperties.getProperty(TAG_COMPLIANCE_MODE));
         this.username = sessionProperties.getProperty(TAG_USER,
-            defaultConfigProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
-        this.defaultConsistencyLevel = DefaultConsistencyLevel.valueOf(
+            this.activeExecutionProfile.getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, StringUtils.EMPTY));
+        this.consistencyLevel = DefaultConsistencyLevel.valueOf(
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
-                defaultConfigProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
+                this.activeExecutionProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
                     ConsistencyLevel.LOCAL_ONE.name())));
-        final int fetchSizeFromProfile = defaultConfigProfile.getInt(DefaultDriverOption.REQUEST_PAGE_SIZE,
+        final int fetchSizeFromProfile = this.activeExecutionProfile.getInt(DefaultDriverOption.REQUEST_PAGE_SIZE,
             FALLBACK_FETCH_SIZE);
         final String fetchSizeParameter = sessionProperties.getProperty(TAG_FETCH_SIZE);
         try {
@@ -174,8 +181,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             LOG.warn(String.format(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile));
             this.defaultFetchSize = fetchSizeFromProfile;
         }
-        this.cSession = sessionHolder.session;
-        this.metadata = this.cSession.getMetadata();
 
         LOG.info("Connected to cluster: {}, with session: {}",
             Objects.toString(getCatalog(), "<not available>"), this.cSession.getName());
@@ -203,10 +208,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @param defaultConsistencyLevel The default consistency level.
      * @param debugMode               Debug mode flag.
      * @param optionSet               The compliance mode option set to use.
+     * @param defaultExecutionProfile The name of the default execution profile to use.
      */
     public CassandraConnection(final Session cSession, final String currentKeyspace,
                                final ConsistencyLevel defaultConsistencyLevel,
-                               final boolean debugMode, final OptionSet optionSet) {
+                               final boolean debugMode, final OptionSet optionSet,
+                               final String defaultExecutionProfile) {
         this.sessionHolder = null;
         this.connectionProperties = new Properties();
 
@@ -219,8 +226,9 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.currentKeyspace = currentKeyspace;
         this.cSession = cSession;
         this.metadata = cSession.getMetadata();
-        this.defaultConsistencyLevel = defaultConsistencyLevel;
+        this.consistencyLevel = defaultConsistencyLevel;
         this.debugMode = debugMode;
+        setActiveExecutionProfile(Objects.toString(defaultExecutionProfile, DriverExecutionProfile.DEFAULT_NAME));
         final List<TypeCodec<?>> codecs = new ArrayList<>();
         codecs.add(new TimestampToLongCodec());
         codecs.add(new LongToIntCodec());
@@ -375,12 +383,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     /**
-     * Gets the default consistency level applied to this connection.
+     * Gets the consistency level currently applied to this connection.
      *
-     * @return The default consistency level applied to this connection.
+     * @return The consistency level currently applied to this connection.
      */
-    public ConsistencyLevel getDefaultConsistencyLevel() {
-        return this.defaultConsistencyLevel;
+    public ConsistencyLevel getConsistencyLevel() {
+        return this.consistencyLevel;
+    }
+
+    /**
+     * Sets the consistency level applied to this connection.
+     *
+     * @param consistencyLevel  The consistency level to apply to this connection.
+     */
+    public void setConsistencyLevel(final ConsistencyLevel consistencyLevel) {
+         this.consistencyLevel = consistencyLevel;
     }
 
     /**
@@ -609,6 +626,48 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         final OptionSet optionSet = new Default();
         optionSet.setConnection(this);
         return optionSet;
+    }
+
+    /**
+     * Gets the active execution profile.
+     *
+     * @return The active execution profile.
+     */
+    public DriverExecutionProfile getActiveExecutionProfile() {
+        return this.activeExecutionProfile;
+    }
+
+    /**
+     * Sets a new execution profile for the current connection.
+     * <p>
+     *     If the given profile name is invalid, this method has no effect.
+     * </p>
+     *
+     * @param profile The execution profile to set.
+     */
+    public void setActiveExecutionProfile(final String profile) {
+        final DriverExecutionProfile currentProfile = this.activeExecutionProfile;
+        try {
+            this.activeExecutionProfile = this.cSession.getContext().getConfig().getProfile(profile);
+            this.lastUsedExecutionProfile = currentProfile;
+        } catch (final IllegalArgumentException e) {
+            LOG.warn(String.format(INVALID_PROFILE_NAME, profile));
+            if (this.activeExecutionProfile == null) {
+                this.activeExecutionProfile = this.cSession.getContext().getConfig().getDefaultProfile();
+            }
+        }
+    }
+
+    /**
+     * Restores the last execution profile defined before switching it.
+     * <p>
+     *     If the execution profile has never been changed previously, this method has no effect.
+     * </p>
+     */
+    public void restoreLastExecutionProfile() {
+        if (this.lastUsedExecutionProfile != null) {
+            this.activeExecutionProfile = this.lastUsedExecutionProfile;
+        }
     }
 
 }

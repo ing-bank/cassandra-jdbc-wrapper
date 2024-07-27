@@ -93,17 +93,6 @@ public final class JdbcUrlUtil {
     public static final String TAG_FETCH_SIZE = "fetchSize";
 
     /**
-     * JDBC URL parameter key for the connection number of retries.
-     */
-    public static final String KEY_CONNECTION_RETRIES = "retries";
-
-    /**
-     * Property name used to retrieve the number of retries when the connection to Cassandra is established. This
-     * property is mapped from the JDBC URL parameter {@code retries}.
-     */
-    public static final String TAG_CONNECTION_RETRIES = "retries";
-
-    /**
      * JDBC URL parameter key for the load balancing policy.
      */
     public static final String KEY_LOAD_BALANCING_POLICY = "loadbalancing";
@@ -313,6 +302,24 @@ public final class JdbcUrlUtil {
      */
     public static final String TAG_CONTACT_POINTS = "contactPoints";
 
+    /**
+     * Property name used to retrieve the execution profile to use when the connection to Cassandra is created.
+     * This property is mapped from the JDBC URL parameter {@code activeprofile}.
+     */
+    public static final String TAG_ACTIVE_PROFILE = "activeProfile";
+
+    /**
+     * JDBC URL parameter key for the active execution profile.
+     */
+    public static final String KEY_ACTIVE_PROFILE = "activeprofile";
+
+    /**
+     * Property name used to determine if the current connection is established to a cloud database. In such a case,
+     * the hostname can be ignored.
+     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
+     */
+    public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
+
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
     private static final String HOST_SEPARATOR = "--";
@@ -347,6 +354,7 @@ public final class JdbcUrlUtil {
             if (url.startsWith(PROTOCOL_DBAAS)) {
                 uriStartIndex = PROTOCOL_DBAAS.length();
                 isDbaasConnection = true;
+                props.put(TAG_DBAAS_CONNECTION, true);
             }
             final String rawUri = url.substring(uriStartIndex);
             final ImmutablePair<URI, Map<String, String>> uriParsingResult = parseToUri(rawUri);
@@ -394,9 +402,6 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_FETCH_SIZE)) {
                     props.setProperty(TAG_FETCH_SIZE, params.get(KEY_FETCH_SIZE));
-                }
-                if (params.containsKey(KEY_CONNECTION_RETRIES)) {
-                    props.setProperty(TAG_CONNECTION_RETRIES, params.get(KEY_CONNECTION_RETRIES));
                 }
                 if (params.containsKey(KEY_LOAD_BALANCING_POLICY)) {
                     props.setProperty(TAG_LOAD_BALANCING_POLICY, params.get(KEY_LOAD_BALANCING_POLICY));
@@ -450,6 +455,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_COMPLIANCE_MODE)) {
                     props.setProperty(TAG_COMPLIANCE_MODE, params.get(KEY_COMPLIANCE_MODE));
+                }
+                if (params.containsKey(KEY_ACTIVE_PROFILE)) {
+                    props.setProperty(TAG_ACTIVE_PROFILE, params.get(KEY_ACTIVE_PROFILE));
                 }
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
@@ -544,7 +552,8 @@ public final class JdbcUrlUtil {
                 .map(ContactPoint::toString)
                 .collect(Collectors.joining(HOST_SEPARATOR));
         }
-        if (hostsAndPorts == null) {
+        final boolean isDbaasConnection = (boolean) props.getOrDefault(TAG_DBAAS_CONNECTION, false);
+        if (hostsAndPorts == null && !isDbaasConnection) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);
         }
 

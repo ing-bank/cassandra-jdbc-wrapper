@@ -24,7 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.DriverPropertyInfo;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -161,6 +163,27 @@ public final class DriverUtil {
             .map(VersionedMetadata::getName)
             .sorted()
             .collect(Collectors.joining(","));
+    }
+
+    /**
+     * Builds an instance of {@link DriverPropertyInfo} for the given driver property and value.
+     *
+     * @param propertyName The property name.
+     * @param value        The current value of the property.
+     * @return The driver property info.
+     */
+    public static DriverPropertyInfo buildPropertyInfo(final String propertyName, final Object value) {
+        final DriverPropertyInfo propertyInfo = new DriverPropertyInfo(propertyName,
+            Objects.toString(value, StringUtils.EMPTY));
+        final String driverPropertyDefinition = "driver.properties." + propertyName;
+
+        final String propertyChoices = getDriverProperty(driverPropertyDefinition + ".choices");
+        if (StringUtils.isNotBlank(propertyChoices)) {
+            propertyInfo.choices = propertyChoices.split(",");
+        }
+        propertyInfo.required = Boolean.getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
+        propertyInfo.description = getDriverProperty(driverPropertyDefinition);
+        return propertyInfo;
     }
 
 }

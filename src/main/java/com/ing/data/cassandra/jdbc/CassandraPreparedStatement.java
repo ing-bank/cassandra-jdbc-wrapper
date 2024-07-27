@@ -45,6 +45,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.sql.BatchUpdateException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
@@ -78,6 +79,8 @@ import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToByteArr
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToInstant;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalDate;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalTime;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_STATEMENT_FAILURE_MSG;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_UPDATE_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE_BINDING_INDEX;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.OUT_OF_BOUNDS_BINDING_INDEX;
@@ -144,7 +147,9 @@ public class CassandraPreparedStatement extends CassandraStatement
         }
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
-            this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+            this.boundStatement = this.preparedStatement.boundStatementBuilder()
+                .setExecutionProfile(this.connection.getActiveExecutionProfile())
+                .build();
             this.batchStatements = new ArrayList<>();
             this.count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
         } catch (final Exception e) {
@@ -215,7 +220,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             }
             this.boundStatement = this.boundStatement
                 .setPageSize(this.getFetchSize()) // Set paging to avoid timeout and node harm.
-                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
+                .setConsistencyLevel(this.connection.getConsistencyLevel());
             for (int i = 0; i < getBoundStatementVariableDefinitions().size(); i++) {
                 // Set parameters to null if unset.
                 if (!this.boundStatement.isSet(i)) {
@@ -231,7 +236,9 @@ public class CassandraPreparedStatement extends CassandraStatement
     @Override
     public void addBatch() throws SQLException {
         this.batchStatements.add(this.boundStatement);
-        this.boundStatement = this.preparedStatement.boundStatementBuilder().build();
+        this.boundStatement = this.preparedStatement.boundStatementBuilder()
+            .setExecutionProfile(this.connection.getActiveExecutionProfile())
+            .build();
         if (this.batchStatements.size() > MAX_ASYNC_QUERIES) {
             throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, batchStatements.size()));
         }
@@ -271,24 +278,47 @@ public class CassandraPreparedStatement extends CassandraStatement
                     LOG.trace("CQL: {}", this.cql);
                 }
                 final BoundStatement boundStatement = statement.setConsistencyLevel(
-                    this.connection.getDefaultConsistencyLevel());
+                    this.connection.getConsistencyLevel());
                 final CompletionStage<AsyncResultSet> resultSetFuture = getCqlSession().executeAsync(boundStatement);
                 futures.add(resultSetFuture);
             }
 
             int i = 0;
+            boolean hasFailures = false;
+            final StringBuilder errMsgBuilder = new StringBuilder(BATCH_UPDATE_FAILED);
             for (final CompletionStage<AsyncResultSet> future : futures) {
-                CompletableFutures.getUninterruptibly(future);
-                returnCounts[i] = 1;
-                i++;
+                try {
+                    final AsyncResultSet asyncResultSet = CompletableFutures.getUninterruptibly(future);
+                    if (asyncResultSet.getColumnDefinitions().size() > 0) {
+                        returnCounts[i] = EXECUTE_FAILED;
+                        hasFailures = true;
+                        errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i,
+                            "attempts to return a result set"));
+                    } else {
+                        returnCounts[i] = SUCCESS_NO_INFO;
+                    }
+                } catch (final Exception e) {
+                    returnCounts[i] = EXECUTE_FAILED;
+                    hasFailures = true;
+                    errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i, e.getMessage()));
+                } finally {
+                    i++;
+                }
             }
 
-            // Empty the batch statement list after execution.
-            this.batchStatements = new ArrayList<>();
+            // If at least one statement in the batch has failed, throw a BatchUpdateException with the appropriate
+            // updateCounts (i.e. failed statements have value EXECUTE_FAILED).
+            if (hasFailures) {
+                throw new BatchUpdateException(errMsgBuilder.toString(), returnCounts);
+            }
+        } catch (final SQLException sqlEx) {
+            // Any SQLException can be re-throw as is, without being wrapped into another SQLException.
+            throw sqlEx;
         } catch (final Exception e) {
+            throw new SQLTransientException(e);
+        } finally {
             // Empty the batch statement list after execution even if it failed.
             this.batchStatements = new ArrayList<>();
-            throw new SQLTransientException(e);
         }
 
         return returnCounts;

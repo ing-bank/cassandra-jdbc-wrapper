@@ -84,7 +84,7 @@ class DbaasAstraIntegrationTest {
              * Note: Astra can be accessed with only a token (username='token').
              */
             sqlConnection = (CassandraConnection) DriverManager.getConnection(
-                "jdbc:cassandra://dbaas/" + KEYSPACE_NAME +
+                "jdbc:cassandra:dbaas:///" + KEYSPACE_NAME +
                     "?user=" + "token" +
                     "&password=" + TestUtils.getAstraToken() + // env var ASTRA_DB_APPLICATION_TOKEN
                     "&consistency=" + "LOCAL_QUORUM" +

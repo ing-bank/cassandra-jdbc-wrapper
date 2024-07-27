@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -54,11 +55,15 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_HOLD_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEEP_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TYPE_RS;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_STATEMENT_FAILURE_MSG;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_UPDATE_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_GEN_KEYS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_MULTIPLE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_STMT;
+import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.containsSpecialCommands;
+import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.getCommandExecutor;
 import static org.apache.commons.lang3.StringUtils.countMatches;
 
 /**
@@ -222,7 +227,7 @@ public class CassandraStatement extends AbstractStatement
         this.connection = connection;
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
-        this.consistencyLevel = connection.getDefaultConsistencyLevel();
+        this.consistencyLevel = connection.getConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
 
@@ -329,6 +334,11 @@ public class CassandraStatement extends AbstractStatement
         try {
             final List<String> cqlQueries = splitStatements(cql);
             final int nbQueriesToExecute = cqlQueries.size();
+
+            // If the list of statements contains at least one special command, all the statements must be executed
+            // synchronously.
+            final boolean containsSpecialCommands = containsSpecialCommands(cql);
+
             if (nbQueriesToExecute > 1
                 && !(cql.trim().toLowerCase().startsWith("begin")
                 && cql.toLowerCase().contains("batch") && cql.toLowerCase().contains("apply"))) {
@@ -336,14 +346,15 @@ public class CassandraStatement extends AbstractStatement
 
                 // Several statements in the query to execute potentially asynchronously...
                 if (nbQueriesToExecute > MAX_ASYNC_QUERIES * 1.1) {
-                    // Protect the cluster from receiving too many queries at once and force the dev to split the load
+                    // Protect the cluster from receiving too many queries at once and force the dev to split the load.
                     throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, nbQueriesToExecute));
                 }
 
                 // If we should not execute the queries asynchronously, for example if they must be executed in the
                 // specified order (e.g. in Liquibase scripts with queries such as CREATE TABLE t, then
-                // INSERT INTO t ...).
-                if (!this.connection.getOptionSet().executeMultipleQueriesByStatementAsync()) {
+                // INSERT INTO t ...; or if it contains special commands such as CONSISTENCY <level>).
+                if (!this.connection.getOptionSet().executeMultipleQueriesByStatementAsync()
+                    || containsSpecialCommands) {
                     for (final String cqlQuery : cqlQueries) {
                         final com.datastax.oss.driver.api.core.cql.ResultSet rs = executeSingleStatement(cqlQuery);
                         results.add(rs);
@@ -354,7 +365,8 @@ public class CassandraStatement extends AbstractStatement
                             LOG.debug("CQL: {}", cqlQuery);
                         }
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
-                            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+                            .setExecutionProfile(this.connection.getActiveExecutionProfile())
+                            .setConsistencyLevel(this.connection.getConsistencyLevel())
                             .setPageSize(this.fetchSize);
                         if (this.customTimeoutProfile != null) {
                             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -389,12 +401,22 @@ public class CassandraStatement extends AbstractStatement
         }
     }
 
-    private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql) {
+    private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql)
+        throws SQLException {
         if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
             LOG.debug("CQL: {}", cql);
         }
+
+        // If the CQL statement is a special command, execute it using the appropriate special command executor and
+        // return the result. Otherwise, execute the statement through the driver.
+        final SpecialCommands.SpecialCommandExecutor commandExecutor = getCommandExecutor(cql);
+        if (commandExecutor != null) {
+            return commandExecutor.execute(this, cql);
+        }
+
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
-            .setConsistencyLevel(this.connection.getDefaultConsistencyLevel())
+            .setExecutionProfile(this.connection.getActiveExecutionProfile())
+            .setConsistencyLevel(this.connection.getConsistencyLevel())
             .setPageSize(this.fetchSize);
         if (this.customTimeoutProfile != null) {
             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -426,30 +448,63 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int[] executeBatch() throws SQLException {
         final int[] returnCounts = new int[this.batchQueries.size()];
-        final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-        if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-            LOG.debug("CQL statements: {}", this.batchQueries.size());
-        }
-
-        for (final String query : this.batchQueries) {
+        try {
+            final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
             if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.debug("CQL: {}", query);
+                LOG.debug("CQL statements: {}", this.batchQueries.size());
             }
-            SimpleStatement stmt = SimpleStatement.newInstance(query)
-                .setConsistencyLevel(this.connection.getDefaultConsistencyLevel());
-            if (this.customTimeoutProfile != null) {
-                stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
-            }
-            final CompletionStage<AsyncResultSet> resultSetFuture =
-                ((CqlSession) this.connection.getSession()).executeAsync(stmt);
-            futures.add(resultSetFuture);
-        }
 
-        int i = 0;
-        for (final CompletionStage<AsyncResultSet> future : futures) {
-            CompletableFutures.getUninterruptibly(future);
-            returnCounts[i] = 1;
-            i++;
+            for (final String query : this.batchQueries) {
+                if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
+                    LOG.debug("CQL: {}", query);
+                }
+                SimpleStatement stmt = SimpleStatement.newInstance(query)
+                    .setExecutionProfile(this.connection.getActiveExecutionProfile())
+                    .setConsistencyLevel(this.connection.getConsistencyLevel());
+                if (this.customTimeoutProfile != null) {
+                    stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
+                }
+                final CompletionStage<AsyncResultSet> resultSetFuture =
+                    ((CqlSession) this.connection.getSession()).executeAsync(stmt);
+                futures.add(resultSetFuture);
+            }
+
+            int i = 0;
+            boolean hasFailures = false;
+            final StringBuilder errMsgBuilder = new StringBuilder(BATCH_UPDATE_FAILED);
+            for (final CompletionStage<AsyncResultSet> future : futures) {
+                try {
+                    final AsyncResultSet asyncResultSet = CompletableFutures.getUninterruptibly(future);
+                    if (asyncResultSet.getColumnDefinitions().size() > 0) {
+                        returnCounts[i] = EXECUTE_FAILED;
+                        hasFailures = true;
+                        errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i,
+                            "attempts to return a result set"));
+                    } else {
+                        returnCounts[i] = SUCCESS_NO_INFO;
+                    }
+                } catch (final Exception e) {
+                    returnCounts[i] = EXECUTE_FAILED;
+                    hasFailures = true;
+                    errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i, e.getMessage()));
+                } finally {
+                    i++;
+                }
+            }
+
+            // If at least one statement in the batch has failed, throw a BatchUpdateException with the appropriate
+            // updateCounts (i.e. failed statements have value EXECUTE_FAILED).
+            if (hasFailures) {
+                throw new BatchUpdateException(errMsgBuilder.toString(), returnCounts);
+            }
+        } catch (final SQLException sqlEx) {
+            // Any SQLException can be re-throw as is, without being wrapped into another SQLException.
+            throw sqlEx;
+        } catch (final Exception e) {
+            throw new SQLTransientException(e);
+        } finally {
+            // Empty the batch statement list after execution even if it failed.
+            this.batchQueries = new ArrayList<>();
         }
 
         return returnCounts;
@@ -634,8 +689,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getQueryTimeout() throws SQLException {
         checkNotClosed();
-        DriverExecutionProfile activeProfile =
-            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        DriverExecutionProfile activeProfile = this.connection.getActiveExecutionProfile();
         if (this.customTimeoutProfile != null) {
             activeProfile = this.customTimeoutProfile;
         }
@@ -658,10 +712,9 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public void setQueryTimeout(final int seconds) throws SQLException {
         checkNotClosed();
-        final DriverExecutionProfile defaultProfile =
-            this.connection.getSession().getContext().getConfig().getDefaultProfile();
+        final DriverExecutionProfile activeProfile = this.connection.getActiveExecutionProfile();
         this.customTimeoutProfile =
-            defaultProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
+            activeProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
     }
 
     @Override

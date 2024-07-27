@@ -155,10 +155,16 @@ import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
  *     <tr><td>varint   </td><td>{@link BigInteger} </td><td>Arbitrary-precision integer</td></tr>
  *     <tr><td>vector   </td><td>{@link CqlVector}  </td><td>A n-dimensional vector</td></tr>
  * </table>
- * See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
+ * <p>
+ *     See: <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cql_data_types_c.html">
  *     CQL data types reference</a> and
- * <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
+ *     <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/temporal_types/">
  *     CQL temporal types reference</a>.
+ * </p>
+ * <p>
+ *     Note: CQL type {@code list} can also be accessed through the methods {@link java.sql.ResultSet#getArray(int)}
+ *     and {@link java.sql.ResultSet#getArray(String)}.
+ * </p>
  *
  * @see ResultSet
  */

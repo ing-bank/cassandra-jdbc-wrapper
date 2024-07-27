@@ -20,6 +20,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Collections;
 
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,11 +34,13 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     private static final String USER = "testuser";
     private static final String PASSWORD = "secret";
     private static final String CONSISTENCY = "ONE";
+    private static final String COMPLIANCE_MODE = "Liquibase";
 
     @Test
     void givenParameters_whenConstructDataSource_returnCassandraDataSource() throws Exception {
         final CassandraDataSource cds = new CassandraDataSource(
-            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
+            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER,
+            PASSWORD, CONSISTENCY, "datacenter1");
         assertNotNull(cds.getContactPoints());
         assertEquals(1, cds.getContactPoints().size());
         final ContactPoint dsContactPoint = cds.getContactPoints().get(0);
@@ -47,13 +50,14 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals(USER, cds.getUser());
         assertEquals(PASSWORD, cds.getPassword());
 
-        final DataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
-                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
+        final CassandraDataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
+            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
             KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
+        ds.setComplianceMode(COMPLIANCE_MODE);
         assertNotNull(ds);
 
         // null username and password
-        java.sql.Connection cnx = ds.getConnection(null, null);
+        CassandraConnection cnx = ds.getConnection(null, null);
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
         assertEquals(5, ds.getLoginTimeout());
@@ -62,7 +66,9 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         cnx = ds.getConnection();
         assertFalse(cnx.isClosed());
         ds.setLoginTimeout(5);
-        assertEquals(CONSISTENCY, ((CassandraConnection) cnx).getConnectionProperties().get(TAG_CONSISTENCY_LEVEL));
+        assertEquals(CONSISTENCY, cnx.getConnectionProperties().get(TAG_CONSISTENCY_LEVEL));
+        assertEquals(COMPLIANCE_MODE, cnx.getConnectionProperties().get(TAG_COMPLIANCE_MODE));
+
         assertEquals(5, ds.getLoginTimeout());
     }
 

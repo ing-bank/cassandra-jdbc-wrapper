@@ -145,6 +145,10 @@ listValue list<bigint>,
 mapValue map<double, boolean>,
 setValue set<text>);
 
+CREATE TABLE tbl_batch_test (
+keyValue text PRIMARY KEY,
+listValue list<int>);
+
 /* Init keyspace and tables for JdbcRegressionUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace3;
 CREATE KEYSPACE "test_keyspace3" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};

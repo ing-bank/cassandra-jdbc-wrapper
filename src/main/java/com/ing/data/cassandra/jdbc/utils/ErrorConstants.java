@@ -349,6 +349,38 @@ public final class ErrorConstants {
      */
     public static final String ARRAY_WAS_FREED = "Array was freed.";
 
+    /**
+     * Error message used in any batch update exception thrown when at least one statement fails or attempts to return
+     * a result set in the method {@link Statement#executeBatch()}. This message should be followed by the details for
+     * each failed statement (example: {@code BATCH_UPDATE_FAILED + "Statement failed"}).
+     *
+     * @see #BATCH_STATEMENT_FAILURE_MSG
+     */
+    public static final String BATCH_UPDATE_FAILED = "At least one statement in batch has failed:";
+
+    /**
+     * Template used to report a statement failure or attempting to return a result set in the method
+     * {@link Statement#executeBatch()}. This template should be used in {@link #BATCH_UPDATE_FAILED} and expects
+     * the statement index in the batch and the error message (example:
+     * {@code String.format(BATCH_STATEMENT_FAILURE_MSG, 1, "Statement failed"}).
+     *
+     * @see #BATCH_UPDATE_FAILED
+     */
+    public static final String BATCH_STATEMENT_FAILURE_MSG = "\n - Statement #%d: %s";
+
+    /**
+     * Error message used when the given execution profile does not exist and cannot be applied. This message is a
+     * template expecting the name of the invalid profile (example:
+     * {@code String.format(INVALID_PROFILE_NAME, "undefined_profile")}).
+     */
+    public static final String INVALID_PROFILE_NAME =
+        "No execution profile named [%s], keep the current active profile.";
+
+    /**
+     * Error message used in any SQL exception thrown when trying to extract properties from a JDBC URL.
+     */
+    public static final String PROPERTIES_PARSING_FROM_URL_FAILED = "Failed to extract properties from the given URL.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }
