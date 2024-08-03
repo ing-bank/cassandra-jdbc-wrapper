@@ -29,6 +29,7 @@ import com.datastax.oss.driver.internal.core.type.DefaultVectorType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.sql.Array;
 import java.sql.BatchUpdateException;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -68,6 +70,7 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +92,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_CONVE
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
+import static java.util.Collections.emptyList;
 
 /**
  * Cassandra prepared statement: implementation class for {@link PreparedStatement}.
@@ -362,6 +366,23 @@ public class CassandraPreparedStatement extends CassandraStatement
     }
 
     @Override
+    public void setArray(final int parameterIndex, final Array x) throws SQLException {
+        checkNotClosed();
+        checkIndex(parameterIndex);
+        // Only the ArrayImpl implementation of this JDBC driver is supported, any other implementation will insert an
+        // empty list with a warning.
+        if (x == null) {
+            this.boundStatement = this.boundStatement.setToNull(parameterIndex - 1);
+        } else if (x instanceof ArrayImpl) {
+            this.setObject(parameterIndex, ((ArrayImpl) x).toList());
+        } else {
+            LOG.warn("Unsupported SQL Array implementation: {}, an empty list will be inserted.",
+                x.getClass().getName());
+            this.setObject(parameterIndex, emptyList());
+        }
+    }
+
+    @Override
     public void setBigDecimal(final int parameterIndex, final BigDecimal x) throws SQLException {
         checkNotClosed();
         checkIndex(parameterIndex);
@@ -532,7 +553,9 @@ public class CassandraPreparedStatement extends CassandraStatement
     @Override
     public void setObject(final int parameterIndex, final Object x) throws SQLException {
         final int targetType;
-        if (x.getClass().equals(Long.class)) {
+        if (x instanceof Array) {
+            targetType = Types.ARRAY;
+        } else if (x.getClass().equals(Long.class)) {
             targetType = Types.BIGINT;
         } else if (x.getClass().equals(ByteArrayInputStream.class)) {
             targetType = Types.BINARY;
@@ -669,6 +692,9 @@ public class CassandraPreparedStatement extends CassandraStatement
                 break;
             case Types.ROWID:
                 this.boundStatement.setToNull(parameterIndex - 1);
+                break;
+            case Types.ARRAY:
+                this.setArray(parameterIndex, (Array) x);
                 break;
             case Types.OTHER:
                 if (x instanceof TupleValue) {

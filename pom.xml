@@ -88,6 +88,13 @@
                 <role>developer</role>
             </roles>
         </contributor>
+        <contributor>
+            <name>Lik Dan</name>
+            <url>https://github.com/LikDan</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </contributor>
     </contributors>
 
     <scm>

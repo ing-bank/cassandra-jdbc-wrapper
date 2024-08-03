@@ -19,8 +19,11 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ARRAY_WAS_FREED;
 
@@ -103,6 +106,31 @@ public class ArrayImpl implements Array {
         if (this.array != null) {
             this.array = null;
         }
+    }
+
+    @Override
+    public String toString() {
+        final String nullValueAsString = "null";
+        if (this.array != null) {
+            return String.format("[%s]",
+                Arrays.stream(this.array)
+                    .map(item -> Objects.toString(item, nullValueAsString))
+                    .collect(Collectors.joining(", "))
+            );
+        }
+        return nullValueAsString;
+    }
+
+    /**
+     * Gets a {@link List} instance corresponding to this array.
+     *
+     * @return The list instance corresponding to this {@link Array} instance.
+     */
+    public List<Object> toList() {
+        if (this.array != null) {
+            return Arrays.asList(this.array);
+        }
+        return null;
     }
 
 }

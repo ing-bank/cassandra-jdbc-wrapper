@@ -81,10 +81,6 @@ abstract class AbstractStatement implements Wrapper {
      * From the PreparedStatement implementation.
      */
 
-    public void setArray(final int parameterIndex, final Array x) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
     public void setAsciiStream(final int parameterIndex, final InputStream x) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

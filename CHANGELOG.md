@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Add support for IPv6 addresses in JDBC URL (see PR [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
+- Add implementation for the method `CassandraPreparedStatement.setArray(int, Array)`.
+
 ## [4.13.0] - 2024-07-27
 ### Added
 - Add support for switching execution profiles.

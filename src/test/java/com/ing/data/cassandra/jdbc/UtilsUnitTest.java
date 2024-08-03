@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.ing.data.cassandra.jdbc.metadata.BasicVersionedMetadata;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.semver4j.Semver;
 
+import java.sql.Array;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
@@ -367,5 +369,11 @@ class UtilsUnitTest {
         assertFalse(propertyInfo.required);
         assertEquals("Whether the TCP keep-alive is enabled. By default, it's disabled.", propertyInfo.description);
         assertThat(Arrays.asList(propertyInfo.choices), hasItems("true", "false"));
+    }
+
+    @Test
+    void testArrayImplToString() {
+        final Array sut = new ArrayImpl(Arrays.asList("a", "b", "c"));
+        assertEquals("[a, b, c]", sut.toString());
     }
 }

@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Date;
 import java.sql.ParameterMetaData;
@@ -509,6 +510,17 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
         checkNotClosed();
         try {
             return this.preparedStatement.getParameterMetaData();
+        } catch (final SQLException sqlException) {
+            this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
+            throw sqlException;
+        }
+    }
+
+    @Override
+    public void setArray(final int parameterIndex, final Array x) throws SQLException {
+        checkNotClosed();
+        try {
+            this.preparedStatement.setArray(parameterIndex, x);
         } catch (final SQLException sqlException) {
             this.pooledCassandraConnection.statementErrorOccurred(this.preparedStatement, sqlException);
             throw sqlException;

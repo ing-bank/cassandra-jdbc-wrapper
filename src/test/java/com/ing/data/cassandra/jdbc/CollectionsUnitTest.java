@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import com.ing.data.cassandra.jdbc.utils.CustomArrayImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -357,6 +359,50 @@ class CollectionsUnitTest extends UsingCassandraContainerTest {
         Object outerUdt = resultSet.getObject("outerUdt");
         assertInstanceOf(UdtValue.class, outerUdt);
         assertEquals(1, ((UdtValue) outerUdt).getInt("key"));
+
+        statement.close();
+    }
+
+    @Test
+    void givenArrayInsertStatement_whenExecute_insertExpectedValues() throws Exception {
+        final String insertQuery = "INSERT INTO collections_test (keyValue, listValue) VALUES(?, ?);";
+        final PreparedStatement preparedStatement = sqlConnection.prepareStatement(insertQuery);
+        final ArrayImpl arrayValue = new ArrayImpl(Arrays.asList(4L, 9L, 11L));
+        preparedStatement.setInt(1, 3);
+        preparedStatement.setArray(2, arrayValue);
+        preparedStatement.execute();
+
+        preparedStatement.setInt(1, 4);
+        preparedStatement.setArray(2, null);
+        preparedStatement.execute();
+
+        preparedStatement.setInt(1, 5);
+        preparedStatement.setArray(2, new CustomArrayImpl());
+        preparedStatement.execute();
+
+        preparedStatement.close();
+
+        final Statement statement = sqlConnection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT * FROM collections_test WHERE keyValue = 3;");
+        resultSet.next();
+        List<?> listObject = ((CassandraResultSet) resultSet).getList("listValue");
+        assertThat(listObject, is(instanceOf(ArrayList.class)));
+        assertEquals(3, listObject.size());
+        assertEquals(4L, listObject.get(0));
+        assertEquals(9L, listObject.get(1));
+        assertEquals(11L, listObject.get(2));
+
+        resultSet = statement.executeQuery("SELECT * FROM collections_test WHERE keyValue = 4;");
+        resultSet.next();
+        listObject = ((CassandraResultSet) resultSet).getList("listValue");
+        assertThat(listObject, is(instanceOf(ArrayList.class)));
+        assertEquals(0, listObject.size());
+
+        resultSet = statement.executeQuery("SELECT * FROM collections_test WHERE keyValue = 5;");
+        resultSet.next();
+        listObject = ((CassandraResultSet) resultSet).getList("listValue");
+        assertThat(listObject, is(instanceOf(ArrayList.class)));
+        assertEquals(0, listObject.size());
 
         statement.close();
     }
