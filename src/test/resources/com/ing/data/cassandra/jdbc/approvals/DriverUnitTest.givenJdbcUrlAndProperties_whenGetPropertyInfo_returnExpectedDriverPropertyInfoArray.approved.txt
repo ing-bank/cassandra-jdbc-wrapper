@@ -51,7 +51,7 @@
 	choices: {true,false}
 	required: false
 [13] = secureConnectBundle: 
-	The fully qualified path of the cloud secure connect bundle file used to connect to an AstraDB isntance.
+	The fully qualified path of the cloud secure connect bundle file used to connect to an AstraDB instance.
 	choices: n/a
 	required: false
 [14] = useKerberos: 
