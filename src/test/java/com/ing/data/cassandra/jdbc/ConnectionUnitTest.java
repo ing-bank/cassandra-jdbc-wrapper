@@ -137,7 +137,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         }
         initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
             "user=aTestUser", "password=aTestPassword", "requesttimeout=5000",
-            "connectimeout=8000", "keepalive=false", "tcpnodelay=true", "fetchsize=2000",
+            "connecttimeout=8000", "keepalive=false", "tcpnodelay=true", "fetchsize=2000",
             "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
             "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
             "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",

@@ -93,6 +93,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     private final Properties properties = new Properties();
     private String url;
 
+    @SuppressWarnings("unused")
     private CassandraDataSource() {
         // Hide the default constructor to force setting contact points and keyspace when creating the data source.
     }
@@ -313,7 +314,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * @return The compliance mode to use for the connection (for example, {@link Liquibase}).
      */
     public String getComplianceMode() {
-        return this.properties.getProperty(TAG_COMPLIANCE_MODE, "Default");
+        return this.properties.getProperty(TAG_COMPLIANCE_MODE, Default.class.getSimpleName());
     }
 
     /**
