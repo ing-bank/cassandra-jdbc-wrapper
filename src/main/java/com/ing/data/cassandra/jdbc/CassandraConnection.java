@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_FETCH_SIZE_PARAMETER;
@@ -603,7 +604,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public String toString() {
-        return "CassandraConnection [connectionProperties=" + this.connectionProperties + "]";
+        return String.format("CassandraConnection [connectionProperties=%s]",
+            toStringWithoutSensitiveValues(this.connectionProperties));
     }
 
     /**

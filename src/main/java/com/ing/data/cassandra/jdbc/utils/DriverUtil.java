@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+
 /**
  * A set of static utility methods and constants used by the JDBC driver.
  */
@@ -184,6 +186,21 @@ public final class DriverUtil {
         propertyInfo.required = Boolean.getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
         propertyInfo.description = getDriverProperty(driverPropertyDefinition);
         return propertyInfo;
+    }
+
+    /**
+     * Returns a string representation of the provided driver properties with redacted values for sensitive properties
+     * such as passwords.
+     *
+     * @param properties The driver properties.
+     * @return The string representation of the properties, without sensitive values.
+     */
+    public static String toStringWithoutSensitiveValues(final Properties properties) {
+        final Properties withRedactedSensitiveValues = (Properties) properties.clone();
+        if (withRedactedSensitiveValues.containsKey(TAG_PASSWORD)) {
+            withRedactedSensitiveValues.setProperty(TAG_PASSWORD, "***");
+        }
+        return withRedactedSensitiveValues.toString();
     }
 
 }
