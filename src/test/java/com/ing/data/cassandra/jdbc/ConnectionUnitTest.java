@@ -67,6 +67,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -634,6 +635,16 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
         assertNotNull(executedStmt.getExecutionProfile());
         assertEquals(customProfileName, executedStmt.getExecutionProfile().getName());
+    }
+
+    @Test
+    void givenCassandraConnection_whenToString_returnExpectedString() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        assertThat(sqlConnection.toString(),
+            matchesPattern("CassandraConnection \\[connectionProperties=\\{password=\\*\\*\\*, "
+                + "localDatacenter=datacenter1, databaseName=system, contactPoints=\\[localhost:\\d+]}]")
+            );
     }
 
 }

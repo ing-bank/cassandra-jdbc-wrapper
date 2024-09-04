@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for IPv6 addresses in JDBC URL (see PR [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
 - Add implementation for the method `CassandraPreparedStatement.setArray(int, Array)`.
 
+## [4.13.1] - 2024-09-04
+### Fixed
+- Fix implementation of `CassandraConnection.toString()` to not leak connection password (see issue 
+  [#71](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/71)).
+
 ## [4.13.0] - 2024-07-27
 ### Added
 - Add support for switching execution profiles.
@@ -299,6 +304,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.13.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.13.0...v4.13.1
 [4.13.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.12.0...v4.13.0
 [4.12.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.1...v4.12.0
 [4.11.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.11.0...v4.11.1
