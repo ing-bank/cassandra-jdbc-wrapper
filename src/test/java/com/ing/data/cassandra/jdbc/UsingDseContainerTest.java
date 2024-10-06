@@ -34,13 +34,17 @@ abstract class UsingDseContainerTest {
 
     protected static void initializeContainer() {
         // For the official DataStax Enterprise server image, see here: https://hub.docker.com/r/datastax/dse-server/
-        final DockerImageName dseServerImage = DockerImageName.parse("datastax/dse-server:7.0.0-a")
+        final DockerImageName dseServerImage = DockerImageName.parse("datastax/dse-server:6.9.2")
             .asCompatibleSubstituteFor("cassandra");
         cassandraContainer = new CassandraContainer(dseServerImage)
             .withEnv("DS_LICENSE", "accept")
             .withEnv("CLUSTER_NAME", "embedded_test_cluster")
             .withEnv("DC", "datacenter1")
-            .withInitScript("initEmbeddedDse.cql");
+            .withInitScript("initEmbeddedDse.cql")
+            // In DSE server container, the working directory is /opt/dse by default, but the init script is copied
+            // at the root of the container; so, we have to change the working directory in this case to avoid an error
+            // 'No such file or directory' when running the script.
+            .withWorkingDirectory("/");
         cassandraContainer.start();
     }
 
