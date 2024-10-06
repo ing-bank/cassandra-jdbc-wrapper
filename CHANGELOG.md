@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add support for IPv6 addresses in JDBC URL (see PR [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
 - Add implementation for the method `CassandraPreparedStatement.setArray(int, Array)`.
+### Changed
+- Do not try to register codecs again (if already done previously) on a pre-existing session to avoid warnings in logs.
 
 ## [4.13.1] - 2024-09-04
 ### Fixed

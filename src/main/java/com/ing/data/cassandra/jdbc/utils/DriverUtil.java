@@ -15,6 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.session.Session;
+import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.apache.commons.lang3.StringUtils;
 import org.semver4j.RangesExpression;
@@ -201,6 +205,29 @@ public final class DriverUtil {
             withRedactedSensitiveValues.setProperty(TAG_PASSWORD, "***");
         }
         return withRedactedSensitiveValues.toString();
+    }
+
+    /**
+     * Registers the given codecs to the specified CQL session, checking they are not already registered before
+     * registering them.
+     *
+     * @param cqlSession The CQL session.
+     * @param codecs     The codecs to register.
+     */
+    public static void safelyRegisterCodecs(final Session cqlSession, final List<TypeCodec<?>> codecs) {
+        final DefaultCodecRegistry codecRegistry = (DefaultCodecRegistry) cqlSession.getContext().getCodecRegistry();
+        codecs.stream()
+            .filter(codec -> {
+                try {
+                    codecRegistry.codecFor(codec.getCqlType(), codec.getJavaType());
+                    // The codec has been found, exclude it form the list of codecs to register.
+                    return false;
+                } catch (final CodecNotFoundException e) {
+                    // If the codec is not registered yet, include it into the filtered codecs to register it.
+                    return true;
+                }
+            })
+            .forEach(codecRegistry::register);
     }
 
 }

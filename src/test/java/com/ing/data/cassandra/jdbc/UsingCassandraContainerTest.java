@@ -16,7 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
@@ -36,7 +36,7 @@ abstract class UsingCassandraContainerTest {
     // start a Cassandra container, we just want to have one container instance for all the tests of the class. See:
     // https://www.testcontainers.org/test_framework_integration/manual_lifecycle_control/#singleton-containers
     @SuppressWarnings("resource")
-    static final CassandraContainer<?> cassandraContainer = new CassandraContainer<>(CASSANDRA_IMAGE)
+    static final CassandraContainer cassandraContainer = new CassandraContainer(CASSANDRA_IMAGE)
         .withEnv("CASSANDRA_DC", "datacenter1")
         .withEnv("CASSANDRA_CLUSTER_NAME", "embedded_test_cluster")
         .withCopyFileToContainer(MountableFile.forClasspathResource("cassandra.keystore"),

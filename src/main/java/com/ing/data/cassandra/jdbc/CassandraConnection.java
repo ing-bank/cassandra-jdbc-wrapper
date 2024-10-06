@@ -23,7 +23,6 @@ import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
-import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
 import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
 import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
@@ -67,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
@@ -240,8 +240,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         codecs.add(new VarintToIntCodec());
         codecs.add(new SmallintToIntCodec());
         codecs.add(new TinyintToIntCodec());
-
-        codecs.forEach(codec -> ((DefaultCodecRegistry) cSession.getContext().getCodecRegistry()).register(codec));
+        safelyRegisterCodecs(cSession, codecs);
     }
 
     /**

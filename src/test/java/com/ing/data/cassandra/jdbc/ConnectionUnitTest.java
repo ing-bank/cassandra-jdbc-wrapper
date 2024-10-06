@@ -19,15 +19,19 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfig;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
+import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import com.datastax.oss.driver.api.core.retry.RetryPolicy;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.internal.core.auth.PlainTextAuthProvider;
 import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.connection.ExponentialReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
+import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.ing.data.cassandra.jdbc.optionset.Liquibase;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
@@ -38,6 +42,7 @@ import com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +70,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSW
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -79,6 +85,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -489,6 +496,28 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             .executeQuery("SELECT release_version FROM system.local");
         assertNotNull(resultSet.getString("release_version"));
         assertEquals(KEYSPACE, jdbcConnection.getCatalog());
+    }
+
+    @Test
+    void givenSession_whenCreateConnection_registerCodecsOnlyOnce() {
+        // The number of custom codecs defined in the package com.ing.data.cassandra.jdbc.codec.
+        final int numberOfCustomCodecs = 9;
+
+        final CqlSession mockSession = mock(CqlSession.class);
+        final DriverContext mockContext = mock(DriverContext.class);
+        final DriverConfig mockConfig = mock(DriverConfig.class);
+        final DefaultCodecRegistry spiedCodecRegistry = Mockito.spy(new DefaultCodecRegistry(EMPTY));
+        when(mockSession.getContext()).thenReturn(mockContext);
+        when(mockContext.getConfig()).thenReturn(mockConfig);
+        when(mockConfig.getProfile(anyString())).thenReturn(mock(DriverExecutionProfile.class));
+        when(mockContext.getCodecRegistry()).thenReturn(spiedCodecRegistry);
+
+        // Create a first connection using an existing session.
+        new CassandraConnection(mockSession, KEYSPACE, ConsistencyLevel.ALL, false, null, null);
+        // Create a second connection re-using the previous session: the codecs shouldn't be registered again.
+        new CassandraConnection(mockSession, KEYSPACE, ConsistencyLevel.ALL, false, null, null);
+        // Verify the register method is called once by custom codec to register.
+        verify(spiedCodecRegistry, times(numberOfCustomCodecs)).register(any(TypeCodec.class));
     }
 
     @Test
