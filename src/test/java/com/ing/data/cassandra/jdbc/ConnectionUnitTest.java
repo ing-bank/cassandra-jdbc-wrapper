@@ -107,6 +107,15 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    void givenSerialConsistency_whenGetConnection_createConnectionWithExpectedSerialConsistencyLevel()
+        throws Exception {
+        initConnection(KEYSPACE, "serialconsistency=LOCAL_SERIAL", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        assertEquals(ConsistencyLevel.LOCAL_SERIAL, sqlConnection.getSerialConsistencyLevel());
+        sqlConnection.close();
+    }
+
+    @Test
     void givenInvalidFetchSize_whenGetConnection_createConnectionWithFallbackFetchSize() throws Exception {
         initConnection(KEYSPACE, "fetchsize=NaN", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
@@ -144,8 +153,8 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             fail("Unable to find test_application.conf");
         }
         initConnection(KEYSPACE, "configfile=" + confTestUrl.getPath(), "localdatacenter=DC2",
-            "user=aTestUser", "password=aTestPassword", "requesttimeout=5000",
-            "connecttimeout=8000", "keepalive=false", "tcpnodelay=true", "fetchsize=2000",
+            "user=aTestUser", "password=aTestPassword", "serialconsistency=SERIAL", "consistency=ONE",
+            "requesttimeout=5000", "connecttimeout=8000", "keepalive=false", "tcpnodelay=true", "fetchsize=2000",
             "loadbalancing=com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy",
             "retry=com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy",
             "reconnection=com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()",
@@ -159,6 +168,9 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final ConsistencyLevel consistencyLevel = sqlConnection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.TWO, consistencyLevel);
+        final ConsistencyLevel serialConsistencyLevel = sqlConnection.getSerialConsistencyLevel();
+        assertNotNull(serialConsistencyLevel);
+        assertEquals(ConsistencyLevel.LOCAL_SERIAL, serialConsistencyLevel);
 
         final int fetchSize = sqlConnection.getDefaultFetchSize();
         assertEquals(5000, fetchSize);

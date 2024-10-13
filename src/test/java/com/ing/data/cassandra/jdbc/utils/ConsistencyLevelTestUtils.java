@@ -43,4 +43,23 @@ public class ConsistencyLevelTestUtils {
         assertTrue(resultSet.next());
         assertEquals(level, resultSet.getString(1));
     }
+
+    public static void assertSerialConsistencyLevel(final CassandraConnection sqlConnection, final String level)
+        throws SQLException {
+        final ResultSet resultSet = sqlConnection.createStatement().executeQuery("SERIAL CONSISTENCY");
+        assertEquals(1, resultSet.findColumn("serial_consistency_level"));
+        assertTrue(resultSet.next());
+        assertEquals(level, resultSet.getString(1));
+    }
+
+    public static void assertSerialConsistencyLevelViaExecute(final CassandraConnection sqlConnection,
+                                                              final String level) throws SQLException {
+        final Statement statement = sqlConnection.createStatement();
+        final boolean isQuery = statement.execute("SERIAL CONSISTENCY");
+        assertTrue(isQuery);
+        final ResultSet resultSet = statement.getResultSet();
+        assertEquals(1, resultSet.findColumn("serial_consistency_level"));
+        assertTrue(resultSet.next());
+        assertEquals(level, resultSet.getString(1));
+    }
 }

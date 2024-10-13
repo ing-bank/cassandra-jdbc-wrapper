@@ -32,7 +32,9 @@ public final class SpecialCommandsUtil {
 
     static final Logger LOG = LoggerFactory.getLogger(SpecialCommandsUtil.class);
 
-    static final String CMD_CONSISTENCY_PATTERN = "CONSISTENCY( \\w+)?";
+    static final String CMD_CONSISTENCY_PATTERN = "(?<consistencyCmd>CONSISTENCY(?<consistencyLvl> \\w+)?)";
+    static final String CMD_SERIAL_CONSISTENCY_PATTERN =
+        "(?<serialConsistencyCmd>SERIAL CONSISTENCY(?<serialConsistencyLvl> \\w+)?)";
 
     private SpecialCommandsUtil() {
         // Private constructor to hide the public one.
@@ -47,7 +49,8 @@ public final class SpecialCommandsUtil {
      * otherwise.
      */
     public static boolean containsSpecialCommands(final String cql) {
-        final Pattern pattern = Pattern.compile(CMD_CONSISTENCY_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+        final Pattern pattern = Pattern.compile(CMD_CONSISTENCY_PATTERN + "|" + CMD_SERIAL_CONSISTENCY_PATTERN,
+            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
         return pattern.matcher(cql).find();
     }
 
@@ -59,18 +62,34 @@ public final class SpecialCommandsUtil {
      * supported.
      */
     public static SpecialCommands.SpecialCommandExecutor getCommandExecutor(final String cql) {
-        final Matcher matcher = Pattern.compile(CMD_CONSISTENCY_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE).matcher(cql.trim());
+        final Matcher matcher = Pattern.compile(CMD_CONSISTENCY_PATTERN + "|" + CMD_SERIAL_CONSISTENCY_PATTERN,
+                Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
+            .matcher(cql.trim());
         if (!matcher.matches()) {
             LOG.trace("CQL statement is not a supported special command: {}", cql);
             return null;
         } else {
-            // If the first matching group is not null, this means the command specifies a consistency level to set
-            // see CMD_CONSISTENCY_PATTERN regex for details.
+            // If the first matching group is not null, this means the command matched CMD_CONSISTENCY_PATTERN, and if
+            // the second matching group is not null, this means the command specifies a consistency level to set.
             String levelParameter = null;
-            if (matcher.group(1) != null) {
-                levelParameter = matcher.group(1).trim();
+            if (matcher.group("consistencyCmd") != null) {
+                final String consistencyLevelValue = matcher.group("consistencyLvl");
+                if (consistencyLevelValue != null) {
+                    levelParameter = consistencyLevelValue.trim();
+                }
+                return new SpecialCommands.ConsistencyLevelExecutor(levelParameter);
             }
-            return new SpecialCommands.ConsistencyLevelExecutor(levelParameter);
+            // If the third matching group is not null, this means the command matched CMD_SERIAL_CONSISTENCY_PATTERN,
+            // and if the fourth matching group is not null, this means the command specifies a serial consistency
+            // level to set.
+            if (matcher.group("serialConsistencyCmd") != null) {
+                final String consistencyLevelValue = matcher.group("serialConsistencyLvl");
+                if (consistencyLevelValue != null) {
+                    levelParameter = consistencyLevelValue.trim();
+                }
+                return new SpecialCommands.SerialConsistencyLevelExecutor(levelParameter);
+            }
+            return new SpecialCommands.NoOpExecutor();
         }
     }
 

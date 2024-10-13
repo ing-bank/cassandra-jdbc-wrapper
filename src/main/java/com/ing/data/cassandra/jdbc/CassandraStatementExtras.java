@@ -37,6 +37,17 @@ public interface CassandraStatementExtras extends Statement {
     void setConsistencyLevel(ConsistencyLevel consistencyLevel);
 
     /**
+     * Sets the serial consistency level for the statement.
+     * <p>
+     * See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigSerialConsistency.html">
+     * serial consistency level documentation</a> for further details.
+     * </p>
+     *
+     * @param consistencyLevel The serial consistency level to use for this statement.
+     */
+    void setSerialConsistencyLevel(ConsistencyLevel consistencyLevel);
+
+    /**
      * Gets the consistency level for the statement.
      * <p>
      * See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html">

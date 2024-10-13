@@ -64,6 +64,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
@@ -351,6 +352,34 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setConsistency(final String consistency) {
         this.setDataSourceProperty(TAG_CONSISTENCY_LEVEL, consistency);
+    }
+
+    /**
+     * Gets the serial consistency level.
+     * <p>
+     *     See <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigSerialConsistency.html">
+     *     serial consistency level documentation</a> for further details. The default serial consistency level is
+     *     {@link ConsistencyLevel#SERIAL}.
+     * </p>
+     *
+     * @return The serial consistency level.
+     */
+    public String getSerialConsistency() {
+        return this.properties.getProperty(TAG_SERIAL_CONSISTENCY_LEVEL, ConsistencyLevel.SERIAL.name());
+    }
+
+    /**
+     * Sets the serial consistency level.
+     * <p>
+     *     The acceptable values are {@link ConsistencyLevel#SERIAL} and {@link ConsistencyLevel#LOCAL_SERIAL}. See
+     *     <a href="https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigSerialConsistency.html">
+     *     serial consistency level documentation</a> for further details.
+     * </p>
+     *
+     * @param consistency The serial consistency level.
+     */
+    public void setSerialConsistency(final String consistency) {
+        this.setDataSourceProperty(TAG_SERIAL_CONSISTENCY_LEVEL, consistency);
     }
 
     /**

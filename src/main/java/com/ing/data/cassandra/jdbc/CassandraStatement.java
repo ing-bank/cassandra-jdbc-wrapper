@@ -84,10 +84,6 @@ public class CassandraStatement extends AbstractStatement
      * CQL statements separator: semi-colon ({@code ;}).
      */
     public static final String STATEMENTS_SEPARATOR_REGEX = ";";
-    /**
-     * The default fetch size.
-     */
-    protected static final int DEFAULT_FETCH_SIZE = 100;
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraStatement.class);
 
@@ -148,14 +144,21 @@ public class CassandraStatement extends AbstractStatement
      */
     protected boolean escapeProcessing = true;
     /**
-     * The Java Driver for Apache Cassandra® statement.
-     */
-    protected com.datastax.oss.driver.api.core.cql.Statement<?> statement;
-    /**
      * The consistency level used for the statement.
      */
     protected ConsistencyLevel consistencyLevel;
+    /**
+     * The serial consistency level used for the statement.
+     */
+    protected ConsistencyLevel serialConsistencyLevel;
+    /**
+     * Whether the statement is closed.
+     */
     private boolean isClosed;
+    /**
+     * The custom execution profile used by the driver to execute the statement. If not defined, the default profile
+     * will be used.
+     */
     private DriverExecutionProfile customTimeoutProfile;
 
     /**
@@ -228,6 +231,7 @@ public class CassandraStatement extends AbstractStatement
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
         this.consistencyLevel = connection.getConsistencyLevel();
+        this.serialConsistencyLevel = connection.getSerialConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
 
@@ -366,7 +370,8 @@ public class CassandraStatement extends AbstractStatement
                         }
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
                             .setExecutionProfile(this.connection.getActiveExecutionProfile())
-                            .setConsistencyLevel(this.connection.getConsistencyLevel())
+                            .setConsistencyLevel(this.consistencyLevel)
+                            .setSerialConsistencyLevel(this.serialConsistencyLevel)
                             .setPageSize(this.fetchSize);
                         if (this.customTimeoutProfile != null) {
                             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -416,7 +421,8 @@ public class CassandraStatement extends AbstractStatement
 
         SimpleStatement stmt = SimpleStatement.newInstance(cql)
             .setExecutionProfile(this.connection.getActiveExecutionProfile())
-            .setConsistencyLevel(this.connection.getConsistencyLevel())
+            .setConsistencyLevel(this.consistencyLevel)
+            .setSerialConsistencyLevel(this.serialConsistencyLevel)
             .setPageSize(this.fetchSize);
         if (this.customTimeoutProfile != null) {
             stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
@@ -460,7 +466,8 @@ public class CassandraStatement extends AbstractStatement
                 }
                 SimpleStatement stmt = SimpleStatement.newInstance(query)
                     .setExecutionProfile(this.connection.getActiveExecutionProfile())
-                    .setConsistencyLevel(this.connection.getConsistencyLevel());
+                    .setConsistencyLevel(this.consistencyLevel)
+                    .setSerialConsistencyLevel(this.serialConsistencyLevel);
                 if (this.customTimeoutProfile != null) {
                     stmt = stmt.setExecutionProfile(this.customTimeoutProfile);
                 }
@@ -572,7 +579,11 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public void setConsistencyLevel(final ConsistencyLevel consistencyLevel) {
         this.consistencyLevel = consistencyLevel;
-        this.statement = this.statement.setConsistencyLevel(consistencyLevel);
+    }
+
+    @Override
+    public void setSerialConsistencyLevel(final ConsistencyLevel consistencyLevel) {
+        this.serialConsistencyLevel = consistencyLevel;
     }
 
     @Override

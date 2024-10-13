@@ -64,6 +64,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     private static final String USER = "testuser";
     private static final String PASSWORD = "secret";
     private static final String CONSISTENCY = "ONE";
+    private static final String SERIAL_CONSISTENCY = "LOCAL_SERIAL";
     private static final String COMPLIANCE_MODE = "Liquibase";
 
     @Test
@@ -82,6 +83,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals(DATA_SOURCE_DESCRIPTION, ds.getDescription());
         assertEquals("Default", ds.getComplianceMode());
         assertEquals("LOCAL_ONE", ds.getConsistency());
+        assertEquals("SERIAL", ds.getSerialConsistency());
         assertEquals("default", ds.getActiveProfile());
         assertEquals("DefaultRetryPolicy", ds.getRetryPolicy());
         assertEquals("DefaultLoadBalancingPolicy", ds.getLoadBalancingPolicy());
@@ -106,6 +108,8 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals("Liquibase", ds.getComplianceMode());
         ds.setConsistency(CONSISTENCY);
         assertEquals(CONSISTENCY, ds.getConsistency());
+        ds.setSerialConsistency(SERIAL_CONSISTENCY);
+        assertEquals(SERIAL_CONSISTENCY, ds.getSerialConsistency());
         ds.setActiveProfile("custom_profile");
         assertEquals("custom_profile", ds.getActiveProfile());
         ds.setRetryPolicy("com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy");
@@ -182,8 +186,9 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenDataSourceWithUrl_whenConnect_returnCassandraConnection() throws Exception {
         final CassandraDataSource ds = new CassandraDataSource(CONTACT_POINTS, KEYSPACE);
-        ds.setURL(buildJdbcUrl(CONTACT_POINT_HOST, CONTACT_POINT_PORT, KEYSPACE, "consistency=TWO", "fetchsize=5000",
-            "localdatacenter=DC1", "loadbalancing=com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy",
+        ds.setURL(buildJdbcUrl(CONTACT_POINT_HOST, CONTACT_POINT_PORT, KEYSPACE, "consistency=TWO",
+            "serialconsistency=LOCAL_SERIAL", "fetchsize=5000", "localdatacenter=DC1",
+            "loadbalancing=com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy",
             "requesttimeout=8000", "retry=com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy",
             "reconnection=ConstantReconnectionPolicy((long)10)", "connecttimeout=15000", "tcpnodelay=false",
             "keepalive=true", "user=testUser", "password=testPassword"));
@@ -206,6 +211,9 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         final ConsistencyLevel consistencyLevel = connection.getConsistencyLevel();
         assertNotNull(consistencyLevel);
         assertEquals(ConsistencyLevel.TWO, consistencyLevel);
+        final ConsistencyLevel serialConsistencyLevel = connection.getSerialConsistencyLevel();
+        assertNotNull(serialConsistencyLevel);
+        assertEquals(ConsistencyLevel.LOCAL_SERIAL, serialConsistencyLevel);
 
         final int fetchSize = connection.getDefaultFetchSize();
         assertEquals(5000, fetchSize);

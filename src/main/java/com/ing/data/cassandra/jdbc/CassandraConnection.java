@@ -81,6 +81,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVE
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_FETCH_SIZE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
@@ -134,6 +135,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
     private ConsistencyLevel consistencyLevel;
+    private ConsistencyLevel serialConsistencyLevel;
     private int defaultFetchSize = FALLBACK_FETCH_SIZE;
     private String currentKeyspace;
     private final boolean debugMode;
@@ -169,6 +171,11 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             sessionProperties.getProperty(TAG_CONSISTENCY_LEVEL,
                 this.activeExecutionProfile.getString(DefaultDriverOption.REQUEST_CONSISTENCY,
                     ConsistencyLevel.LOCAL_ONE.name())));
+        this.serialConsistencyLevel = DefaultConsistencyLevel.valueOf(
+            sessionProperties.getProperty(TAG_SERIAL_CONSISTENCY_LEVEL,
+                this.activeExecutionProfile.getString(DefaultDriverOption.REQUEST_SERIAL_CONSISTENCY,
+                    ConsistencyLevel.SERIAL.name())));
+
         final int fetchSizeFromProfile = this.activeExecutionProfile.getInt(DefaultDriverOption.REQUEST_PAGE_SIZE,
             FALLBACK_FETCH_SIZE);
         final String fetchSizeParameter = sessionProperties.getProperty(TAG_FETCH_SIZE);
@@ -228,6 +235,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.cSession = cSession;
         this.metadata = cSession.getMetadata();
         this.consistencyLevel = defaultConsistencyLevel;
+        this.serialConsistencyLevel = ConsistencyLevel.SERIAL;
         this.debugMode = debugMode;
         setActiveExecutionProfile(Objects.toString(defaultExecutionProfile, DriverExecutionProfile.DEFAULT_NAME));
         final List<TypeCodec<?>> codecs = new ArrayList<>();
@@ -398,6 +406,24 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     public void setConsistencyLevel(final ConsistencyLevel consistencyLevel) {
          this.consistencyLevel = consistencyLevel;
+    }
+
+    /**
+     * Gets the serial consistency level currently applied to this connection.
+     *
+     * @return The serial consistency level currently applied to this connection.
+     */
+    public ConsistencyLevel getSerialConsistencyLevel() {
+        return this.serialConsistencyLevel;
+    }
+
+    /**
+     * Sets the serial consistency level applied to this connection.
+     *
+     * @param serialConsistencyLevel  The serial consistency level to apply to this connection.
+     */
+    public void setSerialConsistencyLevel(final ConsistencyLevel serialConsistencyLevel) {
+        this.serialConsistencyLevel = serialConsistencyLevel;
     }
 
     /**

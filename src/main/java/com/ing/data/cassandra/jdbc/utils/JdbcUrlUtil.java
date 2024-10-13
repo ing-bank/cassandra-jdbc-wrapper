@@ -82,6 +82,17 @@ public final class JdbcUrlUtil {
     public static final String TAG_CONSISTENCY_LEVEL = "consistencyLevel";
 
     /**
+     * JDBC URL parameter key for the serial consistency.
+     */
+    public static final String KEY_SERIAL_CONSISTENCY = "serialconsistency";
+
+    /**
+     * Property name used to retrieve the serial consistency when the connection to Cassandra is established. This
+     * property is mapped from the JDBC URL parameter {@code serialconsistency}.
+     */
+    public static final String TAG_SERIAL_CONSISTENCY_LEVEL = "serialConsistencyLevel";
+
+    /**
      * JDBC URL parameter key for the fetch size (request page size).
      */
     public static final String KEY_FETCH_SIZE = "fetchsize";
@@ -399,6 +410,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_CONSISTENCY)) {
                     props.setProperty(TAG_CONSISTENCY_LEVEL, params.get(KEY_CONSISTENCY));
+                }
+                if (params.containsKey(KEY_SERIAL_CONSISTENCY)) {
+                    props.setProperty(TAG_SERIAL_CONSISTENCY_LEVEL, params.get(KEY_SERIAL_CONSISTENCY));
                 }
                 if (params.containsKey(KEY_FETCH_SIZE)) {
                     props.setProperty(TAG_FETCH_SIZE, params.get(KEY_FETCH_SIZE));
