@@ -120,6 +120,8 @@
 
         <!-- Versions for dependencies -->
         <approvaltests.version>24.3.0</approvaltests.version>
+        <aws-secretsmanager.version>2.29.1</aws-secretsmanager.version>
+        <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
@@ -131,6 +133,7 @@
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
         <semver4j.version>5.3.0</semver4j.version>
         <!-- Versions for test dependencies -->
+        <dotenv.version>2.3.2</dotenv.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit5.version>5.10.3</junit5.version>
         <junit-platform.version>1.10.3</junit-platform.version>
@@ -225,6 +228,31 @@
             <version>${javax-jsr305.version}</version>
         </dependency>
 
+        <!-- AWS Auth provider support -->
+        <dependency>
+            <groupId>software.aws.mcs</groupId>
+            <artifactId>aws-sigv4-auth-cassandra-java-driver-plugin</artifactId>
+            <version>${aws-sigv4-auth-cassandra.version}</version>
+            <exclusions>
+                <!-- Dependencies already provided through import of AWS Secret manager below, exclude them here to
+                 ensure the Amazon Secrets manager client works with the appropriate dependencies versions. -->
+                <exclusion>
+                    <artifactId>profiles</artifactId>
+                    <groupId>software.amazon.awssdk</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>auth</artifactId>
+                    <groupId>software.amazon.awssdk</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- AWS Secret manager -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>secretsmanager</artifactId>
+            <version>${aws-secretsmanager.version}</version>
+        </dependency>
 
         <!-- Unit tests libraries -->
         <dependency>
@@ -288,6 +316,13 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- LocalStack containers for tests using Amazon Secrets manager -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- Astra SDK for integration tests with AstraDB -->
         <dependency>
             <groupId>com.datastax.astra</groupId>
@@ -321,6 +356,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Dotenv for tests only running locally (integration with DBaaS) -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>${dotenv.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

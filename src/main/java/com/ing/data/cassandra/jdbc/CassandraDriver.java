@@ -46,6 +46,9 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.PROPERTIES_PARSING_FROM_URL_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
@@ -62,11 +65,13 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 
 /**
@@ -164,10 +169,11 @@ public class CassandraDriver implements Driver {
 
         // Define the list of availableProperties.
         final List<String> availableProperties = Arrays.asList(TAG_USER, TAG_PASSWORD, TAG_LOCAL_DATACENTER, TAG_DEBUG,
-            TAG_CONSISTENCY_LEVEL, TAG_ACTIVE_PROFILE, TAG_FETCH_SIZE, TAG_LOAD_BALANCING_POLICY, TAG_RETRY_POLICY,
-            TAG_RECONNECT_POLICY, TAG_ENABLE_SSL, TAG_SSL_ENGINE_FACTORY, TAG_SSL_HOSTNAME_VERIFICATION,
-            TAG_CLOUD_SECURE_CONNECT_BUNDLE, TAG_USE_KERBEROS, TAG_REQUEST_TIMEOUT, TAG_CONNECT_TIMEOUT,
-            TAG_TCP_NO_DELAY, TAG_KEEP_ALIVE, TAG_CONFIG_FILE, TAG_COMPLIANCE_MODE);
+            TAG_CONSISTENCY_LEVEL, TAG_SERIAL_CONSISTENCY_LEVEL, TAG_ACTIVE_PROFILE, TAG_FETCH_SIZE,
+            TAG_LOAD_BALANCING_POLICY, TAG_RETRY_POLICY, TAG_RECONNECT_POLICY, TAG_ENABLE_SSL, TAG_SSL_ENGINE_FACTORY,
+            TAG_SSL_HOSTNAME_VERIFICATION, TAG_CLOUD_SECURE_CONNECT_BUNDLE, TAG_USE_KERBEROS, TAG_REQUEST_TIMEOUT,
+            TAG_CONNECT_TIMEOUT, TAG_TCP_NO_DELAY, TAG_KEEP_ALIVE, TAG_CONFIG_FILE, TAG_COMPLIANCE_MODE, TAG_AWS_REGION,
+            TAG_AWS_SECRET_NAME, TAG_AWS_SECRET_REGION, TAG_USE_SIG_V4);
 
         final List<DriverPropertyInfo> info = new ArrayList<>();
         for (String propertyName : availableProperties) {

@@ -15,7 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.ing.data.cassandra.jdbc.CassandraConnection;
 import org.semver4j.Semver;
+
+import javax.annotation.Nullable;
 
 /**
  * A versioned database metadata (such as a CQL type, CQL keyword or a built-in function).
@@ -44,5 +47,15 @@ public interface VersionedMetadata {
      * @return The first version of Cassandra in which the metadata does not exist anymore or {@code null}.
      */
     Semver isInvalidFrom();
+
+    /**
+     * Checks if the connection to the database fulfills some specific conditions defined in the implementation of
+     * {@code VersionedMetadata}.
+     *
+     * @param connection The connection to the database.
+     * @return {@code true} if the additional condition is verified by the connection, {@code false} otherwise.
+     * @implSpec Should return {@code true} if the connection is {@code null}.
+     */
+    boolean fulfillAdditionalCondition(@Nullable CassandraConnection connection);
 
 }

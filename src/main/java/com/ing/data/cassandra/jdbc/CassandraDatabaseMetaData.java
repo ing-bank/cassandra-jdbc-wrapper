@@ -37,6 +37,7 @@ import java.sql.SQLSyntaxErrorException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
@@ -517,7 +518,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getNumericFunctions() throws SQLException {
         checkStatementClosed();
-        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildNumericFunctionsList();
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion(), this.connection)
+            .buildNumericFunctionsList();
     }
 
     @Override
@@ -640,8 +642,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         // https://cassandra.apache.org/doc/latest/cassandra/cql/appendices.html#appendix-A
         // Also add new keywords relative to vector type introduced by CEP-30 in Cassandra 5.0:
         // https://cwiki.apache.org/confluence/x/OQ40Dw
+
+        // Some APIs are not supported by Amazon Keyspaces, those are marked with an additional condition
+        // (ifNotAwsKeyspaces) to be returned by this method.
+        // See : https://docs.aws.amazon.com/keyspaces/latest/devguide/cassandra-apis.html
+        final Function<CassandraConnection, Boolean> ifNotAwsKeyspaces =
+            CassandraConnection::isNotConnectedToAmazonKeyspaces;
+
         final List<VersionedMetadata> cqlKeywords = Arrays.asList(
-            new BasicVersionedMetadata("AGGREGATE"),
+            new BasicVersionedMetadata("AGGREGATE", ifNotAwsKeyspaces),
             new BasicVersionedMetadata("ALLOW"),
             new BasicVersionedMetadata("ANN OF", CASSANDRA_5),
             new BasicVersionedMetadata("APPLY"),
@@ -659,7 +668,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("FROZEN"),
             new BasicVersionedMetadata("FUNCTIONS"),
             new BasicVersionedMetadata("IF"),
-            new BasicVersionedMetadata("INDEX"),
+            new BasicVersionedMetadata("INDEX", ifNotAwsKeyspaces),
             new BasicVersionedMetadata("INET"),
             new BasicVersionedMetadata("INFINITY"),
             new BasicVersionedMetadata("INITCOND"),
@@ -691,7 +700,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("TIMEUUID"),
             new BasicVersionedMetadata("TINYINT"),
             new BasicVersionedMetadata("TOKEN"),
-            new BasicVersionedMetadata("TRUNCATE"),
+            new BasicVersionedMetadata("TRUNCATE", ifNotAwsKeyspaces),
             new BasicVersionedMetadata("TTL"),
             new BasicVersionedMetadata("TUPLE"),
             new BasicVersionedMetadata("UNLOGGED"),
@@ -702,7 +711,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("VECTOR", CASSANDRA_5),
             new BasicVersionedMetadata("WRITETIME")
         );
-        return buildMetadataList(cqlKeywords, this.getDatabaseProductVersion());
+        return buildMetadataList(cqlKeywords, this.getDatabaseProductVersion(), this.connection);
     }
 
     @Override
@@ -738,7 +747,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getStringFunctions() throws SQLException {
         checkStatementClosed();
-        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildSystemFunctionsList();
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion(), this.connection)
+            .buildSystemFunctionsList();
     }
 
     /**
@@ -783,7 +793,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getSystemFunctions() throws SQLException {
         checkStatementClosed();
-        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildSystemFunctionsList();
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion(), this.connection)
+            .buildSystemFunctionsList();
     }
 
     /**
@@ -836,7 +847,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     @Override
     public String getTimeDateFunctions() throws SQLException {
         checkStatementClosed();
-        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion()).buildTimeDateFunctionsList();
+        return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion(), this.connection)
+            .buildTimeDateFunctionsList();
     }
 
     @Override

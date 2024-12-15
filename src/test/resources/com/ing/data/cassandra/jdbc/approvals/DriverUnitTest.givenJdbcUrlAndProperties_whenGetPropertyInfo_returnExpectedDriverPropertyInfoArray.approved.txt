@@ -15,70 +15,90 @@
 	choices: {true,false}
 	required: false
 [04] = consistencyLevel: 
-	The consistency level per connection. The consistency level defaults to 'LOCAL_ONE' as defined in the configuration reference if not specified.
-	choices: n/a
+	The consistency level per connection. The consistency level defaults to 'LOCAL_ONE' as defined in the configuration reference if not specified. Be careful, acceptable values may vary depending on the database version or implementation.
+	choices: {ALL,EACH_QUORUM,QUORUM,ONE,TWO,THREE,LOCAL_ONE,ANY,SERIAL,LOCAL_SERIAL}
 	required: false
-[05] = activeProfile: 
+[05] = serialConsistencyLevel: 
+	The serial consistency level per connection. The serial consistency level defaults to 'SERIAL' as defined in the configuration reference if not specified. Be careful, acceptable values may vary depending on the database version or implementation.
+	choices: {SERIAL,LOCAL_SERIAL}
+	required: false
+[06] = activeProfile: 
 	The execution profile to use when the connection to Cassandra is created.
 	choices: n/a
 	required: false
-[06] = fetchSize: 
+[07] = fetchSize: 
 	The default fetch size for all the queries returning result sets. This value is the number of rows the server will return in each network frame. By default, this value is set to 100.
 	choices: n/a
 	required: false
-[07] = loadBalancing: 
+[08] = loadBalancing: 
 	The custom load balancing policy to apply. The value must be the full package of the policy's class implementing 'LoadBalancingPolicy' interface.
 	choices: n/a
 	required: false
-[08] = retry: 
+[09] = retry: 
 	The custom retry policy to apply. The value must be the full package of the policy's class implementing 'RetryPolicy' interface. By default, the driver will use 'DefaultRetryPolicy'.
 	choices: n/a
 	required: false
-[09] = reconnection: 
+[10] = reconnection: 
 	The custom reconnection policy to apply. By default, the driver will use 'ExponentialReconnectionPolicy'. If you want to use a custom policy, specify the full package of the policy's class. Make sure you always cast the policy's arguments appropriately.
 	choices: n/a
 	required: false
-[10] = enableSsl: 
+[11] = enableSsl: 
 	Whether the secured traffic is enabled.
 	choices: {true,false}
 	required: false
-[11] = sslEngineFactory: 
+[12] = sslEngineFactory: 
 	The SSL engine factory to use. By default, 'DefaultSslEngineFactory' is used. The value must be the fully-qualified name of a class with a no-args constructor implementing 'SslEngineFactory' interface.
 	choices: n/a
 	required: false
-[12] = hostnameVerification: 
+[13] = hostnameVerification: 
 	Whether the validation of the server certificate's common name against the hostname of the server being connected to is enabled. By default, it's enabled if the secured traffic is enabled.
 	choices: {true,false}
 	required: false
-[13] = secureConnectBundle: 
+[14] = secureConnectBundle: 
 	The fully qualified path of the cloud secure connect bundle file used to connect to an AstraDB instance.
 	choices: n/a
 	required: false
-[14] = useKerberos: 
+[15] = useKerberos: 
 	Whether the Kerberos auth provider is enabled. By default, it's disabled.
 	choices: {true,false}
 	required: false
-[15] = requestTimeout: 
+[16] = requestTimeout: 
 	A custom timeout for the queries in milliseconds. By default, the timeout for queries is 2 seconds.
 	choices: n/a
 	required: false
-[16] = connectTimeout: 10000
+[17] = connectTimeout: 10000
 	A custom connection timeout in milliseconds. By default, the connection timeout is 5 seconds.
 	choices: n/a
 	required: false
-[17] = tcpNoDelay: 
+[18] = tcpNoDelay: 
 	Whether the Nagle's algorithm is enabled. By default, it's enabled.
 	choices: {true,false}
 	required: false
-[18] = keepAlive: 
+[19] = keepAlive: 
 	Whether the TCP keep-alive is enabled. By default, it's disabled.
 	choices: {true,false}
 	required: false
-[19] = configFile: 
+[20] = configFile: 
 	The Cassandra client configuration file to use.
 	choices: n/a
 	required: false
-[20] = complianceMode: 
+[21] = complianceMode: 
 	The compliance mode used when the connection to the database is established.
 	choices: {Default,Liquibase}
+	required: false
+[22] = awsRegion: 
+	When connecting to an Amazon Keyspaces instance, the AWS region of the contact point.
+	choices: {us-east-1,us-east-2,us-west-1,us-west-2,ap-east-1,ap-south-1,ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-2,ca-central-1,eu-central-1,eu-west-1,eu-west-2,eu-west-3,eu-north-1,me-south-1,sa-east-1,us-gov-east-1,us-gov-west-1,cn-north-1,cn-northwest-1}
+	required: false
+[23] = awsSecretName: 
+	The name of the secret, stored in Amazon Secret Manager, containing the credentials of the user used for the connection.
+	choices: n/a
+	required: false
+[24] = awsSecretRegion: 
+	The AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection are stored. If not specified, the value of awsRegion property will be used.
+	choices: n/a
+	required: false
+[25] = useAwsSigV4: 
+	Whether the Amazon Signature V4 auth provider is enabled. By default, it's disabled.
+	choices: {true,false}
 	required: false

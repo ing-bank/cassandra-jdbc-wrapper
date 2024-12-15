@@ -40,6 +40,7 @@ import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
+import com.ing.data.cassandra.jdbc.utils.AwsUtil;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import com.instaclustr.cassandra.driver.auth.KerberosAuthProviderBase;
 import com.instaclustr.cassandra.driver.auth.ProgrammaticKerberosAuthProvider;
@@ -47,6 +48,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.aws.mcs.auth.SigV4AuthProvider;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -66,7 +68,12 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWOR
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
@@ -89,6 +96,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VER
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 
@@ -133,7 +141,7 @@ class SessionHolder {
             .filter(key -> !URL_KEY.equals(key))
             .forEach(key -> this.properties.put(key, params.get(key)));
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Final Properties to Connection: {}", this.properties);
+            LOG.debug("Final Properties to Connection: {}", toStringWithoutSensitiveValues(this.properties));
         }
 
         this.session = createSession(this.properties);
@@ -156,11 +164,12 @@ class SessionHolder {
                 break;
             }
         }
+        final String jdbcUrl = redactSensitiveValuesInJdbcUrl(this.cacheKey.get(URL_KEY));
         if (newRef == -1) {
-            LOG.debug("Released last reference to {}, closing Session.", this.cacheKey.get(URL_KEY));
+            LOG.debug("Released last reference to {}, closing Session.", jdbcUrl);
             dispose();
         } else {
-            LOG.debug("Released reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), newRef);
+            LOG.debug("Released reference to {}, new count = {}.", jdbcUrl, newRef);
         }
     }
 
@@ -172,13 +181,14 @@ class SessionHolder {
     boolean acquire() {
         while (true) {
             final int ref = this.references.get();
+            final String jdbcUrl = redactSensitiveValuesInJdbcUrl(this.cacheKey.get(URL_KEY));
             if (ref < 0) {
                 // We raced with the release of the last reference, the caller will need to create a new session.
-                LOG.debug("Failed to acquire reference to {}.", this.cacheKey.get(URL_KEY));
+                LOG.debug("Failed to acquire reference to {}.", jdbcUrl);
                 return false;
             }
             if (this.references.compareAndSet(ref, ref + 1)) {
-                LOG.debug("Acquired reference to {}, new count = {}.", this.cacheKey.get(URL_KEY), ref + 1);
+                LOG.debug("Acquired reference to {}, new count = {}.", jdbcUrl, ref + 1);
                 return true;
             }
         }
@@ -219,9 +229,15 @@ class SessionHolder {
         final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.getOrDefault(TAG_CONTACT_POINTS,
             new ArrayList<>());
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
+        final String awsSecretName = properties.getProperty(TAG_AWS_SECRET_NAME, StringUtils.EMPTY);
+        final String awsRegion = properties.getProperty(TAG_AWS_REGION, StringUtils.EMPTY);
+        final String awsSecretRegion = properties.getProperty(TAG_AWS_SECRET_REGION, StringUtils.EMPTY);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
         final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);
-        final String password = properties.getProperty(TAG_PASSWORD, StringUtils.EMPTY);
+        String password = properties.getProperty(TAG_PASSWORD, StringUtils.EMPTY);
+        if (!awsSecretName.isEmpty()) {
+            password = AwsUtil.getSecretValue(StringUtils.defaultIfBlank(awsSecretRegion, awsRegion), awsSecretName);
+        }
         final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
         final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, null);
         final String retryPolicy = properties.getProperty(TAG_RETRY_POLICY, StringUtils.EMPTY);
@@ -242,6 +258,8 @@ class SessionHolder {
             requestTimeout = Integer.parseInt(requestTimeoutRawValue);
         }
         final boolean useKerberosAuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_KERBEROS,
+            StringUtils.EMPTY));
+        final boolean useAwsSigV4AuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_SIG_V4,
             StringUtils.EMPTY));
 
         // Instantiate the session builder and set the contact points.
@@ -342,6 +360,11 @@ class SessionHolder {
             builder.withAuthProvider(new ProgrammaticKerberosAuthProvider(
                 KerberosAuthProviderBase.KerberosAuthOptions.builder().build()
             ));
+        }
+
+        // Set Amazon SigV4 Auth provider if required.
+        if (useAwsSigV4AuthProvider) {
+            builder.withAuthProvider(new SigV4AuthProvider(awsRegion));
         }
 
         // Declare and register codecs.

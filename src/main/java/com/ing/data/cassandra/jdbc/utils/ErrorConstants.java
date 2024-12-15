@@ -234,6 +234,28 @@ public final class ErrorConstants {
     public static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
 
     /**
+     * Error message used in any SQL exception thrown when the required parameter {@code awsregion} is missing in the
+     * JDBC URL.
+     */
+    public static final String AWS_REGION_REQUIRED = "The 'awsregion' parameter is required.";
+
+    /**
+     * Error message used in any SQL exception thrown when either the required parameter {@code awsregion} or
+     * {@code awssecretregion} is missing in the JDBC URL.
+     */
+    public static final String AWS_REGION_FOR_SECRET_REQUIRED =
+        "Either 'awsregion' or 'awssecretregion' parameter is required.";
+
+    /**
+     * Error message used in any SQL exception thrown when retrieving of a secret value in AWS Secret Manager failed.
+     * This message is a template expecting the name of the secret and AWS region and the error message returned by the
+     * AWS Secret Manager (example:
+     * {@code String.format(AWS_SECRET_RETRIEVAL_FAILED, "mySecret", "eu-west-1", e.awsErrorDetails().errorMessage())}).
+     */
+    public static final String AWS_SECRET_RETRIEVAL_FAILED =
+        "Unable to retrieve the secret [%s] in the region [%s]: %s";
+
+    /**
      * Error message used in any SQL exception thrown because the {@link ResultSet} type is set to
      * {@link ResultSet#TYPE_FORWARD_ONLY} (but cursors are currently not implemented in Cassandra).
      */

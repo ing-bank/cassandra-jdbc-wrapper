@@ -42,12 +42,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_FOR_SECRET_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CONTACT_POINT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * A set of static utility methods and constants used to parse the JDBC URL used to establish a connection to a
@@ -61,6 +64,11 @@ public final class JdbcUrlUtil {
     public static final int DEFAULT_PORT = 9042;
 
     /**
+     * Default Amazon Keyspaces port.
+     */
+    public static final int DEFAULT_AWS_PORT = 9142;
+
+    /**
      * JDBC protocol for Cassandra connection.
      */
     public static final String PROTOCOL = "jdbc:cassandra:";
@@ -69,6 +77,14 @@ public final class JdbcUrlUtil {
      * JDBC protocol for Cassandra DBaaS connection.
      */
     public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
+
+    /**
+     * JDBC protocol for Amazon Keyspaces connection.
+     * <p>
+     *     This is required to retrieve password from the Amazon Secrets manager and to use Amazon SigV4 auth provider.
+     * </p>
+     */
+    public static final String PROTOCOL_AWS = "jdbc:cassandra:aws:";
 
     /**
      * JDBC URL parameter key for the consistency.
@@ -325,11 +341,62 @@ public final class JdbcUrlUtil {
     public static final String KEY_ACTIVE_PROFILE = "activeprofile";
 
     /**
+     * JDBC URL parameter key for the secret name to use to retrieve credentials.
+     */
+    public static final String KEY_AWS_SECRET_NAME = "awssecret";
+
+    /**
+     * Property name used to retrieve the credentials in AWS Secret Manager from the given secret name. This property is
+     * *mapped from the JDBC URL parameter {@code awssecret}.
+     */
+    public static final String TAG_AWS_SECRET_NAME = "awsSecretName";
+
+    /**
+     * JDBC URL parameter key for the AWS region.
+     */
+    public static final String KEY_AWS_SECRET_REGION = "awssecretregion";
+
+    /**
+     * Property name used to retrieve the credentials in AWS Secret Manager in the given AWS region. This property is
+     * mapped from the JDBC URL parameter {@code awssecretregion}.
+     */
+    public static final String TAG_AWS_SECRET_REGION = "awsSecretRegion";
+
+    /**
+     * JDBC URL parameter key for the AWS region of the contact point.
+     */
+    public static final String KEY_AWS_REGION = "awsregion";
+
+    /**
+     * Property name used to determine the region of the Amazon Keyspaces contact point. This property is mapped from
+     * the JDBC URL parameter {@code awsregion}.
+     */
+    public static final String TAG_AWS_REGION = "awsRegion";
+
+    /**
+     * JDBC URL parameter key for Amazon Signature V4 auth provider enabling.
+     */
+    public static final String KEY_USE_SIG_V4 = "usesigv4";
+
+    /**
+     * Property name used to retrieve the Amazon Signature V4 auth provider enabling when the connection to Amazon
+     * Keyspaces is established. This property is mapped from the JDBC URL parameter {@code usesigv4}.
+     */
+    public static final String TAG_USE_SIG_V4 = "useAwsSigV4";
+
+    /**
      * Property name used to determine if the current connection is established to a cloud database. In such a case,
      * the hostname can be ignored.
      * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
      */
     public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
+
+    /**
+     * Property name used to determine if the current connection is established to an Amazon Keyspaces database.
+     * In such a case, secured connection is automatically enabled and specifying an AWS region is required.
+     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_AWS}).
+     */
+    public static final String TAG_AWS_CONNECTION = "isAwsConnection";
 
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
@@ -360,13 +427,23 @@ public final class JdbcUrlUtil {
         final Properties props = new Properties();
 
         if (url != null) {
-            boolean isDbaasConnection = false;
             int uriStartIndex = PROTOCOL.length();
+
+            // Handle specific protocol for DataStax Astra DB connections.
+            boolean isDbaasConnection = false;
             if (url.startsWith(PROTOCOL_DBAAS)) {
                 uriStartIndex = PROTOCOL_DBAAS.length();
                 isDbaasConnection = true;
                 props.put(TAG_DBAAS_CONNECTION, true);
             }
+            // Handle specific protocol for Amazon Keyspaces connections.
+            boolean isAwsConnection = false;
+            if (url.startsWith(PROTOCOL_AWS)) {
+                uriStartIndex = PROTOCOL_AWS.length();
+                isAwsConnection = true;
+                props.put(TAG_AWS_CONNECTION, true);
+            }
+
             final String rawUri = url.substring(uriStartIndex);
             final ImmutablePair<URI, Map<String, String>> uriParsingResult = parseToUri(rawUri);
             final Map<String, String> ipV6Map = uriParsingResult.getRight();
@@ -377,7 +454,8 @@ public final class JdbcUrlUtil {
                     if (StringUtils.isBlank(uri.getAuthority())) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
                     }
-                    final List<ContactPoint> contactPoints = parseContactPoints(uri.getAuthority(), ipV6Map);
+                    final List<ContactPoint> contactPoints =
+                        parseContactPoints(uri.getAuthority(), ipV6Map, isAwsConnection);
                     if (contactPoints.isEmpty()) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
                     }
@@ -473,8 +551,11 @@ public final class JdbcUrlUtil {
                 if (params.containsKey(KEY_ACTIVE_PROFILE)) {
                     props.setProperty(TAG_ACTIVE_PROFILE, params.get(KEY_ACTIVE_PROFILE));
                 }
+                handleAwsProperties(props, params, isAwsConnection);
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
+            } else if (isAwsConnection) {
+                throw new SQLNonTransientConnectionException(AWS_REGION_REQUIRED);
             }
         }
 
@@ -483,6 +564,36 @@ public final class JdbcUrlUtil {
         }
 
         return props;
+    }
+
+    private static void handleAwsProperties(final Properties props, final Map<String, String> params,
+                                            final boolean isAwsConnection) throws SQLException {
+        if (isAwsConnection) {
+            props.setProperty(TAG_ENABLE_SSL, Boolean.TRUE.toString());
+            props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, Boolean.FALSE.toString());
+        }
+
+        boolean awsRegionIsDefined = false;
+        if (params.containsKey(KEY_AWS_SECRET_REGION)) {
+            props.setProperty(TAG_AWS_SECRET_NAME, params.get(KEY_AWS_SECRET_REGION));
+            awsRegionIsDefined = true;
+        }
+        if (params.containsKey(KEY_AWS_REGION)) {
+            props.setProperty(TAG_AWS_REGION, params.get(KEY_AWS_REGION));
+            props.setProperty(TAG_LOCAL_DATACENTER, params.get(KEY_AWS_REGION));
+            awsRegionIsDefined = true;
+        } else if (isAwsConnection) {
+            throw new SQLNonTransientConnectionException(AWS_REGION_REQUIRED);
+        }
+        if (params.containsKey(KEY_USE_SIG_V4)) {
+            props.setProperty(TAG_USE_SIG_V4, params.get(KEY_USE_SIG_V4));
+        }
+        if (params.containsKey(KEY_AWS_SECRET_NAME)) {
+            if (!awsRegionIsDefined) {
+                throw new SQLNonTransientConnectionException(AWS_REGION_FOR_SECRET_REQUIRED);
+            }
+            props.setProperty(TAG_AWS_SECRET_NAME, params.get(KEY_AWS_SECRET_NAME));
+        }
     }
 
     private static ImmutablePair<URI, Map<String, String>> parseToUri(final String rawUriToParse)
@@ -512,11 +623,15 @@ public final class JdbcUrlUtil {
         return new ImmutablePair<>(uri, ipV6Map);
     }
 
-    private static List<ContactPoint> parseContactPoints(final String toParse, final Map<String, String> ipV6Map) {
+    private static List<ContactPoint> parseContactPoints(final String toParse, final Map<String, String> ipV6Map,
+                                                         final boolean isAwsConnection) {
         // Check whether the value to parse ends with a port. If yes, we'll use this port as the common port for all
         // the hosts except if another port is specified for the host. When no port is specified at all, use the default
-        // Cassandra port.
+        // Cassandra port (or Amazon Keyspaces port if the connection is identified as such).
         final AtomicInteger defaultPort = new AtomicInteger(DEFAULT_PORT);
+        if (isAwsConnection) {
+            defaultPort.set(DEFAULT_AWS_PORT);
+        }
         final Pattern endWithPort = Pattern.compile(":(\\d{1,5})$");
         final Matcher endWithPortMatcher = endWithPort.matcher(toParse);
         if (endWithPortMatcher.find()) {
@@ -618,11 +733,17 @@ public final class JdbcUrlUtil {
         final Map<String, String> params = new HashMap<>();
         for (final String param : query.split("&")) {
             try {
+                // Handle passwords ending with an equal sign because the the split() function just after will drop
+                // equal signs.
+                final boolean passwordEndsWithEqualSign = param.endsWith("=") && param.startsWith(KEY_PASSWORD);
                 final String[] pair = param.split("=");
                 final String key = URLDecoder.decode(pair[0], StandardCharsets.UTF_8.displayName()).toLowerCase();
-                String value = StringUtils.EMPTY;
+                String value = EMPTY;
                 if (pair.length > 1) {
                     value = URLDecoder.decode(pair[1], StandardCharsets.UTF_8.displayName());
+                    if (passwordEndsWithEqualSign) {
+                        value += "=";
+                    }
                 }
                 params.put(key, value);
             } catch (final UnsupportedEncodingException e) {
@@ -678,7 +799,7 @@ public final class JdbcUrlUtil {
                         final String param = paramsMatcher.group();
                         if (param.toLowerCase().contains("(long)")) {
                             final long delay = Long.parseLong(param.toLowerCase()
-                                .replace("(long)", StringUtils.EMPTY)
+                                .replace("(long)", EMPTY)
                                 .trim());
                             if (argPos == 0) {
                                 policyParametersMap.put(DefaultDriverOption.RECONNECTION_BASE_DELAY,

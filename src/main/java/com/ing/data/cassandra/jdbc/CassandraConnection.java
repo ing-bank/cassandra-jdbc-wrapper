@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientConnectionException;
@@ -66,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
+import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_KEYSPACES_HOSTS_REGEX;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
@@ -125,6 +127,10 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * The connection URL.
      */
     protected String url;
+    /**
+     * Whether the connection is bound to an Amazon Keyspaces database.
+     */
+    private Boolean connectedToAmazonKeyspaces;
 
     private final SessionHolder sessionHolder;
     private final Session cSession;
@@ -249,6 +255,41 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         codecs.add(new SmallintToIntCodec());
         codecs.add(new TinyintToIntCodec());
         safelyRegisterCodecs(cSession, codecs);
+    }
+
+    /**
+     * Checks whether the current connection is not bound to an Amazon Keyspaces instance.
+     * <p>
+     *     The main purpose of this method is to adapt the values returned by the methods of
+     *     {@link CassandraDatabaseMetaData} when the used database is Amazon Keyspaces since this one does not
+     *     implement all the Cassandra features. See
+     *     <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/keyspaces-vs-cassandra.html">comparison
+     *     between Cassandra and Keyspaces</a>.
+     * </p>
+     *
+     * @return {@code true} if the connection is not bound to Amazon Keyspaces, {@code false} otherwise.
+     */
+    public boolean isNotConnectedToAmazonKeyspaces() {
+        if (this.connectedToAmazonKeyspaces == null) {
+            this.connectedToAmazonKeyspaces = false;
+            // Valid Amazon Keyspaces endpoints are available here:
+            // https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html
+            if (this.url.matches(AWS_KEYSPACES_HOSTS_REGEX)) {
+                this.connectedToAmazonKeyspaces = true;
+            } else {
+                // Check for the existence of the keyspace 'system_schema_mcs' (specific to Amazon Keyspaces).
+                try (final CassandraStatement stmt = (CassandraStatement) this.createStatement()) {
+                    stmt.execute(
+                        "SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name = 'system_schema_mcs'");
+                    final ResultSet rs = stmt.getResultSet();
+                    this.connectedToAmazonKeyspaces = rs != null && rs.next();
+                } catch (final Exception e) {
+                    LOG.debug("Failed to check existing keyspaces to determine if the connection is bound to AWS: {}",
+                        e.getMessage());
+                }
+            }
+        }
+        return !this.connectedToAmazonKeyspaces;
     }
 
     /**

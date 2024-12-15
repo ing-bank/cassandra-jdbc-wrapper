@@ -23,6 +23,7 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
+import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.semver4j.Semver;
 
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 
@@ -74,11 +76,11 @@ public enum DataTypeEnum implements VersionedMetadata {
      * {@code custom} CQL type (type {@value DataType#CUSTOM} in CQL native protocol) mapped to {@link ByteBuffer} Java
      * type.
      */
-    CUSTOM(DataType.CUSTOM, ByteBuffer.class, "CUSTOM"),
+    CUSTOM(DataType.CUSTOM, ByteBuffer.class, "CUSTOM", ifNotAwsKeyspaces()),
     /**
      * {@code date} CQL type (type {@value DataType#DATE} in CQL native protocol) mapped to {@link Date} Java type.
      */
-    DATE(DataType.DATE, Date.class, cqlName(DataTypes.DATE)),
+    DATE(DataType.DATE, Date.class, cqlName(DataTypes.DATE), ifNotAwsKeyspaces()),
     /**
      * {@code decimal} CQL type (type {@value DataType#DECIMAL} in CQL native protocol) mapped to {@link BigDecimal}
      * Java type.
@@ -93,7 +95,7 @@ public enum DataTypeEnum implements VersionedMetadata {
      * {@code duration} CQL type (type {@value DataType#DURATION} in CQL native protocol) mapped to {@link CqlDuration}
      * Java type.
      */
-    DURATION(DataType.DURATION, CqlDuration.class, cqlName(DataTypes.DURATION)),
+    DURATION(DataType.DURATION, CqlDuration.class, cqlName(DataTypes.DURATION), ifNotAwsKeyspaces()),
     /**
      * {@code float} CQL type (type {@value DataType#FLOAT} in CQL native protocol) mapped to {@link Float} Java type.
      */
@@ -123,7 +125,7 @@ public enum DataTypeEnum implements VersionedMetadata {
      * {@code smallint} CQL type (type {@value DataType#SMALLINT} in CQL native protocol) mapped to {@link Short} Java
      * type.
      */
-    SMALLINT(DataType.SMALLINT, Short.class, cqlName(DataTypes.SMALLINT)),
+    SMALLINT(DataType.SMALLINT, Short.class, cqlName(DataTypes.SMALLINT), ifNotAwsKeyspaces()),
     /**
      * {@code text} CQL type (type {@value DataType#VARCHAR} in CQL native protocol) mapped to {@link String} Java type.
      */
@@ -131,7 +133,7 @@ public enum DataTypeEnum implements VersionedMetadata {
     /**
      * {@code time} CQL type (type {@value DataType#TIME} in CQL native protocol) mapped to {@link Time} Java type.
      */
-    TIME(DataType.TIME, Time.class, cqlName(DataTypes.TIME)),
+    TIME(DataType.TIME, Time.class, cqlName(DataTypes.TIME), ifNotAwsKeyspaces()),
     /**
      * {@code timestamp} CQL type (type {@value DataType#TIMESTAMP} in CQL native protocol) mapped to {@link Timestamp}
      * Java type.
@@ -146,20 +148,20 @@ public enum DataTypeEnum implements VersionedMetadata {
      * {@code tinyint} CQL type (type {@value DataType#TINYINT} in CQL native protocol) mapped to {@link Byte} Java
      * type.
      */
-    TINYINT(DataType.TINYINT, Byte.class, cqlName(DataTypes.TINYINT)),
+    TINYINT(DataType.TINYINT, Byte.class, cqlName(DataTypes.TINYINT), ifNotAwsKeyspaces()),
     /**
      * {@code tuple} CQL type (type {@value DataType#TUPLE} in CQL native protocol) mapped to {@link TupleValue} Java
      * type.
      */
-    TUPLE(DataType.TUPLE, TupleValue.class, "tuple"),
+    TUPLE(DataType.TUPLE, TupleValue.class, "tuple", ifNotAwsKeyspaces()),
     /**
      * {@code udt} CQL type (type {@value DataType#UDT} in CQL native protocol) mapped to {@link UdtValue} Java type.
      */
-    UDT(DataType.UDT, UdtValue.class, "UDT"),
+    UDT(DataType.UDT, UdtValue.class, "UDT", ifNotAwsKeyspaces()),
     /**
      * {@code uuid} CQL type (type {@value DataType#UUID} in CQL native protocol) mapped to {@link UUID} Java type.
      */
-    UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID)),
+    UUID(DataType.UUID, UUID.class, cqlName(DataTypes.UUID), ifNotAwsKeyspaces()),
     /**
      * {@code varchar} CQL type (type {@value DataType#VARCHAR} in CQL native protocol) mapped to {@link String} Java
      * type.
@@ -174,7 +176,7 @@ public enum DataTypeEnum implements VersionedMetadata {
      * {@code vector} CQL type (type {@value DataType#LIST} in CQL native protocol) mapped to {@link CqlVector} Java
      * type.
      */
-    VECTOR(DataType.LIST, CqlVector.class, "Vector", CASSANDRA_5, null);
+    VECTOR(DataType.LIST, CqlVector.class, "Vector", CASSANDRA_5, null, ifNotAwsKeyspaces());
 
     static final String VECTOR_CLASSNAME = "org.apache.cassandra.db.marshal.VectorType";
 
@@ -192,6 +194,7 @@ public enum DataTypeEnum implements VersionedMetadata {
     final int protocolId;
     final Semver validFrom;
     final Semver invalidFrom;
+    final Function<CassandraConnection, Boolean> additionalCondition;
 
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
@@ -203,24 +206,26 @@ public enum DataTypeEnum implements VersionedMetadata {
     /**
      * Constructs a {@code DataTypeEnum} item.
      *
-     * @param protocolId  The type ID as defined in CQL binary protocol. (see
-     *                    <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
-     *                    CQL binary protocol definition</a> and {@link DataType}).
-     * @param javaType    The corresponding Java type.
-     * @param cqlType     The CQL type name.
-     * @param validFrom   The minimal Cassandra version from which the CQL type exists. If {@code null}, we consider the
-     *                    type exists in any version of the Cassandra database.
-     * @param invalidFrom The first Cassandra version in which the CQL type does not exist anymore. If {@code null},
-     *                    we consider the type exists in any version of the Cassandra database greater than
-     *                    {@code validFrom}.
+     * @param protocolId          The type ID as defined in CQL binary protocol. (see
+     *                            <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
+     *                            CQL binary protocol definition</a> and {@link DataType}).
+     * @param javaType            The corresponding Java type.
+     * @param cqlType             The CQL type name.
+     * @param validFrom           The minimal Cassandra version from which the CQL type exists. If {@code null}, we
+     *                            consider the type exists in any version of the Cassandra database.
+     * @param invalidFrom         The first Cassandra version in which the CQL type does not exist anymore. If
+     *                            {@code null}, we consider the type exists in any version of the Cassandra database
+     *                            greater than {@code validFrom}.
+     * @param additionalCondition An additional condition to verify on the current connection to the database.
      */
     DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom,
-                 final String invalidFrom) {
+                 final String invalidFrom, final Function<CassandraConnection, Boolean> additionalCondition) {
         this.protocolId = protocolId;
         this.javaType = javaType;
         this.cqlType = cqlType;
         this.validFrom = Semver.coerce(validFrom);
         this.invalidFrom = Semver.coerce(invalidFrom);
+        this.additionalCondition = additionalCondition;
     }
 
     /**
@@ -234,7 +239,22 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param validFrom  The minimal Cassandra version from which the CQL type exists.
      */
     DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom) {
-        this(protocolId, javaType, cqlType, validFrom, null);
+        this(protocolId, javaType, cqlType, validFrom, null, connection -> true);
+    }
+
+    /**
+     * Constructs a {@code DataTypeEnum} item valid in any version of Cassandra.
+     *
+     * @param protocolId          The type ID as defined in CQL binary protocol. (see
+     *                            <a href="https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v5.spec">
+     *                            CQL binary protocol definition</a> and {@link DataType}).
+     * @param javaType            The corresponding Java type.
+     * @param cqlType             The CQL type name.
+     * @param additionalCondition An additional condition to verify on the current connection to the database.
+     */
+    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType,
+                 final Function<CassandraConnection, Boolean> additionalCondition) {
+        this(protocolId, javaType, cqlType, null, null, additionalCondition);
     }
 
     /**
@@ -247,7 +267,7 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param cqlType    The CQL type name.
      */
     DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType) {
-        this(protocolId, javaType, cqlType, null);
+        this(protocolId, javaType, cqlType, (String) null);
     }
 
     /**
@@ -384,6 +404,11 @@ public enum DataTypeEnum implements VersionedMetadata {
         return this.invalidFrom;
     }
 
+    @Override
+    public boolean fulfillAdditionalCondition(final CassandraConnection connection) {
+        return connection == null || this.additionalCondition.apply(connection);
+    }
+
     /**
      * Gets the CQL name from a given {@link com.datastax.oss.driver.api.core.type.DataType} instance.
      * For vectors, dataType.asCql returns looks like 'org.apache.cassandra.db.marshal.VectorType(n)' where n is
@@ -399,6 +424,18 @@ public enum DataTypeEnum implements VersionedMetadata {
         }
         return rawCql;
     }
+
+    /**
+     * Some data types are not supported by Amazon Keyspaces, those are marked with an additional condition
+     * ({@code ifNotAwsKeyspaces()}) in the enumerated data types. See
+     * <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types"> data types
+     * supported by Amazon Keyspaces</a>.
+     * @return The function indicating if a given connection is bound to Amazon Keyspaces.
+     */
+    private static Function<CassandraConnection, Boolean> ifNotAwsKeyspaces() {
+        return CassandraConnection::isNotConnectedToAmazonKeyspaces;
+    }
+
 }
 
 

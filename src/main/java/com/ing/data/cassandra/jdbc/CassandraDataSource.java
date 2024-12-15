@@ -30,6 +30,7 @@ import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.optionset.Liquibase;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
+import software.amazon.awssdk.regions.Region;
 
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
@@ -48,6 +49,9 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CLOUD_SECURE_CONNECT_BUNDLE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
@@ -70,6 +74,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VER
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 
 /**
@@ -825,6 +830,125 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setConfigurationFile(final Path configurationFilePath) {
         this.setConfigurationFile(configurationFilePath.toString());
+    }
+
+    /**
+     * Gets the AWS region of the contact point of the Amazon Keyspaces instance.
+     *
+     * @return The AWS region.
+     */
+    public String getAwsRegion() {
+        return this.properties.getProperty(TAG_AWS_REGION);
+    }
+
+    /**
+     * Sets the AWS region of the contact point of the Amazon Keyspaces instance.
+     *
+     * @param region The string representation of the region.
+     */
+    public void setAwsRegion(final String region) {
+        this.setDataSourceProperty(TAG_AWS_REGION, region);
+    }
+
+    /**
+     * Sets the AWS region of the contact point of the Amazon Keyspaces instance.
+     *
+     * @param region The AWS region.
+     */
+    public void setAwsRegion(final Region region) {
+        if (region == null) {
+            this.setAwsRegion((String) null);
+        } else {
+            this.setDataSourceProperty(TAG_AWS_REGION, region.id());
+        }
+    }
+
+    /**
+     * Gets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
+     * are stored. If not defined, the value is the one returned by {@link #getAwsRegion()}.
+     *
+     * @return .
+     */
+    public String getAwsSecretRegion() {
+        return (String) this.properties.getOrDefault(TAG_AWS_SECRET_REGION,
+            this.properties.getProperty(TAG_AWS_REGION));
+    }
+
+    /**
+     * Sets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
+     * are stored.
+     *
+     * @param region The string representation of the region.
+     */
+    public void setAwsSecretRegion(final String region) {
+        this.setDataSourceProperty(TAG_AWS_SECRET_REGION, region);
+    }
+
+    /**
+     * Sets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
+     * are stored.
+     *
+     * @param region The AWS region.
+     */
+    public void setAwsSecretRegion(final Region region) {
+        if (region == null) {
+            this.setAwsSecretRegion((String) null);
+        } else {
+            this.setDataSourceProperty(TAG_AWS_SECRET_REGION, region.id());
+        }
+    }
+
+    /**
+     * Gets the name of the secret, stored in Amazon Secret Manager, containing the credentials of the user used for
+     * the connection.
+     *
+     * @return The name of the secret.
+     */
+    public String getAwsSecretName() {
+        return this.properties.getProperty(TAG_AWS_SECRET_NAME);
+    }
+
+    /**
+     * Sets the name of the secret, stored in Amazon Secret Manager, containing the credentials of the user used for
+     * the connection.
+     *
+     * @param secretName The name of the secret.
+     */
+    public void setAwsSecretName(final String secretName) {
+        this.setDataSourceProperty(TAG_AWS_SECRET_NAME, secretName);
+    }
+
+    /**
+     * Gets whether the Amazon Signature V4 auth provider is enabled.
+     * <p>
+     *     The default value is {@code false}.
+     *     See <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/authentication/">
+     *     Authentication reference</a> and
+     *     <a href="https://github.com/aws/aws-sigv4-auth-cassandra-java-driver-plugin">
+     *     Amazon Signature V4 authenticator plugin for Java driver</a> for further information.
+     * </p>
+     *
+     * @return {@code true} if the Amazon Signature V4 auth provider is enabled, {@code false} otherwise.
+     */
+    public boolean isSigV4AuthProviderEnabled() {
+        return (boolean) this.properties.getOrDefault(TAG_USE_SIG_V4, false);
+    }
+
+    /**
+     * Sets whether the Amazon Signature V4 auth provider is enabled.
+     * <p>
+     *     This will enable the Amazon Signature V4 {@link AuthProvider} implementation for the connection using the
+     *     AWS region defined in the property {@link #setAwsRegion(String)} (or {@link #setAwsRegion(Region)}).
+     *     See <a href="https://docs.datastax.com/en/developer/java-driver/latest/manual/core/authentication/">
+     *     Authentication reference</a> and
+     *     <a href="https://github.com/aws/aws-sigv4-auth-cassandra-java-driver-plugin">
+     *     Amazon Signature V4 authenticator plugin for Java driver</a> for further information.
+     * </p>
+     *
+     * @param enabled Whether the Amazon Signature V4 auth provider is enabled.
+     */
+    public void setSigV4AuthProviderEnabled(final boolean enabled) {
+        this.setDataSourceProperty(TAG_USE_SIG_V4, enabled);
     }
 
     private void setDataSourceProperty(final String propertyName, final Object value) {

@@ -15,7 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.ing.data.cassandra.jdbc.CassandraConnection;
 import org.semver4j.Semver;
+
+import java.util.function.Function;
 
 /**
  * A basic implementation of a versioned database metadata.
@@ -28,6 +31,27 @@ public class BasicVersionedMetadata implements VersionedMetadata {
     private final String metadataName;
     private final Semver validFrom;
     private final Semver invalidFrom;
+    private final Function<CassandraConnection, Boolean> additionalCondition;
+
+    /**
+     * Constructs a database metadata valid in the specified range of Cassandra versions and verifying a specific
+     * condition for the current connection.
+     *
+     * @param metadataName          The metadata name (a built-in function name for example).
+     * @param validFrom             The minimal Cassandra version from which the metadata exists. If {@code null}, we
+     *                              consider the metadata exists in any version of the Cassandra database.
+     * @param invalidFrom           The first Cassandra version in which the metadata does not exist anymore. If
+     *                              {@code null}, we consider the metadata exists in any version of the Cassandra
+     *                              database greater than {@code validFrom}.
+     * @param additionalCondition   An additional condition to verify on the current connection to the database.
+     */
+    public BasicVersionedMetadata(final String metadataName, final String validFrom, final String invalidFrom,
+                                  final Function<CassandraConnection, Boolean> additionalCondition) {
+        this.metadataName = metadataName;
+        this.validFrom = Semver.coerce(validFrom);
+        this.invalidFrom = Semver.coerce(invalidFrom);
+        this.additionalCondition = additionalCondition;
+    }
 
     /**
      * Constructs a database metadata valid in the specified range of Cassandra versions.
@@ -40,9 +64,20 @@ public class BasicVersionedMetadata implements VersionedMetadata {
      *                     {@code validFrom}.
      */
     public BasicVersionedMetadata(final String metadataName, final String validFrom, final String invalidFrom) {
-        this.metadataName = metadataName;
-        this.validFrom = Semver.coerce(validFrom);
-        this.invalidFrom = Semver.coerce(invalidFrom);
+        this(metadataName, validFrom, invalidFrom, connection -> true);
+    }
+
+    /**
+     * Constructs a database metadata valid from the specified version of Cassandra and verifying a specific condition
+     * for the current connection.
+     *
+     * @param metadataName          The metadata name (a built-in function name for example).
+     * @param validFrom             The minimal Cassandra version from which the metadata exists.
+     * @param additionalCondition   An additional condition to verify on the current connection to the database.
+     */
+    public BasicVersionedMetadata(final String metadataName, final String validFrom,
+                                  final Function<CassandraConnection, Boolean> additionalCondition) {
+        this(metadataName, validFrom, null, additionalCondition);
     }
 
     /**
@@ -52,7 +87,19 @@ public class BasicVersionedMetadata implements VersionedMetadata {
      * @param validFrom    The minimal Cassandra version from which the metadata exists.
      */
     public BasicVersionedMetadata(final String metadataName, final String validFrom) {
-        this(metadataName, validFrom, null);
+        this(metadataName, validFrom, (String) null);
+    }
+
+    /**
+     * Constructs a database metadata valid from the specified version of Cassandra and verifying a specific condition
+     * for the current connection.
+     *
+     * @param metadataName          The metadata name (a built-in function name for example).
+     * @param additionalCondition   An additional condition to verify on the current connection to the database.
+     */
+    public BasicVersionedMetadata(final String metadataName,
+                                  final Function<CassandraConnection, Boolean> additionalCondition) {
+        this(metadataName, null, null, additionalCondition);
     }
 
     /**
@@ -61,7 +108,7 @@ public class BasicVersionedMetadata implements VersionedMetadata {
      * @param metadataName The metadata name (a built-in function name for example).
      */
     public BasicVersionedMetadata(final String metadataName) {
-        this(metadataName, null);
+        this(metadataName, (String) null);
     }
 
     @Override
@@ -79,4 +126,8 @@ public class BasicVersionedMetadata implements VersionedMetadata {
         return this.invalidFrom;
     }
 
+    @Override
+    public boolean fulfillAdditionalCondition(final CassandraConnection connection) {
+        return connection == null || this.additionalCondition.apply(connection);
+    }
 }

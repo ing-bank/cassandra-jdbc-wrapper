@@ -1,5 +1,8 @@
-# Created by https://www.toptal.com/developers/gitignore/api/macos,java,maven,intellij,eclipse
-# Edit at https://www.toptal.com/developers/gitignore?templates=macos,java,maven,intellij,eclipse
+# Created by https://www.toptal.com/developers/gitignore/api/java,macos,maven,dotenv,eclipse,intellij
+# Edit at https://www.toptal.com/developers/gitignore?templates=java,macos,maven,dotenv,eclipse,intellij
+
+### dotenv ###
+.env
 
 ### Eclipse ###
 .metadata

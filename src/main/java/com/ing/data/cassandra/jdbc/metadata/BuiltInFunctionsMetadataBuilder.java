@@ -15,12 +15,14 @@
 
 package com.ing.data.cassandra.jdbc.metadata;
 
+import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraDatabaseMetaData;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.DatabaseMetaData;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
@@ -30,15 +32,25 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
  */
 public class BuiltInFunctionsMetadataBuilder {
 
+    // Global note: some built-in functions are not supported by Amazon Keyspaces, those are marked with an additional
+    // condition (ifNotAwsKeyspaces) in the methods of this class.
+    // See : https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.functions.html
+    final Function<CassandraConnection, Boolean> ifNotAwsKeyspaces =
+        CassandraConnection::isNotConnectedToAmazonKeyspaces;
+
     private final String databaseVersion;
+
+    private final CassandraConnection connection;
 
     /**
      * Constructor.
      *
      * @param databaseVersion The database version the driver is currently connected to.
+     * @param connection      The connection to the Cassandra database.
      */
-    public BuiltInFunctionsMetadataBuilder(final String databaseVersion) {
+    public BuiltInFunctionsMetadataBuilder(final String databaseVersion, final CassandraConnection connection) {
         this.databaseVersion = databaseVersion;
+        this.connection = connection;
     }
 
     /**
@@ -50,18 +62,18 @@ public class BuiltInFunctionsMetadataBuilder {
     public String buildNumericFunctionsList() {
         final List<VersionedMetadata> numericFunctions = Arrays.asList(
             // Math functions introduced in Cassandra 5.0 (see https://issues.apache.org/jira/browse/CASSANDRA-17221)
-            new BasicVersionedMetadata("abs", CASSANDRA_5),
-            new BasicVersionedMetadata("exp", CASSANDRA_5),
-            new BasicVersionedMetadata("log", CASSANDRA_5),
-            new BasicVersionedMetadata("log10", CASSANDRA_5),
-            new BasicVersionedMetadata("round", CASSANDRA_5),
+            new BasicVersionedMetadata("abs", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("exp", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("log", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("log10", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("round", CASSANDRA_5, this.ifNotAwsKeyspaces),
             // We consider here the vectors similarity functions introduced by CEP-30 as numeric functions (see
             // https://issues.apache.org/jira/browse/CASSANDRA-18640).
-            new BasicVersionedMetadata("similarity_cosine", CASSANDRA_5),
-            new BasicVersionedMetadata("similarity_euclidean", CASSANDRA_5),
-            new BasicVersionedMetadata("similarity_dot_product", CASSANDRA_5)
+            new BasicVersionedMetadata("similarity_cosine", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("similarity_euclidean", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("similarity_dot_product", CASSANDRA_5, this.ifNotAwsKeyspaces)
         );
-        return buildMetadataList(numericFunctions, databaseVersion);
+        return buildMetadataList(numericFunctions, this.databaseVersion, this.connection);
     }
 
     /**
@@ -80,26 +92,26 @@ public class BuiltInFunctionsMetadataBuilder {
             new BasicVersionedMetadata("dateOf", null, CASSANDRA_5),
             new BasicVersionedMetadata("now"),
             new BasicVersionedMetadata("minTimeuuid"),
-            new BasicVersionedMetadata("min_timeuuid", CASSANDRA_5),
+            new BasicVersionedMetadata("min_timeuuid", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("maxTimeuuid"),
-            new BasicVersionedMetadata("max_timeuuid", CASSANDRA_5),
+            new BasicVersionedMetadata("max_timeuuid", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("unixTimestampOf", null, CASSANDRA_5),
             new BasicVersionedMetadata("toDate", null, CASSANDRA_5),
-            new BasicVersionedMetadata("to_date", CASSANDRA_5),
+            new BasicVersionedMetadata("to_date", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("toTimestamp", null, CASSANDRA_5),
-            new BasicVersionedMetadata("to_timestamp", CASSANDRA_5),
+            new BasicVersionedMetadata("to_timestamp", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("toUnixTimestamp", null, CASSANDRA_5),
-            new BasicVersionedMetadata("to_unix_timestamp", CASSANDRA_5),
+            new BasicVersionedMetadata("to_unix_timestamp", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("currentTimestamp", null, CASSANDRA_5),
-            new BasicVersionedMetadata("current_timestamp", CASSANDRA_5),
+            new BasicVersionedMetadata("current_timestamp", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("currentDate", null, CASSANDRA_5),
-            new BasicVersionedMetadata("current_date", CASSANDRA_5),
+            new BasicVersionedMetadata("current_date", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("currentTime", null, CASSANDRA_5),
-            new BasicVersionedMetadata("current_time", CASSANDRA_5),
+            new BasicVersionedMetadata("current_time", CASSANDRA_5, this.ifNotAwsKeyspaces),
             new BasicVersionedMetadata("currentTimeUUID", null, CASSANDRA_5),
-            new BasicVersionedMetadata("current_timeuuid", CASSANDRA_5)
+            new BasicVersionedMetadata("current_timeuuid", CASSANDRA_5, this.ifNotAwsKeyspaces)
         );
-        return buildMetadataList(timeDateFunctions, databaseVersion);
+        return buildMetadataList(timeDateFunctions, this.databaseVersion, this.connection);
     }
 
     /**
@@ -115,14 +127,14 @@ public class BuiltInFunctionsMetadataBuilder {
             new BasicVersionedMetadata("writetime"),
             // Masking functions introduced by CEP-20 (see
             // https://cwiki.apache.org/confluence/display/CASSANDRA/CEP-20%3A+Dynamic+Data+Masking)
-            new BasicVersionedMetadata("mask_default", CASSANDRA_5),
-            new BasicVersionedMetadata("mask_hash", CASSANDRA_5),
-            new BasicVersionedMetadata("mask_inner", CASSANDRA_5),
-            new BasicVersionedMetadata("mask_null", CASSANDRA_5),
-            new BasicVersionedMetadata("mask_outer", CASSANDRA_5),
-            new BasicVersionedMetadata("mask_replace", CASSANDRA_5)
+            new BasicVersionedMetadata("mask_default", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("mask_hash", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("mask_inner", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("mask_null", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("mask_outer", CASSANDRA_5, this.ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("mask_replace", CASSANDRA_5, this.ifNotAwsKeyspaces)
         );
-        return buildMetadataList(systemFunctions, this.databaseVersion);
+        return buildMetadataList(systemFunctions, this.databaseVersion, this.connection);
     }
 
     /**
