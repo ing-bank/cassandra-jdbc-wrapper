@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Do not try to register codecs again (if already done previously) on a pre-existing session to avoid warnings in logs.
 - Fix some logging in `SessionHolder` to not leak connection credentials.
+- Fix `CodecNotFoundException` when getting complex objects, e.g. collections of collections, from a result set (see
+  issue [#75](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/75)).
 
 ## [4.13.1] - 2024-09-04
 ### Fixed

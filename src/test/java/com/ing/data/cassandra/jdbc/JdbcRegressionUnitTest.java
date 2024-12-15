@@ -19,8 +19,6 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -51,6 +49,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1030,6 +1029,80 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertEquals("test789", new String(array, StandardCharsets.UTF_8));
 
         stmt2.close();
+        stmt3.close();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testIngIssue75() throws Exception {
+        final Statement stmt = sqlConnection.createStatement();
+
+        // Create the table with complex types.
+        final String createTableQuery = "CREATE TABLE t75 (id int PRIMARY KEY, "
+            + "complex_type1 list<frozen<map<text, text>>>, "
+            + "complex_type2 list<frozen<map<text, list<frozen<map<text, text>>>>>>, "
+            + "complex_type3 set<frozen<map<text, set<bigint>>>>);";
+        stmt.execute(createTableQuery);
+        stmt.close();
+
+        // Insert data into the table.
+        final String insertQuery =
+            "INSERT INTO t75(id, complex_type1, complex_type2, complex_type3) values(?, ?, ?, ?);";
+        final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
+        stmt2.setObject(1, 1);
+
+        final Map<String, String> map = new HashMap<>();
+        map.put("a", "10");
+        map.put("b", "20");
+        final List<Map<String, String>> list = new ArrayList<>();
+        list.add(map);
+        stmt2.setObject(2, list);
+
+        final Map<String, List<Map<String, String>>> map2 = new HashMap<>();
+        map2.put("c", list);
+        final List<Map<String, List<Map<String, String>>>> list2 = new ArrayList<>();
+        list2.add(map2);
+        stmt2.setObject(3, list2);
+
+        final Map<String, Set<Long>> map3 = new HashMap<>();
+        final Set<Long> innerSet = new HashSet<>();
+        innerSet.add(10L);
+        innerSet.add(15L);
+        map3.put("d", innerSet);
+        final Set<Map<String, Set<Long>>> outerSet = new HashSet<>();
+        outerSet.add(map3);
+        stmt2.setObject(4, outerSet);
+
+        stmt2.execute();
+        stmt2.close();
+
+        final Statement stmt3 = sqlConnection.createStatement();
+        final CassandraResultSet result = (CassandraResultSet) stmt3.executeQuery("SELECT * FROM t75 WHERE id = 1;");
+
+        assertTrue(result.next());
+        assertEquals(1, result.getInt("id"));
+
+        final List<Map<String, String>> complexType1ValueAsList =
+            (List<Map<String, String>>) result.getList("complex_type1");
+        final List<Map<String, String>> complexType1ValueAsObject =
+            (List<Map<String, String>>) result.getObject("complex_type1");
+        assertThat(complexType1ValueAsList, hasItem(map));
+        assertThat(complexType1ValueAsObject, hasItem(map));
+
+        final List<Map<String, List<Map<String, String>>>> complexType2ValueAsList =
+            (List<Map<String, List<Map<String, String>>>>) result.getList("complex_type2");
+        final List<Map<String, List<Map<String, String>>>> complexType2ValueAsObject =
+            (List<Map<String, List<Map<String, String>>>>) result.getObject("complex_type2");
+        assertThat(complexType2ValueAsList, hasItem(map2));
+        assertThat(complexType2ValueAsObject, hasItem(map2));
+
+        final Set<Map<String, Set<Long>>> complexType3ValueAsSet =
+            (Set<Map<String, Set<Long>>>) result.getSet("complex_type3");
+        final Set<Map<String, Set<Long>>> complexType3ValueAsObject =
+            (Set<Map<String, Set<Long>>>) result.getObject("complex_type3");
+        assertThat(complexType3ValueAsSet, hasItem(map3));
+        assertThat(complexType3ValueAsObject, hasItem(map3));
+
         stmt3.close();
     }
 }

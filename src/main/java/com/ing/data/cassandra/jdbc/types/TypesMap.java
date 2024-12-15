@@ -66,8 +66,8 @@ public final class TypesMap {
         TYPES_MAP.put("org.apache.cassandra.db.marshal.inet", JdbcInetAddress.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.int", JdbcInt32.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.list", JdbcList.INSTANCE);
-        TYPES_MAP.put("org.apache.cassandra.db.marshal.map", JdbcList.INSTANCE);
-        TYPES_MAP.put("org.apache.cassandra.db.marshal.set", JdbcList.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.map", JdbcMap.INSTANCE);
+        TYPES_MAP.put("org.apache.cassandra.db.marshal.set", JdbcSet.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.smallint", JdbcShort.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.text", JdbcUTF8.INSTANCE);
         TYPES_MAP.put("org.apache.cassandra.db.marshal.time", JdbcTime.INSTANCE);
@@ -95,8 +95,13 @@ public final class TypesMap {
     public static AbstractJdbcType<?> getTypeForComparator(final String comparator) {
         // If not fully qualified, assume it's the short name for a built-in type.
         if (comparator != null && !comparator.contains(".")) {
-            return TYPES_MAP.getOrDefault("org.apache.cassandra.db.marshal." + comparator.toLowerCase(),
-                JdbcOther.INSTANCE);
+            String cqlSimpleType = comparator.toLowerCase();
+            // If the CQL type is a collection (map, list, set, ...), ignore the types of elements in the collection
+            // to retrieve the corresponding JDBC type.
+            if (cqlSimpleType.contains("<")) {
+                cqlSimpleType = cqlSimpleType.substring(0, comparator.indexOf("<"));
+            }
+            return TYPES_MAP.getOrDefault("org.apache.cassandra.db.marshal." + cqlSimpleType, JdbcOther.INSTANCE);
         }
         return TYPES_MAP.getOrDefault(comparator, JdbcOther.INSTANCE);
     }
