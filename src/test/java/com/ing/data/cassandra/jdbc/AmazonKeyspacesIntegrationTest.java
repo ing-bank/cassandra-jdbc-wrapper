@@ -16,7 +16,6 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -26,18 +25,27 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.profiles.ProfileProperty;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Locale;
 
+import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_SECRETSMANAGER_ENDPOINT_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
+import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 
 /**
  * Test JDBC Driver against DBaaS Amazon Keyspaces.
@@ -54,6 +62,14 @@ import static org.apache.commons.lang3.StringUtils.isNoneBlank;
  *         certificate</li>
  *         <li><b>AWS_TRUSTSTORE_PASSWORD</b>: The password of the trust store aforementioned</li>
  *     </ul>
+ *     Optionally, you can specify the following variables to use SigV4AuthProvider or retrieving password from the
+ *     Amazon Secrets manager:
+ *     <ul>
+ *         <li><b>AWS_ACCESS_KEY</b>: The identifier of an AWS access key</li>
+ *         <li><b>AWS_SECRET_ACCESS_KEY</b>: The AWS secret access key value</li>
+ *     </ul>
+ *     When retrieving the password from the Amazon Secrets manager, you must use the following environment variable to
+ *     specify the name of the secret to retrieve in the Secrets manager: <b>AWS_SECRET_NAME</b>.
  * </p>
  */
 @Disabled
@@ -72,17 +88,19 @@ class AmazonKeyspacesIntegrationTest {
     private static final String AWS_SECRET_ACCESS_KEY = DOTENV.get("AWS_SECRET_ACCESS_KEY");
     private static final String AWS_TRUSTSTORE_PATH = DOTENV.get("AWS_TRUSTSTORE_PATH");
     private static final String AWS_TRUSTSTORE_PASSWORD = DOTENV.get("AWS_TRUSTSTORE_PASSWORD");
+    private static final String SIMPLE_TABLE_NAME = "simple_table";
 
-    /* TODO
-    static final LocalStackContainer localStackContainer =
-        new LocalStackContainer(DockerImageName.parse("localstack/localstack:stable"))
-            .withServices(LocalStackContainer.Service.SECRETSMANAGER);
+    /**
+     * Integration with AWS Secrets manager uses a LocalStack container to limit the cost of testing this use case.
      */
-
-    static CassandraConnection sqlConnection = null;
+    static final LocalStackContainer localStackContainer =
+        new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
+            .withEnv(AWS_ACCESS_KEY_ID.toUpperCase(Locale.ROOT), AWS_ACCESS_KEY)
+            .withEnv(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase(Locale.ROOT), AWS_SECRET_ACCESS_KEY)
+            .withServices(SECRETSMANAGER);
 
     @BeforeAll
-    static void setupAwsKeyspaces() throws Exception {
+    static void setupAwsKeyspaces() {
         /* Valid Amazon Keyspaces endpoints:
          * 1. Global
          *    cassandra.us-east-1.amazonaws.com
@@ -127,17 +145,15 @@ class AmazonKeyspacesIntegrationTest {
             System.setProperty(JSSE_TRUSTSTORE_PROPERTY, AWS_TRUSTSTORE_PATH);
             System.setProperty(JSSE_TRUSTSTORE_PASSWORD_PROPERTY, AWS_TRUSTSTORE_PASSWORD);
 
-            /*
-             * Create the connection to AWS Keyspaces, using the standard method with username/password :
-             * https://docs.aws.amazon.com/keyspaces/latest/devguide/using_java_driver.html
-             */
-            sqlConnection = (CassandraConnection) DriverManager.getConnection(
-                "jdbc:cassandra://cassandra." + AWS_REGION + ".amazonaws.com:9142/" + AWS_KEYSPACE_NAME
-                    + "?localdatacenter=" + AWS_REGION
-                    + "&user=" + AWS_USER
-                    + "&password=" + URLEncoder.encode(AWS_PASSWORD, StandardCharsets.UTF_8.name())
-                    + "&enablessl=true"
-                    + "&hostnameverification=false");
+            if (canRunTestUsingSigV4() || canRunTestUsingSecret()) {
+                /*
+                 * Set the aws.accessKeyId and aws.secretKey generated for the user cassandra_test to be used by the
+                 * DefaultAWSCredentialsProviderChain (used by SigV4AuthProvider).
+                 * See: https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html
+                 */
+                System.setProperty(SdkSystemSetting.AWS_ACCESS_KEY_ID.property(), AWS_ACCESS_KEY);
+                System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), AWS_SECRET_ACCESS_KEY);
+            }
         } else {
             LOG.debug("AWS_* variables are not defined, skipping Amazon Keyspaces integration tests.");
         }
@@ -145,85 +161,106 @@ class AmazonKeyspacesIntegrationTest {
 
     static boolean canRunTests() {
         return isNoneBlank(
-            AWS_REGION, AWS_USER, AWS_PASSWORD, AWS_KEYSPACE_NAME, AWS_TRUSTSTORE_PATH, AWS_TRUSTSTORE_PASSWORD);
+            AWS_REGION, AWS_USER, AWS_KEYSPACE_NAME, AWS_TRUSTSTORE_PATH, AWS_TRUSTSTORE_PASSWORD
+        );
+    }
+
+    static boolean canRunTestsUsingPassword() {
+        return canRunTests() && isNotBlank(AWS_PASSWORD);
+    }
+
+    static boolean canRunTestUsingSigV4() {
+        return canRunTests() && isNoneBlank(AWS_ACCESS_KEY, AWS_SECRET_ACCESS_KEY);
     }
 
     static boolean canRunTestUsingSecret() {
-        return isNoneBlank(
-            AWS_REGION, AWS_USER, AWS_SECRET_NAME, AWS_KEYSPACE_NAME, AWS_TRUSTSTORE_PATH, AWS_TRUSTSTORE_PASSWORD);
+        return canRunTestUsingSigV4() && isNotBlank(AWS_SECRET_NAME);
     }
 
     @Test
     @Order(1)
-    @EnabledIf("canRunTests")
+    @EnabledIf("canRunTestUsingSigV4")
     void testConnectionUsingSigV4AuthProvider() throws SQLException {
-        /*
-         * Set the aws.accessKeyId and aws.secretKey generated for the user cassandra_test to be used by the
-         * DefaultAWSCredentialsProviderChain (used by SigV4AuthProvider).
-         * See: https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html
-         */
-        System.setProperty(SdkSystemSetting.AWS_ACCESS_KEY_ID.property(), AWS_ACCESS_KEY);
-        System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), AWS_SECRET_ACCESS_KEY);
-
         final CassandraConnection connectionUsingSigV4 = (CassandraConnection) DriverManager.getConnection(
             "jdbc:cassandra:aws://cassandra." + AWS_REGION + ".amazonaws.com/" + AWS_KEYSPACE_NAME
                 + "?usesigv4=true&awsregion=" + AWS_REGION);
         Assertions.assertNotNull(connectionUsingSigV4);
+
+        assertConnectionIsOperational(connectionUsingSigV4);
+
         connectionUsingSigV4.close();
     }
 
-    /* FIXME
     @Test
     @Order(2)
     @EnabledIf("canRunTestUsingSecret")
-    void testConnectionUsingSecret() throws SQLException {
+    void testConnectionUsingSecret() throws Exception {
         localStackContainer.start();
         System.setProperty(AWS_SECRETSMANAGER_ENDPOINT_PROPERTY, localStackContainer.getEndpoint().toString());
+        localStackContainer.execInContainer("awslocal", "secretsmanager", "create-secret",
+            "--name", AWS_SECRET_NAME, "--secret-string", AWS_PASSWORD);
+
         final CassandraConnection connectionUsingSecret = (CassandraConnection) DriverManager.getConnection(
             "jdbc:cassandra:aws://cassandra." + AWS_REGION + ".amazonaws.com:9142/" + AWS_KEYSPACE_NAME
                 + "?awsregion=" + AWS_REGION
                 + "&user=" + AWS_USER
                 + "&awssecretregion=" + localStackContainer.getRegion()
                 + "&awssecret=" + AWS_SECRET_NAME);
+
         Assertions.assertNotNull(connectionUsingSecret);
+
+        assertConnectionIsOperational(connectionUsingSecret);
+
         connectionUsingSecret.close();
         localStackContainer.stop();
     }
-    */
 
     @Test
     @Order(3)
-    @EnabledIf("canRunTests")
-    void givenConnection_whenCreateTable_shouldTableExist() throws SQLException {
-        // Given
+    @EnabledIf("canRunTestsUsingPassword")
+    void testConnectionUsingPassword() throws Exception {
+        /*
+         * Create the connection to AWS Keyspaces, using the standard method with username/password :
+         * https://docs.aws.amazon.com/keyspaces/latest/devguide/using_java_driver.html
+         */
+        final CassandraConnection sqlConnection = (CassandraConnection) DriverManager.getConnection(
+            "jdbc:cassandra://cassandra." + AWS_REGION + ".amazonaws.com:9142/" + AWS_KEYSPACE_NAME
+                + "?localdatacenter=" + AWS_REGION
+                + "&user=" + AWS_USER
+                + "&password=" + URLEncoder.encode(AWS_PASSWORD, StandardCharsets.UTF_8.name())
+                + "&enablessl=true"
+                + "&hostnameverification=false");
+
         Assertions.assertNotNull(sqlConnection);
-        // When
+
+        assertConnectionIsOperational(sqlConnection);
+
+        sqlConnection.close();
+    }
+
+    private void assertConnectionIsOperational(final CassandraConnection sqlConnection) throws SQLException {
+        createTable(sqlConnection);
+        Assertions.assertTrue(tableExists(sqlConnection));
+    }
+
+    private void createTable(final Connection sqlConnection) throws SQLException {
         sqlConnection.createStatement().execute(SchemaBuilder
-            .createTable("simple_table")
+            .createTable(SIMPLE_TABLE_NAME)
             .ifNotExists()
             .withPartitionKey("email", DataTypes.TEXT)
             .withColumn("firstname", DataTypes.TEXT)
             .withColumn("lastname", DataTypes.TEXT)
             .build().getQuery());
-        // Then
-        Assertions.assertTrue(tableExists("simple_table"));
     }
 
-    private boolean tableExists(final String tableName) throws SQLException {
+    private boolean tableExists(final CassandraConnection sqlConnection) throws SQLException {
         final String tableStatusCql =
             "SELECT status FROM system_schema_mcs.tables WHERE keyspace_name = ? AND table_name = ?";
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(tableStatusCql);
         prepStatement.setString(1, AWS_KEYSPACE_NAME);
-        prepStatement.setString(2, tableName);
+        prepStatement.setString(2, SIMPLE_TABLE_NAME);
         final ResultSet resultSet = prepStatement.executeQuery();
         return resultSet.next() && resultSet.getString(1) != null;
-    }
-
-    @AfterAll
-    static void closeSql() throws SQLException {
-        if (sqlConnection != null) {
-            sqlConnection.close();
-        }
     }
 
 }

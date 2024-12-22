@@ -575,7 +575,7 @@ public final class JdbcUrlUtil {
 
         boolean awsRegionIsDefined = false;
         if (params.containsKey(KEY_AWS_SECRET_REGION)) {
-            props.setProperty(TAG_AWS_SECRET_NAME, params.get(KEY_AWS_SECRET_REGION));
+            props.setProperty(TAG_AWS_SECRET_REGION, params.get(KEY_AWS_SECRET_REGION));
             awsRegionIsDefined = true;
         }
         if (params.containsKey(KEY_AWS_REGION)) {
