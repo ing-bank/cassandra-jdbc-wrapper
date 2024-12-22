@@ -9,19 +9,29 @@ This product includes software developed as part of the Apache Cassandra Java Dr
 ( https://github.com/apache/cassandra-java-driver ).
 
 Apache Commons Collections
-Copyright 2001-2023 The Apache Software Foundation
+Copyright 2001-2024 The Apache Software Foundation
 This product includes software developed as part of the Apache Commons Collections project
 ( https://github.com/apache/commons-collections ).
 
 Apache Commons IO
-Copyright 2002-2023 The Apache Software Foundation
+Copyright 2002-2024 The Apache Software Foundation
 This product includes software developed as part of the Apache Commons IO project
 ( https://github.com/apache/commons-io ).
 
 Apache Commons Lang
-Copyright 2001-2023 The Apache Software Foundation
+Copyright 2001-2024 The Apache Software Foundation
 This product includes software developed as part of the Apache Commons Lang project
 ( https://github.com/apache/commons-lang ).
+
+AWS SDK for Java 2.0
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+This product includes software developed as part of the AWS SDK for Java 2.0 project
+( https://github.com/aws/aws-sdk-java-v2 ).
+
+AWS SigV4 Auth Cassandra Java driver plugin
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+This product includes software developed as part of the AWS SigV4 Auth Cassandra Java driver plugin project
+( https://github.com/aws/aws-sigv4-auth-cassandra-java-driver-plugin ).
 
 Caffeine
 Copyright 2018 Ben Manes

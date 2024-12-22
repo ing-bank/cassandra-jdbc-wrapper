@@ -10,8 +10,8 @@ This is a JDBC wrapper of the Java Driver for Apache Cassandra®, which offers a
 CQL3.
 
 This JDBC wrapper is based on a fork of the project
-[adejanovski/cassandra-jdbc-wrapper](https://github.com/adejanovski/cassandra-jdbc-wrapper/). We would especially like 
-to thank its author.
+[adejanovski/cassandra-jdbc-wrapper](https://github.com/adejanovski/cassandra-jdbc-wrapper/), which is no longer 
+maintained. We would especially like to thank its author.
 
 ## Features
 
@@ -66,8 +66,11 @@ might disable them using the Maven profile `disableDseTests`:
 ./mvnw clean package -PdisableDseTests
 ```
 
-The test suite also includes integration tests with AstraDB (`DbaasAstraIntegrationTest`). These tests require an
-AstraDB token configured in the environment variable `ASTRA_DB_APPLICATION_TOKEN`, otherwise they are skipped.
+The test suite also includes integration tests with:
+- AstraDB (`DbaasAstraIntegrationTest`). These tests require an AstraDB token configured in the environment 
+variable `ASTRA_DB_APPLICATION_TOKEN`, otherwise they are skipped.
+- Amazon Keyspaces (`AmazonKeyspacesIntegrationTest`). These tests require an instance of Amazon Keyspaces and to define
+several environment variables in a `.env` file (see test class for further information), otherwise they are skipped.
     
 ### Integration in Maven projects
 

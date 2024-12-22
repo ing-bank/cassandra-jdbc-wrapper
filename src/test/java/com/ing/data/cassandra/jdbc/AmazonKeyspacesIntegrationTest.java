@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -72,7 +71,6 @@ import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
  *     specify the name of the secret to retrieve in the Secrets manager: <b>AWS_SECRET_NAME</b>.
  * </p>
  */
-@Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 @Testcontainers
 class AmazonKeyspacesIntegrationTest {

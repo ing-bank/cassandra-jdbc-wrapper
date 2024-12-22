@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.14.0] - Unreleased
+## [4.14.0] - 2024-12-xx
 ### Added
 - Add support for IPv6 addresses in JDBC URL (see PR [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
 - Add implementation for the method `CassandraPreparedStatement.setArray(int, Array)`.
@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Add specific `jdbc:cassandra:aws` protocol to ease connection to Amazon Keyspaces.
   - Add support for Amazon Signature V4 authentication provider.
   - Add support to retrieve connection password from Amazon Secrets manager.
+### Changed
+- Update Apache Commons IO to version 2.18.0.
+- Update Apache Commons Lang to version 3.17.0.
+- Update Jackson dependencies to version 2.18.2.
+- Update Semver4j to version 5.4.1.
 ### Fixed
 - Do not try to register codecs again (if already done previously) on a pre-existing session to avoid warnings in logs.
 - Fix some logging in `SessionHolder` to not leak connection credentials.
