@@ -204,6 +204,7 @@ public class CassandraResultSet extends AbstractResultSet
     private boolean isClosed;
     // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
+    private final List<String> driverWarnings = new ArrayList<>();
 
     /**
      * No argument constructor.
@@ -231,6 +232,9 @@ public class CassandraResultSet extends AbstractResultSet
         this.driverResultSet = resultSet;
         this.rowsIterator = resultSet.iterator();
         this.isClosed = false;
+        if (!resultSet.getExecutionInfos().isEmpty()) {
+            this.driverWarnings.addAll(resultSet.getExecutionInfo().getWarnings());
+        }
 
         // Initialize the column values from the first row.
         if (hasMoreRows()) {
@@ -255,8 +259,14 @@ public class CassandraResultSet extends AbstractResultSet
         this.fetchSize = statement.getFetchSize();
         this.isClosed = false;
 
-        // We have several result sets, but we will use only the first one for metadata needs.
+        // We have several result sets, but we will use only the first one for metadata needs. However, we aggregate the
+        // warnings of all the available result sets.
         this.driverResultSet = resultSets.get(0);
+        for (final ResultSet rs : resultSets) {
+            if (!rs.getExecutionInfos().isEmpty()) {
+                this.driverWarnings.addAll(rs.getExecutionInfo().getWarnings());
+            }
+        }
 
         // Now, we concatenate iterators of the different result sets into a single one.
         // This may lead to StackOverflowException when there are too many result sets.
@@ -1530,12 +1540,11 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public SQLWarning getWarnings() throws SQLException {
         checkNotClosed();
-        final List<String> driverWarnings = this.driverResultSet.getExecutionInfo().getWarnings();
-        if (!driverWarnings.isEmpty()) {
+        if (!this.driverWarnings.isEmpty()) {
             SQLWarning firstWarning = null;
             SQLWarning previousWarning = null;
 
-            for (final String warningMessage : driverWarnings) {
+            for (final String warningMessage : this.driverWarnings) {
                 final SQLWarning warning = new SQLWarning(warningMessage);
                 if (previousWarning == null) {
                     firstWarning = warning;

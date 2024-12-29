@@ -403,6 +403,19 @@ public final class ErrorConstants {
      */
     public static final String PROPERTIES_PARSING_FROM_URL_FAILED = "Failed to extract properties from the given URL.";
 
+    /**
+     * Error message used in any SQL exception thrown when trying to execute the special CQL command {@code SOURCE}
+     * without specifying any filename.
+     */
+    public static final String MISSING_SOURCE_FILENAME = "A filename must be specified for the command SOURCE.";
+
+    /**
+     * Error message used when the specified file in the special CQL command {@code SOURCE} cannot be open. This
+     * message is a template expecting the name of the file and the error message (example:
+     * {@code String.format(CANNOT_OPEN_SOURCE_FILE, "file.cql", "file does not exist")}).
+     */
+    public static final String CANNOT_OPEN_SOURCE_FILE = "Could not open '%s': %s";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

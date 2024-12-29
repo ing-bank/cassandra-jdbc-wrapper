@@ -13,8 +13,9 @@
  *   limitations under the License.
  */
 
-package com.ing.data.cassandra.jdbc;
+package com.ing.data.cassandra.jdbc.commands;
 
+import com.ing.data.cassandra.jdbc.UsingCassandraContainerTest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;

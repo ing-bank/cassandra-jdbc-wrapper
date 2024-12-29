@@ -25,12 +25,12 @@ import java.net.InetSocketAddress;
 import java.sql.DriverManager;
 
 @Testcontainers
-abstract class UsingCassandraContainerTest {
+public abstract class UsingCassandraContainerTest {
 
     // For the official Cassandra image, see here: https://hub.docker.com/_/cassandra
     static final DockerImageName CASSANDRA_IMAGE = DockerImageName.parse("cassandra:5");
 
-    static CassandraConnection sqlConnection = null;
+    protected static CassandraConnection sqlConnection = null;
 
     // Using @Container annotation restarts a new container for each test of the class, so as it takes ~20/30 sec. to
     // start a Cassandra container, we just want to have one container instance for all the tests of the class. See:
@@ -58,7 +58,7 @@ abstract class UsingCassandraContainerTest {
         cassandraContainer.stop();
     }
 
-    static void initConnection(final String keyspace, final String... parameters) throws Exception {
+    protected static void initConnection(final String keyspace, final String... parameters) throws Exception {
         sqlConnection = newConnection(keyspace, false, parameters);
     }
 

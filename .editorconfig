@@ -25,3 +25,6 @@ indent_size = 2
 
 [{*.yml,*.yaml}]
 indent_size = 2
+
+[*.cql]
+insert_final_newline = false

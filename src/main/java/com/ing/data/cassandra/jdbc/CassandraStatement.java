@@ -24,6 +24,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
+import com.ing.data.cassandra.jdbc.commands.SpecialCommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +63,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_MULTIPLE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_STMT;
-import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.containsSpecialCommands;
-import static com.ing.data.cassandra.jdbc.utils.SpecialCommandsUtil.getCommandExecutor;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.containsSpecialCommands;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.getCommandExecutor;
 import static org.apache.commons.lang3.StringUtils.countMatches;
 
 /**
@@ -414,7 +415,7 @@ public class CassandraStatement extends AbstractStatement
 
         // If the CQL statement is a special command, execute it using the appropriate special command executor and
         // return the result. Otherwise, execute the statement through the driver.
-        final SpecialCommands.SpecialCommandExecutor commandExecutor = getCommandExecutor(cql);
+        final SpecialCommandExecutor commandExecutor = getCommandExecutor(cql);
         if (commandExecutor != null) {
             return commandExecutor.execute(this, cql);
         }

@@ -27,6 +27,7 @@ import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,6 +88,7 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         final CassandraStatement mockStmt = mock(CassandraStatement.class);
         final com.datastax.oss.driver.api.core.cql.ResultSet mockDriverRs =
             mock(com.datastax.oss.driver.api.core.cql.ResultSet.class);
+        when(mockDriverRs.getExecutionInfos()).thenReturn(Collections.singletonList(mock(ExecutionInfo.class)));
         when(mockDriverRs.getExecutionInfo()).thenReturn(mock(ExecutionInfo.class));
         when(mockDriverRs.getExecutionInfo().getWarnings())
             .thenReturn(Arrays.asList("First warning message", "Second warning message"));

@@ -1,4 +1,4 @@
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
 import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
@@ -9,12 +9,12 @@ import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinition;
 import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinitions;
 import com.datastax.oss.driver.internal.core.cql.DefaultRow;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-import com.ing.data.cassandra.jdbc.SpecialCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
+import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Utility methods for execution of
@@ -35,6 +38,13 @@ public final class SpecialCommandsUtil {
     static final String CMD_CONSISTENCY_PATTERN = "(?<consistencyCmd>CONSISTENCY(?<consistencyLvl> \\w+)?)";
     static final String CMD_SERIAL_CONSISTENCY_PATTERN =
         "(?<serialConsistencyCmd>SERIAL CONSISTENCY(?<serialConsistencyLvl> \\w+)?)";
+    static final String CMD_SOURCE_PATTERN = "(?<sourceCmd>SOURCE(?<sourceFile> +'.*')?)";
+
+    private static final Pattern SUPPORTED_COMMANDS_PATTERN = Pattern.compile(
+        CMD_CONSISTENCY_PATTERN
+            + "|" + CMD_SERIAL_CONSISTENCY_PATTERN
+            + "|" + CMD_SOURCE_PATTERN,
+        Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     private SpecialCommandsUtil() {
         // Private constructor to hide the public one.
@@ -49,9 +59,7 @@ public final class SpecialCommandsUtil {
      * otherwise.
      */
     public static boolean containsSpecialCommands(final String cql) {
-        final Pattern pattern = Pattern.compile(CMD_CONSISTENCY_PATTERN + "|" + CMD_SERIAL_CONSISTENCY_PATTERN,
-            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-        return pattern.matcher(cql).find();
+        return SUPPORTED_COMMANDS_PATTERN.matcher(cql).find();
     }
 
     /**
@@ -60,11 +68,11 @@ public final class SpecialCommandsUtil {
      * @param cql The CQL statement.
      * @return The special command executor instance or {@code null} if the statement is not a special command or not
      * supported.
+     * @throws SQLSyntaxErrorException if an error occurs while parsing the special command.
      */
-    public static SpecialCommands.SpecialCommandExecutor getCommandExecutor(final String cql) {
-        final Matcher matcher = Pattern.compile(CMD_CONSISTENCY_PATTERN + "|" + CMD_SERIAL_CONSISTENCY_PATTERN,
-                Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
-            .matcher(cql.trim());
+    public static SpecialCommandExecutor getCommandExecutor(final String cql)
+        throws SQLSyntaxErrorException {
+        final Matcher matcher = SUPPORTED_COMMANDS_PATTERN.matcher(cql.trim());
         if (!matcher.matches()) {
             LOG.trace("CQL statement is not a supported special command: {}", cql);
             return null;
@@ -77,7 +85,7 @@ public final class SpecialCommandsUtil {
                 if (consistencyLevelValue != null) {
                     levelParameter = consistencyLevelValue.trim();
                 }
-                return new SpecialCommands.ConsistencyLevelExecutor(levelParameter);
+                return new ConsistencyLevelExecutor(levelParameter);
             }
             // If the third matching group is not null, this means the command matched CMD_SERIAL_CONSISTENCY_PATTERN,
             // and if the fourth matching group is not null, this means the command specifies a serial consistency
@@ -87,9 +95,19 @@ public final class SpecialCommandsUtil {
                 if (consistencyLevelValue != null) {
                     levelParameter = consistencyLevelValue.trim();
                 }
-                return new SpecialCommands.SerialConsistencyLevelExecutor(levelParameter);
+                return new SerialConsistencyLevelExecutor(levelParameter);
             }
-            return new SpecialCommands.NoOpExecutor();
+            // If the fifth and sixth matching group are not null, this means the command matched CMD_SOURCE_PATTERN
+            // with a file name.
+            if (matcher.group("sourceCmd") != null) {
+                final String sourceFile = matcher.group("sourceFile");
+                if (sourceFile != null) {
+                    return new SourceCommandExecutor(sourceFile.trim().replace("'", EMPTY));
+                } else {
+                    throw new SQLSyntaxErrorException(MISSING_SOURCE_FILENAME);
+                }
+            }
+            return new NoOpExecutor();
         }
     }
 

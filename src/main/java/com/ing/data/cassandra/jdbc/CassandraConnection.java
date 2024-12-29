@@ -147,7 +147,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
-    private final OptionSet optionSet;
+    private OptionSet optionSet = new Default();
     private DriverExecutionProfile activeExecutionProfile;
     private DriverExecutionProfile lastUsedExecutionProfile;
 
@@ -681,6 +681,16 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     public OptionSet getOptionSet() {
         return this.optionSet;
+    }
+
+    /**
+     * Sets the compliance mode option set used for the connection.
+     *
+     * @param optionSet The compliance mode option set used for the connection.
+     */
+    public void setOptionSet(final OptionSet optionSet) {
+        optionSet.setConnection(this);
+        this.optionSet = optionSet;
     }
 
     private OptionSet lookupOptionSet(final String property) {
