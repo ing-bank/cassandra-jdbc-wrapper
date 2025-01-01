@@ -130,6 +130,7 @@
         <java.driver.version>4.18.1</java.driver.version>
         <jackson.version>2.18.2</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
+        <opencsv.version>5.9</opencsv.version>
         <semver4j.version>5.4.1</semver4j.version>
         <!-- Versions for test dependencies -->
         <approvaltests.version>24.12.0</approvaltests.version>
@@ -252,6 +253,13 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>secretsmanager</artifactId>
             <version>${aws-secretsmanager.version}</version>
+        </dependency>
+
+        <!-- OpenCSV for implementation of COPY special command -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>${opencsv.version}</version>
         </dependency>
 
         <!-- Unit tests libraries -->

@@ -40,6 +40,15 @@ import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
  *     of the connection to the given value, otherwise return a result set with a single row containing the
  *     current serial consistency level in a column {@code serial_consistency_level}.
  * </p>
+ * <p>
+ *     The documentation of the original {@code SERIAL CONSISTENCY} command is available:
+ *     <ul>
+ *         <li><a href="https://cassandra.apache.org/doc/latest/cassandra/managing/tools/cqlsh.html#serial-consistency">
+ *             in the Apache Cassandra® documentation</a></li>
+ *         <li><a href="https://docs.datastax.com/en/cql-oss/3.3/cql/cql_reference/cqlshSerialConsistency.html">
+ *             in the DataStax CQL reference documentation</a></li>
+ *     </ul>
+ * </p>
  */
 public class SerialConsistencyLevelExecutor implements SpecialCommandExecutor {
 

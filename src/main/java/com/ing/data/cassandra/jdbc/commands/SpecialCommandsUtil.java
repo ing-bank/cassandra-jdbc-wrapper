@@ -9,16 +9,20 @@ import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinition;
 import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinitions;
 import com.datastax.oss.driver.internal.core.cql.DefaultRow;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,15 +39,31 @@ public final class SpecialCommandsUtil {
 
     static final Logger LOG = LoggerFactory.getLogger(SpecialCommandsUtil.class);
 
-    static final String CMD_CONSISTENCY_PATTERN = "(?<consistencyCmd>CONSISTENCY(?<consistencyLvl> \\w+)?)";
+    // Regex for CQL identifiers such as table or keyspace name is specified in the Cassandra documentation here:
+    // https://cassandra.apache.org/doc/5.0/cassandra/developing/cql/ddl.html#common-definitions
+    // NB: \\w is equivalent to [a-zA-Z_0-9]
+    static final String CQL_IDENTIFIER_PATTERN = "\"?\\w{1,48}\"?";
+
+    static final String CMD_CONSISTENCY_PATTERN = "(?<consistencyCmd>CONSISTENCY(?<consistencyLvl>\\s+\\w+)?)";
     static final String CMD_SERIAL_CONSISTENCY_PATTERN =
-        "(?<serialConsistencyCmd>SERIAL CONSISTENCY(?<serialConsistencyLvl> \\w+)?)";
-    static final String CMD_SOURCE_PATTERN = "(?<sourceCmd>SOURCE(?<sourceFile> +'.*')?)";
+        "(?<serialConsistencyCmd>SERIAL CONSISTENCY(?<serialConsistencyLvl>\\s+\\w+)?)";
+    static final String CMD_SOURCE_PATTERN = "(?<sourceCmd>SOURCE(?<sourceFile>\\s+'[^']*')?)";
+
+    static final String FIRST_OPTION_PATTERN =
+        "\\s+WITH\\s+(?<firstOptName>[A-Z]+)\\s*=\\s*(?<firstOptValue>'[^']*'|[^\\s']+)";
+    static final String ADDITIONAL_OPTIONS_PATTERN =
+        "\\s+AND\\s+(?<otherOptName>[A-Z]+)\\s*=\\s*(?<otherOptValue>'[^']*'|[^\\s']+)";
+    static final String CMD_COPY_TO_PATTERN =
+        "(?<copyToCmd>COPY(?<copiedTableName>\\s+(" + CQL_IDENTIFIER_PATTERN + "\\.)?" + CQL_IDENTIFIER_PATTERN + ")"
+            + "(\\s*\\((?<copiedColumns>\"?\\w+\"?(,\\s*\"?\\w+\"?)*)\\))?"
+            + "\\s+TO\\s+(?<copyToTarget>'[^']*')"
+            + "(" + FIRST_OPTION_PATTERN + "(" + ADDITIONAL_OPTIONS_PATTERN + ")*)?)";
 
     private static final Pattern SUPPORTED_COMMANDS_PATTERN = Pattern.compile(
         CMD_CONSISTENCY_PATTERN
             + "|" + CMD_SERIAL_CONSISTENCY_PATTERN
-            + "|" + CMD_SOURCE_PATTERN,
+            + "|" + CMD_SOURCE_PATTERN
+            + "|" + CMD_COPY_TO_PATTERN,
         Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     private SpecialCommandsUtil() {
@@ -72,42 +92,17 @@ public final class SpecialCommandsUtil {
      */
     public static SpecialCommandExecutor getCommandExecutor(final String cql)
         throws SQLSyntaxErrorException {
-        final Matcher matcher = SUPPORTED_COMMANDS_PATTERN.matcher(cql.trim());
+        final String trimmedCql = cql.trim();
+        final Matcher matcher = SUPPORTED_COMMANDS_PATTERN.matcher(trimmedCql);
         if (!matcher.matches()) {
             LOG.trace("CQL statement is not a supported special command: {}", cql);
             return null;
         } else {
-            // If the first matching group is not null, this means the command matched CMD_CONSISTENCY_PATTERN, and if
-            // the second matching group is not null, this means the command specifies a consistency level to set.
-            String levelParameter = null;
-            if (matcher.group("consistencyCmd") != null) {
-                final String consistencyLevelValue = matcher.group("consistencyLvl");
-                if (consistencyLevelValue != null) {
-                    levelParameter = consistencyLevelValue.trim();
-                }
-                return new ConsistencyLevelExecutor(levelParameter);
-            }
-            // If the third matching group is not null, this means the command matched CMD_SERIAL_CONSISTENCY_PATTERN,
-            // and if the fourth matching group is not null, this means the command specifies a serial consistency
-            // level to set.
-            if (matcher.group("serialConsistencyCmd") != null) {
-                final String consistencyLevelValue = matcher.group("serialConsistencyLvl");
-                if (consistencyLevelValue != null) {
-                    levelParameter = consistencyLevelValue.trim();
-                }
-                return new SerialConsistencyLevelExecutor(levelParameter);
-            }
-            // If the fifth and sixth matching group are not null, this means the command matched CMD_SOURCE_PATTERN
-            // with a file name.
-            if (matcher.group("sourceCmd") != null) {
-                final String sourceFile = matcher.group("sourceFile");
-                if (sourceFile != null) {
-                    return new SourceCommandExecutor(sourceFile.trim().replace("'", EMPTY));
-                } else {
-                    throw new SQLSyntaxErrorException(MISSING_SOURCE_FILENAME);
-                }
-            }
-            return new NoOpExecutor();
+            return handleConsistencyLevelCommand(matcher)
+                .orElse(handleSerialConsistencyLevelCommand(matcher)
+                    .orElse(handleSourceCommand(matcher)
+                        .orElse(handleCopyToCommand(matcher, trimmedCql)
+                            .orElse(new NoOpExecutor()))));
         }
     }
 
@@ -177,6 +172,104 @@ public final class SpecialCommandsUtil {
                 return rsRows.iterator();
             }
         };
+    }
+
+    /**
+     * Translates a specified filename to support the tilde shorthand notation (for home directory) and to re-build the
+     * absolute path of a filename relative to the current directory.
+     *
+     * @param originalFilename The original filename.
+     * @return The translated filename or the original one if it does neither use the tilde shorthand notation nor is
+     * relative.
+     */
+    public static String translateFilename(final String originalFilename) {
+        String enhancedFilename = originalFilename;
+        if (originalFilename.startsWith("~")) {
+            enhancedFilename = originalFilename.replace("~", System.getProperty("user.home"));
+        } else if (!new File(originalFilename).isAbsolute()) {
+            enhancedFilename = System.getProperty("user.dir") + File.separator + originalFilename;
+        }
+        return enhancedFilename;
+    }
+
+    private static Optional<SpecialCommandExecutor> handleConsistencyLevelCommand(final Matcher matcher) {
+        // If the 'consistencyCmd' matching group is not null, this means the command matched
+        // CMD_CONSISTENCY_PATTERN, and if the 'consistencyLvl' matching group is not null, this means the command
+        // specifies a consistency level to set.
+        String levelParameter = null;
+        if (matcher.group("consistencyCmd") != null) {
+            final String consistencyLevelValue = matcher.group("consistencyLvl");
+            if (consistencyLevelValue != null) {
+                levelParameter = consistencyLevelValue.trim();
+            }
+            return Optional.of(new ConsistencyLevelExecutor(levelParameter));
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<SpecialCommandExecutor> handleSerialConsistencyLevelCommand(final Matcher matcher) {
+        // If the 'serialConsistencyCmd' matching group is not null, this means the command matched
+        // CMD_SERIAL_CONSISTENCY_PATTERN, and if the 'serialConsistencyLvl' matching group is not null, this means
+        // the command specifies a serial consistency level to set.
+        String levelParameter = null;
+        if (matcher.group("serialConsistencyCmd") != null) {
+            final String consistencyLevelValue = matcher.group("serialConsistencyLvl");
+            if (consistencyLevelValue != null) {
+                levelParameter = consistencyLevelValue.trim();
+            }
+            return Optional.of(new SerialConsistencyLevelExecutor(levelParameter));
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<SpecialCommandExecutor> handleSourceCommand(final Matcher matcher)
+        throws SQLSyntaxErrorException {
+        // If the 'sourceCmd' and 'sourceFile' matching group are not null, this means the command matched
+        // CMD_SOURCE_PATTERN with a file name.
+        if (matcher.group("sourceCmd") != null) {
+            final String sourceFile = matcher.group("sourceFile");
+            if (sourceFile != null) {
+                return Optional.of(new SourceCommandExecutor(unquote(sourceFile)));
+            } else {
+                throw new SQLSyntaxErrorException(MISSING_SOURCE_FILENAME);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<SpecialCommandExecutor> handleCopyToCommand(final Matcher matcher, final String cql)
+        throws SQLSyntaxErrorException {
+        // If the 'copyToCmd' matching group is not null, this means the command matched CMD_COPY_TO_PATTERN.
+        if (matcher.group("copyToCmd") != null) {
+            final String copiedTableName = matcher.group("copiedTableName");
+            final String copiedColumns = matcher.group("copiedColumns");
+            final String target = matcher.group("copyToTarget");
+
+            // Extract options from the command if at least one is present.
+            final Properties options = new Properties();
+            final String firstOptionName = matcher.group("firstOptName");
+            if (firstOptionName != null) {
+                final String firstOptionValue = unquote(matcher.group("firstOptValue"));
+                options.put(firstOptionName, firstOptionValue);
+
+                // Extract additional options from the repeating group, this requires to re-apply a new matcher only
+                // using the additional options pattern to the whole CQL statement.
+                final Matcher additionalOptionsMatcher = Pattern.compile(ADDITIONAL_OPTIONS_PATTERN).matcher(cql);
+                while (additionalOptionsMatcher.find()) {
+                    final String optionName = additionalOptionsMatcher.group("otherOptName");
+                    final String optionValue = unquote(additionalOptionsMatcher.group("otherOptValue"));
+                    options.put(optionName, optionValue);
+                }
+            }
+
+            return Optional.of(new CopyToCommandExecutor(copiedTableName.trim(), copiedColumns.trim(),
+                unquote(target), options));
+        }
+        return Optional.empty();
+    }
+
+    private static String unquote(@Nonnull final String value) {
+        return StringUtils.defaultIfBlank(value, EMPTY).trim().replace("'", EMPTY);
     }
 
 }

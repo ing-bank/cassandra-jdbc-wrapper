@@ -120,7 +120,7 @@ Connect to a Cassandra cluster using the following arguments:
 * JDBC driver class: `com.ing.data.cassandra.jdbc.CassandraDriver`
 * JDBC URL: `jdbc:cassandra://host1--host2--host3:9042/keyspace?localdatacenter=DC1` 
 
-You can give the driver any number of hosts you want separated by "--". You can optionally specify a port for each host.
+You can give the driver any number of hosts you want separated by `--`. You can optionally specify a port for each host.
 If only one port is specified after all the listed hosts, it applies to all hosts. If no port is specified at all, the
 default Cassandra port (9042) is used.
 They will be used as contact points for the driver to discover the entire cluster.

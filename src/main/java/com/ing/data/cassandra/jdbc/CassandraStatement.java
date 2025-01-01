@@ -537,7 +537,7 @@ public class CassandraStatement extends AbstractStatement
      *
      * @param cql A CQL Data Manipulation Language (DML) statement, such as {@code INSERT}, {@code UPDATE}, or
      *            {@code DELETE}; or a CQL statement that returns nothing, such as a DDL statement.
-     * @return Always 0, for any statement. The rationale is that Datastax Java driver does not provide update count.
+     * @return Always 0, for any statement. The rationale is that DataStax Java driver does not provide update count.
      * @throws SQLException when something went wrong during the execution of the statement.
      */
     @Override

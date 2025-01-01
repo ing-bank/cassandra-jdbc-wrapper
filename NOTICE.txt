@@ -53,6 +53,11 @@ Copyright 2009 Google
 This product includes software developed as part of the JSR305 Annotations for Findbugs project
 ( https://code.google.com/archive/p/jsr-305/ ).
 
+OpenCSV
+Copyright 2005 Bytecode Pty Ltd.
+This product includes software developed as part of the OpenCSV project
+( https://opencsv.sourceforge.net/ ).
+
 Semver4j
 Copyright 2022-present Semver4j contributors
 This product includes software developed as part of the Semver4j project

@@ -40,6 +40,15 @@ import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
  *     connection to the given value, otherwise return a result set with a single row containing the
  *     current consistency level in a column {@code consistency_level}.
  * </p>
+ * <p>
+ *     The documentation of the original {@code CONSISTENCY} command is available:
+ *     <ul>
+ *         <li><a href="https://cassandra.apache.org/doc/latest/cassandra/managing/tools/cqlsh.html#consistency">
+ *             in the Apache Cassandra® documentation</a></li>
+ *         <li><a href="https://docs.datastax.com/en/cql-oss/3.3/cql/cql_reference/cqlshConsistency.html">
+ *             in the DataStax CQL reference documentation</a></li>
+ *     </ul>
+ * </p>
  */
 public class ConsistencyLevelExecutor implements SpecialCommandExecutor {
 

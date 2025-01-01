@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased]
 ### Added
-- Add support for the special CQL command `SOURCE <filename>` in `CassandraStatement`.
+- Add support for the following special CQL commands in `CassandraStatement`:
+  - `SOURCE <filename>`
+  - `COPY <tableName>[(<colums>)] TO <target>[ WITH <options>[ AND <options>...]]`
 - Add a method `CassandraConnection.setOptionSet(OptionSet)` to programmatically define a custom compliance mode option
   set on a pre-existing connection.
 

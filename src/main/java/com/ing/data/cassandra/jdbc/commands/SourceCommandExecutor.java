@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmptyResultSet;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_OPEN_SOURCE_FILE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
 
@@ -38,6 +39,15 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FI
  *     {@code SOURCE <filename>}: where {@code filename} is the path of the file containing the CQL statements to
  *     execute. If not absolute, the path is interpreted relative to the current working directory. The tilde shorthand
  *     notation ({@code '~/dir'}) is supported for referring to the home directory.
+ * </p>
+ * <p>
+ *     The documentation of the original {@code SOURCE} command is available:
+ *     <ul>
+ *         <li><a href="https://cassandra.apache.org/doc/latest/cassandra/managing/tools/cqlsh.html#source">
+ *             in the Apache Cassandra® documentation</a></li>
+ *         <li><a href="https://docs.datastax.com/en/cql-oss/3.3/cql/cql_reference/cqlshSource.html">
+ *             in the DataStax CQL reference documentation</a></li>
+ *     </ul>
  * </p>
  * @implNote <p>
  *     If some of CQL statements included in the executed script return a result set or warnings, both will be
@@ -71,16 +81,7 @@ public class SourceCommandExecutor implements SpecialCommandExecutor {
         }
 
         final CassandraConnection connection = (CassandraConnection) statement.getConnection();
-
-        // Add support for the tilde shorthand notation.
-        String enhancedFilename = this.filename;
-        if (this.filename.startsWith("~")) {
-            enhancedFilename = this.filename.replace("~", System.getProperty("user.home"));
-        } else if (!new File(this.filename).isAbsolute()) {
-            enhancedFilename = System.getProperty("user.dir") + File.separator + this.filename;
-        }
-
-        final File sourceFile = new File(enhancedFilename);
+        final File sourceFile = new File(translateFilename(this.filename));
         final String cqlStatement;
         try {
             cqlStatement = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
