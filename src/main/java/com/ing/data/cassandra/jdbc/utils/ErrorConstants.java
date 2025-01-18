@@ -424,11 +424,38 @@ public final class ErrorConstants {
     public static final String CANNOT_WRITE_CSV_FILE = "Could not write CSV file '%s': %s";
 
     /**
+     * Error message used when the execution of the special CQL command {@code COPY FROM} failed while reading the CSV
+     * file to import. This message is a template expecting the name of the file and the error message (example:
+     * {@code String.format(CANNOT_READ_CSV_FILE, "target.csv", "access refused")}).
+     */
+    public static final String CANNOT_READ_CSV_FILE = "Could not read CSV file to import '%s': %s";
+
+    /**
+     * Error message used when the execution of the special CQL command {@code COPY FROM} failed to find the CSV file
+     * to import. This message is a template expecting the name of the file and the error message (example:
+     * {@code String.format(CSV_FILE_NOT_FOUND, "target.csv")}).
+     */
+    public static final String CSV_FILE_NOT_FOUND = "Could not find CSV file to import '%s'";
+
+    /**
      * Error message used when the special CQL command {@code COPY} contains at least one unknown or unsupported option.
      * This message is a template expecting the unknown option (example:
      * {@code String.format(UNSUPPORTED_COPY_OPTIONS, "[OPTION1, OPTION2]")}).
      */
     public static final String UNSUPPORTED_COPY_OPTIONS = "Command COPY used with unknown or unsupported options: %s";
+
+    /**
+     * Error message used when the execution of the special CQL command {@code COPY FROM} failed to find the
+     * definitions of the columns in the target table.
+     */
+    public static final String MISSING_COLUMN_DEFINITIONS = "No column definitions found in the target table.";
+
+    /**
+     * Error message used when the execution of the special CQL command {@code COPY FROM} failed to read the
+     * definitions of the columns in the target table.
+     */
+    public static final String COLUMN_DEFINITIONS_RETRIEVAL_FAILED =
+        "Failed to retrieve the column definitions of the target table.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

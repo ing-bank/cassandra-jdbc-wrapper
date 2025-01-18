@@ -68,6 +68,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWOR
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
@@ -134,7 +135,7 @@ class SessionHolder {
 
         // Parse the URL into a set of Properties and replace double quote marks (") by simple quotes (') to handle the
         // fact that double quotes (") are not valid characters in URIs.
-        this.properties = parseURL(url.replace("\"", "'"));
+        this.properties = parseURL(url.replace("\"", SINGLE_QUOTE));
 
         // Other properties in parameters come from the initial call to connect(), they take priority.
         params.keySet().stream()

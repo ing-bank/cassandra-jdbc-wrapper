@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_AUTO_GEN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_CONCURRENCY_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
@@ -310,16 +311,15 @@ public class CassandraStatement extends AbstractStatement
 
         // If a query contains a semicolon character in a string value (for example 'abc;xyz'), re-merge queries
         // wrongly split.
-        final String singleQuote = "'";
         StringBuilder prevCqlQuery = new StringBuilder();
         for (final String cqlQuery : cqlQueries) {
-            final boolean hasStringValues = cqlQuery.contains(singleQuote);
+            final boolean hasStringValues = cqlQuery.contains(SINGLE_QUOTE);
             final boolean isFirstQueryPartWithIncompleteStringValue =
-                countMatches(cqlQuery, singleQuote) % 2 == 1 && prevCqlQuery.length() == 0;
+                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 1 && prevCqlQuery.length() == 0;
             final boolean isNotFirstQueryPartWithCompleteStringValue =
-                countMatches(cqlQuery, singleQuote) % 2 == 0 && prevCqlQuery.length() > 0;
+                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 0 && prevCqlQuery.length() > 0;
             final boolean isNotFirstQueryPartWithoutStringValue =
-                !prevCqlQuery.toString().isEmpty() && !cqlQuery.contains(singleQuote);
+                !prevCqlQuery.toString().isEmpty() && !cqlQuery.contains(SINGLE_QUOTE);
 
             if ((hasStringValues && (isFirstQueryPartWithIncompleteStringValue
                 || isNotFirstQueryPartWithCompleteStringValue)) || isNotFirstQueryPartWithoutStringValue) {

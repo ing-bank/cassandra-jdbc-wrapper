@@ -43,6 +43,7 @@ import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefi
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static java.sql.DatabaseMetaData.typeNullable;
 import static java.sql.DatabaseMetaData.typePredBasic;
@@ -254,7 +255,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
             final AbstractJdbcType<?> jdbcType = getTypeForComparator(dataType.asLowercaseCql());
             String literalQuotingSymbol = null;
             if (jdbcType.needsQuotes()) {
-                literalQuotingSymbol = "'";
+                literalQuotingSymbol = SINGLE_QUOTE;
             }
             final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
                 dataType.cqlType,                             // TYPE_NAME

@@ -35,25 +35,17 @@ import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmptyResultSet;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
- * Executor for copy to CSV special command.
+ * Executor for special command copying table content to a CSV file.
  * <p>
  *     {@code COPY <tableName>[(<columns>)] TO <target>[ WITH <options>[ AND <options> ...]]}: where {@code tableName}
  *     is the name of the table to copy (it may be prefixed with the keyspace name), {@code columns} is a subset of
@@ -123,45 +115,14 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  *     is not supported.
  * </p>
  */
-public class CopyToCommandExecutor implements SpecialCommandExecutor {
+public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
     private static final int DEFAULT_FETCH_SIZE = 1000;
-    private static final char DEFAULT_DECIMAL_SEPARATOR = '.';
-    private static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ssZ";
-    private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
-    private static final String DEFAULT_NULL_FORMAT = "null";
-    private static final char DEFAULT_QUOTE_CHAR = '"';
-    private static final char DEFAULT_DELIMITER_CHAR = ',';
-    private static final char DEFAULT_ESCAPE_CHAR = '\\';
 
-    // Supported options
-    private static final String OPTION_DECIMALSEP = "DECIMALSEP";
-    private static final String OPTION_DELIMITER = "DELIMITER";
-    private static final String OPTION_ESCAPE = "ESCAPE";
-    private static final String OPTION_HEADER = "HEADER";
-    private static final String OPTION_NULLVAL = "NULLVAL";
+    // Supported options (not in common with COPY FROM)
     private static final String OPTION_PAGESIZE = "PAGESIZE";
-    private static final String OPTION_QUOTE = "QUOTE";
-    private static final String OPTION_THOUSANDSSEP = "THOUSANDSSEP";
-    private static final Set<String> SUPPORTED_OPTIONS = Collections.unmodifiableSet(
-        new HashSet<String>() {
-            {
-                add(OPTION_DECIMALSEP);
-                add(OPTION_DELIMITER);
-                add(OPTION_ESCAPE);
-                add(OPTION_HEADER);
-                add(OPTION_NULLVAL);
-                add(OPTION_PAGESIZE);
-                add(OPTION_QUOTE);
-                add(OPTION_THOUSANDSSEP);
-            }
-        }
-    );
 
-    private final String tableName;
-    private final String columns;
     private final String target;
-    private final Properties options;
 
     /**
      * Constructor.
@@ -179,7 +140,11 @@ public class CopyToCommandExecutor implements SpecialCommandExecutor {
         this.columns = StringUtils.defaultIfBlank(columns, "*");
         this.target = target;
         this.options = options;
+
+        SUPPORTED_OPTIONS.add(OPTION_PAGESIZE);
         checkOptions();
+
+        configureFormatters();
     }
 
     /**
@@ -189,7 +154,7 @@ public class CopyToCommandExecutor implements SpecialCommandExecutor {
     public ResultSet execute(final CassandraStatement statement, final String cql) throws SQLException {
         final CassandraConnection connection = statement.getCassandraConnection();
         final Statement selectStatement = connection.createStatement();
-        selectStatement.setFetchSize(parsePageSizeFromOptions());
+        selectStatement.setFetchSize(getOptionValueAsInt(OPTION_PAGESIZE, DEFAULT_FETCH_SIZE));
         final java.sql.ResultSet rs = selectStatement.executeQuery(
             String.format("SELECT %s FROM %s", this.columns, this.tableName)
         );
@@ -213,7 +178,7 @@ public class CopyToCommandExecutor implements SpecialCommandExecutor {
             final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
             csvWriter.writeAll(rs, includeHeaders);
         } catch (final IOException e) {
-            throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e), e);
+            throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
         } finally {
             rs.close();
             selectStatement.close();
@@ -223,57 +188,12 @@ public class CopyToCommandExecutor implements SpecialCommandExecutor {
         return buildEmptyResultSet();
     }
 
-    private void checkOptions() throws SQLSyntaxErrorException {
-        // Remove the supported options from the set of options found in the command, if the result set is not empty,
-        // this means there are unsupported options.
-        final Set<String> invalidKeys = new HashSet<>(this.options.stringPropertyNames());
-        invalidKeys.removeAll(SUPPORTED_OPTIONS);
-        if (!invalidKeys.isEmpty()) {
-            throw new SQLSyntaxErrorException(String.format(UNSUPPORTED_COPY_OPTIONS, invalidKeys));
-        }
-    }
-
-    private int parsePageSizeFromOptions() {
-        int configuredPageSize = DEFAULT_FETCH_SIZE;
-        final String pageSizeOption = this.options.getProperty(OPTION_PAGESIZE);
-        if (pageSizeOption != null) {
-            try {
-                configuredPageSize = Integer.parseInt(pageSizeOption);
-            } catch (final NumberFormatException e) {
-                LOG.warn("Invalid value for option PAGESIZE: {}. Will use the default value: {}.",
-                    pageSizeOption, DEFAULT_FETCH_SIZE);
-            }
-        }
-        return configuredPageSize;
-    }
-
-    private char getOptionValueAsChar(final String optionName, final char defaultValue) {
-        final String optionValue = this.options.getProperty(optionName);
-        if (StringUtils.isNotEmpty(optionValue)) {
-            return optionValue.charAt(0);
-        }
-        return defaultValue;
-    }
-
     private ResultSetHelperService configureResultSetHelperService() {
         final ResultSetHelperService rsHelperService = new EnhancedResultSetHelperService();
-
-        rsHelperService.setDateFormat(DEFAULT_DATE_FORMAT);
-        rsHelperService.setDateTimeFormat(DEFAULT_DATETIME_FORMAT);
-
-        final char thousandsSeparator = getOptionValueAsChar(OPTION_THOUSANDSSEP, Character.MIN_VALUE);
-        final DecimalFormatSymbols decimalSymbols = new DecimalFormatSymbols(Locale.getDefault());
-        decimalSymbols.setDecimalSeparator(getOptionValueAsChar(OPTION_DECIMALSEP, DEFAULT_DECIMAL_SEPARATOR));
-        if (thousandsSeparator != Character.MIN_VALUE) {
-            decimalSymbols.setGroupingSeparator(thousandsSeparator);
-        }
-
-        final DecimalFormat decimalFormat = (DecimalFormat) NumberFormat.getNumberInstance();
-        decimalFormat.setGroupingUsed(thousandsSeparator != Character.MIN_VALUE);
-        decimalFormat.setDecimalFormatSymbols(decimalSymbols);
-        rsHelperService.setFloatingPointFormat(decimalFormat);
-        rsHelperService.setIntegerFormat(decimalFormat);
-
+        rsHelperService.setDateFormat(this.dateFormat);
+        rsHelperService.setDateTimeFormat(this.dateTimeFormat);
+        rsHelperService.setFloatingPointFormat(this.decimalFormat);
+        rsHelperService.setIntegerFormat(this.decimalFormat);
         return rsHelperService;
     }
 

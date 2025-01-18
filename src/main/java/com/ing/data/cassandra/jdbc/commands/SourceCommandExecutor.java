@@ -34,7 +34,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_OPEN_SOURC
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
 
 /**
- * Executor for source special command.
+ * Executor for special command executing a CQL script file.
  * <p>
  *     {@code SOURCE <filename>}: where {@code filename} is the path of the file containing the CQL statements to
  *     execute. If not absolute, the path is interpreted relative to the current working directory. The tilde shorthand

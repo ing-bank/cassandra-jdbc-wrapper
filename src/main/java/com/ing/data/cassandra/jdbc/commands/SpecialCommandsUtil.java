@@ -27,8 +27,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.unwrap;
 
 /**
  * Utility methods for execution of
@@ -53,17 +55,17 @@ public final class SpecialCommandsUtil {
         "\\s+WITH\\s+(?<firstOptName>[A-Z]+)\\s*=\\s*(?<firstOptValue>'[^']*'|[^\\s']+)";
     static final String ADDITIONAL_OPTIONS_PATTERN =
         "\\s+AND\\s+(?<otherOptName>[A-Z]+)\\s*=\\s*(?<otherOptValue>'[^']*'|[^\\s']+)";
-    static final String CMD_COPY_TO_PATTERN =
-        "(?<copyToCmd>COPY(?<copiedTableName>\\s+(" + CQL_IDENTIFIER_PATTERN + "\\.)?" + CQL_IDENTIFIER_PATTERN + ")"
-            + "(\\s*\\((?<copiedColumns>\"?\\w+\"?(,\\s*\"?\\w+\"?)*)\\))?"
-            + "\\s+TO\\s+(?<copyToTarget>'[^']*')"
+    static final String CMD_COPY_PATTERN =
+        "(?<copyCmd>COPY(?<tableName>\\s+(" + CQL_IDENTIFIER_PATTERN + "\\.)?" + CQL_IDENTIFIER_PATTERN + ")"
+            + "(\\s*\\((?<columns>\"?\\w+\"?(,\\s*\"?\\w+\"?)*)\\))?"
+            + "\\s+(?<copyDirection>TO|FROM)\\s+(?<copyTargetOrOrigin>'[^']*')"
             + "(" + FIRST_OPTION_PATTERN + "(" + ADDITIONAL_OPTIONS_PATTERN + ")*)?)";
 
     private static final Pattern SUPPORTED_COMMANDS_PATTERN = Pattern.compile(
         CMD_CONSISTENCY_PATTERN
             + "|" + CMD_SERIAL_CONSISTENCY_PATTERN
             + "|" + CMD_SOURCE_PATTERN
-            + "|" + CMD_COPY_TO_PATTERN,
+            + "|" + CMD_COPY_PATTERN,
         Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     private SpecialCommandsUtil() {
@@ -101,7 +103,7 @@ public final class SpecialCommandsUtil {
             return handleConsistencyLevelCommand(matcher)
                 .orElse(handleSerialConsistencyLevelCommand(matcher)
                     .orElse(handleSourceCommand(matcher)
-                        .orElse(handleCopyToCommand(matcher, trimmedCql)
+                        .orElse(handleCopyCommand(matcher, trimmedCql)
                             .orElse(new NoOpExecutor()))));
         }
     }
@@ -229,7 +231,7 @@ public final class SpecialCommandsUtil {
         if (matcher.group("sourceCmd") != null) {
             final String sourceFile = matcher.group("sourceFile");
             if (sourceFile != null) {
-                return Optional.of(new SourceCommandExecutor(unquote(sourceFile)));
+                return Optional.of(new SourceCommandExecutor(unwrap(sourceFile.trim(), SINGLE_QUOTE)));
             } else {
                 throw new SQLSyntaxErrorException(MISSING_SOURCE_FILENAME);
             }
@@ -237,19 +239,19 @@ public final class SpecialCommandsUtil {
         return Optional.empty();
     }
 
-    private static Optional<SpecialCommandExecutor> handleCopyToCommand(final Matcher matcher, final String cql)
+    private static Optional<SpecialCommandExecutor> handleCopyCommand(final Matcher matcher, final String cql)
         throws SQLSyntaxErrorException {
-        // If the 'copyToCmd' matching group is not null, this means the command matched CMD_COPY_TO_PATTERN.
-        if (matcher.group("copyToCmd") != null) {
-            final String copiedTableName = matcher.group("copiedTableName");
-            final String copiedColumns = matcher.group("copiedColumns");
-            final String target = matcher.group("copyToTarget");
+        // If the 'copyCmd' matching group is not null, this means the command matched CMD_COPY_PATTERN.
+        if (matcher.group("copyCmd") != null) {
+            final String tableName = matcher.group("tableName").trim();
+            final String columns = Optional.ofNullable(matcher.group("columns")).orElse(EMPTY).trim();
+            final String targetOrOrigin = unwrap(matcher.group("copyTargetOrOrigin"), SINGLE_QUOTE);
 
             // Extract options from the command if at least one is present.
             final Properties options = new Properties();
             final String firstOptionName = matcher.group("firstOptName");
             if (firstOptionName != null) {
-                final String firstOptionValue = unquote(matcher.group("firstOptValue"));
+                final String firstOptionValue = unwrap(matcher.group("firstOptValue"), SINGLE_QUOTE);
                 options.put(firstOptionName, firstOptionValue);
 
                 // Extract additional options from the repeating group, this requires to re-apply a new matcher only
@@ -257,19 +259,18 @@ public final class SpecialCommandsUtil {
                 final Matcher additionalOptionsMatcher = Pattern.compile(ADDITIONAL_OPTIONS_PATTERN).matcher(cql);
                 while (additionalOptionsMatcher.find()) {
                     final String optionName = additionalOptionsMatcher.group("otherOptName");
-                    final String optionValue = unquote(additionalOptionsMatcher.group("otherOptValue"));
+                    final String optionValue = unwrap(additionalOptionsMatcher.group("otherOptValue"), SINGLE_QUOTE);
                     options.put(optionName, optionValue);
                 }
             }
 
-            return Optional.of(new CopyToCommandExecutor(copiedTableName.trim(), copiedColumns.trim(),
-                unquote(target), options));
+            if ("TO".equalsIgnoreCase(matcher.group("copyDirection"))) {
+                return Optional.of(new CopyToCommandExecutor(tableName, columns, targetOrOrigin, options));
+            } else {
+                return Optional.of(new CopyFromCommandExecutor(tableName, columns, targetOrOrigin, options));
+            }
         }
         return Optional.empty();
-    }
-
-    private static String unquote(@Nonnull final String value) {
-        return StringUtils.defaultIfBlank(value, EMPTY).trim().replace("'", EMPTY);
     }
 
 }

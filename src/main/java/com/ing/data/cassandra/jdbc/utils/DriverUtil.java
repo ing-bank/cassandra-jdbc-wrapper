@@ -91,6 +91,16 @@ public final class DriverUtil {
      */
     public static final String CASSANDRA_4 = "4.0";
 
+    /**
+     * Comma character.
+     */
+    public static final String COMMA = ",";
+
+    /**
+     * Single quote character.
+     */
+    public static final String SINGLE_QUOTE = "'";
+
     static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
 
     private DriverUtil() {
@@ -176,7 +186,7 @@ public final class DriverUtil {
                 && metadata.fulfillAdditionalCondition(connection))
             .map(VersionedMetadata::getName)
             .sorted()
-            .collect(Collectors.joining(","));
+            .collect(Collectors.joining(COMMA));
     }
 
     /**
@@ -205,7 +215,7 @@ public final class DriverUtil {
 
         final String propertyChoices = getDriverProperty(driverPropertyDefinition + ".choices");
         if (StringUtils.isNotBlank(propertyChoices)) {
-            propertyInfo.choices = propertyChoices.split(",");
+            propertyInfo.choices = propertyChoices.split(COMMA);
         }
         propertyInfo.required = Boolean.getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
         propertyInfo.description = getDriverProperty(driverPropertyDefinition);
