@@ -189,11 +189,12 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private ResultSetHelperService configureResultSetHelperService() {
-        final ResultSetHelperService rsHelperService = new EnhancedResultSetHelperService();
+        final EnhancedResultSetHelperService rsHelperService = new EnhancedResultSetHelperService();
         rsHelperService.setDateFormat(this.dateFormat);
         rsHelperService.setDateTimeFormat(this.dateTimeFormat);
         rsHelperService.setFloatingPointFormat(this.decimalFormat);
         rsHelperService.setIntegerFormat(this.decimalFormat);
+        rsHelperService.setNullFormat(getOptionValueAsString(OPTION_NULLVAL, DEFAULT_NULL_FORMAT));
         return rsHelperService;
     }
 

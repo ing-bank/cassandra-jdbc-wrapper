@@ -1,3 +1,18 @@
+/* Init keyspaces and tables for Copy<From|To>CommandTest */
+DROP KEYSPACE IF EXISTS copy_cmd_keyspace;
+CREATE KEYSPACE "copy_cmd_keyspace" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+USE copy_cmd_keyspace;
+CREATE TABLE copy_cmd_table (
+table_key text PRIMARY KEY,
+bool_val boolean,
+decimal_val decimal);
+
+CREATE TABLE copy_cmd_skip_rows_table (
+table_key text PRIMARY KEY,
+int_val int,
+str_val text);
+
 /* Init keyspaces and tables for MetadataResultSetsUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace;
 CREATE KEYSPACE "test_keyspace" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};

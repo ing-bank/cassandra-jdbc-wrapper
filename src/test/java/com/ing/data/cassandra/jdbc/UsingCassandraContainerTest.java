@@ -66,7 +66,8 @@ public abstract class UsingCassandraContainerTest {
         sqlConnection = newConnection(keyspace, true, parameters);
     }
 
-    static CassandraConnection newConnection(final String keyspace, final String... parameters) throws Exception {
+    public static CassandraConnection newConnection(final String keyspace,
+                                                    final String... parameters) throws Exception {
         return newConnection(keyspace, false, parameters);
     }
 

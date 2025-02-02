@@ -75,7 +75,7 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *         <li>{@code ESCAPE}: the character that is used to escape the literal uses of the {@code QUOTE} character.
  *         Defaults to {@value #DEFAULT_ESCAPE_CHAR}.</li>
  *         <li>{@code HEADER}: whether the first line in the CSV input file will contain the column names.
- *         If {@code false}, the option {@code SKIPCOLS} is ignored. Defaults to {@code false}.</li>
+ *         Defaults to {@code false}.</li>
  *         <li>{@code MAXROWS}: the maximum number of rows to import, negative meaning unlimited.
  *         Defaults to {@value #DEFAULT_MAX_ROWS}.</li>
  *         <li>{@code NULLVAL}: the string placeholder for null values. Defaults to {@value #DEFAULT_NULL_FORMAT}.</li>
@@ -223,7 +223,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             for (int i = startRow; i < maxRows; i++) {
                 handleValuesToInsert(insertStatement, allRows.get(i), csvColumns, getColumnsToImport(skippedColumns));
                 final int rowsInBatch = i - startRow + 1;
-                if (rowsInBatch % batchSize == 0 || rowsInBatch == maxRows) {
+                if (rowsInBatch % batchSize == 0 || rowsInBatch == maxRows - startRow) {
                     insertStatement.executeBatch();
                 }
             }
@@ -287,7 +287,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private Map<Integer, String> mapColumnsFromArray(final String[] columnsNames) {
-        final Map<Integer, String> csvColumns = new HashMap<>();
+        final Map<Integer, String> csvColumns = new LinkedHashMap<>();
         for (int i = 0; i < columnsNames.length; i++) {
             csvColumns.put(i, columnsNames[i]);
         }
@@ -307,7 +307,10 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
                 values.add(o);
             }
         }
-        final String cql = String.format("INSERT INTO %s(%s) VALUES (%s)", this.tableName, this.columns,
+        final String cql = String.format("INSERT INTO %s(%s) VALUES (%s)", this.tableName,
+            csvColumns.values().stream()
+                .filter(columnsToImport::contains)
+                .collect(Collectors.joining(COMMA)),
             String.join(COMMA, values));
         try {
             statement.addBatch(cql);
@@ -317,8 +320,11 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private String handleNumberValue(final String strValue) {
+        if (strValue == null) {
+            return null;
+        }
         try {
-            final Number number = this.decimalFormat.parse(strValue);
+            final Number number = this.decimalFormat.parse(strValue.trim());
             return number.toString();
         } catch (final ParseException e) {
             LOG.warn("Failed to parse and convert value: {}, the value will be ignored.", strValue);
@@ -327,7 +333,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private String parseValue(final String value, final Integer colType) {
-        if (DEFAULT_NULL_FORMAT.equals(value)) {
+        if (getOptionValueAsString(OPTION_NULLVAL, DEFAULT_NULL_FORMAT).equals(value)) {
             return null;
         }
         switch (colType) {

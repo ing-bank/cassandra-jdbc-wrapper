@@ -109,6 +109,11 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         this.decimalFormat.setDecimalFormatSymbols(decimalSymbols);
     }
 
+    String getOptionValueAsString(final String optionName, final String defaultValue) {
+        final String optionValue = this.options.getProperty(optionName);
+        return StringUtils.defaultIfBlank(optionValue, defaultValue);
+    }
+
     char getOptionValueAsChar(final String optionName, final char defaultValue) {
         final String optionValue = this.options.getProperty(optionName);
         if (StringUtils.isNotEmpty(optionValue)) {
