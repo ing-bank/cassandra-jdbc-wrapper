@@ -39,6 +39,7 @@ import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.utils.AwsUtil;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
@@ -379,6 +380,7 @@ class SessionHolder {
         codecs.add(new VarintToIntCodec());
         codecs.add(new SmallintToIntCodec());
         codecs.add(new TinyintToIntCodec());
+        codecs.add(new TinyintToShortCodec());
         builder.addTypeCodecs(codecs.toArray(new TypeCodec[]{}));
 
         builder.withKeyspace(keyspace);

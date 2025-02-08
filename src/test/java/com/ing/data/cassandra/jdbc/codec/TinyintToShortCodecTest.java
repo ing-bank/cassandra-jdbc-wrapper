@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class TinyintToIntCodecTest {
+public class TinyintToShortCodecTest {
 
-    private final TinyintToIntCodec sut = new TinyintToIntCodec();
+    private final TinyintToShortCodec sut = new TinyintToShortCodec();
 
     @Test
-    void givenCodec_whenGetJavaType_returnInt() {
-        assertEquals(GenericType.INTEGER, sut.getJavaType());
+    void givenCodec_whenGetJavaType_returnShort() {
+        assertEquals(GenericType.SHORT, sut.getJavaType());
     }
 
     @Test
@@ -47,9 +47,9 @@ public class TinyintToIntCodecTest {
 
     @Test
     void givenValue_whenEncode_returnByteBuffer() {
-        ByteBuffer bytes = sut.encode(123, ProtocolVersion.DEFAULT);
+        ByteBuffer bytes = sut.encode((short) 64, ProtocolVersion.DEFAULT);
         assertNotNull(bytes);
-        assertEquals(123, bytes.getInt());
+        assertEquals(64, bytes.getShort());
     }
 
     @Test
@@ -58,10 +58,10 @@ public class TinyintToIntCodecTest {
     }
 
     @Test
-    void givenValue_whenDecode_returnInt() {
-        ByteBuffer bytes = ByteBuffer.allocate(1).put((byte) 123);
+    void givenValue_whenDecode_returnShort() {
+        ByteBuffer bytes = ByteBuffer.allocate(1).put((byte) 64);
         bytes.position(0);
-        assertEquals(123, sut.decode(bytes, ProtocolVersion.DEFAULT));
+        assertEquals((short) 64, sut.decode(bytes, ProtocolVersion.DEFAULT));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class TinyintToIntCodecTest {
 
     @Test
     void givenNonNullValue_whenParse_returnExpectedValue() {
-        assertEquals(123, sut.parse("123"));
+        assertEquals((short) 64, sut.parse("64"));
     }
 
     @Test
@@ -84,6 +84,6 @@ public class TinyintToIntCodecTest {
 
     @Test
     void givenNonNullValue_whenFormat_returnExpectedValue() {
-        assertEquals("123", sut.format(123));
+        assertEquals("64", sut.format((short) 64));
     }
 }

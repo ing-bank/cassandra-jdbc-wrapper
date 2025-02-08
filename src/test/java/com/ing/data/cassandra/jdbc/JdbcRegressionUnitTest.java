@@ -531,6 +531,7 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertEquals(new Time(now).toString(), result.getTime("time_col").toString());
         assertEquals(1, result.getShort("smallint_col"));
         assertEquals(1, result.getByte("tinyint_col"));
+        assertEquals(1, result.getShort("tinyint_col")); // TINYINT could also be retrieved as short.
         assertEquals(testDuration1, ((CassandraResultSet) result).getDuration("duration_col"));
         assertEquals(testUrl, result.getURL("url_col"));
 

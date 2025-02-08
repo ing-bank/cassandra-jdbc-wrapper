@@ -31,6 +31,7 @@ import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.optionset.OptionSet;
@@ -254,6 +255,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         codecs.add(new VarintToIntCodec());
         codecs.add(new SmallintToIntCodec());
         codecs.add(new TinyintToIntCodec());
+        codecs.add(new TinyintToShortCodec());
         safelyRegisterCodecs(cSession, codecs);
     }
 

@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - `COPY <tableName>[(<colums>)] TO|FROM <target>[ WITH <options>[ AND <options>...]]`
 - Add a method `CassandraConnection.setOptionSet(OptionSet)` to programmatically define a custom compliance mode option
   set on a pre-existing connection.
+### Fixed
+- Add codec for conversion between `Short` and CQL type `tinyint` (see issue
+  [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
 
 ## [4.14.0] - 2024-12-24
 ### Added

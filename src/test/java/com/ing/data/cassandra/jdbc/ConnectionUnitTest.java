@@ -513,7 +513,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenSession_whenCreateConnection_registerCodecsOnlyOnce() {
         // The number of custom codecs defined in the package com.ing.data.cassandra.jdbc.codec.
-        final int numberOfCustomCodecs = 9;
+        final int numberOfCustomCodecs = 10;
 
         final CqlSession mockSession = mock(CqlSession.class);
         final DriverContext mockContext = mock(DriverContext.class);
