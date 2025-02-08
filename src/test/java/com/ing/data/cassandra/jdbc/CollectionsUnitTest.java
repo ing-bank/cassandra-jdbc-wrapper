@@ -38,6 +38,7 @@ import java.util.Set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -355,6 +356,9 @@ class CollectionsUnitTest extends UsingCassandraContainerTest {
         assertEquals(1, udtValue.getInt("key"));
         assertEquals("test", udtValue.getString("value1"));
         assertTrue(udtValue.getBoolean("value2"));
+
+        // Check retrieving a list of UDTs does not throw an exception (see issue #76).
+        assertDoesNotThrow(() -> resultSet.getObject("innerUdt"));
 
         Object outerUdt = resultSet.getObject("outerUdt");
         assertInstanceOf(UdtValue.class, outerUdt);

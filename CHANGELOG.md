@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Add codec for conversion between `Short` and CQL type `tinyint` (see issue
   [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
+- Handle lists of User-Defined Types (UDT) properly when using `CassandraResultSet.getObject(String|int)` methods (see 
+  issue [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
 
 ## [4.14.0] - 2024-12-24
 ### Added

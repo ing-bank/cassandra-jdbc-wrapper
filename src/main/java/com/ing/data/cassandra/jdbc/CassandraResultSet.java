@@ -934,7 +934,10 @@ public class CassandraResultSet extends AbstractResultSet
                 final DataType elementsType = listType.getElementType();
                 final List<?> resultList;
 
-                if (elementsType instanceof TupleType) {
+                if (elementsType instanceof UserDefinedType) {
+                    resultList = this.currentRow.getList(columnIndex - 1,
+                        TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType());
+                } else if (elementsType instanceof TupleType) {
                     resultList = this.currentRow.getList(columnIndex - 1,
                         TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
@@ -1069,7 +1072,10 @@ public class CassandraResultSet extends AbstractResultSet
                 final DataType elementsType = listType.getElementType();
                 final List<?> resultList;
 
-                if (elementsType instanceof TupleType) {
+                if (elementsType instanceof UserDefinedType) {
+                    resultList = this.currentRow.getList(columnLabel,
+                        TypesMap.getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType());
+                } else if (elementsType instanceof TupleType) {
                     resultList = this.currentRow.getList(columnLabel,
                         TypesMap.getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
                 } else {
