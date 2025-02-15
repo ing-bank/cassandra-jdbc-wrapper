@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_KEYSPACE;
@@ -35,9 +37,13 @@ import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_T
 import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_PARTIAL_TABLE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE;
 import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.assertCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.assertRowValues;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class CopyFromCommandTest extends UsingCassandraContainerTest {
@@ -49,23 +55,35 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
         initConnection(COPY_CMD_TEST_KEYSPACE, "localdatacenter=datacenter1");
     }
 
-    static String getTestOriginPath(final String csvFile) {
+    static String getTestOriginPath(final String csvFile, final boolean allowInvalidFile) {
         final URL cqlScriptResourceUrl =
             CopyFromCommandTest.class.getClassLoader().getResource("copyFromTests/" + csvFile);
         if (cqlScriptResourceUrl == null) {
+            if (allowInvalidFile) {
+                return csvFile;
+            }
             fail("Could not find the CSV script to import in 'copyFromTests' directory: " + csvFile);
         }
         return cqlScriptResourceUrl.getPath();
     }
 
-    private void executeCopyFromCommand(final String targetTable, final String csvSourceFile,
-                                        final String options) throws SQLException {
+    private ResultSet executeCopyFromCommand(final String targetTable, final String csvSourceFile,
+                                             final String options) throws SQLException {
+        return executeCopyFromCommand(targetTable, csvSourceFile, options, false);
+    }
+
+    private ResultSet executeCopyFromCommand(final String targetTable, final String csvSourceFile,
+                                             final String options, final boolean allowInvalidFile) throws SQLException {
         assertNotNull(sqlConnection);
+        // First, truncate target table to ensure the data of any test previously executed is removed.
         final Statement truncateTableStmt = sqlConnection.createStatement();
         truncateTableStmt.execute(String.format("TRUNCATE TABLE %s", targetTable));
         truncateTableStmt.close();
-        sqlConnection.createStatement().execute(String.format("COPY %s FROM '%s' %s", targetTable,
-                getTestOriginPath(csvSourceFile), options));
+
+        final Statement copyCmdStmt = sqlConnection.createStatement();
+        copyCmdStmt.execute(String.format("COPY %s FROM '%s' %s", targetTable,
+            getTestOriginPath(csvSourceFile, allowInvalidFile), Optional.ofNullable(options).orElse(EMPTY)));
+        return copyCmdStmt.getResultSet();
     }
 
     static Stream<Arguments> buildCopyFromCommandVariableParameters() {
@@ -82,7 +100,8 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     void givenTableAndOriginFile_whenExecuteCopyFromCommand_executeExpectedStatements(final String csvFile,
                                                                                       final String options)
         throws SQLException {
-        executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, csvFile, options);
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, csvFile, options);
+        assertCommandResultSet(resultSet, true, 2, 1, 0);
         assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key1", true, new BigDecimal("654000.7"));
         assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key2", false, new BigDecimal("321000.8"));
     }
@@ -90,7 +109,9 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     @Test
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithSkipRows_executeExpectedStatements()
         throws SQLException {
-        executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv", "WITH SKIPROWS=2");
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME,
+            "test_partial_import.csv", "WITH SKIPROWS=2");
+        assertCommandResultSet(resultSet, true, 2, 1, 2);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key3", 3, "N/A");
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key4", 4, "test4");
     }
@@ -98,15 +119,18 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     @Test
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithMaxRows_executeExpectedStatements()
         throws SQLException {
-        executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv", "WITH MAXROWS=1");
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME,
+            "test_partial_import.csv", "WITH MAXROWS=1");
+        assertCommandResultSet(resultSet, true, 1, 1, 3);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");
     }
 
     @Test
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithPartialImportOptions_executeExpectedStatements()
         throws SQLException {
-        executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
             "WITH MAXROWS=2 AND SKIPROWS=1 AND SKIPCOLS=str_val");
+        assertCommandResultSet(resultSet, true, 2, 1, 2);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key2", 2, null);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key3", 3, null);
     }
@@ -114,9 +138,53 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     @Test
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithNullValueOption_executeExpectedStatements()
         throws SQLException {
-        executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv", "WITH NULLVAL=N/A");
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME,
+            "test_partial_import.csv", "WITH NULLVAL=N/A");
+        assertCommandResultSet(resultSet, true, 4, 1, 0);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key3", 3, null);
     }
 
+    @Test
+    void givenTableAndOriginFile_whenExecuteCopyFromCommandWithUnsupportedOptions_throwException() {
+        final SQLException sqlException = assertThrows(SQLException.class, () ->
+            executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, "test_simple.csv", "WITH BADOPTION=1"));
+        assertThat(sqlException.getMessage(),
+            containsString("Command COPY used with unknown or unsupported options: [BADOPTION]"));
+    }
+
+    @Test
+    void givenTableAndOriginFile_whenExecuteCopyFromCommandWithInvalidIntOption_useDefaultOptionValue()
+        throws SQLException {
+        final ResultSet resultSet = executeCopyFromCommand(
+            COPY_CMD_TEST_KEYSPACE + "." + COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
+            "WITH SKIPROWS=a");
+        assertCommandResultSet(resultSet, true, 4, 1, 0);
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key2", 2, "test2");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key3", 3, "N/A");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key4", 4, "test4");
+    }
+
+    @Test
+    void givenNonExistingFile_whenExecuteCopyFromCommand_throwException() {
+        final SQLException sqlException = assertThrows(SQLException.class, () ->
+            executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, "bad_test_file.csv", EMPTY, true));
+        assertThat(sqlException.getMessage(),
+            containsString("Could not find CSV file to import 'bad_test_file.csv'"));
+    }
+
+    @Test
+    void givenTableAndOriginFile_whenExecuteCopyFromCommandWithSpecificBatchSize_executeExpectedBatches()
+        throws SQLException {
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_PARTIAL_TABLE_NAME,
+            "test_partial_import.csv", "WITH BATCHSIZE=2");
+        assertCommandResultSet(resultSet, true, 4, 2, 0);
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key2", 2, "test2");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key3", 3, "N/A");
+        assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key4", 4, "test4");
+    }
+
+    // TODO: test with all types
 }

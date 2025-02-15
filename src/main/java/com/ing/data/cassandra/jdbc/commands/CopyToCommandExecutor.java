@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -38,8 +39,9 @@ import java.sql.Types;
 import java.text.NumberFormat;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmptyResultSet;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -97,6 +99,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  *         <li>{@code REPORTFREQUENCY}</li>
  *     </ul>
  *     Using unknown options will throw a {@link SQLSyntaxErrorException}.
+ * </p>
+ * <p>
+ *     A successful command execution will return a result set with a single row containing some information about the
+ *     export process in a column {@code result}.
  * </p>
  * <p>
  *     The documentation of the original {@code COPY TO} command is available:
@@ -159,11 +165,12 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             String.format("SELECT %s FROM %s", this.columns, this.tableName)
         );
 
+        final Path targetPath = Paths.get(translateFilename(this.target));
         ICSVWriter csvWriter = null;
         try {
             final CSVWriterBuilder builder = new CSVWriterBuilder(
                 new OutputStreamWriter(
-                    Files.newOutputStream(Paths.get(translateFilename(this.target))),
+                    Files.newOutputStream(targetPath),
                     StandardCharsets.UTF_8.newEncoder() // Use UTF-8 encoding by default
                 )
             );
@@ -185,7 +192,13 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             IOUtils.closeQuietly(csvWriter);
         }
 
-        return buildEmptyResultSet();
+        long exportedRows = -1;
+        try (Stream<String> csvLines = Files.lines(targetPath)) {
+            exportedRows = csvLines.count();
+        } catch (final IOException e) {
+            LOG.warn("Failed to read exported CSV file to count exportedRows.");
+        }
+        return buildCopyCommandResultSet("exported to", exportedRows, 1, -1);
     }
 
     private ResultSetHelperService configureResultSetHelperService() {

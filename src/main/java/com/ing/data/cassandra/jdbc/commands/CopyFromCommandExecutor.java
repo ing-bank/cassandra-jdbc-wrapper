@@ -46,7 +46,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmptyResultSet;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
@@ -117,6 +116,10 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *         <li>{@code TTL}</li>
  *     </ul>
  *     Using unknown options will throw a {@link SQLSyntaxErrorException}.
+ * </p>
+ * <p>
+ *     A successful command execution will return a result set with a single row containing some information about the
+ *     import process in a column {@code result}.
  * </p>
  * <p>
  *     The documentation of the original {@code COPY FROM} command is available:
@@ -200,9 +203,14 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         final int batchSize = getOptionValueAsInt(OPTION_BATCHSIZE, DEFAULT_BATCH_SIZE);
 
         CSVReader csvReader = null;
+
+        int executedBatches = 0;
+        final int importedRows;
+        int skippedRows = getOptionValueAsInt(OPTION_SKIPROWS, DEFAULT_SKIPPED_ROWS);
+
         try {
             csvReader = new CSVReaderBuilder(new FileReader(translateFilename(this.origin)))
-                .withSkipLines(getOptionValueAsInt(OPTION_SKIPROWS, DEFAULT_SKIPPED_ROWS))
+                .withSkipLines(skippedRows)
                 .withCSVParser(configureCsvParser())
                 .build();
             final List<String[]> allRows = csvReader.readAll();
@@ -225,8 +233,11 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
                 final int rowsInBatch = i - startRow + 1;
                 if (rowsInBatch % batchSize == 0 || rowsInBatch == maxRows - startRow) {
                     insertStatement.executeBatch();
+                    executedBatches++;
                 }
             }
+            importedRows = maxRows - startRow;
+            skippedRows += allRows.size() - importedRows - startRow;
         } catch (final FileNotFoundException e) {
             throw new SQLException(String.format(CSV_FILE_NOT_FOUND, this.origin), e);
         } catch (final IOException | CsvException e) {
@@ -236,7 +247,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             IOUtils.closeQuietly(csvReader);
         }
 
-        return buildEmptyResultSet();
+        return buildCopyCommandResultSet("imported from", importedRows, executedBatches, skippedRows);
     }
 
     private ICSVParser configureCsvParser() {

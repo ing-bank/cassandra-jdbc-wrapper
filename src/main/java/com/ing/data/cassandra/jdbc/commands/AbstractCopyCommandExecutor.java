@@ -17,20 +17,27 @@ package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
+import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.datastax.oss.driver.api.core.type.DataTypes.TEXT;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Executor abstraction for common parts of the special commands {@code COPY}.
@@ -133,6 +140,40 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
             }
         }
         return defaultValue;
+    }
+
+    /**
+     * Generates a result set for the {@code COPY} command.
+     *
+     * @param actionVerb      The action verb (imported from/exported to) used in the result set depending on the
+     *                        executed command.
+     * @param processedRows   The total number of imported or exported rows.
+     * @param executedBatches The number of batches executed.
+     * @param skippedRows     The total number of skipped rows. The information about the skipped rows is only
+     *                        displayed if this number is greater or equal to 0.
+     * @return The result for the {@code COPY} command.
+     * @implNote The result set is a single row with a string value in a column {@code result} following the model of
+     * the result representation described in the examples presented in the
+     * <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cqlshCopy.html#Examples">cqlsh
+     * documentation</a>.
+     */
+    ResultSet buildCopyCommandResultSet(final String actionVerb, final long processedRows, final int executedBatches,
+                                        final int skippedRows) {
+        String skippedRowsInfo = EMPTY;
+        if (skippedRows >= 0) {
+            skippedRowsInfo = String.format(" (%d skipped)", skippedRows);
+        }
+        final String result = String.format("%d row(s) %s 1 file in %d batch(es)%s.",
+            processedRows, actionVerb, executedBatches, skippedRowsInfo);
+        final ByteBuffer resultAsBytes = bytes(result);
+        return buildSpecialCommandResultSet(
+            new ColumnDefinitions.Definition[]{
+                ColumnDefinitions.Definition.buildDefinitionInAnonymousTable("result", TEXT)
+            },
+            Collections.singletonList(
+                Collections.singletonList(resultAsBytes)
+            )
+        );
     }
 
 }

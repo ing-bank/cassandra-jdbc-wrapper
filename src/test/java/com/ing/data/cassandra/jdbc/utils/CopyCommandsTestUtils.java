@@ -20,6 +20,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +54,30 @@ public class CopyCommandsTestUtils {
         }
         verifyRs.close();
         verifyStmt.close();
+    }
+
+    public static void assertCommandResultSet(final ResultSet rs, final boolean isImport,
+                                              final int expectedProcessedRows,
+                                              final int expectedExecutedBatches) throws SQLException {
+        assertCommandResultSet(rs, isImport, expectedProcessedRows, expectedExecutedBatches, null);
+    }
+
+    public static void assertCommandResultSet(final ResultSet rs, final boolean isImport,
+                                              final int expectedProcessedRows, final int expectedExecutedBatches,
+                                              final Integer expectedSkippedRows) throws SQLException {
+        String expectedVerb = "exported to";
+        String expectedSkippedRowsInfo = EMPTY;
+        if (isImport) {
+            expectedVerb = "imported from";
+            expectedSkippedRowsInfo = String.format(" (%d skipped)", expectedSkippedRows);
+        }
+
+        assertTrue(rs.next());
+        assertEquals(1, rs.findColumn("result"));
+        assertThat(rs.getString(1), containsString(String.format("%d row(s) %s 1 file in %d batch(es)%s",
+            expectedProcessedRows, expectedVerb, expectedExecutedBatches, expectedSkippedRowsInfo)));
+
+        rs.close();
     }
 
 }
