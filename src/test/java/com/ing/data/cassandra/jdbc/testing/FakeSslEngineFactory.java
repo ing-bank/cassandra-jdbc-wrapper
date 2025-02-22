@@ -11,38 +11,30 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
-import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
-import com.datastax.oss.driver.api.core.context.DriverContext;
-import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.metadata.EndPoint;
+import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLEngine;
 
-import static org.mockito.Mockito.mock;
+public class FakeSslEngineFactory implements SslEngineFactory {
 
-public class FakeReconnectionPolicy implements ReconnectionPolicy {
-
-    public FakeReconnectionPolicy(final DriverContext context) {
+    public FakeSslEngineFactory() {
         // Do nothing. For testing purpose only.
     }
 
     @Nonnull
     @Override
-    public ReconnectionSchedule newNodeSchedule(@Nonnull final Node node) {
+    public SSLEngine newSslEngine(@Nonnull EndPoint remoteEndpoint) {
         // Do nothing. For testing purpose only.
-        return mock(ReconnectionSchedule.class);
-    }
-
-    @Nonnull
-    @Override
-    public ReconnectionSchedule newControlConnectionSchedule(final boolean isInitialConnection) {
-        // Do nothing. For testing purpose only.
-        return mock(ReconnectionSchedule.class);
+        return null;
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         // Do nothing. For testing purpose only.
     }
+
 }

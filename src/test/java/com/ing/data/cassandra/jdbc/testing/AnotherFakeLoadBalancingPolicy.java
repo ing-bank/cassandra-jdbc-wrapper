@@ -11,7 +11,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
@@ -28,9 +28,9 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 
-public class FakeLoadBalancingPolicy implements LoadBalancingPolicy {
+public class AnotherFakeLoadBalancingPolicy implements LoadBalancingPolicy {
 
-    public FakeLoadBalancingPolicy(@Nonnull final DriverContext context, @Nonnull final String profileName) {
+    public AnotherFakeLoadBalancingPolicy(final DriverContext context, final String profileName) {
         // Do nothing. For testing purpose only.
     }
 

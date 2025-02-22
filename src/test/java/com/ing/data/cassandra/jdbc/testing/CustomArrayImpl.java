@@ -12,7 +12,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
 import java.sql.Array;
 import java.sql.ResultSet;

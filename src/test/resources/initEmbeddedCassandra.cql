@@ -13,6 +13,33 @@ table_key text PRIMARY KEY,
 int_val int,
 str_val text);
 
+CREATE TABLE copy_cmd_all_types_table (
+table_key text PRIMARY KEY,
+ascii_val ascii,
+bigint_val bigint,
+blob_val blob,
+bool_val boolean,
+date_val date,
+decimal_val decimal,
+double_val double,
+duration_val duration,
+float_val float,
+inet_val inet,
+int_val int,
+list_val list<int>,
+map_val map<int, text>,
+smallint_val smallint,
+set_val set<int>,
+time_val time,
+ts_val timestamp,
+timeuuid_val timeuuid,
+tinyint_val tinyint,
+tuple_val tuple<int, text>,
+uuid_val uuid,
+varchar_val varchar,
+varint_val varint,
+vector_val vector<int, 4>);
+
 /* Init keyspaces and tables for MetadataResultSetsUnitTest */
 DROP KEYSPACE IF EXISTS test_keyspace;
 CREATE KEYSPACE "test_keyspace" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};

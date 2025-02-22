@@ -28,8 +28,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 
-import static com.ing.data.cassandra.jdbc.utils.ConsistencyLevelTestUtils.assertSerialConsistencyLevel;
-import static com.ing.data.cassandra.jdbc.utils.ConsistencyLevelTestUtils.assertSerialConsistencyLevelViaExecute;
+import static com.ing.data.cassandra.jdbc.testing.ConsistencyLevelTestUtils.assertSerialConsistencyLevel;
+import static com.ing.data.cassandra.jdbc.testing.ConsistencyLevelTestUtils.assertSerialConsistencyLevelViaExecute;
 import static java.sql.Statement.EXECUTE_FAILED;
 import static java.sql.Statement.SUCCESS_NO_INFO;
 import static org.hamcrest.MatcherAssert.assertThat;

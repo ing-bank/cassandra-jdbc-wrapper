@@ -16,7 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
-import com.ing.data.cassandra.jdbc.utils.CustomArrayImpl;
+import com.ing.data.cassandra.jdbc.testing.CustomArrayImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

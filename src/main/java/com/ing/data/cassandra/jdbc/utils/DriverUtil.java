@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
@@ -100,6 +101,41 @@ public final class DriverUtil {
      * Single quote character.
      */
     public static final String SINGLE_QUOTE = "'";
+
+    /**
+     * UUIDv1 pattern, used by {@code TIMEUUID} CQL type.
+     */
+    public static final Pattern UUID_V1_PATTERN = Pattern.compile(
+        "^[0-9A-F]{8}-[0-9A-F]{4}-1[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * UUIDv4 pattern, used by {@code UUID} CQL type.
+     */
+    public static final Pattern UUID_V4_PATTERN = Pattern.compile(
+        "^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Duration format pattern, used by {@code DURATION} CQL type.
+     * See: <a href="https://cassandra.apache.org/doc/stable/cassandra/cql/types.html#durations">Duration CQL type</a>
+     */
+    public static final Pattern DURATION_FORMAT_PATTERN = Pattern.compile(
+        "^(\\d+y)?(\\d+mo)?(\\d+w)?(\\d+d)?(\\d+h)?(\\d+m)?(\\d+s)?(\\d+ms)?(\\d+us)?(\\d+ns)?$"
+    );
+
+    /**
+     * ISO-8601 duration format pattern, used by {@code DURATION} CQL type.
+     * See: <a href="https://cassandra.apache.org/doc/stable/cassandra/cql/types.html#durations">Duration CQL type</a>
+     */
+    public static final Pattern DURATION_ISO8601_FORMAT_PATTERN = Pattern.compile(
+        "^P((\\d+Y)?(\\d+M)?(\\d+D)?T(\\d+H)?(\\d+M)?(\\d+S)?)?|(\\d+W)?$"
+    );
+
+    /**
+     * Alternative ISO-8601 duration format pattern, used by {@code DURATION} CQL type.
+     * See: <a href="https://cassandra.apache.org/doc/stable/cassandra/cql/types.html#durations">Duration CQL type</a>
+     */
+    public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
+        "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
 
     static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
 

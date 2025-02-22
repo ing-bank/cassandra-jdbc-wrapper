@@ -22,7 +22,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
-import com.ing.data.cassandra.jdbc.utils.TestMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.testing.TestMetadataResultSetBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

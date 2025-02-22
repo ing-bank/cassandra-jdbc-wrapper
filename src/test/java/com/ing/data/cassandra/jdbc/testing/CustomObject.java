@@ -11,7 +11,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -21,8 +21,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -30,53 +39,53 @@ import java.util.Map;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomObjectStringOnly {
+public class CustomObject {
 
     @JsonProperty("asciivalue")
     private String asciiValue;
     @JsonProperty("bigintvalue")
-    private String bigintValue;
+    private Long bigintValue;
     @JsonProperty("blobvalue")
-    private String blobValue;
+    private ByteBuffer blobValue;
     @JsonProperty("boolvalue")
-    private String boolValue;
+    private Boolean boolValue;
     @JsonProperty("datevalue")
-    private String dateValue;
+    private LocalDate dateValue;
     @JsonProperty("decimalvalue")
-    private String decimalValue;
+    private BigDecimal decimalValue;
     @JsonProperty("doublevalue")
-    private String doubleValue;
+    private Double doubleValue;
     @JsonProperty("floatvalue")
-    private String floatValue;
+    private Float floatValue;
     @JsonProperty("inetvalue")
-    private String inetValue;
+    private InetAddress inetValue;
     @JsonProperty("intvalue")
-    private String intValue;
+    private Integer intValue;
     @JsonProperty("listvalue")
-    private List<String> listValue;
+    private List<Integer> listValue;
     @JsonProperty("mapvalue")
-    private Map<String, String> mapValue;
+    private Map<Integer, String> mapValue;
     @JsonProperty("smallintvalue")
-    private String smallintValue;
+    private Short smallintValue;
     @JsonProperty("setvalue")
-    private List<String> setValue;
+    private Set<Integer> setValue;
     @JsonProperty("textvalue")
     private String textValue;
     @JsonProperty("timevalue")
-    private String timeValue;
+    private LocalTime timeValue;
     @JsonProperty("tsvalue")
-    private String tsValue;
+    private OffsetDateTime tsValue;
     @JsonProperty("timeuuidvalue")
-    private String timeuuidValue;
+    private UUID timeuuidValue;
     @JsonProperty("tinyintvalue")
-    private String tinyintValue;
+    private Byte tinyintValue;
     @JsonProperty("tuplevalue")
     private List<String> tupleValue;
     @JsonProperty("uuidvalue")
-    private String uuidValue;
+    private UUID uuidValue;
     @JsonProperty("varcharvalue")
     private String varcharValue;
     @JsonProperty("varintvalue")
-    private String varintValue;
+    private BigInteger varintValue;
 
 }

@@ -24,8 +24,8 @@ import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import com.datastax.oss.driver.api.core.retry.RetryPolicy;
 import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPolicy;
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext;
-import com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy;
+import com.ing.data.cassandra.jdbc.testing.AnotherFakeLoadBalancingPolicy;
+import com.ing.data.cassandra.jdbc.testing.AnotherFakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.Test;
 
@@ -112,12 +112,12 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertEquals(SERIAL_CONSISTENCY, ds.getSerialConsistency());
         ds.setActiveProfile("custom_profile");
         assertEquals("custom_profile", ds.getActiveProfile());
-        ds.setRetryPolicy("com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy");
-        assertEquals("com.ing.data.cassandra.jdbc.utils.FakeRetryPolicy", ds.getRetryPolicy());
-        ds.setLoadBalancingPolicy("com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy");
-        assertEquals("com.ing.data.cassandra.jdbc.utils.FakeLoadBalancingPolicy", ds.getLoadBalancingPolicy());
-        ds.setReconnectionPolicy("com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()");
-        assertEquals("com.ing.data.cassandra.jdbc.utils.FakeReconnectionPolicy()", ds.getReconnectionPolicy());
+        ds.setRetryPolicy("com.ing.data.cassandra.jdbc.testing.FakeRetryPolicy");
+        assertEquals("com.ing.data.cassandra.jdbc.testing.FakeRetryPolicy", ds.getRetryPolicy());
+        ds.setLoadBalancingPolicy("com.ing.data.cassandra.jdbc.testing.FakeLoadBalancingPolicy");
+        assertEquals("com.ing.data.cassandra.jdbc.testing.FakeLoadBalancingPolicy", ds.getLoadBalancingPolicy());
+        ds.setReconnectionPolicy("com.ing.data.cassandra.jdbc.testing.FakeReconnectionPolicy()");
+        assertEquals("com.ing.data.cassandra.jdbc.testing.FakeReconnectionPolicy()", ds.getReconnectionPolicy());
         ds.setFetchSize(500);
         assertEquals(500, ds.getFetchSize());
         ds.setRequestTimeout(5_000L);
@@ -127,8 +127,8 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         ds.setSslEnabled(true);
         assertTrue(ds.isSslEnabled());
         assertTrue(ds.isHostnameVerified()); // true when SSL enabled with DefaultSslEngineFactory.
-        ds.setSslEngineFactory("com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory");
-        assertEquals("com.ing.data.cassandra.jdbc.utils.FakeSslEngineFactory", ds.getSslEngineFactory());
+        ds.setSslEngineFactory("com.ing.data.cassandra.jdbc.testing.FakeSslEngineFactory");
+        assertEquals("com.ing.data.cassandra.jdbc.testing.FakeSslEngineFactory", ds.getSslEngineFactory());
         assertFalse(ds.isHostnameVerified()); // false when SSL enabled with custom SslEngineFactory.
         ds.setHostnameVerified(true);
         assertTrue(ds.isHostnameVerified());
@@ -188,8 +188,8 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         final CassandraDataSource ds = new CassandraDataSource(CONTACT_POINTS, KEYSPACE);
         ds.setURL(buildJdbcUrl(CONTACT_POINT_HOST, CONTACT_POINT_PORT, KEYSPACE, "consistency=TWO",
             "serialconsistency=LOCAL_SERIAL", "fetchsize=5000", "localdatacenter=DC1",
-            "loadbalancing=com.ing.data.cassandra.jdbc.utils.AnotherFakeLoadBalancingPolicy",
-            "requesttimeout=8000", "retry=com.ing.data.cassandra.jdbc.utils.AnotherFakeRetryPolicy",
+            "loadbalancing=com.ing.data.cassandra.jdbc.testing.AnotherFakeLoadBalancingPolicy",
+            "requesttimeout=8000", "retry=com.ing.data.cassandra.jdbc.testing.AnotherFakeRetryPolicy",
             "reconnection=ConstantReconnectionPolicy((long)10)", "connecttimeout=15000", "tcpnodelay=false",
             "keepalive=true", "user=testUser", "password=testPassword"));
 

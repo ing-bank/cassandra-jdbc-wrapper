@@ -20,6 +20,8 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +65,7 @@ public final class UdtUtil {
         if (set != null) {
             return set.stream()
                 .map(item -> udtValueUsingFormattedContents((UdtValue) item))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         }
         return null;
     }
@@ -83,18 +85,19 @@ public final class UdtUtil {
                 .collect(Collectors.toMap(
                     entry -> {
                         final Object key = entry.getKey();
-                        if (key.getClass().isAssignableFrom(UdtValue.class)) {
+                        if (UdtValue.class.isAssignableFrom(key.getClass())) {
                             return udtValueUsingFormattedContents((UdtValue) key);
                         }
                         return key;
                     },
                     entry -> {
                         final Object value = entry.getValue();
-                        if (value.getClass().isAssignableFrom(UdtValue.class)) {
+                        if (UdtValue.class.isAssignableFrom(value.getClass())) {
                             return udtValueUsingFormattedContents((UdtValue) value);
                         }
                         return value;
-                    })
+                    },
+                    (k, v) -> v, LinkedHashMap::new)
                 );
         }
         return null;

@@ -32,7 +32,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -48,7 +47,12 @@ import java.util.stream.Collectors;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_FORMAT_PATTERN;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_ISO8601_ALT_FORMAT_PATTERN;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_ISO8601_FORMAT_PATTERN;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.UUID_V1_PATTERN;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.UUID_V4_PATTERN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_READ_CSV_FILE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.COLUMN_DEFINITIONS_RETRIEVAL_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CSV_FILE_NOT_FOUND;
@@ -193,7 +197,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         }
         setTargetColumnsIfNotSpecified();
 
-        final Statement insertStatement = connection.createStatement();
+        final CassandraStatement insertStatement = (CassandraStatement) connection.createStatement();
 
         final boolean hasHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
         final Set<String> skippedColumns = Arrays.stream(((String) this.options.getOrDefault(OPTION_SKIPCOLS, EMPTY))
@@ -305,7 +309,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         return csvColumns;
     }
 
-    private void handleValuesToInsert(final Statement statement,
+    private void handleValuesToInsert(final CassandraStatement statement,
                                       final String[] row,
                                       final Map<Integer, String> csvColumns,
                                       final List<String> columnsToImport) {
@@ -325,6 +329,9 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             String.join(COMMA, values));
         try {
             statement.addBatch(cql);
+            if (LOG.isTraceEnabled() || statement.getCassandraConnection().isDebugMode()) {
+                LOG.trace("Added to batch: {}", cql);
+            }
         } catch (final SQLException e) {
             LOG.warn("Failed to add statement to the batch: {}", cql, e);
         }
@@ -369,12 +376,6 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             case Types.TIMESTAMP:
             case Types.TIMESTAMP_WITH_TIMEZONE:
                 // We assume here the date-time values respect the default date-time format supported by Cassandra CQL.
-            case Types.BINARY:
-            case Types.VARBINARY:
-            case Types.LONGVARBINARY:
-            case Types.BLOB:
-            case Types.CLOB:
-            case Types.NCLOB:
             case Types.NVARCHAR:
             case Types.NCHAR:
             case Types.LONGNVARCHAR:
@@ -383,11 +384,30 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             case Types.CHAR:
             case Types.DATALINK:
                 return wrap(value, SINGLE_QUOTE);
-            case Types.OTHER:
+            case Types.BINARY:
+            case Types.VARBINARY:
+            case Types.LONGVARBINARY:
+            case Types.BLOB:
+            case Types.CLOB:
+            case Types.NCLOB:
+                // We assume blob values are represented as text in imported CSV files.
+                return String.format("textAsBlob('%s')", value);
             case Types.ARRAY:
-                // We assume the format provided for other types (tuples, maps, arrays, ...) is correct and does not
-                // require any transformation.
-                return value;
+            case Types.OTHER:
+                // We assume the format provided for collection types (tuples, maps, arrays, ...) is correct and does
+                // not require any transformation.
+                if (value.matches("[\\[({].*[])}]")) {
+                    return value;
+                }
+                // DURATION, TIMEUUID and UUID types does not require any transformation.
+                if (UUID_V1_PATTERN.matcher(value).matches() || UUID_V4_PATTERN.matcher(value).matches()
+                    || DURATION_FORMAT_PATTERN.matcher(value).matches()
+                    || DURATION_ISO8601_FORMAT_PATTERN.matcher(value).matches()
+                    || DURATION_ISO8601_ALT_FORMAT_PATTERN.matcher(value).matches()) {
+                    return value;
+                }
+                // For the others, wrap the value with single quotes.
+                return wrap(value, SINGLE_QUOTE);
             default:
                 // Types JAVA_OBJECT, DISTINCT, STRUCT, REF, ROWID, SQLXML, REF_CURSOR are not supported.
                 return null;

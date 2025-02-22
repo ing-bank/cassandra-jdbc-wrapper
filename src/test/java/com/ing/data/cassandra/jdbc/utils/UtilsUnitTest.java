@@ -11,13 +11,11 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc;
+package com.ing.data.cassandra.jdbc.utils;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.ing.data.cassandra.jdbc.metadata.BasicVersionedMetadata;
-import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
-import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

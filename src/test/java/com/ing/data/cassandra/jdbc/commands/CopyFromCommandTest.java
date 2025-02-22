@@ -15,6 +15,11 @@
 
 package com.ing.data.cassandra.jdbc.commands;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.CqlVector;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.internal.core.data.DefaultTupleValue;
+import com.datastax.oss.driver.internal.core.type.DefaultTupleType;
 import com.ing.data.cassandra.jdbc.UsingCassandraContainerTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,20 +30,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.Inet4Address;
 import java.net.URL;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_KEYSPACE;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_PARTIAL_TABLE;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_PARTIAL_TABLE_NAME;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE_NAME;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.assertCommandResultSet;
-import static com.ing.data.cassandra.jdbc.utils.CopyCommandsTestUtils.assertRowValues;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_ALL_TYPES_TABLE;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_ALL_TYPES_TABLE_NAME;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_KEYSPACE;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_PARTIAL_TABLE;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_PARTIAL_TABLE_NAME;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD_TEST_TABLE_NAME;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertCommandResultSet;
+import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertRowValues;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -186,5 +204,48 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key4", 4, "test4");
     }
 
-    // TODO: test with all types
+    @Test
+    void givenTableWithAllTypesAndOriginFile_whenExecuteCopyFromCommand_executeExpectedStatements() throws Exception {
+        final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_ALL_TYPES_TABLE_NAME,
+            "test_all_types_import.csv", "WITH HEADER=true AND DELIMITER=;");
+        assertCommandResultSet(resultSet, true, 1, 1, 0);
+        assertRowValues(sqlConnection, COPY_CMD_TEST_ALL_TYPES_TABLE,
+            "key1",                                                     // text
+            "abc123",                                                   // ascii
+            12345678900000L,                                            // bigint
+            bytes("this is a blob"),                                    // blob
+            true,                                                       // boolean
+            Date.valueOf("2023-03-25"),                                 // date
+            new BigDecimal("18.97"),                                    // decimal
+            2345.6d,                                                    // double
+            CqlDuration.from("3h15m"),                                  // duration
+            21.3f,                                                      // float
+            Inet4Address.getByName("127.0.0.1"),                        // inet
+            98,                                                         // int
+            Arrays.asList(4, 6, 10),                                    // list
+            new HashMap<Integer, String>(){{                            // map
+                put(3, "three");
+                put(8, "eight");
+            }},
+            (short) 2,                                                  // smallint
+            new HashSet<Integer>(){{                                    // set
+                add(2);
+                add(3);
+                add(5);
+            }},
+            Time.valueOf("12:30:45"),                                   // time
+            Timestamp.valueOf(                                          // timestamp
+                LocalDateTime.parse("2023-03-25T13:30:45.789")),        // fixme
+            UUID.fromString("1f4b6fe0-f12b-11ef-8b6b-fdf7025e383c"),    // timeuuid
+            (byte) 12,                                                  // tinyint
+            new DefaultTupleValue(                                      // tuple
+                new DefaultTupleType(Arrays.asList(DataTypes.INT, DataTypes.TEXT)),
+                5, "five"),
+            UUID.fromString("f26f86e6-d8ef-4d30-9d9e-4027d21e02a9"),    // uuid
+            "varchar text",                                             // varchar
+            new BigInteger("4321"),                                     // varint
+            CqlVector.newInstance(1, 3, 8, 6)                           // vector
+            );
+    }
+
 }

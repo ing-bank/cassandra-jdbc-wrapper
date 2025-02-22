@@ -13,7 +13,7 @@
  *   limitations under the License.
  */
 
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 

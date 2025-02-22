@@ -11,7 +11,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package com.ing.data.cassandra.jdbc.utils;
+package com.ing.data.cassandra.jdbc.testing;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -38,7 +38,12 @@ public class CopyCommandsTestUtils {
     public static final Pair<String, String> COPY_CMD_TEST_PARTIAL_TABLE =
         Pair.of(COPY_CMD_TEST_PARTIAL_TABLE_NAME, "table_key, int_val, str_val");
 
-    public static final String COPY_CMD_TEST_ALL_TYPES_TABLE = "copy_cmd_all_types_table";
+    public static final String COPY_CMD_TEST_ALL_TYPES_TABLE_NAME = "copy_cmd_all_types_table";
+    public static final Pair<String, String> COPY_CMD_TEST_ALL_TYPES_TABLE =
+        Pair.of(COPY_CMD_TEST_ALL_TYPES_TABLE_NAME,
+            "table_key, ascii_val, bigint_val, blob_val, bool_val, date_val, decimal_val, double_val, duration_val, "
+                + "float_val, inet_val, int_val, list_val, map_val, smallint_val, set_val, time_val, ts_val, "
+                + "timeuuid_val, tinyint_val, tuple_val, uuid_val, varchar_val, varint_val, vector_val");
 
     public static void assertRowValues(final Connection connection,
                                        final Pair<String, String> tableDesc,
