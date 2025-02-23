@@ -39,7 +39,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -209,6 +210,7 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
         final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_ALL_TYPES_TABLE_NAME,
             "test_all_types_import.csv", "WITH HEADER=true AND DELIMITER=;");
         assertCommandResultSet(resultSet, true, 1, 1, 0);
+
         assertRowValues(sqlConnection, COPY_CMD_TEST_ALL_TYPES_TABLE,
             "key1",                                                     // text
             "abc123",                                                   // ascii
@@ -235,7 +237,9 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
             }},
             Time.valueOf("12:30:45"),                                   // time
             Timestamp.valueOf(                                          // timestamp
-                LocalDateTime.parse("2023-03-25T13:30:45.789")),        // fixme
+                OffsetDateTime.parse("2023-03-25T12:30:45.789Z")
+                    .atZoneSameInstant(ZoneId.systemDefault())
+                    .toLocalDateTime()),
             UUID.fromString("1f4b6fe0-f12b-11ef-8b6b-fdf7025e383c"),    // timeuuid
             (byte) 12,                                                  // tinyint
             new DefaultTupleValue(                                      // tuple

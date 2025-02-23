@@ -1,0 +1,4 @@
+"table_key","bool_val","decimal_val"
+"key1","true","1.5"
+"key3","false","null"
+"key2","false","4200"

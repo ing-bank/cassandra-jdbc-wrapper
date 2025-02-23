@@ -16,6 +16,7 @@
 package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.opencsv.CSVWriterBuilder;
@@ -167,6 +168,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
         final Path targetPath = Paths.get(translateFilename(this.target));
         ICSVWriter csvWriter = null;
+        long exportedRows = 0;
         try {
             final CSVWriterBuilder builder = new CSVWriterBuilder(
                 new OutputStreamWriter(
@@ -183,6 +185,9 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 .build();
 
             final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
+            if (includeHeaders) {
+                exportedRows -= 1;
+            }
             csvWriter.writeAll(rs, includeHeaders);
         } catch (final IOException e) {
             throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
@@ -192,9 +197,8 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             IOUtils.closeQuietly(csvWriter);
         }
 
-        long exportedRows = -1;
         try (Stream<String> csvLines = Files.lines(targetPath)) {
-            exportedRows = csvLines.count();
+            exportedRows += csvLines.count();
         } catch (final IOException e) {
             LOG.warn("Failed to read exported CSV file to count exportedRows.");
         }
@@ -260,9 +264,6 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.CLOB:
                     value = handleClob(rs, colIndex);
                     break;
-                case Types.BIGINT:
-                    value = applyFormatter(this.integerFormat, rs.getBigDecimal(colIndex));
-                    break;
                 case Types.DECIMAL:
                 case Types.REAL:
                 case Types.NUMERIC:
@@ -274,10 +275,17 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.FLOAT:
                     value = applyFormatter(this.floatingPointFormat, rs.getFloat(colIndex));
                     break;
+                case Types.BIGINT:
+                    value = applyFormatter(this.integerFormat, rs.getLong(colIndex));
+                    break;
                 case Types.INTEGER:
-                case Types.TINYINT:
-                case Types.SMALLINT:
                     value = applyFormatter(this.integerFormat, rs.getInt(colIndex));
+                    break;
+                case Types.TINYINT:
+                    value = applyFormatter(this.integerFormat, rs.getByte(colIndex));
+                    break;
+                case Types.SMALLINT:
+                    value = applyFormatter(this.integerFormat, rs.getShort(colIndex));
                     break;
                 case Types.DATE:
                     value = handleDate(rs, colIndex, dateFormatString);
@@ -298,9 +306,20 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.CHAR:
                     value = handleVarChar(rs, colIndex, trim);
                     break;
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.LONGVARBINARY:
+                    value = new String(rs.getBytes(colIndex), StandardCharsets.UTF_8);
+                    break;
                 default:
-                    // This takes care of Types.BIT, Types.JAVA_OBJECT, and anything unknown.
-                    value = Objects.toString(rs.getObject(colIndex), EMPTY);
+                    // This takes care of any types not previously handled.
+                    // For tuples, use the method "getFormattedContents()" to get the string representation of the
+                    // tuple.
+                    final Object objValue = rs.getObject(colIndex);
+                    if (TupleValue.class.isAssignableFrom(objValue.getClass())) {
+                        return ((TupleValue) objValue).getFormattedContents();
+                    }
+                    value = Objects.toString(objValue, EMPTY);
             }
 
             if (rs.wasNull() || value == null) {
