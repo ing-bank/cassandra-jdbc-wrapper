@@ -36,8 +36,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -46,6 +48,7 @@ import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.time.TimeZones.GMT;
 
 /**
  * Executor for special command copying table content to a CSV file.
@@ -247,6 +250,17 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 return formatter.format(value);
             }
             return Objects.toString(value, EMPTY);
+        }
+
+        @Override
+        protected String handleTimestamp(final Timestamp timestamp, final String timestampFormatString) {
+            if (timestamp == null) {
+                return null;
+            }
+            final SimpleDateFormat timeFormat = new SimpleDateFormat(timestampFormatString);
+            // Use GMT time zone for the timestamp values to get consistent and machine-independent results.
+            timeFormat.setTimeZone(GMT);
+            return timeFormat.format(timestamp);
         }
 
         private String getColumnValue(final java.sql.ResultSet rs, final int colType, final int colIndex,
