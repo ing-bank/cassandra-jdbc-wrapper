@@ -38,8 +38,13 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -50,6 +55,7 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1048,7 +1054,7 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
 
         // Insert data into the table.
         final String insertQuery =
-            "INSERT INTO t75(id, complex_type1, complex_type2, complex_type3) values(?, ?, ?, ?);";
+            "INSERT INTO t75(id, complex_type1, complex_type2, complex_type3) VALUES(?, ?, ?, ?);";
         final PreparedStatement stmt2 = sqlConnection.prepareStatement(insertQuery);
         stmt2.setObject(1, 1);
 
@@ -1105,5 +1111,50 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertThat(complexType3ValueAsObject, hasItem(map3));
 
         stmt3.close();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testIngIssue77() throws Exception {
+        // Create the table.
+        final String createTableQuery = "CREATE TABLE t77 (id int PRIMARY KEY, "
+            + "list_ts list<timestamp>, list_dt list<date>, list_time list<time>);";
+        final Statement stmt = sqlConnection.createStatement();
+        stmt.execute(createTableQuery);
+        stmt.close();
+
+        // Insert data into the table.
+        // Cassandra doesn't support nanoseconds, so set truncate values to milliseconds.
+        final Timestamp tsValue1 = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        final Timestamp tsValue2 = Timestamp.from(Instant.now().minusSeconds(120).truncatedTo(ChronoUnit.MILLIS));
+        final Date dtValue1 = Date.valueOf(LocalDate.now());
+        final Date dtValue2 = Date.valueOf(LocalDate.now().minusYears(3).minusMonths(2).minusDays(1));
+        final Time timeValue1 = Time.valueOf(LocalTime.now());
+        final Time timeValue2 = Time.valueOf(LocalTime.now().plusHours(2).minusMinutes(15).plusSeconds(30));
+
+        final PreparedStatement ps = sqlConnection.prepareStatement(
+            "INSERT INTO t77(id, list_ts, list_dt, list_time) VALUES(1, ?, ?, ?)"
+        );
+        final List<Timestamp> tsList = Arrays.asList(tsValue1, tsValue2);
+        final List<Date> dtList = Arrays.asList(dtValue1, dtValue2);
+        final List<Time> timeList = Arrays.asList(timeValue1, timeValue2);
+        ps.setObject(1, tsList);
+        ps.setObject(2, dtList);
+        ps.setObject(3, timeList);
+        ps.execute();
+        ps.close();
+
+        // Get data from the table.
+        final Statement stmt2 = sqlConnection.createStatement();
+        final ResultSet resultSet = stmt2.executeQuery("SELECT * FROM t77;");
+        resultSet.next();
+        final List<Timestamp> resultTsList = (List<Timestamp>) resultSet.getObject("list_ts");
+        assertThat(resultTsList, hasItems(tsValue1, tsValue2));
+        final List<Date> resultDtList = (List<Date>) resultSet.getObject("list_dt");
+        assertThat(resultDtList, hasItems(dtValue1, dtValue2));
+        final List<Time> resultTimeList = (List<Time>) resultSet.getObject("list_time");
+        assertThat(resultTimeList, hasItems(timeValue1, timeValue2));
+        resultSet.close();
+        stmt2.close();
     }
 }

@@ -20,6 +20,19 @@ import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
+import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
+import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
+import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.SqlDateCodec;
+import com.ing.data.cassandra.jdbc.codec.SqlTimeCodec;
+import com.ing.data.cassandra.jdbc.codec.SqlTimestampCodec;
+import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
+import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
+import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.apache.commons.lang3.StringUtils;
 import org.semver4j.RangesExpression;
@@ -32,6 +45,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.DriverPropertyInfo;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -136,6 +150,27 @@ public final class DriverUtil {
      */
     public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
         "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
+
+    /**
+     * The list of pre-configured codecs used by this driver.
+     */
+    public static final List<TypeCodec<?>> PRECONFIGURED_CODECS = new ArrayList<>();
+
+    static {
+        PRECONFIGURED_CODECS.add(new TimestampToLongCodec());
+        PRECONFIGURED_CODECS.add(new LongToIntCodec());
+        PRECONFIGURED_CODECS.add(new IntToLongCodec());
+        PRECONFIGURED_CODECS.add(new BigintToBigDecimalCodec());
+        PRECONFIGURED_CODECS.add(new DecimalToDoubleCodec());
+        PRECONFIGURED_CODECS.add(new FloatToDoubleCodec());
+        PRECONFIGURED_CODECS.add(new VarintToIntCodec());
+        PRECONFIGURED_CODECS.add(new SmallintToIntCodec());
+        PRECONFIGURED_CODECS.add(new TinyintToIntCodec());
+        PRECONFIGURED_CODECS.add(new TinyintToShortCodec());
+        PRECONFIGURED_CODECS.add(new SqlTimestampCodec());
+        PRECONFIGURED_CODECS.add(new SqlDateCodec());
+        PRECONFIGURED_CODECS.add(new SqlTimeCodec());
+    }
 
     static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
 

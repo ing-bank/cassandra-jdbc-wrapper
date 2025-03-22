@@ -22,17 +22,6 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
-import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
-import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
-import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
-import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
-import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
-import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
-import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
-import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.optionset.OptionSet;
 import org.apache.commons.lang3.StringUtils;
@@ -48,9 +37,7 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -69,6 +56,7 @@ import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_KEYSPACES_HOSTS_REGEX;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.PRECONFIGURED_CODECS;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
@@ -245,18 +233,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.serialConsistencyLevel = ConsistencyLevel.SERIAL;
         this.debugMode = debugMode;
         setActiveExecutionProfile(Objects.toString(defaultExecutionProfile, DriverExecutionProfile.DEFAULT_NAME));
-        final List<TypeCodec<?>> codecs = new ArrayList<>();
-        codecs.add(new TimestampToLongCodec());
-        codecs.add(new LongToIntCodec());
-        codecs.add(new IntToLongCodec());
-        codecs.add(new BigintToBigDecimalCodec());
-        codecs.add(new DecimalToDoubleCodec());
-        codecs.add(new FloatToDoubleCodec());
-        codecs.add(new VarintToIntCodec());
-        codecs.add(new SmallintToIntCodec());
-        codecs.add(new TinyintToIntCodec());
-        codecs.add(new TinyintToShortCodec());
-        safelyRegisterCodecs(cSession, codecs);
+        safelyRegisterCodecs(cSession, PRECONFIGURED_CODECS);
     }
 
     /**

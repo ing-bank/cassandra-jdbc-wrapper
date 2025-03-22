@@ -23,6 +23,7 @@
  *         <li>{@code CONSISTENCY [level]}</li>
  *         <li>{@code SERIAL CONSISTENCY [level]}</li>
  *         <li>{@code SOURCE <filename>}</li>
+ *         <li>{@code COPY <tableName>[(<columns>)] TO|FROM <filename>[ WITH <options>[ AND <options> ...]]}</li>
  *         </ul>
  * </p>
  */

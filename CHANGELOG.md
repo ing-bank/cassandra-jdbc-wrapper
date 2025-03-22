@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Use an extended implementation of `UdtValue`, including a string representation of the value, for UDT values returned
   by `CassandraResultSet.getObject(String|int)` methods (see issue 
   [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
+- Add support for collections of `timestamp`, `date` and `time` values (see issue
+  [#77](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/77)) by adding specific codecs for 
+  `java.sql.Timestamp`, `java.sql.Date` and `java.sql.Time` types.
 
 ## [4.14.0] - 2024-12-24
 ### Added
@@ -336,6 +339,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.15.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.14.0...v4.15.0
 [4.14.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.13.1...v4.14.0
 [4.13.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.13.0...v4.13.1
 [4.13.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.12.0...v4.13.0

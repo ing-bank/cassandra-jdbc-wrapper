@@ -31,16 +31,6 @@ import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.ing.data.cassandra.jdbc.codec.BigintToBigDecimalCodec;
-import com.ing.data.cassandra.jdbc.codec.DecimalToDoubleCodec;
-import com.ing.data.cassandra.jdbc.codec.FloatToDoubleCodec;
-import com.ing.data.cassandra.jdbc.codec.IntToLongCodec;
-import com.ing.data.cassandra.jdbc.codec.LongToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.SmallintToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.TimestampToLongCodec;
-import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
-import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
-import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.utils.AwsUtil;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import com.instaclustr.cassandra.driver.auth.KerberosAuthProviderBase;
@@ -69,6 +59,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWOR
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.PRECONFIGURED_CODECS;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
@@ -369,19 +360,8 @@ class SessionHolder {
             builder.withAuthProvider(new SigV4AuthProvider(awsRegion));
         }
 
-        // Declare and register codecs.
-        final List<TypeCodec<?>> codecs = new ArrayList<>();
-        codecs.add(new TimestampToLongCodec());
-        codecs.add(new LongToIntCodec());
-        codecs.add(new IntToLongCodec());
-        codecs.add(new BigintToBigDecimalCodec());
-        codecs.add(new DecimalToDoubleCodec());
-        codecs.add(new FloatToDoubleCodec());
-        codecs.add(new VarintToIntCodec());
-        codecs.add(new SmallintToIntCodec());
-        codecs.add(new TinyintToIntCodec());
-        codecs.add(new TinyintToShortCodec());
-        builder.addTypeCodecs(codecs.toArray(new TypeCodec[]{}));
+        // Register codecs.
+        builder.addTypeCodecs(PRECONFIGURED_CODECS.toArray(new TypeCodec[]{}));
 
         builder.withKeyspace(keyspace);
         builder.withConfigLoader(driverConfigLoaderBuilder.build());
