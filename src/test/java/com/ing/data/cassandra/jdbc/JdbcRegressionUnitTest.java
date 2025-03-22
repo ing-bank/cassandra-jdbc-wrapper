@@ -14,15 +14,18 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.ing.data.cassandra.jdbc.optionset.Default;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
@@ -53,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.datastax.oss.driver.api.core.config.DriverExecutionProfile.DEFAULT_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -1156,5 +1160,21 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertThat(resultTimeList, hasItems(timeValue1, timeValue2));
         resultSet.close();
         stmt2.close();
+    }
+
+    @Test
+    void testIngIssue78() throws SQLException {
+        final CqlSession cqlSession = CqlSession.builder()
+            .addContactPoint(new InetSocketAddress(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())
+            )
+            .withLocalDatacenter("datacenter1")
+            .build();
+        final Connection cassandraConnection = new CassandraConnection(
+            cqlSession, KEYSPACE, ConsistencyLevel.LOCAL_ONE, false, new Default(), DEFAULT_NAME
+        );
+        // The following method call checking if the database is an Amazon Keyspaces instance should not throw
+        // an exception when the connection is created from a pre-existing session.
+        assertNotNull(cassandraConnection.getMetaData().getSQLKeywords());
     }
 }

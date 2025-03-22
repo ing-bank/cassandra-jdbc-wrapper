@@ -109,6 +109,7 @@ class AmazonKeyspacesIntegrationTest {
          *    cassandra.us-west-1.amazonaws.com
          *    cassandra.us-west-2.amazonaws.com
          *    cassandra-fips.us-west-2.amazonaws.com
+         *    cassandra.af-south-1.amazonaws.com
          *    cassandra.ap-east-1.amazonaws.com
          *    cassandra.ap-south-1.amazonaws.com
          *    cassandra.ap-northeast-1.amazonaws.com
@@ -132,7 +133,7 @@ class AmazonKeyspacesIntegrationTest {
          *    cassandra.cn-north-1.amazonaws.com.cn
          *    cassandra.cn-northwest-1.amazonaws.com.cn
          *
-         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Oct. 2024)
+         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Mar. 2025)
          */
 
         if (canRunTests()) {

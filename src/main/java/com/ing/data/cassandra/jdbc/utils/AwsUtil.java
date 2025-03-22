@@ -26,6 +26,8 @@ import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerExcept
 
 import java.net.URI;
 import java.sql.SQLTransientException;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_SECRET_RETRIEVAL_FAILED;
 
@@ -35,11 +37,41 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_SECRET_RETRIE
 public final class AwsUtil {
 
     /**
-     * Regular expression matching the valid hosts for Amazon Keyspaces.
+     * Set of valid hosts for Amazon Keyspaces.
+     * <p>
+     *     See: <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html">
+     *     List of Amazon Keyspaces endpoints</a> (last update: March 2025).
+     * </p>
      */
-    public static final String AWS_KEYSPACES_HOSTS_REGEX =
-        "cassandra(-fips)?\\.(us(-gov)?|ap|eu|ca|me|sa|cn)-central|(north|south)?(east|west)?-[0-9]"
-            + "\\.amazonaws\\.com(\\.cn)?";
+    public static final Set<String> AWS_KEYSPACES_VALID_HOSTS = new HashSet<String>() {
+        {
+            add("cassandra.us-east-1.amazonaws.com");
+            add("cassandra-fips.us-east-1.amazonaws.com");
+            add("cassandra.us-east-2.amazonaws.com");
+            add("cassandra.us-west-1.amazonaws.com");
+            add("cassandra.us-west-2.amazonaws.com");
+            add("cassandra-fips.us-west-2.amazonaws.com");
+            add("cassandra.af-south-1.amazonaws.com");
+            add("cassandra.ap-east-1.amazonaws.com");
+            add("cassandra.ap-south-1.amazonaws.com");
+            add("cassandra.ap-northeast-1.amazonaws.com");
+            add("cassandra.ap-northeast-2.amazonaws.com");
+            add("cassandra.ap-southeast-1.amazonaws.com");
+            add("cassandra.ap-southeast-2.amazonaws.com");
+            add("cassandra.ca-central-1.amazonaws.com");
+            add("cassandra.eu-central-1.amazonaws.com");
+            add("cassandra.eu-west-1.amazonaws.com");
+            add("cassandra.eu-west-2.amazonaws.com");
+            add("cassandra.eu-west-3.amazonaws.com");
+            add("cassandra.eu-north-1.amazonaws.com");
+            add("cassandra.me-south-1.amazonaws.com");
+            add("cassandra.sa-east-1.amazonaws.com");
+            add("cassandra.us-gov-east-1.amazonaws.com");
+            add("cassandra.us-gov-west-1.amazonaws.com");
+            add("cassandra.cn-north-1.amazonaws.com.cn");
+            add("cassandra.cn-northwest-1.amazonaws.com.cn");
+        }
+    };
 
     /**
      * Name of the system property used to override the default endpoint of the Amazon Secrets manager.

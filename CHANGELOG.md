@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for collections of `timestamp`, `date` and `time` values (see issue
   [#77](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/77)) by adding specific codecs for 
   `java.sql.Timestamp`, `java.sql.Date` and `java.sql.Time` types.
+- Fix `NullPointerException` when checking if the connection using a pre-existing CQL session is done to an Amazon  
+  Keyspaces instance (see issue [#78](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/78)) and also improve  
+  the implementation of the method `CassandraConnection.isNotConnectedToAmazonKeyspaces()`. 
 
 ## [4.14.0] - 2024-12-24
 ### Added

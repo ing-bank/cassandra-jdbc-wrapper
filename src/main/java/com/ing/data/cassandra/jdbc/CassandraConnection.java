@@ -38,6 +38,7 @@ import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -51,11 +52,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
-import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_KEYSPACES_HOSTS_REGEX;
+import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_KEYSPACES_VALID_HOSTS;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.PRECONFIGURED_CODECS;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
@@ -253,7 +255,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             this.connectedToAmazonKeyspaces = false;
             // Valid Amazon Keyspaces endpoints are available here:
             // https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html
-            if (this.url.matches(AWS_KEYSPACES_HOSTS_REGEX)) {
+            Set<String> connectionUrlOrEndpoints = new HashSet<>();
+            if (this.url != null) {
+                connectionUrlOrEndpoints.add(this.url);
+            } else {
+                try {
+                    connectionUrlOrEndpoints = this.metadata.getNodes().values().stream()
+                        .map(node -> node.getEndPoint().resolve().toString())
+                        .collect(Collectors.toSet());
+                } catch (final Exception e) {
+                    LOG.debug("Failed to retrieve the contact points of the connection to determine if the connection "
+                        + "is bound to AWS: {}", e.getMessage());
+                }
+            }
+            if (connectionUrlOrEndpoints.stream().anyMatch(
+                endpoint -> AWS_KEYSPACES_VALID_HOSTS.stream().anyMatch(endpoint::contains))) {
                 this.connectedToAmazonKeyspaces = true;
             } else {
                 // Check for the existence of the keyspace 'system_schema_mcs' (specific to Amazon Keyspaces).
