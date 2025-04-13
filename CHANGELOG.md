@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - `COPY <tableName>[(<colums>)] TO|FROM <target>[ WITH <options>[ AND <options>...]]`
 - Add a method `CassandraConnection.setOptionSet(OptionSet)` to programmatically define a custom compliance mode option
   set on a pre-existing connection.
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.0.
+- Update Apache Commons IO to version 2.19.0.
+- Update Jackson dependencies to version 2.18.3.
+- Update Semver4j to version 5.6.0.
+- Update AWS Secrets Manager SDK to 2.31.21.
 ### Fixed
 - Add codec for conversion between `Short` and CQL type `tinyint` (see issue
   [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
