@@ -92,6 +92,8 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CONFIGURATION_FILE_NOT_FOUND;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PARAMETER_PARSING_FAILED;
 
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.
@@ -100,6 +102,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
  *     the last {@link CassandraConnection} has been closed, the {@code Session} is closed.
  * </p>
  */
+@SuppressWarnings("LoggingSimilarMessage")
 class SessionHolder {
     static final String URL_KEY = "jdbcUrl";
 
@@ -215,7 +218,7 @@ class SessionHolder {
                 LOG.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
-                LOG.warn("The configuration file {} cannot be found, it will be ignored.", configurationFilePath);
+                LOG.warn(CONFIGURATION_FILE_NOT_FOUND, configurationFilePath);
             }
         }
 
@@ -305,8 +308,8 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn("Error occurred while parsing load balancing policy: {} / Forcing to "
-                    + "DefaultLoadBalancingPolicy...", e.getMessage());
+                LOG.warn(PARAMETER_PARSING_FAILED, "load balancing policy", e.getMessage(),
+                    "Forcing to DefaultLoadBalancingPolicy");
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     DefaultLoadBalancingPolicy.class.getSimpleName());
             }
@@ -320,7 +323,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn("Error occurred while parsing retry policy: {} / skipping...", e.getMessage());
+                LOG.warn(PARAMETER_PARSING_FAILED, "retry policy", e.getMessage(), "skipping");
             }
         }
 
@@ -344,7 +347,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn("Error occurred while parsing reconnection policy: {} / skipping...", e.getMessage());
+                LOG.warn(PARAMETER_PARSING_FAILED, "reconnection policy", e.getMessage(), "skipping");
             }
         }
 

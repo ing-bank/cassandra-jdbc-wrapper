@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.COUNTING_EXPORTED_ROWS_FAILED;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.time.TimeZones.GMT;
 
@@ -203,7 +204,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
         try (Stream<String> csvLines = Files.lines(targetPath)) {
             exportedRows += csvLines.count();
         } catch (final IOException e) {
-            LOG.warn("Failed to read exported CSV file to count exportedRows.");
+            LOG.warn(COUNTING_EXPORTED_ROWS_FAILED);
         }
         return buildCopyCommandResultSet("exported to", exportedRows, 1, -1);
     }

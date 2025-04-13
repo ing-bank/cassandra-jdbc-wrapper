@@ -83,13 +83,15 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "localdatacenter=datacenter1");
 
         // Update cluster name according to the configured name.
-       /* try (final Statement statement = sqlConnection.createStatement()) {
+        /*
+        try (final Statement statement = sqlConnection.createStatement()) {
             final String configuredClusterName = cassandraContainer.getEnvMap().get("CASSANDRA_CLUSTER_NAME");
             statement.execute("UPDATE system.local SET cluster_name = '" + configuredClusterName
                 + "' WHERE key = 'local'");
         } catch (final SQLException e) {
-            log.error("Cannot update cluster_name in system.local table.", e);
-        } */
+            LOG.error("Cannot update cluster_name in system.local table.", e);
+        }
+        */
     }
 
     private static CassandraStatementExtras statementExtras(final Statement statement) throws Exception {

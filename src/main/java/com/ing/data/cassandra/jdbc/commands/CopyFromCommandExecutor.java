@@ -57,6 +57,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_READ_CSV_F
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.COLUMN_DEFINITIONS_RETRIEVAL_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CSV_FILE_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_COLUMN_DEFINITIONS;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.ADD_STATEMENT_TO_BATCH_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PARSING_VALUE_FAILED;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.wrap;
 
@@ -333,7 +335,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
                 LOG.trace("Added to batch: {}", cql);
             }
         } catch (final SQLException e) {
-            LOG.warn("Failed to add statement to the batch: {}", cql, e);
+            LOG.warn(ADD_STATEMENT_TO_BATCH_FAILED, cql, e);
         }
     }
 
@@ -345,7 +347,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             final Number number = this.decimalFormat.parse(strValue.trim());
             return number.toString();
         } catch (final ParseException e) {
-            LOG.warn("Failed to parse and convert value: {}, the value will be ignored.", strValue);
+            LOG.warn(PARSING_VALUE_FAILED, strValue);
         }
         return null;
     }

@@ -43,7 +43,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CONNECTION_CREATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.PROPERTIES_PARSING_FROM_URL_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
@@ -73,6 +72,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PROPERTIES_PARSING_FROM_URL_FAILED;
 
 /**
  * The Cassandra driver implementation.

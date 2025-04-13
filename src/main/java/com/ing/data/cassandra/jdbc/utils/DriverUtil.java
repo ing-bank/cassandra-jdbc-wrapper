@@ -54,6 +54,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
@@ -190,8 +192,8 @@ public final class DriverUtil {
             final Properties driverProperties = new Properties();
             driverProperties.load(propertiesFile);
             return driverProperties.getProperty(name, EMPTY);
-        } catch (IOException ex) {
-            LOG.error("Unable to get JDBC driver property: {}.", name, ex);
+        } catch (final IOException ex) {
+            LOG.warn(DRIVER_PROPERTY_NOT_FOUND, name, ex);
             return EMPTY;
         }
     }
@@ -316,7 +318,7 @@ public final class DriverUtil {
      */
     public static String redactSensitiveValuesInJdbcUrl(final String jdbcUrl) {
         if (!jdbcUrl.contains("://")) {
-            LOG.warn("Try to redact an invalid URL, ignore it");
+            LOG.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
         try {
@@ -338,7 +340,7 @@ public final class DriverUtil {
                 splitUrl[0], uri.getAuthority(), uri.getPath(), redactedQuery, uri.getFragment()
             ).toString();
         } catch (final URISyntaxException e) {
-            LOG.warn("Try to redact an invalid URL, ignore it");
+            LOG.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
     }

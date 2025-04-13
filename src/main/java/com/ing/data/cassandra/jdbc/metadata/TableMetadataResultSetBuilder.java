@@ -35,6 +35,7 @@ import java.util.Map;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE;
 import static java.sql.DatabaseMetaData.bestRowNotPseudo;
 
 /**
@@ -415,8 +416,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                     try {
                         jdbcType = getTypeForComparator(columnMetadata.getType().toString()).getJdbcType();
                     } catch (final Exception e) {
-                        LOG.warn("Unable to get JDBC type for comparator [{}]: {}",
-                            columnMetadata.getType(), e.getMessage());
+                        LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, columnMetadata.getType(), e.getMessage());
                     }
 
                     final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,

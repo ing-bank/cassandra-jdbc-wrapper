@@ -40,14 +40,14 @@ import java.time.OffsetTime;
 import java.time.ZoneOffset;
 import java.util.Calendar;
 
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
+
 /**
  * A set of static utility methods for types conversions.
  */
 public final class ConversionsUtil {
 
     static final Logger LOG = LoggerFactory.getLogger(ConversionsUtil.class);
-
-    static final String BINARY_FAILED_CONVERSION = "Unable to convert %s object to byte array.";
 
     private ConversionsUtil() {
         // Private constructor to hide the public one.
@@ -76,7 +76,7 @@ public final class ConversionsUtil {
             try {
                 ((ByteArrayInputStream) x).read(array);
             } catch (final IOException e) {
-                LOG.warn(String.format(BINARY_FAILED_CONVERSION, x.getClass()), e);
+                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
             }
         } else if (x instanceof byte[]) {
             array = (byte[]) x;
@@ -86,13 +86,13 @@ public final class ConversionsUtil {
                 array = new byte[stream.available()];
                 stream.read(array);
             } catch (final IOException | SQLException e) {
-                LOG.warn(String.format(BINARY_FAILED_CONVERSION, x.getClass()), e);
+                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
             }
         } else if (x instanceof Clob) {
             try (Reader reader = ((Clob) x).getCharacterStream()) {
                 array = IOUtils.toByteArray(reader, StandardCharsets.UTF_8);
             } catch (final IOException | SQLException e) {
-                LOG.warn(String.format(BINARY_FAILED_CONVERSION, x.getClass()), e);
+                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
             }
         } else {
             throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));

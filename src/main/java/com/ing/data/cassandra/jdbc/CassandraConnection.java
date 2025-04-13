@@ -63,8 +63,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_FETCH_SIZE_PARAMETER;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_PROFILE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_TRANSACTIONS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
@@ -77,6 +75,8 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_FETCH_SIZE_PARAMETER;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_PROFILE_NAME;
 
 /**
  * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra
@@ -183,7 +183,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 this.defaultFetchSize = Integer.parseInt(fetchSizeParameter);
             }
         } catch (final NumberFormatException e) {
-            LOG.warn(String.format(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile));
+            LOG.warn(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile);
             this.defaultFetchSize = fetchSizeFromProfile;
         }
 
@@ -724,7 +724,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             this.activeExecutionProfile = this.cSession.getContext().getConfig().getProfile(profile);
             this.lastUsedExecutionProfile = currentProfile;
         } catch (final IllegalArgumentException e) {
-            LOG.warn(String.format(INVALID_PROFILE_NAME, profile));
+            LOG.warn(INVALID_PROFILE_NAME, profile);
             if (this.activeExecutionProfile == null) {
                 this.activeExecutionProfile = this.cSession.getContext().getConfig().getDefaultProfile();
             }

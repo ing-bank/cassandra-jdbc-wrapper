@@ -45,6 +45,7 @@ import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE;
 import static java.sql.DatabaseMetaData.typeNullable;
 import static java.sql.DatabaseMetaData.typePredBasic;
 import static java.sql.Types.JAVA_OBJECT;
@@ -431,7 +432,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                         try {
                             jdbcType = getTypeForComparator(attrType.toString()).getJdbcType();
                         } catch (final Exception e) {
-                            LOG.warn("Unable to get JDBC type for comparator [{}]: {}", attrType, e.getMessage());
+                            LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, attrType, e.getMessage());
                         }
 
                         final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,

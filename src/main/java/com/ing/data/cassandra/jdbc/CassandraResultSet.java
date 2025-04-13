@@ -112,6 +112,9 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 import static com.ing.data.cassandra.jdbc.utils.UdtUtil.udtValueUsingFormattedContents;
 import static com.ing.data.cassandra.jdbc.utils.UdtUtil.udtValuesUsingFormattedContents;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_LIST_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_SET_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_VECTOR_FAILED;
 
 /**
  * Cassandra result set: implementation class for {@link java.sql.ResultSet}.
@@ -791,7 +794,7 @@ public class CassandraResultSet extends AbstractResultSet
                 }
                 return new ArrayList<>(resultList);
             } catch (final ClassNotFoundException e) {
-                LOG.warn("Error while executing getList()", e);
+                LOG.warn(GET_LIST_FAILED, e);
             }
         }
         return this.currentRow.getList(columnIndex - 1, String.class);
@@ -811,7 +814,7 @@ public class CassandraResultSet extends AbstractResultSet
                 }
                 return new ArrayList<>(resultList);
             } catch (final ClassNotFoundException e) {
-                LOG.warn("Error while executing getList()", e);
+                LOG.warn(GET_LIST_FAILED, e);
             }
         }
         return this.currentRow.getList(columnLabel, String.class);
@@ -1364,7 +1367,7 @@ public class CassandraResultSet extends AbstractResultSet
             return this.currentRow.getSet(columnIndex - 1,
                 Class.forName(fromDataType(setType.getElementType()).asJavaClass().getCanonicalName()));
         } catch (ClassNotFoundException e) {
-            LOG.warn("Error while executing getSet()", e);
+            LOG.warn(GET_SET_FAILED, e);
         }
         return null;
     }
@@ -1377,7 +1380,7 @@ public class CassandraResultSet extends AbstractResultSet
             return this.currentRow.getSet(columnLabel,
                 Class.forName(fromDataType(setType.getElementType()).asJavaClass().getCanonicalName()));
         } catch (ClassNotFoundException e) {
-            LOG.warn("Error while executing getSet()", e);
+            LOG.warn(GET_SET_FAILED, e);
         }
         return null;
     }
@@ -1540,7 +1543,7 @@ public class CassandraResultSet extends AbstractResultSet
                 throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
             }
         } catch (ClassNotFoundException e) {
-            LOG.warn("Error while executing getSet()", e);
+            LOG.warn(GET_VECTOR_FAILED, e);
         }
         return null;
     }
@@ -1558,7 +1561,7 @@ public class CassandraResultSet extends AbstractResultSet
                 throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
             }
         } catch (ClassNotFoundException e) {
-            LOG.warn("Error while executing getVector()", e);
+            LOG.warn(GET_VECTOR_FAILED, e);
         }
         return null;
     }

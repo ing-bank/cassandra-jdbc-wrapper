@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.SCHEMA_NAME_NOT_FOUND;
+
 /**
  * Option set implementation for Liquibase compatibility and flavour of JDBC.
  */
@@ -34,7 +36,7 @@ public class Liquibase extends AbstractOptionSet {
         try {
             return getConnection().getSchema();
         } catch (final SQLException e) {
-            LOG.warn("Unable to retrieve the schema name: {}", e.getMessage());
+            LOG.warn(SCHEMA_NAME_NOT_FOUND, e.getMessage());
             return null;
         }
     }

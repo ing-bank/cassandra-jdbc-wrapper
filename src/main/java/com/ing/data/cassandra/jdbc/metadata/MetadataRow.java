@@ -39,11 +39,12 @@ import java.util.UUID;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_POPULATE_METADATA_ROW;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CAST;
 
 /**
  * The content of a metadata row returned in a {@link CassandraMetadataResultSet}.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "LoggingSimilarMessage"})
 public class MetadataRow {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataRow.class);
@@ -153,7 +154,7 @@ public class MetadataRow {
         try {
             return (Boolean) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn("Unable to cast [{}] (index {}) as boolean, it will return false.", entryValue, i);
+            LOG.warn(INVALID_CAST, entryValue, i, "boolean", Boolean.FALSE);
             return false;
         }
     }
@@ -184,7 +185,7 @@ public class MetadataRow {
         try {
             return (byte) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn("Unable to cast [{}] (index {}) as byte, it will return 0.", entryValue, i);
+            LOG.warn(INVALID_CAST, entryValue, i, "byte", 0);
             return 0;
         }
     }
@@ -215,7 +216,7 @@ public class MetadataRow {
         try {
             return (short) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn("Unable to cast [{}] (index {}) as short, it will return 0.", entryValue, i);
+            LOG.warn(INVALID_CAST, entryValue, i, "short", 0);
             return 0;
         }
     }
@@ -246,7 +247,7 @@ public class MetadataRow {
         try {
             return (int) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn("Unable to cast [{}] (index {}) as integer, it will return 0.", entryValue, i);
+            LOG.warn(INVALID_CAST, entryValue, i, "integer", 0);
             return 0;
         }
     }
@@ -277,7 +278,7 @@ public class MetadataRow {
         try {
             return (long) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn("Unable to cast [{}] (index {}) as long, it will return 0.", entryValue, i);
+            LOG.warn(INVALID_CAST, entryValue, i, "long", 0);
             return 0;
         }
     }

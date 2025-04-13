@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.MAP_TO_STRING_FORMATTING_FAILED;
+
 /**
  * JDBC description of {@code MAP} CQL type (corresponding Java type: {@link Map}).
  * <p>CQL type description: a JSON-style array of literals.</p>
@@ -44,7 +46,7 @@ public class JdbcMap extends AbstractJdbcCollection<Map> {
         try {
             return new ObjectMapper().writeValueAsString(obj);
         } catch (final JsonProcessingException e) {
-            LOG.warn("Unable to format map [{}] as string", obj.toString());
+            LOG.warn(MAP_TO_STRING_FORMATTING_FAILED, obj.toString(), e);
             return null;
         }
     }

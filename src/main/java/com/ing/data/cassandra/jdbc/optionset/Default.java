@@ -22,6 +22,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CLUSTER_NAME_NOT_FOUND;
+
 /**
  * Default option set implementing the methods of {@code OptionSet} accordingly to the JDBC API standard.
  */
@@ -38,7 +40,7 @@ public class Default extends AbstractOptionSet {
                 return rs.getString("cluster_name");
             }
         } catch (final SQLException e) {
-            LOG.warn("Unable to retrieve the cluster name: {}", e.getMessage());
+            LOG.warn(CLUSTER_NAME_NOT_FOUND, e.getMessage());
             return null;
         }
 

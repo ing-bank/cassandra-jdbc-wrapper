@@ -70,7 +70,6 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_CONVE
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_ARRAY_IMPLEMENTATION;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PREPARED_STATEMENT_CLOSING_FAILED;
 import static java.util.Collections.emptyList;
 
 /**
@@ -211,7 +212,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             this.connection.removeStatement(this);
         } catch (final Exception e) {
-            LOG.warn("Unable to close the prepared statement: {}", e.getMessage());
+            LOG.warn(PREPARED_STATEMENT_CLOSING_FAILED, e.getMessage());
         }
     }
 
@@ -378,8 +379,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         } else if (x instanceof ArrayImpl) {
             this.setObject(parameterIndex, ((ArrayImpl) x).toList());
         } else {
-            LOG.warn("Unsupported SQL Array implementation: {}, an empty list will be inserted.",
-                x.getClass().getName());
+            LOG.warn(INVALID_ARRAY_IMPLEMENTATION, x.getClass().getName());
             this.setObject(parameterIndex, emptyList());
         }
     }

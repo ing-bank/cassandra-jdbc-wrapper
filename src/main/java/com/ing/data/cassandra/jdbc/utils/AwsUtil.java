@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_SECRET_RETRIEVAL_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT;
 
 /**
  * Utility methods used for support of Amazon Keyspaces.
@@ -100,8 +101,7 @@ public final class AwsUtil {
             try {
                 secretsClientBuilder.endpointOverride(URI.create(customEndpoint));
             } catch (final IllegalArgumentException e) {
-                LOG.warn("Unable to set a custom endpoint for Amazon Secrets manager, will fallback to the "
-                    + "default endpoint.", e);
+                LOG.warn(INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT, e);
             }
         }
         final SecretsManagerClient secretsClient = secretsClientBuilder.build();

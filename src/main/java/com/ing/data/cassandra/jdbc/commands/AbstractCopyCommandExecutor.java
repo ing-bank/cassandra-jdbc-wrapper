@@ -37,6 +37,7 @@ import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_OPTION_VALUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
@@ -135,8 +136,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
             try {
                 return Integer.parseInt(optionValue);
             } catch (final NumberFormatException e) {
-                LOG.warn("Invalid value for option {}: {}. Will use the default value: {}.",
-                    optionName, optionValue, defaultValue);
+                LOG.warn(INVALID_OPTION_VALUE, optionName, optionValue, defaultValue);
             }
         }
         return defaultValue;
