@@ -107,7 +107,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_READ_VA
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_CONVERSION;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 import static com.ing.data.cassandra.jdbc.utils.UdtUtil.udtValueUsingFormattedContents;
@@ -1537,11 +1536,7 @@ public class CassandraResultSet extends AbstractResultSet
             final VectorType vectorType = (VectorType) getCqlDataType(columnIndex);
             final Class<?> elementClass = Class.forName(fromDataType(vectorType.getElementType()).asJavaClass()
                 .getCanonicalName());
-            if (Number.class.isAssignableFrom(elementClass)) {
-                return this.currentRow.getVector(columnIndex - 1, elementClass.asSubclass(Number.class));
-            } else {
-                throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
-            }
+            return this.currentRow.getVector(columnIndex - 1, elementClass);
         } catch (ClassNotFoundException e) {
             LOG.warn(GET_VECTOR_FAILED, e);
         }
@@ -1555,11 +1550,7 @@ public class CassandraResultSet extends AbstractResultSet
             final VectorType vectorType = (VectorType) getCqlDataType(columnLabel);
             final Class<?> elementClass = Class.forName(fromDataType(vectorType.getElementType()).asJavaClass()
                 .getCanonicalName());
-            if (Number.class.isAssignableFrom(elementClass)) {
-                return this.currentRow.getVector(columnLabel, elementClass.asSubclass(Number.class));
-            } else {
-                throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
-            }
+            return this.currentRow.getVector(columnLabel, elementClass);
         } catch (ClassNotFoundException e) {
             LOG.warn(GET_VECTOR_FAILED, e);
         }

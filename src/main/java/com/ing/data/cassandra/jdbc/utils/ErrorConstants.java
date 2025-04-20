@@ -268,12 +268,6 @@ public final class ErrorConstants {
     public static final String SSL_CONFIG_FAILED = "Unable to configure SSL: %s.";
 
     /**
-     * Error message used in any SQL exception thrown when the method {@link CassandraResultSet#getVector(int)} or
-     * {@link CassandraResultSet#getVector(String)} is invoked on a column containing an invalid CQL vector.
-     */
-    public static final String VECTOR_ELEMENTS_NOT_NUMBERS = "Vector elements are not numbers.";
-
-    /**
      * Error message used in any SQL exception thrown when the target JDBC type specified in the method
      * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
      */

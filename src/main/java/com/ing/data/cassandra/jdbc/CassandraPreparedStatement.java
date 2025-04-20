@@ -89,7 +89,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.OUT_OF_BOUNDS_BIN
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_CONVERSION_TO_JSON;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_TYPE;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VECTOR_ELEMENTS_NOT_NUMBERS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_ARRAY_IMPLEMENTATION;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PREPARED_STATEMENT_CLOSING_FAILED;
@@ -711,12 +710,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                         (DefaultVectorType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
                     final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(vectorType.getElementType()
                         .asCql(false, false)).javaType;
-                    if (Number.class.isAssignableFrom(itemsClass)) {
-                        this.boundStatement = this.boundStatement.setVector(parameterIndex - 1, vector,
-                            itemsClass.asSubclass(Number.class));
-                    } else {
-                        throw new SQLException(VECTOR_ELEMENTS_NOT_NUMBERS);
-                    }
+                    this.boundStatement = this.boundStatement.setVector(parameterIndex - 1, vector, itemsClass);
                 } else if (x instanceof java.net.InetAddress) {
                     this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, (InetAddress) x);
                 } else if (List.class.isAssignableFrom(x.getClass())) {

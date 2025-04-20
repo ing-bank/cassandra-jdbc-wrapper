@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc.codec;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import com.datastax.oss.driver.internal.core.type.codec.TimestampCodec;
 import com.datastax.oss.driver.internal.core.util.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 import static com.ing.data.cassandra.jdbc.codec.SqlTimestampCodec.DEFAULT_TIMESTAMP_FORMAT;
@@ -82,7 +85,8 @@ public class SqlTimestampCodecTest {
 
     @Test
     void givenNonNullValue_whenParse_returnExpectedValue() {
-        assertEquals(NOW_SQL_TS, sut.parse(Strings.quote(String.valueOf(NOW_SQL_TS))));
+        final String formattedTimestamp = DEFAULT_TIMESTAMP_FORMAT.format(NOW_INSTANT.atZone(ZoneId.systemDefault()));
+        assertEquals(NOW_SQL_TS, sut.parse(Strings.quote(formattedTimestamp)));
     }
 
     @Test

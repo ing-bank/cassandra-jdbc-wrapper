@@ -309,7 +309,8 @@ USE test_keyspace_vect;
 CREATE TABLE vectors_test (
 keyValue int PRIMARY KEY,
 intsVector vector<int, 3>,
-floatsVector vector<float, 4>);
+floatsVector vector<float, 4>,
+asciiVector vector<ascii, 3>);
 
 CREATE TABLE IF NOT EXISTS pet_supply_vectors (
     product_id     TEXT PRIMARY KEY,

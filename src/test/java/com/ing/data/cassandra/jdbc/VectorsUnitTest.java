@@ -42,11 +42,12 @@ class VectorsUnitTest extends UsingCassandraContainerTest {
     void givenVectorInsertStatement_whenExecute_insertExpectedValues() throws Exception {
         final Statement statement = sqlConnection.createStatement();
 
-        final String insert = "INSERT INTO vectors_test (keyValue, intsVector, floatsVector) "
-            + "VALUES(1, [4, 6, 8], [2.1, 3.7, 9.0, 5.5]);";
+        final String insert = "INSERT INTO vectors_test (keyValue, intsVector, floatsVector, asciiVector) "
+            + "VALUES(1, [4, 6, 8], [2.1, 3.7, 9.0, 5.5], ['abc', 'def', 'ghi']);";
         statement.executeUpdate(insert);
 
-        final ResultSet resultSet = statement.executeQuery("SELECT * FROM vectors_test WHERE keyValue = 1;");
+        final ResultSet resultSet = statement.executeQuery(
+            "SELECT keyValue, intsVector, floatsVector, asciiVector FROM vectors_test WHERE keyValue = 1;");
         resultSet.next();
 
         assertThat(resultSet, is(instanceOf(CassandraResultSet.class)));
@@ -57,12 +58,17 @@ class VectorsUnitTest extends UsingCassandraContainerTest {
         assertEquals(4, intsVector.get(0));
         assertEquals(6, intsVector.get(1));
         assertEquals(8, intsVector.get(2));
-        final CqlVector<?> floatsVector = ((CassandraResultSet) resultSet).getVector(2);
+        final CqlVector<?> floatsVector = ((CassandraResultSet) resultSet).getVector(3);
         assertEquals(4, floatsVector.size());
         assertEquals(2.1f, floatsVector.get(0));
         assertEquals(3.7f, floatsVector.get(1));
         assertEquals(9.0f, floatsVector.get(2));
         assertEquals(5.5f, floatsVector.get(3));
+        final CqlVector<?> asciiVector = ((CassandraResultSet) resultSet).getVector("asciiVector");
+        assertEquals(3, asciiVector.size());
+        assertEquals("abc", asciiVector.get(0));
+        assertEquals("def", asciiVector.get(1));
+        assertEquals("ghi", asciiVector.get(2));
 
         statement.close();
     }

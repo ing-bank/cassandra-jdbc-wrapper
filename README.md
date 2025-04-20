@@ -137,6 +137,22 @@ public class HelloCassandra {
 }
 ```
 
+Alternatively, you can also obtain a connection using a `CassandraDataSource` instance:
+```java
+public class HelloCassandra {
+    public static void main(final String[] args) {
+        final List<ContactPoint> contactPoints = Arrays.asList(
+                ContactPoint.of("host1", 9042),
+                ContactPoint.of("host2", 9042),
+                ContactPoint.of("host3", 9042));
+        final CassandraDataSource dataSource = new CassandraDataSource(contactPoints, "keyspace");
+        dataSource.setLocalDataCenter("DC1");
+        // Use setters on dataSource instance to specify additional properties of the connection.
+        final Connection connection = dataSource.getConnection();
+    }
+}
+```
+
 For further details about configuration and usage of the driver, please refer to the 
 [full documentation](https://github.com/ing-bank/cassandra-jdbc-wrapper/wiki/Documentation).
 

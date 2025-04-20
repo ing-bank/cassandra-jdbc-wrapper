@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.15.0] - 2025-04-20
 ### Added
 - Add support for the following special CQL commands in `CassandraStatement`:
   - `SOURCE <filename>`
@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   set on a pre-existing connection.
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.0.
+- Allow any type in `vector` since it's now supported by the Java Driver for Apache Cassandra® (see the
+  [related issue](https://datastax-oss.atlassian.net/browse/JAVA-3143)).
 - Update Apache Commons IO to version 2.19.0.
 - Update Jackson dependencies to version 2.18.3.
 - Update Semver4j to version 5.6.0.
