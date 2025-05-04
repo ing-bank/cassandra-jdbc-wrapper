@@ -15,7 +15,9 @@ package com.ing.data.cassandra.jdbc.utils;
 
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.ing.data.cassandra.jdbc.metadata.BasicVersionedMetadata;
+import com.ing.data.cassandra.jdbc.testing.ValidTestCodec;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,11 +67,14 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseCustomCodecs;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -374,4 +379,26 @@ class UtilsUnitTest {
         final Array sut = new ArrayImpl(Arrays.asList("a", "b", "c"));
         assertEquals("[a, b, c]", sut.toString());
     }
+
+    @Test
+    void givenEmptyCustomCodecsList_whenParse_returnEmptyList() {
+        final List<TypeCodec<?>> parsedCodecs = parseCustomCodecs(StringUtils.EMPTY);
+        assertNotNull(parsedCodecs);
+        assertThat(parsedCodecs, hasSize(0));
+    }
+
+    @Test
+    void givenCustomCodecsList_whenParse_returnInstantiatedCodecList() {
+        final List<TypeCodec<?>> parsedCodecs = parseCustomCodecs(
+            "com.ing.data.cassandra.jdbc.testing.ValidTestCodec, "
+            + "com.ing.data.cassandra.jdbc.testing.InvalidTestCodec, "
+            + "com.ing.data.cassandra.jdbc.testing.NotInstantiableValidTestCodec, "
+            + "com.ing.data.cassandra.jdbc.testing.NotExistingCodec, "
+            + "com.ing.data.BadCodec1;com.ing.data.BadCodec2"
+        );
+        assertNotNull(parsedCodecs);
+        assertThat(parsedCodecs, hasSize(1));
+        assertThat(parsedCodecs.get(0), instanceOf(ValidTestCodec.class));
+    }
+
 }

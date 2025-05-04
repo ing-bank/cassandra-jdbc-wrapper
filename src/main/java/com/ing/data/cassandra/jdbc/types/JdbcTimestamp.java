@@ -25,12 +25,12 @@ import java.time.format.DateTimeFormatter;
  * represented as a string, such as 2015-05-03 13:30:54.234 (yyyy-MM-dd hh:mm:ss.SSS).</p>
  */
 public class JdbcTimestamp extends AbstractJdbcType<Timestamp> {
-    private static final int TIMESTAMP_SCALE = 3; // typically, JDBC drivers return scale of a second for timestamps
-
     /**
      * Gets a {@code JdbcTimestamp} instance.
      */
     public static final JdbcTimestamp INSTANCE = new JdbcTimestamp();
+
+    private static final int TIMESTAMP_SCALE = 3; // typically, JDBC drivers return scale of a second for timestamps
 
     // The maximal size of timestamp is 31 (for the format 'yyyy-MM-ddThh:mm:ss.SSSSSS[+-]xxxx').
     private static final int DEFAULT_TIMESTAMP_PRECISION = 31;

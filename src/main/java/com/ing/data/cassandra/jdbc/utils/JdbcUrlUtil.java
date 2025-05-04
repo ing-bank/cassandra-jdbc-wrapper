@@ -18,6 +18,7 @@ package com.ing.data.cassandra.jdbc.utils;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -33,15 +34,18 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_FOR_SECRET_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
@@ -50,12 +54,15 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CONTACT_POINT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CODEC_INSTANTIATION_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CODEC_CLASS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * A set of static utility methods and constants used to parse the JDBC URL used to establish a connection to a
  * Cassandra database.
  */
+@SuppressWarnings("unchecked")
 public final class JdbcUrlUtil {
 
     /**
@@ -398,6 +405,17 @@ public final class JdbcUrlUtil {
      */
     public static final String TAG_AWS_CONNECTION = "isAwsConnection";
 
+    /**
+     * JDBC URL parameter key for the custom codecs.
+     */
+    public static final String KEY_CUSTOM_CODECS = "customcodecs";
+
+    /**
+     * Property name used to retrieve the custom codecs to register, in addition to the default ones, when the
+     * connection to Cassandra is established. This property is mapped from the JDBC URL parameter {@code customcodecs}.
+     */
+    public static final String TAG_CUSTOM_CODECS = "customCodecs";
+
     static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
 
     private static final String HOST_SEPARATOR = "--";
@@ -550,6 +568,9 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_ACTIVE_PROFILE)) {
                     props.setProperty(TAG_ACTIVE_PROFILE, params.get(KEY_ACTIVE_PROFILE));
+                }
+                if (params.containsKey(KEY_CUSTOM_CODECS)) {
+                    props.setProperty(TAG_CUSTOM_CODECS, params.get(KEY_CUSTOM_CODECS));
                 }
                 handleAwsProperties(props, params, isAwsConnection);
             } else if (isDbaasConnection) {
@@ -820,4 +841,32 @@ public final class JdbcUrlUtil {
         return policyParametersMap;
     }
 
+    /**
+     * Parses the given comma-separated list of custom codecs class names into a list of instantiated codecs.
+     *
+     * @param customCodecs The string containing the custom codecs class names to instantiate.
+     * @return A list of instantiated codecs parsed from the given string.
+     */
+    public static List<TypeCodec<?>> parseCustomCodecs(final String customCodecs) {
+        if (StringUtils.isBlank(customCodecs)) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(customCodecs.split(COMMA))
+            .map(String::trim)
+            .map(codecClassName -> {
+                try {
+                    final Class<?> codecClass = Class.forName(codecClassName);
+                    if (!TypeCodec.class.isAssignableFrom(codecClass)) {
+                        LOG.warn(INVALID_CODEC_CLASS, codecClassName);
+                        return null;
+                    }
+                    return (TypeCodec<?>) codecClass.getDeclaredConstructor().newInstance();
+                } catch (final Exception e) {
+                    LOG.warn(CODEC_INSTANTIATION_FAILED, codecClassName, e);
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
 }

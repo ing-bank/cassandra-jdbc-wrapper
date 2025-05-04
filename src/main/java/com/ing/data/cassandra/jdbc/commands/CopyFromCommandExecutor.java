@@ -84,11 +84,11 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *         <li>{@code MAXROWS}: the maximum number of rows to import, negative meaning unlimited.
  *         Defaults to {@value #DEFAULT_MAX_ROWS}.</li>
  *         <li>{@code NULLVAL}: the string placeholder for null values. Defaults to {@value #DEFAULT_NULL_FORMAT}.</li>
+ *         <li>{@code QUOTE}: the character that is used to enclose field values.
+ *         Defaults to {@value #DEFAULT_QUOTE_CHAR}.</li>
  *         <li>{@code SKIPCOLS}: a comma-separated list of column names to ignore.
  *         By default, no columns are skipped.</li>
  *         <li>{@code SKIPROWS}: the number of initial rows to skip. Defaults to {@value #DEFAULT_SKIPPED_ROWS}.</li>
- *         <li>{@code QUOTE}: the character that is used to enclose field values.
- *         Defaults to {@value #DEFAULT_QUOTE_CHAR}.</li>
  *         <li>{@code THOUSANDSSEP}: the character that is used to separate thousands.
  *         Defaults to the empty string.</li>
  *     </ul>

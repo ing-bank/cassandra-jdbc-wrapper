@@ -441,7 +441,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @param consistencyLevel  The consistency level to apply to this connection.
      */
     public void setConsistencyLevel(final ConsistencyLevel consistencyLevel) {
-         this.consistencyLevel = consistencyLevel;
+        this.consistencyLevel = consistencyLevel;
     }
 
     /**

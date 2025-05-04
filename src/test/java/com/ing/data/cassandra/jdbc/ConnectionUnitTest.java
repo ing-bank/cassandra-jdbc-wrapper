@@ -555,7 +555,7 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertEquals(4, dbMetadata.getJDBCMajorVersion());
         assertEquals(0, dbMetadata.getJDBCMinorVersion());
         assertEquals("Cassandra", dbMetadata.getDatabaseProductName());
-        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
+        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+(-SNAPSHOT)?"));
         assertThat(dbMetadata.getDatabaseProductVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
         sqlConnection.close();
     }

@@ -72,6 +72,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONFIG_FILE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONNECT_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONTACT_POINTS;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CUSTOM_CODECS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DATABASE_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_DEBUG;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ENABLE_SSL;
@@ -90,6 +91,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseCustomCodecs;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CONFIGURATION_FILE_NOT_FOUND;
@@ -257,6 +259,8 @@ class SessionHolder {
             StringUtils.EMPTY));
         final boolean useAwsSigV4AuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_SIG_V4,
             StringUtils.EMPTY));
+        final List<TypeCodec<?>> customCodecs =
+            parseCustomCodecs(properties.getProperty(TAG_CUSTOM_CODECS, StringUtils.EMPTY));
 
         // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();
@@ -365,6 +369,9 @@ class SessionHolder {
 
         // Register codecs.
         builder.addTypeCodecs(PRECONFIGURED_CODECS.toArray(new TypeCodec[]{}));
+        if (!customCodecs.isEmpty()) {
+            builder.addTypeCodecs(customCodecs.toArray(new TypeCodec[]{}));
+        }
 
         builder.withKeyspace(keyspace);
         builder.withConfigLoader(driverConfigLoaderBuilder.build());

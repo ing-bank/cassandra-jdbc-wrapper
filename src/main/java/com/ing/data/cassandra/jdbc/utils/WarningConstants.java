@@ -192,6 +192,20 @@ public final class WarningConstants {
      */
     public static final String BINARY_FAILED_CONVERSION = "Unable to convert {} object to byte array.";
 
+    /**
+     * Warning message used when the specific class is not a valid codec, i.e. does not implement TypeCodec interface.
+     * This message is a template expecting the class name (example:
+     * {@code LOG.warn(INVALID_CODEC_CLASS, codecClassName)}).
+     */
+    public static final String INVALID_CODEC_CLASS =
+        "{} is a not a valid codec (doesn't implement TypeCodec interface), skip it";
+
+    /**
+     * Warning message used when the instantiation of the specific codec class failed. This message is a template
+     * expecting the codec class name (example: {@code LOG.warn(CODEC_INSTANTIATION_FAILED, codecClassName)}).
+     */
+    public static final String CODEC_INSTANTIATION_FAILED = "Unable to instantiate codec: {}, skip it";
+
     private WarningConstants() {
         // Private constructor to hide the public one.
     }

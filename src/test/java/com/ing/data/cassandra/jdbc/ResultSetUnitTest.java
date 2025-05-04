@@ -14,12 +14,14 @@
 package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLWarning;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -173,5 +176,30 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         assertTrue(rs.next());
         Object result = rs.getObject(1);
         assertNull(result);
+    }
+
+    @Test
+    void givenStringValue_whenFetchingAsByteBuffer_throwsCodecNotFoundException() throws Exception {
+        final String cql = "SELECT keyname FROM cf_test1";
+        final Statement statement = sqlConnection.createStatement();
+        final ResultSet rs = statement.executeQuery(cql);
+        final CodecNotFoundException exception = assertThrows(CodecNotFoundException.class,
+            () -> rs.getBytes("keyname"));
+        assertEquals("Codec not found for requested operation: [TEXT <-> java.nio.ByteBuffer]", exception.getMessage());
+    }
+
+    @Test
+    void givenStringValue_whenFetchingAsByteBufferWithAppropriateCustomCodec_returnExpectedValue() throws Exception {
+        try (Connection connectionWithCustomCodec = newConnection(KEYSPACE, "localdatacenter=datacenter1",
+            "customcodecs=com.ing.data.cassandra.jdbc.testing.TextToByteBufferCodec")) {
+            final String cql = "SELECT keyname FROM cf_test1";
+            final Statement statement = connectionWithCustomCodec.createStatement();
+            final ResultSet rs = statement.executeQuery(cql);
+            final byte[] result = rs.getBytes("keyname");
+            assertNotNull(result);
+            assertEquals("key1", new String(result));
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 }

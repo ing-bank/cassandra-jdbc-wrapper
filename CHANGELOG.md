@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Add a parameter `customcodecs` to configure additional custom codecs for the Cassandra session.
+
 ## [4.15.0] - 2025-04-20
 ### Added
 - Add support for the following special CQL commands in `CassandraStatement`:
@@ -36,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [4.14.0] - 2024-12-24
 ### Added
-- Add support for IPv6 addresses in JDBC URL (see PR [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
+- Add support for IPv6 addresses in JDBC URL (see pull request [#62](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/62)).
 - Add implementation for the method `CassandraPreparedStatement.setArray(int, Array)`.
 - Add a parameter `serialconsistency` to specify the default serial consistency level used by the connection.
 - Add support for the special CQL command `SERIAL CONSISTENCY [level]` in `CassandraStatement`.
@@ -63,33 +67,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [4.13.0] - 2024-07-27
 ### Added
 - Add support for switching execution profiles.
-- Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see PR 
+- Add implementation for the methods `CassandraResultSet.getArray(int | String)` (see pull request 
   [#55](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/55)).
-- Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by PR
+- Add support for the special CQL command `CONSISTENCY [level]` in `CassandraStatement` (inspired by pull request
   [#56](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/56)). 
 - Add a method `setComplianceMode(String)` in `CassandraDataSource` to specify a specific compliance mode when getting
   the connection from a `DataSource` (see issue [#68](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/68), 
-  PR [#69](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/69)).
+  pull request [#69](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/69)).
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.18.1.
 - Update Apache Commons Lang to version 3.15.0.
 - Update Jackson dependencies to version 2.17.2.
-- Modify the scale value returned for the type `TIMESTAMP` (see PR
+- Modify the scale value returned for the type `TIMESTAMP` (see pull request
   [#58](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/58)).
-- Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see PR
+- Refactor handling of user-defined types and tuples in `CassandraResultSet.getObject(int | String)` (see pull request
   [#60](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/60)).
 - Fully implement `CassandraDriver.getPropertyInfo(String, Properties)` (see issue
   [#66](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/66)).
 ### Fixed
 - Fix implementation of the methods `CassandraStatement.execute(String)` and `CassandraPreparedStatement.execute()` to
   return `true` even when the result set is empty (see 
-  PR [#54](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/54)).
-- Fix fetching null values in `CassandraResultSet.getObject(int | String)` (see PR 
+  pull request [#54](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/54)).
+- Fix fetching null values in `CassandraResultSet.getObject(int | String)` (see pull request 
   [#57](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/57)).
 - Fix handling of `VARINT` values in `CassandraResultSet.getObject(int | String)` and 
-  `CassandraMetadataResultSet.getObject(int | String)` (see PR 
+  `CassandraMetadataResultSet.getObject(int | String)` (see pull request 
   [#59](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/59)).
-- Fix return value of `CassandraDatabaseMetaData.supportsBatchUpdates()` (see PR
+- Fix return value of `CassandraDatabaseMetaData.supportsBatchUpdates()` (see pull request
   [#61](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/61)).
 - Fix implementation of `Statement.executeBatch()` (see issue 
   [#63](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/63)) to conform with JDBC specifications: 
@@ -126,7 +130,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove the parameter `version` (CQL version) in JDBC URL and the deprecated constructors of `CassandraDataSource`
   using this parameter.
 ### Fixed
-- Fix issue preventing a correct usage of `DCInferringLoadBalancingPolicy` (see PR 
+- Fix issue preventing a correct usage of `DCInferringLoadBalancingPolicy` (see pull request 
   [#49](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/49)).
 
 ## [4.11.1] - 2023-12-28
@@ -207,7 +211,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add support for new [`vector` CQL type](https://datastax-oss.atlassian.net/browse/JAVA-3060)
   defined in [CEP-30](https://cwiki.apache.org/confluence/x/OQ40Dw). 
-  Also see PR [#27](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/27).
+  Also see pull request [#27](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/27).
 - Implement the method `getWarnings()` in `CassandraResultSet`.
 - Implement the following methods of `CassandraDatabaseMetaData`: 
   `getBestRowIdentifier(String, String, String, int, boolean)` and `getAttributes(String, String, String, String)`.
