@@ -239,14 +239,14 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             final ResultSetMetaData metadata = rs.getMetaData();
             final String[] valueArray = new String[metadata.getColumnCount()];
             for (int i = 1; i <= metadata.getColumnCount(); i++) {
-                valueArray[i - 1] = getColumnValue(rs, metadata.getColumnType(i), i,
+                valueArray[i - 1] = getColumnValueFromResultSet(rs, metadata.getColumnType(i), i,
                     trim, dateFormatString, timeFormatString);
             }
             return valueArray;
         }
 
-        private String applyFormatter(final NumberFormat formatter, final Number value) {
-            // Keep the same logic as the parent class here.
+        private String applyNumberFormatter(final NumberFormat formatter, final Number value) {
+            // Keep the same logic as in the parent class here.
             if (formatter != null && value != null) {
                 return formatter.format(value);
             }
@@ -264,9 +264,10 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             return timeFormat.format(timestamp);
         }
 
-        private String getColumnValue(final java.sql.ResultSet rs, final int colType, final int colIndex,
-                                      final boolean trim, final String dateFormatString,
-                                      final String timestampFormatString) throws SQLException, IOException {
+        private String getColumnValueFromResultSet(final java.sql.ResultSet rs, final int colType, final int colIndex,
+                                                   final boolean trim, final String dateFormatString,
+                                                   final String timestampFormatString)
+            throws SQLException, IOException {
             String value;
 
             switch (colType) {
@@ -282,25 +283,25 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.DECIMAL:
                 case Types.REAL:
                 case Types.NUMERIC:
-                    value = applyFormatter(this.floatingPointFormat, rs.getBigDecimal(colIndex));
+                    value = applyNumberFormatter(this.floatingPointFormat, rs.getBigDecimal(colIndex));
                     break;
                 case Types.DOUBLE:
-                    value = applyFormatter(this.floatingPointFormat, rs.getDouble(colIndex));
+                    value = applyNumberFormatter(this.floatingPointFormat, rs.getDouble(colIndex));
                     break;
                 case Types.FLOAT:
-                    value = applyFormatter(this.floatingPointFormat, rs.getFloat(colIndex));
+                    value = applyNumberFormatter(this.floatingPointFormat, rs.getFloat(colIndex));
                     break;
                 case Types.BIGINT:
-                    value = applyFormatter(this.integerFormat, rs.getLong(colIndex));
+                    value = applyNumberFormatter(this.integerFormat, rs.getLong(colIndex));
                     break;
                 case Types.INTEGER:
-                    value = applyFormatter(this.integerFormat, rs.getInt(colIndex));
+                    value = applyNumberFormatter(this.integerFormat, rs.getInt(colIndex));
                     break;
                 case Types.TINYINT:
-                    value = applyFormatter(this.integerFormat, rs.getByte(colIndex));
+                    value = applyNumberFormatter(this.integerFormat, rs.getByte(colIndex));
                     break;
                 case Types.SMALLINT:
-                    value = applyFormatter(this.integerFormat, rs.getShort(colIndex));
+                    value = applyNumberFormatter(this.integerFormat, rs.getShort(colIndex));
                     break;
                 case Types.DATE:
                     value = handleDate(rs, colIndex, dateFormatString);

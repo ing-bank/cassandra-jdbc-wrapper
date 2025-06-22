@@ -705,9 +705,9 @@ public class CassandraStatement extends AbstractStatement
         if (this.customTimeoutProfile != null) {
             activeProfile = this.customTimeoutProfile;
         }
-        return Long.valueOf(Objects.requireNonNull(
+        return Math.toIntExact(Objects.requireNonNull(
             activeProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ZERO)
-        ).get(ChronoUnit.SECONDS)).intValue();
+        ).get(ChronoUnit.SECONDS));
     }
 
     /**

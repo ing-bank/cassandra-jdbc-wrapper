@@ -44,6 +44,7 @@ public class SqlTimeCodec extends AbstractCodec<Time> implements TypeCodec<Time>
      * Constructor for {@code SqlTimeCodec}.
      */
     public SqlTimeCodec() {
+        super();
     }
 
     @Nonnull

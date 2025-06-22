@@ -34,6 +34,7 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
      * Constructor for {@code IntToLongCodec}.
      */
     public IntToLongCodec() {
+        super();
     }
 
     @Nonnull

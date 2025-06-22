@@ -7,12 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## Unreleased
 ### Added
 - Add a parameter `customcodecs` to configure additional custom codecs for the Cassandra session.
+### Fixed
+- Fix implementation of `CassandraDatabaseMetaData.getStringFunctions()`.
 
 ## [4.15.0] - 2025-04-20
 ### Added
 - Add support for the following special CQL commands in `CassandraStatement`:
   - `SOURCE <filename>`
-  - `COPY <tableName>[(<colums>)] TO|FROM <target>[ WITH <options>[ AND <options>...]]`
+  - `COPY <tableName>[(<columns>)] TO|FROM <target>[ WITH <options>[ AND <options>...]]`
 - Add a method `CassandraConnection.setOptionSet(OptionSet)` to programmatically define a custom compliance mode option
   set on a pre-existing connection.
 ### Changed

@@ -35,6 +35,7 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
      * Constructor for {@code BigintToBigDecimalCodec}.
      */
     public BigintToBigDecimalCodec() {
+        super();
     }
 
     @Nonnull

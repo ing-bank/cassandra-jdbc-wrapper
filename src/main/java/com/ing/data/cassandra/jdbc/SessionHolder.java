@@ -59,8 +59,8 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWOR
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.PRECONFIGURED_CODECS;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.listPreconfiguredCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
@@ -368,7 +368,7 @@ class SessionHolder {
         }
 
         // Register codecs.
-        builder.addTypeCodecs(PRECONFIGURED_CODECS.toArray(new TypeCodec[]{}));
+        builder.addTypeCodecs(listPreconfiguredCodecs().toArray(new TypeCodec[]{}));
         if (!customCodecs.isEmpty()) {
             builder.addTypeCodecs(customCodecs.toArray(new TypeCodec[]{}));
         }

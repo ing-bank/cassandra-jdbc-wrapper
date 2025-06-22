@@ -748,7 +748,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public String getStringFunctions() throws SQLException {
         checkStatementClosed();
         return new BuiltInFunctionsMetadataBuilder(this.getDatabaseProductVersion(), this.connection)
-            .buildSystemFunctionsList();
+            .buildStringFunctionsList();
     }
 
     /**

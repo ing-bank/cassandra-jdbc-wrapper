@@ -34,6 +34,7 @@ public class SmallintToIntCodec extends AbstractCodec<Integer> implements TypeCo
      * Constructor for {@code SmallintToIntCodec}.
      */
     public SmallintToIntCodec() {
+        super();
     }
 
     @Nonnull

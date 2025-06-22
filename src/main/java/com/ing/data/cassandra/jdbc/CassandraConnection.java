@@ -57,8 +57,8 @@ import java.util.stream.Collectors;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_CONCURRENCY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_HOLDABILITY;
 import static com.ing.data.cassandra.jdbc.CassandraResultSet.DEFAULT_TYPE;
-import static com.ing.data.cassandra.jdbc.utils.AwsUtil.AWS_KEYSPACES_VALID_HOSTS;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.PRECONFIGURED_CODECS;
+import static com.ing.data.cassandra.jdbc.utils.AwsUtil.listAwsKeyspacesHosts;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.listPreconfiguredCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safelyRegisterCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ALWAYS_AUTOCOMMIT;
@@ -235,7 +235,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         this.serialConsistencyLevel = ConsistencyLevel.SERIAL;
         this.debugMode = debugMode;
         setActiveExecutionProfile(Objects.toString(defaultExecutionProfile, DriverExecutionProfile.DEFAULT_NAME));
-        safelyRegisterCodecs(cSession, PRECONFIGURED_CODECS);
+        safelyRegisterCodecs(cSession, listPreconfiguredCodecs());
     }
 
     /**
@@ -269,7 +269,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 }
             }
             if (connectionUrlOrEndpoints.stream().anyMatch(
-                endpoint -> AWS_KEYSPACES_VALID_HOSTS.stream().anyMatch(endpoint::contains))) {
+                endpoint -> listAwsKeyspacesHosts().stream().anyMatch(endpoint::contains))) {
                 this.connectedToAmazonKeyspaces = true;
             } else {
                 // Check for the existence of the keyspace 'system_schema_mcs' (specific to Amazon Keyspaces).
@@ -690,15 +690,15 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     private OptionSet lookupOptionSet(final String property) {
         final ServiceLoader<OptionSet> loader = ServiceLoader.load(OptionSet.class);
-        for (final OptionSet optionSet : loader) {
-            if (optionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
-                optionSet.setConnection(this);
-                return optionSet;
+        for (final OptionSet loadedOptionSet : loader) {
+            if (loadedOptionSet.getClass().getSimpleName().equalsIgnoreCase(property)) {
+                loadedOptionSet.setConnection(this);
+                return loadedOptionSet;
             }
         }
-        final OptionSet optionSet = new Default();
-        optionSet.setConnection(this);
-        return optionSet;
+        final OptionSet defaultOptionSet = new Default();
+        defaultOptionSet.setConnection(this);
+        return defaultOptionSet;
     }
 
     /**

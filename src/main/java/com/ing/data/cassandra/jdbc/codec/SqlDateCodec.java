@@ -42,6 +42,7 @@ public class SqlDateCodec extends AbstractCodec<Date> implements TypeCodec<Date>
      * Constructor for {@code SqlDateCodec}.
      */
     public SqlDateCodec() {
+        super();
     }
 
     @Nonnull

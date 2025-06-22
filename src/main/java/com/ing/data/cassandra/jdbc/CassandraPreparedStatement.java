@@ -282,10 +282,10 @@ public class CassandraPreparedStatement extends CassandraStatement
                 if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
                     LOG.trace("CQL: {}", this.cql);
                 }
-                final BoundStatement boundStatement = statement
+                final BoundStatement boundStmt = statement
                     .setConsistencyLevel(this.consistencyLevel)
                     .setSerialConsistencyLevel(this.serialConsistencyLevel);
-                final CompletionStage<AsyncResultSet> resultSetFuture = getCqlSession().executeAsync(boundStatement);
+                final CompletionStage<AsyncResultSet> resultSetFuture = getCqlSession().executeAsync(boundStmt);
                 futures.add(resultSetFuture);
             }
 

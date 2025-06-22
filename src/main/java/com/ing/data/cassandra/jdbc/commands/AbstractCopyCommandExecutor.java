@@ -16,12 +16,10 @@
 package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -65,17 +63,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     static final String OPTION_NULLVAL = "NULLVAL";
     static final String OPTION_QUOTE = "QUOTE";
     static final String OPTION_THOUSANDSSEP = "THOUSANDSSEP";
-    static final Set<String> SUPPORTED_OPTIONS = new HashSet<String>() {
-        {
-            add(OPTION_DECIMALSEP);
-            add(OPTION_DELIMITER);
-            add(OPTION_ESCAPE);
-            add(OPTION_HEADER);
-            add(OPTION_NULLVAL);
-            add(OPTION_QUOTE);
-            add(OPTION_THOUSANDSSEP);
-        }
-    };
+    static final Set<String> SUPPORTED_OPTIONS = initSupportedOptions();
 
     String tableName = null;
     String columns = null;
@@ -85,11 +73,17 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     String dateFormat;
     String timeFormat;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public abstract ResultSet execute(CassandraStatement statement, String cql) throws SQLException;
+    private static Set<String> initSupportedOptions() {
+        final Set<String> options = new HashSet<>();
+        options.add(OPTION_DECIMALSEP);
+        options.add(OPTION_DELIMITER);
+        options.add(OPTION_ESCAPE);
+        options.add(OPTION_HEADER);
+        options.add(OPTION_NULLVAL);
+        options.add(OPTION_QUOTE);
+        options.add(OPTION_THOUSANDSSEP);
+        return options;
+    }
 
     void checkOptions() throws SQLSyntaxErrorException {
         // Remove the supported options from the set of options found in the command, if the result set is not empty,

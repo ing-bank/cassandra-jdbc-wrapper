@@ -34,6 +34,7 @@ public class DecimalToDoubleCodec extends AbstractCodec<Double> implements TypeC
      * Constructor for {@code DecimalToDoubleCodec}.
      */
     public DecimalToDoubleCodec() {
+        super();
     }
 
     @Nonnull

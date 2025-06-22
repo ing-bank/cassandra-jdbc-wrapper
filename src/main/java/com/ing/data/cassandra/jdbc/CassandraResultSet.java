@@ -52,6 +52,8 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -1042,6 +1044,8 @@ public class CassandraResultSet extends AbstractResultSet
                     return udtValueUsingFormattedContents(this.currentRow.getUdtValue(columnIndex - 1));
                 case TUPLE:
                     return this.currentRow.getTupleValue(columnIndex - 1);
+                default:
+                    return null;
             }
         }
 
@@ -1186,6 +1190,8 @@ public class CassandraResultSet extends AbstractResultSet
                     return udtValueUsingFormattedContents(this.currentRow.getUdtValue(columnLabel));
                 case TUPLE:
                     return this.currentRow.getTupleValue(columnLabel);
+                default:
+                    return null;
             }
         }
 
@@ -1506,8 +1512,8 @@ public class CassandraResultSet extends AbstractResultSet
             return null;
         } else {
             try {
-                return new URL(storedUrl);
-            } catch (final MalformedURLException e) {
+                return new URI(storedUrl).toURL();
+            } catch (final URISyntaxException | MalformedURLException e) {
                 throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
@@ -1522,8 +1528,8 @@ public class CassandraResultSet extends AbstractResultSet
             return null;
         } else {
             try {
-                return new URL(storedUrl);
-            } catch (final MalformedURLException e) {
+                return new URI(storedUrl).toURL();
+            } catch (final URISyntaxException | MalformedURLException e) {
                 throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
             }
         }
@@ -1861,7 +1867,7 @@ public class CassandraResultSet extends AbstractResultSet
             }
             final AtomicBoolean searchable = new AtomicBoolean(false);
             statement.connection.getSession().getMetadata().getKeyspace(schemaName)
-                .flatMap(metadata -> metadata.getTable(tableName))
+                .flatMap(ksMetadata -> ksMetadata.getTable(tableName))
                 .ifPresent(tableMetadata -> {
                     boolean result;
                     // Check first if the column is a clustering column or in a partitioning key.

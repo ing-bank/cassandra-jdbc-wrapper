@@ -40,11 +40,11 @@ public class ArrayImpl implements Array {
      * @param list The list of object to wrap in a {@link Array} object.
      */
     public ArrayImpl(final List<?> list) {
-        final Object[] array = new Object[list.size()];
+        final Object[] builtArray = new Object[list.size()];
         for (int i = 0; i < list.size(); i++) {
-            array[i] = list.get(i);
+            builtArray[i] = list.get(i);
         }
-        this.array = array;
+        this.array = builtArray;
     }
 
     @Override

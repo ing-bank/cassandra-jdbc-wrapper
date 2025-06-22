@@ -29,9 +29,9 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
  * {@link #formatNonNull(Object)} for non-null values to get the full implementation of the parsing and formatting
  * methods.
  *
- * @param <JavaTypeT> The Java type managed by the codec implementation.
+ * @param <T> The Java type managed by the codec implementation.
  */
-public abstract class AbstractCodec<JavaTypeT> {
+public abstract class AbstractCodec<T> {
 
     /**
      * Parses the given CQL literal into an instance of the Java type handled by this codec.
@@ -39,7 +39,7 @@ public abstract class AbstractCodec<JavaTypeT> {
      * @param value The value to parse.
      * @return The parsed value or {@code null} if the value to parse is {@code NULL} CQL keyword or blank.
      */
-    public JavaTypeT parse(final String value) {
+    public T parse(final String value) {
         if (StringUtils.isBlank(value) || NULL_KEYWORD.equals(value)) {
             return null;
         }
@@ -52,7 +52,7 @@ public abstract class AbstractCodec<JavaTypeT> {
      * @param value The value to parse.
      * @return The parsed value.
      */
-    abstract JavaTypeT parseNonNull(@Nonnull String value);
+    abstract T parseNonNull(@Nonnull String value);
 
     /**
      * Formats the given value as a valid CQL literal according to the CQL type handled by this codec.
@@ -61,7 +61,7 @@ public abstract class AbstractCodec<JavaTypeT> {
      * @return The formatted value or {@code NULL} CQL keyword if the value to format is {@code null}.
      */
     @Nonnull
-    public String format(final JavaTypeT value) {
+    public String format(final T value) {
         if (value == null) {
             return NULL_KEYWORD;
         }
@@ -74,5 +74,5 @@ public abstract class AbstractCodec<JavaTypeT> {
      * @param value The value to format.
      * @return The formatted value.
      */
-    abstract String formatNonNull(@Nonnull JavaTypeT value);
+    abstract String formatNonNull(@Nonnull T value);
 }

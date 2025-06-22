@@ -34,6 +34,7 @@ public class TimestampToLongCodec extends AbstractCodec<Long> implements TypeCod
      * Constructor for {@code TimestampToLongCodec}.
      */
     public TimestampToLongCodec() {
+        super();
     }
 
     @Nonnull

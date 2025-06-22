@@ -34,6 +34,7 @@ public class TinyintToIntCodec extends AbstractCodec<Integer> implements TypeCod
      * Constructor for {@code TinyintToIntCodec}.
      */
     public TinyintToIntCodec() {
+        super();
     }
 
     @Nonnull

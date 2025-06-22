@@ -34,6 +34,7 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
      * Constructor for {@code VarintToIntCodec}.
      */
     public VarintToIntCodec() {
+        super();
     }
 
     @Nonnull

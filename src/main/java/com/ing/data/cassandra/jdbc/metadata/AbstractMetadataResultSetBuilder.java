@@ -30,7 +30,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 /**
@@ -139,7 +139,7 @@ public abstract class AbstractMetadataResultSetBuilder {
      * @return {@code true} if the pattern matches the tested string, {@code false} otherwise.
      */
     public boolean matchesPattern(final String pattern, final String testedValue) {
-        return testedValue.matches(String.format("(?i)^%s$", pattern.replaceAll("%", ".*")));
+        return testedValue.matches(String.format("(?i)^%s$", pattern.replace("%", ".*")));
     }
 
     /**
@@ -230,11 +230,11 @@ public abstract class AbstractMetadataResultSetBuilder {
     }
 
     <M> void filterByPattern(final String pattern, final Map<CqlIdentifier, M> metadataMap,
-                             final BiFunction<String, M, Boolean> patternMatcher,
+                             final BiPredicate<String, M> patternMatcher,
                              final Consumer<M> consumer, final Consumer<M> altConsumer) {
         for (final Map.Entry<CqlIdentifier, M> entry : metadataMap.entrySet()) {
             final M entityMetadata = entry.getValue();
-            if (patternMatcher.apply(pattern, entityMetadata)) {
+            if (patternMatcher.test(pattern, entityMetadata)) {
                 consumer.accept(entityMetadata);
             } else {
                 altConsumer.accept(entityMetadata);

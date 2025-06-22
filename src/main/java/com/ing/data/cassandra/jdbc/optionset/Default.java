@@ -28,7 +28,7 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CLUSTER_NAME_NO
  * Default option set implementing the methods of {@code OptionSet} accordingly to the JDBC API standard.
  */
 public class Default extends AbstractOptionSet {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractOptionSet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Default.class);
 
     @Override
     public String getCatalog() {

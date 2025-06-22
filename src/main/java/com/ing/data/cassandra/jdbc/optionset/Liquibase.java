@@ -26,7 +26,7 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.SCHEMA_NAME_NOT
  * Option set implementation for Liquibase compatibility and flavour of JDBC.
  */
 public class Liquibase extends AbstractOptionSet {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractOptionSet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Liquibase.class);
 
     @Override
     public String getCatalog() {

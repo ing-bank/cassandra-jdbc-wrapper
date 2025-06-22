@@ -34,6 +34,7 @@ public class FloatToDoubleCodec extends AbstractCodec<Double> implements TypeCod
      * Constructor for {@code FloatToDoubleCodec}.
      */
     public FloatToDoubleCodec() {
+        super();
     }
 
     @Nonnull

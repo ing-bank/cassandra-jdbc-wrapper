@@ -17,8 +17,8 @@ package com.ing.data.cassandra.jdbc.metadata;
 
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * A simple metadata result set made of {@link MetadataRow} objects.
@@ -27,7 +27,7 @@ import java.util.Iterator;
  */
 public class MetadataResultSet {
 
-    private ArrayList<MetadataRow> rows;
+    private List<MetadataRow> rows;
     private ColumnDefinitions columnDefinitions;
 
     /**
@@ -52,7 +52,7 @@ public class MetadataResultSet {
      * @param metadataRows A list of {@code MetadataRows}.
      * @return The updated instance of {@code MetadataResultSet}.
      */
-    public MetadataResultSet setRows(final ArrayList<MetadataRow> metadataRows) {
+    public MetadataResultSet setRows(final List<MetadataRow> metadataRows) {
         this.rows = metadataRows;
         // If there is at least one row, use the columns definitions of the first one as columns definitions for all
         // the rows.

@@ -46,6 +46,7 @@ public class SqlTimestampCodec extends AbstractCodec<Timestamp> implements TypeC
      * Constructor for {@code SqlTimestampCodec}.
      */
     public SqlTimestampCodec() {
+        super();
     }
 
     @Nonnull

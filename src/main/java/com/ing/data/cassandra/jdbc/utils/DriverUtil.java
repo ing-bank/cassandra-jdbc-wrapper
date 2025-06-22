@@ -153,31 +153,33 @@ public final class DriverUtil {
     public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
         "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
 
-    /**
-     * The list of pre-configured codecs used by this driver.
-     */
-    public static final List<TypeCodec<?>> PRECONFIGURED_CODECS = new ArrayList<>();
-
-    static {
-        PRECONFIGURED_CODECS.add(new TimestampToLongCodec());
-        PRECONFIGURED_CODECS.add(new LongToIntCodec());
-        PRECONFIGURED_CODECS.add(new IntToLongCodec());
-        PRECONFIGURED_CODECS.add(new BigintToBigDecimalCodec());
-        PRECONFIGURED_CODECS.add(new DecimalToDoubleCodec());
-        PRECONFIGURED_CODECS.add(new FloatToDoubleCodec());
-        PRECONFIGURED_CODECS.add(new VarintToIntCodec());
-        PRECONFIGURED_CODECS.add(new SmallintToIntCodec());
-        PRECONFIGURED_CODECS.add(new TinyintToIntCodec());
-        PRECONFIGURED_CODECS.add(new TinyintToShortCodec());
-        PRECONFIGURED_CODECS.add(new SqlTimestampCodec());
-        PRECONFIGURED_CODECS.add(new SqlDateCodec());
-        PRECONFIGURED_CODECS.add(new SqlTimeCodec());
-    }
-
     static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
 
     private DriverUtil() {
         // Private constructor to hide the public one.
+    }
+
+    /**
+     * Lists the pre-configured codecs used by this driver.
+     *
+     * @return All the pre-configured codecs.
+     */
+    public static List<TypeCodec<?>> listPreconfiguredCodecs() {
+        final List<TypeCodec<?>> codecs = new ArrayList<>();
+        codecs.add(new TimestampToLongCodec());
+        codecs.add(new LongToIntCodec());
+        codecs.add(new IntToLongCodec());
+        codecs.add(new BigintToBigDecimalCodec());
+        codecs.add(new DecimalToDoubleCodec());
+        codecs.add(new FloatToDoubleCodec());
+        codecs.add(new VarintToIntCodec());
+        codecs.add(new SmallintToIntCodec());
+        codecs.add(new TinyintToIntCodec());
+        codecs.add(new TinyintToShortCodec());
+        codecs.add(new SqlTimestampCodec());
+        codecs.add(new SqlDateCodec());
+        codecs.add(new SqlTimeCodec());
+        return codecs;
     }
 
     /**

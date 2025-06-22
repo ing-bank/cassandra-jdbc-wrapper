@@ -37,7 +37,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Calendar;
 
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
@@ -160,7 +160,7 @@ public final class ConversionsUtil {
      */
     public static Instant convertToInstant(final Object x) throws SQLException {
         if (x instanceof LocalDateTime) {
-            return ((LocalDateTime) x).atZone(ZoneOffset.systemDefault()).toInstant();
+            return ((LocalDateTime) x).atZone(ZoneId.systemDefault()).toInstant();
         } else if (x instanceof java.sql.Timestamp) {
             return ((Timestamp) x).toInstant();
         } else if (x instanceof java.util.Date) {

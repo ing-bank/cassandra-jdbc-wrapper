@@ -34,6 +34,7 @@ public class TinyintToShortCodec extends AbstractCodec<Short> implements TypeCod
      * Constructor for {@code TinyintToShortCodec}.
      */
     public TinyintToShortCodec() {
+        super();
     }
 
     @Nonnull
