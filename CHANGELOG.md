@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add a parameter `customcodecs` to configure additional custom codecs for the Cassandra session.
 ### Fixed
 - Fix implementation of `CassandraDatabaseMetaData.getStringFunctions()`.
+- Fix issue [#79](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/79) setting username and password to `null`
+  when calling `CassandraDataSource.getConnection()`.
+- Fix `NullPointerException` when setting non-String properties in `CassandraDataSource` (see issue 
+  [#80](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/80)).
 
 ## [4.15.0] - 2025-04-20
 ### Added

@@ -40,6 +40,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -163,12 +164,16 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
 
     @Override
     public CassandraConnection getConnection(final String user, final String password) throws SQLException {
-        this.setUser(user);
-        this.setPassword(password);
+        if (user != null) {
+            this.setUser(user);
+        }
+        if (password != null) {
+            this.setPassword(password);
+        }
         if (StringUtils.isBlank(this.url)) {
             this.url = PROTOCOL.concat(createSubName(this.properties));
         }
-        return (CassandraConnection) DriverManager.getConnection(this.url, this.properties);
+        return (CassandraConnection) DriverManager.getConnection(this.url, convertAllPropertiesToString());
     }
 
     @Override
@@ -957,5 +962,16 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         } else {
             this.properties.put(propertyName, value);
         }
+    }
+
+    private Properties convertAllPropertiesToString() {
+        this.properties.forEach((propertyName, value) -> {
+            if (Arrays.asList(Integer.class, Long.class, Boolean.class).contains(value.getClass())) {
+                // Need to convert non-String values to be supported by SessionHolder when creating the session,
+                // otherwise such values are ignored and generate NullPointerExceptions (see issue #80).
+                this.properties.put(propertyName, value.toString());
+            }
+        });
+        return this.properties;
     }
 }

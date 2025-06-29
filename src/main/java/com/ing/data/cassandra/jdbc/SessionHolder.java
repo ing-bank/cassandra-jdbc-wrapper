@@ -96,6 +96,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPol
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CONFIGURATION_FILE_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PARAMETER_PARSING_FAILED;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Holds a {@link Session} shared among multiple {@link CassandraConnection} objects.
@@ -179,7 +180,7 @@ class SessionHolder {
     boolean acquire() {
         while (true) {
             final int ref = this.references.get();
-            final String jdbcUrl = redactSensitiveValuesInJdbcUrl(this.cacheKey.get(URL_KEY));
+            final String jdbcUrl = redactSensitiveValuesInJdbcUrl((String) this.cacheKey.get(URL_KEY));
             if (ref < 0) {
                 // We raced with the release of the last reference, the caller will need to create a new session.
                 LOG.debug("Failed to acquire reference to {}.", jdbcUrl);
@@ -196,7 +197,7 @@ class SessionHolder {
     private Session createSession(final Properties properties) throws SQLException {
         File configurationFile = null;
         boolean configurationFileExists = false;
-        final String configurationFilePath = properties.getProperty(TAG_CONFIG_FILE, StringUtils.EMPTY);
+        final String configurationFilePath = properties.getProperty(TAG_CONFIG_FILE, EMPTY);
         if (StringUtils.isNotBlank(configurationFilePath)) {
             configurationFile = new File(configurationFilePath);
             configurationFileExists = configurationFile.exists();
@@ -227,24 +228,24 @@ class SessionHolder {
         final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.getOrDefault(TAG_CONTACT_POINTS,
             new ArrayList<>());
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
-        final String awsSecretName = properties.getProperty(TAG_AWS_SECRET_NAME, StringUtils.EMPTY);
-        final String awsRegion = properties.getProperty(TAG_AWS_REGION, StringUtils.EMPTY);
-        final String awsSecretRegion = properties.getProperty(TAG_AWS_SECRET_REGION, StringUtils.EMPTY);
+        final String awsSecretName = properties.getProperty(TAG_AWS_SECRET_NAME, EMPTY);
+        final String awsRegion = properties.getProperty(TAG_AWS_REGION, EMPTY);
+        final String awsSecretRegion = properties.getProperty(TAG_AWS_SECRET_REGION, EMPTY);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
-        final String username = properties.getProperty(TAG_USER, StringUtils.EMPTY);
-        String password = properties.getProperty(TAG_PASSWORD, StringUtils.EMPTY);
+        final String username = properties.getProperty(TAG_USER, EMPTY);
+        String password = properties.getProperty(TAG_PASSWORD, EMPTY);
         if (!awsSecretName.isEmpty()) {
             password = AwsUtil.getSecretValue(StringUtils.defaultIfBlank(awsSecretRegion, awsRegion), awsSecretName);
         }
-        final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, StringUtils.EMPTY);
+        final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, EMPTY);
         final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, null);
-        final String retryPolicy = properties.getProperty(TAG_RETRY_POLICY, StringUtils.EMPTY);
-        final String reconnectPolicy = properties.getProperty(TAG_RECONNECT_POLICY, StringUtils.EMPTY);
+        final String retryPolicy = properties.getProperty(TAG_RETRY_POLICY, EMPTY);
+        final String reconnectPolicy = properties.getProperty(TAG_RECONNECT_POLICY, EMPTY);
         final boolean debugMode = Boolean.TRUE.toString().equals(properties.getProperty(TAG_DEBUG,
-            StringUtils.EMPTY));
+            EMPTY));
         final String enableSslValue = properties.getProperty(TAG_ENABLE_SSL);
         final String sslEngineFactoryClassName = properties.getProperty(TAG_SSL_ENGINE_FACTORY,
-            StringUtils.EMPTY);
+            EMPTY);
         final boolean sslEnabled = Boolean.TRUE.toString().equals(enableSslValue)
             || (enableSslValue == null && StringUtils.isNotEmpty(sslEngineFactoryClassName));
         final String enableSslHostnameVerification = properties.getProperty(TAG_SSL_HOSTNAME_VERIFICATION);
@@ -256,11 +257,11 @@ class SessionHolder {
             requestTimeout = Integer.parseInt(requestTimeoutRawValue);
         }
         final boolean useKerberosAuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_KERBEROS,
-            StringUtils.EMPTY));
+            EMPTY));
         final boolean useAwsSigV4AuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_SIG_V4,
-            StringUtils.EMPTY));
+            EMPTY));
         final List<TypeCodec<?>> customCodecs =
-            parseCustomCodecs(properties.getProperty(TAG_CUSTOM_CODECS, StringUtils.EMPTY));
+            parseCustomCodecs(properties.getProperty(TAG_CUSTOM_CODECS, EMPTY));
 
         // Instantiate the session builder and set the contact points.
         final CqlSessionBuilder builder = CqlSession.builder();

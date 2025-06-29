@@ -15,10 +15,13 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.optionset.Default;
+import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +44,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -48,6 +52,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -68,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * These tests of non-regression are those existing in the
@@ -1179,4 +1185,50 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         // an exception when the connection is created from a pre-existing session.
         assertNotNull(cassandraConnection.getMetaData().getSQLKeywords());
     }
+
+    @Test
+    public void testIngIssue79() {
+        final CassandraDataSource datasource = new CassandraDataSource(
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort()
+            )),
+            KEYSPACE
+        );
+        datasource.setUser(cassandraContainer.getUsername());
+        datasource.setPassword(cassandraContainer.getPassword());
+        datasource.setLocalDataCenter("datacenter1");
+        try {
+            datasource.getConnection();
+        } catch (final Exception e) {
+            fail(e);
+        }
+        assertEquals(cassandraContainer.getUsername(), datasource.getUser());
+        assertEquals(cassandraContainer.getPassword(), datasource.getPassword());
+    }
+
+    @Test
+    public void testIngIssue80() {
+        final CassandraDataSource datasource = new CassandraDataSource(
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort()
+            )),
+            KEYSPACE
+        );
+        datasource.setLocalDataCenter("datacenter1");
+        // Test the different types of non-String properties
+        datasource.setRequestTimeout(10_000L);      // Long
+        datasource.setTcpKeepAliveEnabled(true);    // Boolean
+        datasource.setFetchSize(50);                // Integer
+        try {
+            final CassandraConnection connection = datasource.getConnection();
+            final DriverExecutionProfile executionProfile =
+                connection.getSession().getContext().getConfig().getDefaultProfile();
+            assertEquals(Duration.ofSeconds(10), executionProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
+            assertTrue(executionProfile.getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
+            assertEquals(50, connection.getDefaultFetchSize());
+        } catch (final Exception e) {
+            fail(e);
+        }
+    }
+
 }
