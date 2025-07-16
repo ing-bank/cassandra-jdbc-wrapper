@@ -103,17 +103,16 @@
         <url>https://github.com/ing-bank/cassandra-jdbc-wrapper</url>
     </scm>
 
-    <!-- TODO: remove distribution management configuration since we use central-publishing-maven-plugin now -->
-    <!--    <distributionManagement>-->
-    <!--        <snapshotRepository>-->
-    <!--            <id>ossrh</id>-->
-    <!--            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>-->
-    <!--        </snapshotRepository>-->
-    <!--        <repository>-->
-    <!--            <id>ossrh</id>-->
-    <!--            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-    <!--        </repository>-->
-    <!--    </distributionManagement>-->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <encoding>UTF-8</encoding>
@@ -145,7 +144,6 @@
         <testcontainers.version>1.20.6</testcontainers.version>
         <astra-sdk.version>1.2.9</astra-sdk.version>
         <!-- Versions for plugins -->
-        <central-publishing-plugin.version>0.8.0</central-publishing-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -162,80 +160,80 @@
         <dependency>
             <groupId>org.apache.cassandra</groupId>
             <artifactId>java-driver-core</artifactId>
-            <version>${java.driver.version}</version>
+            <version>4.19.0</version>
         </dependency>
 
         <!-- Apache Commons Lang 3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
+            <version>3.17.0</version>
         </dependency>
 
         <!-- Apache Commons IO -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
+            <version>2.19.0</version>
         </dependency>
 
         <!-- Apache Commons Collections -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>${commons-collections.version}</version>
+            <version>4.4</version>
         </dependency>
 
         <!-- Caffeine caching -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>${caffeine.version}</version>
+            <version>2.9.3</version>
         </dependency>
 
         <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.18.3</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.18.3</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.18.3</version>
         </dependency>
 
         <!-- Semver for operations on versions -->
         <dependency>
             <groupId>org.semver4j</groupId>
             <artifactId>semver4j</artifactId>
-            <version>${semver4j.version}</version>
+            <version>5.6.0</version>
         </dependency>
 
         <!-- Kerberos Auth provider support -->
         <dependency>
             <groupId>com.instaclustr</groupId>
             <artifactId>cassandra-driver-kerberos</artifactId>
-            <version>${cassandra-driver-krb5.version}</version>
+            <version>3.0.0</version>
         </dependency>
 
         <!-- Javax annotations (JSR-305) -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-            <version>${javax-jsr305.version}</version>
+            <version>3.0.2</version>
         </dependency>
 
         <!-- AWS Auth provider support -->
         <dependency>
             <groupId>software.aws.mcs</groupId>
             <artifactId>aws-sigv4-auth-cassandra-java-driver-plugin</artifactId>
-            <version>${aws-sigv4-auth-cassandra.version}</version>
+            <version>4.0.9</version>
             <exclusions>
                 <!-- Dependencies already provided through import of AWS Secret manager below, exclude them here to
                  ensure the Amazon Secrets manager client works with the appropriate dependencies versions. -->
@@ -254,125 +252,125 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>secretsmanager</artifactId>
-            <version>${aws-secretsmanager.version}</version>
+            <version>2.31.21</version>
         </dependency>
 
         <!-- OpenCSV for implementation of COPY special command -->
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>${opencsv.version}</version>
+            <version>5.11.1</version>
         </dependency>
 
         <!-- Unit tests libraries -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
+            <version>3.12.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${mockito.version}</version>
+            <version>3.12.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit5.version}</version>
+            <version>5.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit5.version}</version>
+            <version>5.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit5.version}</version>
+            <version>5.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
-            <version>${junit-platform.version}</version>
+            <version>1.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-commons</artifactId>
-            <version>${junit-platform.version}</version>
+            <version>1.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
-            <version>${hamcrest.version}</version>
+            <version>2.2</version>
             <scope>test</scope>
         </dependency>
         <!-- Embedded Cassandra for unit tests -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>cassandra</artifactId>
-            <version>${testcontainers.version}</version>
+            <version>1.20.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${testcontainers.version}</version>
+            <version>1.20.6</version>
             <scope>test</scope>
         </dependency>
         <!-- LocalStack containers for tests using Amazon Secrets manager -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>localstack</artifactId>
-            <version>${testcontainers.version}</version>
+            <version>1.20.6</version>
             <scope>test</scope>
         </dependency>
         <!-- Astra SDK for integration tests with AstraDB -->
         <dependency>
             <groupId>com.datastax.astra</groupId>
             <artifactId>astra-sdk-devops</artifactId>
-            <version>${astra-sdk.version}</version>
+            <version>1.2.9</version>
             <scope>test</scope>
         </dependency>
         <!-- Handy to build the CQL queries -->
         <dependency>
             <groupId>org.apache.cassandra</groupId>
             <artifactId>java-driver-query-builder</artifactId>
-            <version>${java.driver.version}</version>
+            <version>4.19.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging for tests -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <version>1.7.36</version>
             <scope>test</scope>
         </dependency>
         <!-- Approval tests -->
         <dependency>
             <groupId>com.approvaltests</groupId>
             <artifactId>approvaltests</artifactId>
-            <version>${approvaltests.version}</version>
+            <version>24.20.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Lombok (used only for some tests) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
+            <version>1.18.38</version>
             <scope>test</scope>
         </dependency>
         <!-- Dotenv for tests only running locally (integration with DBaaS) -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
-            <version>${dotenv.version}</version>
+            <version>2.3.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -534,18 +532,6 @@
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
                             </gpgArguments>
-                        </configuration>
-                    </plugin>
-
-                    <!-- Publishing on Maven Central -->
-                    <plugin>
-                        <groupId>org.sonatype.central</groupId>
-                        <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${central-publishing-plugin.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <deploymentName>Cassandra JDBC Wrapper deployment</deploymentName>
-                            <publishingServerId>central</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>
