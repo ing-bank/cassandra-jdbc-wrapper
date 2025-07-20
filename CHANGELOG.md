@@ -12,7 +12,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons IO to version 2.20.0.
 - Update Apache Commons Lang to version 3.18.0.
 - Update Jackson dependencies to version 2.19.2.
-- Update Semver4j to version 6.0.0.
 - Update AWS Secrets Manager SDK to 2.32.4.
 - Update OpenCSV to 5.11.2.
 ### Fixed
