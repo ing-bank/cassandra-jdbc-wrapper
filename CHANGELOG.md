@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [4.16.0] - Unreleased
 ### Added
 - Add a parameter `customcodecs` to configure additional custom codecs for the Cassandra session.
+### Changed
+- Update Apache Commons Collections to version 4.5.0.
+- Update Apache Commons IO to version 2.20.0.
+- Update Apache Commons Lang to version 3.18.0.
+- Update Jackson dependencies to version 2.19.2.
+- Update Semver4j to version 6.0.0.
+- Update AWS Secrets Manager SDK to 2.32.4.
+- Update OpenCSV to 5.11.2.
 ### Fixed
 - Fix implementation of `CassandraDatabaseMetaData.getStringFunctions()`.
 - Fix issue [#79](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/79) setting username and password to `null`
@@ -360,6 +368,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.16.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.15.0...v4.16.0
 [4.15.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.14.0...v4.15.0
 [4.14.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.13.1...v4.14.0
 [4.13.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.13.0...v4.13.1
