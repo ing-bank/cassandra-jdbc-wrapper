@@ -30,6 +30,8 @@ import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
 import com.datastax.oss.driver.internal.core.loadbalancing.DefaultLoadBalancingPolicy;
 import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
+import com.dtsx.astra.sdk.db.AstraDBOpsClient;
+import com.dtsx.astra.sdk.db.DbOpsClient;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.ing.data.cassandra.jdbc.utils.AwsUtil;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
@@ -41,7 +43,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.aws.mcs.auth.SigV4AuthProvider;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
@@ -55,15 +59,19 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DEFAULT_ASTRA_DB_USER;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.formatContactPoints;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.listPreconfiguredCodecs;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ASTRA_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ASTRA_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_REGION;
@@ -88,6 +96,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTEN
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TOKEN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
@@ -227,15 +236,22 @@ class SessionHolder {
 
         final List<ContactPoint> contactPoints = (List<ContactPoint>) properties.getOrDefault(TAG_CONTACT_POINTS,
             new ArrayList<>());
+        final String astraDbName = properties.getProperty(TAG_ASTRA_DATABASE_NAME);
         final String cloudSecureConnectBundle = properties.getProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE);
+        final String astraToken = properties.getProperty(TAG_TOKEN);
+        final String astraRegion = properties.getProperty(TAG_ASTRA_REGION);
         final String awsSecretName = properties.getProperty(TAG_AWS_SECRET_NAME, EMPTY);
         final String awsRegion = properties.getProperty(TAG_AWS_REGION, EMPTY);
         final String awsSecretRegion = properties.getProperty(TAG_AWS_SECRET_REGION, EMPTY);
         final String keyspace = properties.getProperty(TAG_DATABASE_NAME);
-        final String username = properties.getProperty(TAG_USER, EMPTY);
+        String username = properties.getProperty(TAG_USER, EMPTY);
         String password = properties.getProperty(TAG_PASSWORD, EMPTY);
         if (!awsSecretName.isEmpty()) {
             password = AwsUtil.getSecretValue(StringUtils.defaultIfBlank(awsSecretRegion, awsRegion), awsSecretName);
+        }
+        if (StringUtils.isNotBlank(astraToken)) {
+            password = astraToken;
+            username = DEFAULT_ASTRA_DB_USER;
         }
         final String loadBalancingPolicy = properties.getProperty(TAG_LOAD_BALANCING_POLICY, EMPTY);
         final String localDatacenter = properties.getProperty(TAG_LOCAL_DATACENTER, null);
@@ -268,13 +284,15 @@ class SessionHolder {
         final ProgrammaticDriverConfigLoaderBuilder driverConfigLoaderBuilder =
             DriverConfigLoader.programmaticBuilder();
         driverConfigLoaderBuilder.withBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE, true);
+
         if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
-            driverConfigLoaderBuilder.withString(DefaultDriverOption.CLOUD_SECURE_CONNECT_BUNDLE,
-                cloudSecureConnectBundle);
+            builder.withCloudSecureConnectBundle(Paths.get(cloudSecureConnectBundle));
             LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.",
-                    contactPoints.stream()
-                        .map(ContactPoint::toString)
-                        .collect(Collectors.joining(", ")));
+                formatContactPoints(contactPoints));
+        } else if (StringUtils.isNotBlank(astraToken)) {
+            final ByteArrayInputStream secureConnectBundle =
+                downloadSecureConnectBundle(astraToken, astraDbName, astraRegion);
+            builder.withCloudSecureConnectBundle(secureConnectBundle);
         } else {
             builder.addContactPoints(contactPoints.stream()
                 .map(ContactPoint::toInetSocketAddress)
@@ -456,6 +474,25 @@ class SessionHolder {
         final DriverContext driverContext = new DefaultDriverContext(driverConfigLoaderBuilder.build(),
             ProgrammaticArguments.builder().build());
         builder.withSslEngineFactory(new DefaultSslEngineFactory(driverContext));
+    }
+
+    private ByteArrayInputStream downloadSecureConnectBundle(final String token,
+                                                             final String dbName,
+                                                             final String region)
+        throws SQLNonTransientConnectionException {
+        final AstraDBOpsClient astraDbClient = new AstraDBOpsClient(token);
+        try {
+            final DbOpsClient dbClient = astraDbClient.databaseByName(dbName);
+            final byte[] secureConnectBundle;
+            if (StringUtils.isBlank(region)) {
+                secureConnectBundle = dbClient.downloadDefaultSecureConnectBundle();
+            } else {
+                secureConnectBundle = dbClient.downloadSecureConnectBundle(region);
+            }
+            return new ByteArrayInputStream(secureConnectBundle);
+        } catch (final Exception e) {
+            throw new SQLNonTransientConnectionException(e);
+        }
     }
 
     private void dispose() {

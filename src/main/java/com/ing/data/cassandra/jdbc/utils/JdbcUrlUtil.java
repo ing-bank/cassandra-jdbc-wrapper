@@ -53,6 +53,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CONTACT_POINT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SECURECONENCTBUNDLE_REQUIRED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOKEN_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CODEC_INSTANTIATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CODEC_CLASS;
@@ -82,8 +83,15 @@ public final class JdbcUrlUtil {
 
     /**
      * JDBC protocol for Cassandra DBaaS connection.
+     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
+     * protocol will be removed in a future version.
      */
     public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
+
+    /**
+     * JDBC protocol for Cassandra DBaaS connection.
+     */
+    public static final String PROTOCOL_ASTRA = "jdbc:cassandra:astra:";
 
     /**
      * JDBC protocol for Amazon Keyspaces connection.
@@ -337,6 +345,12 @@ public final class JdbcUrlUtil {
     public static final String TAG_CONTACT_POINTS = "contactPoints";
 
     /**
+     * Property name used to determine the name of the AstraDB cloud database to which the connection has to be
+     * established. This property is mapped from the JDBC URL host.
+     */
+    public static final String TAG_ASTRA_DATABASE_NAME = "astraDbName";
+
+    /**
      * Property name used to retrieve the execution profile to use when the connection to Cassandra is created.
      * This property is mapped from the JDBC URL parameter {@code activeprofile}.
      */
@@ -392,11 +406,42 @@ public final class JdbcUrlUtil {
     public static final String TAG_USE_SIG_V4 = "useAwsSigV4";
 
     /**
-     * Property name used to determine if the current connection is established to a cloud database. In such a case,
-     * the hostname can be ignored.
+     * JDBC URL parameter key for the token used to connect to an AstraDB instance.
+     */
+    public static final String KEY_TOKEN = "token";
+
+    /**
+     * Property name used to retrieve the token used to connect to an AstraDB instance. This property is mapped from
+     * the JDBC URL parameter {@code token}.
+     */
+    public static final String TAG_TOKEN = "token";
+
+    /**
+     * JDBC URL parameter key for the region of the AstraDB instance.
+     */
+    public static final String KEY_ASTRA_REGION = "astraregion";
+
+    /**
+     * Property name used to determine the region of the AstraDB instance to connect to. This property is mapped from
+     * the JDBC URL parameter {@code astraregion}.
+     */
+    public static final String TAG_ASTRA_REGION = "astraRegion";
+
+    /**
+     * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
+     * a case, the hostname can be ignored.
      * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
+     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
+     * protocol will be removed in a future version.
      */
     public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
+
+    /**
+     * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
+     * a case, the hostname must contain the database name in AstraDB.
+     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_ASTRA}).
+     */
+    public static final String TAG_ASTRA_CONNECTION = "isAstraConnection";
 
     /**
      * Property name used to determine if the current connection is established to an Amazon Keyspaces database.
@@ -448,6 +493,13 @@ public final class JdbcUrlUtil {
             int uriStartIndex = PROTOCOL.length();
 
             // Handle specific protocol for DataStax Astra DB connections.
+            boolean isAstraConnection = false;
+            if (url.startsWith(PROTOCOL_ASTRA)) {
+                uriStartIndex = PROTOCOL_ASTRA.length();
+                isAstraConnection = true;
+                props.put(TAG_ASTRA_CONNECTION, true);
+            }
+            // NOTE: Protocol jdbc:cassandra:dbaas is deprecated and will be removed in a future version.
             boolean isDbaasConnection = false;
             if (url.startsWith(PROTOCOL_DBAAS)) {
                 uriStartIndex = PROTOCOL_DBAAS.length();
@@ -481,6 +533,13 @@ public final class JdbcUrlUtil {
                 } catch (final RuntimeException e) {
                     throw new SQLNonTransientConnectionException(e.getMessage());
                 }
+            }
+
+            if (isAstraConnection) {
+                if (StringUtils.isBlank(uri.getAuthority())) {
+                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
+                }
+                props.put(TAG_ASTRA_DATABASE_NAME, uri.getAuthority());
             }
 
             String keyspace = uri.getPath();
@@ -539,6 +598,14 @@ public final class JdbcUrlUtil {
                 } else if (isDbaasConnection) {
                     throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
                 }
+                if (params.containsKey(KEY_TOKEN)) {
+                    props.setProperty(TAG_TOKEN, params.get(KEY_TOKEN));
+                } else if (isAstraConnection) {
+                    throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
+                }
+                if (params.containsKey(KEY_ASTRA_REGION)) {
+                    props.setProperty(TAG_ASTRA_REGION, params.get(KEY_ASTRA_REGION));
+                }
                 if (params.containsKey(KEY_USER)) {
                     props.setProperty(TAG_USER, params.get(KEY_USER));
                 }
@@ -575,6 +642,8 @@ public final class JdbcUrlUtil {
                 handleAwsProperties(props, params, isAwsConnection);
             } else if (isDbaasConnection) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
+            } else if (isAstraConnection) {
+                throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
             } else if (isAwsConnection) {
                 throw new SQLNonTransientConnectionException(AWS_REGION_REQUIRED);
             }
@@ -702,6 +771,12 @@ public final class JdbcUrlUtil {
                 .map(ContactPoint::toString)
                 .collect(Collectors.joining(HOST_SEPARATOR));
         }
+
+        final boolean isAstraConnection = (boolean) props.getOrDefault(TAG_ASTRA_CONNECTION, false);
+        if (isAstraConnection) {
+            hostsAndPorts = props.getProperty(TAG_ASTRA_DATABASE_NAME);
+        }
+
         final boolean isDbaasConnection = (boolean) props.getOrDefault(TAG_DBAAS_CONNECTION, false);
         if (hostsAndPorts == null && !isDbaasConnection) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);

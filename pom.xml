@@ -120,7 +120,8 @@
         <java.version>1.8</java.version>
 
         <!-- Versions for dependencies -->
-        <aws-secretsmanager.version>2.32.4</aws-secretsmanager.version>
+        <astra-sdk.version>1.2.9</astra-sdk.version>
+        <aws-secretsmanager.version>2.32.18</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
@@ -131,19 +132,18 @@
         <java.driver.version>4.19.0</java.driver.version>
         <jackson.version>2.19.2</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
-        <opencsv.version>5.11.2</opencsv.version>
+        <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>5.6.0</semver4j.version>
         <!-- Versions for test dependencies -->
-        <approvaltests.version>24.22.0</approvaltests.version>
+        <approvaltests.version>25.0.23</approvaltests.version>
         <dotenv.version>2.3.2</dotenv.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <junit5.version>5.13.3</junit5.version>
-        <junit-platform.version>1.13.3</junit-platform.version>
+        <junit5.version>5.13.4</junit5.version>
+        <junit-platform.version>1.13.4</junit-platform.version>
         <lombok.version>1.18.38</lombok.version>
         <mockito.version>3.12.4</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <astra-sdk.version>1.2.9</astra-sdk.version>
         <!-- Versions for plugins -->
         <central-publishing-plugin.version>0.8.0</central-publishing-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
@@ -257,6 +257,13 @@
             <version>${aws-secretsmanager.version}</version>
         </dependency>
 
+        <!-- Astra SDK for integration with AstraDB -->
+        <dependency>
+            <groupId>com.datastax.astra</groupId>
+            <artifactId>astra-sdk-devops</artifactId>
+            <version>${astra-sdk.version}</version>
+        </dependency>
+
         <!-- OpenCSV for implementation of COPY special command -->
         <dependency>
             <groupId>com.opencsv</groupId>
@@ -331,13 +338,6 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>localstack</artifactId>
             <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- Astra SDK for integration tests with AstraDB -->
-        <dependency>
-            <groupId>com.datastax.astra</groupId>
-            <artifactId>astra-sdk-devops</artifactId>
-            <version>${astra-sdk.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Handy to build the CQL queries -->

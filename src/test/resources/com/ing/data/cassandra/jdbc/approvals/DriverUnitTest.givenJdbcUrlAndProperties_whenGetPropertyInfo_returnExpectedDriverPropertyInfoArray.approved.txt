@@ -102,3 +102,15 @@
 	Whether the Amazon Signature V4 auth provider is enabled. By default, it's disabled.
 	choices: {true,false}
 	required: false
+[26] = token: 
+	The token used to connect to a DataStax AstraDB cloud database.
+	choices: n/a
+	required: false
+[27] = astraRegion: 
+	The region of the DataStax AstraDB cloud database to connect to.
+	choices: n/a
+	required: false
+[28] = customCodecs: 
+	A comma-separated list of custom codecs to register, in addition to the default ones. Specify the full package of each custom codec class.
+	choices: n/a
+	required: false

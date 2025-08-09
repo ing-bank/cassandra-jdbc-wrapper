@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
@@ -117,6 +118,11 @@ public final class DriverUtil {
      * Single quote character.
      */
     public static final String SINGLE_QUOTE = "'";
+
+    /**
+     * Default username for connection to AstraDB instance with token.
+     */
+    public static final String DEFAULT_ASTRA_DB_USER = "token";
 
     /**
      * UUIDv1 pattern, used by {@code TIMEUUID} CQL type.
@@ -368,6 +374,18 @@ public final class DriverUtil {
                 }
             })
             .forEach(codecRegistry::register);
+    }
+
+    /**
+     * Formats a list of {@link ContactPoint} to a comma-separated list of strings representing the contact points.
+     *
+     * @param contactPoints The contact points.
+     * @return The formatted list of contact points.
+     */
+    public static String formatContactPoints(final List<ContactPoint> contactPoints) {
+        return emptyIfNull(contactPoints).stream()
+            .map(ContactPoint::toString)
+            .collect(Collectors.joining(", "));
     }
 
 }

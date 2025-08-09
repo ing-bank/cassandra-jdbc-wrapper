@@ -50,6 +50,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.PROTOCOL;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ACTIVE_PROFILE;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ASTRA_DATABASE_NAME;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_ASTRA_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_REGION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_NAME;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_AWS_SECRET_REGION;
@@ -73,6 +75,7 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SERIAL_CONSISTEN
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_ENGINE_FACTORY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_SSL_HOSTNAME_VERIFICATION;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TCP_NO_DELAY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TOKEN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_KERBEROS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USE_SIG_V4;
@@ -263,7 +266,29 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     }
 
     /**
+     * Gets the AstraDB database name.
+     *
+     * @return The AstraDB database name.
+     */
+    public String getAstraDatabaseName() {
+        return this.properties.getProperty(TAG_ASTRA_DATABASE_NAME);
+    }
+
+    /**
+     * Sets the AstraDB database name.
+     *
+     * @param astraDatabaseName The AstraDB database name.
+     */
+    public void setAstraDatabaseName(final String astraDatabaseName) {
+        this.setDataSourceProperty(TAG_ASTRA_DATABASE_NAME, astraDatabaseName);
+    }
+
+    /**
      * Gets the database name. In case of Cassandra, i.e. the keyspace used as data source.
+     * <p>
+     *     Warning: for connections to AstraDB instances, the database name must be retrieved with
+     *     {@link #getAstraDatabaseName()}.
+     * </p>
      *
      * @return The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */
@@ -273,6 +298,10 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
 
     /**
      * Sets the database name. In case of Cassandra, i.e. the keyspace used as data source.
+     * <p>
+     *     Warning: for connections to AstraDB instances, the database name must be set with
+     *     {@link #setAstraDatabaseName(String)}.
+     * </p>
      *
      * @param databaseName The database name. In case of Cassandra, i.e. the keyspace used as data source.
      */
@@ -656,6 +685,42 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      */
     public void setSecureConnectBundle(final Path bundlePath) {
         this.setSecureConnectBundle(bundlePath.toString());
+    }
+
+    /**
+     * Gets the token used to connect to an AstraDB instance.
+     *
+     * @return The token.
+     */
+    public String getToken() {
+        return this.properties.getProperty(TAG_TOKEN);
+    }
+
+    /**
+     * Sets the token used to connect to an AstraDB instance.
+     *
+     * @param token The token.
+     */
+    public void setToken(final String token) {
+        this.setDataSourceProperty(TAG_TOKEN, token);
+    }
+
+    /**
+     * Gets the region of the AstraDB instance.
+     *
+     * @return The AstraDB region.
+     */
+    public String getAstraRegion() {
+        return this.properties.getProperty(TAG_ASTRA_REGION);
+    }
+
+    /**
+     * Sets the region of the AstraDB instance.
+     *
+     * @param region The AstraDB region.
+     */
+    public void setAstraRegion(final String region) {
+        this.setDataSourceProperty(TAG_ASTRA_REGION, region);
     }
 
     /**

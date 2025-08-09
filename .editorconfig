@@ -20,8 +20,8 @@ insert_final_newline = true
 trim_trailing_whitespace = false
 indent_size = 2
 
-[*.json]
-indent_size = 2
+[*.approved.txt]
+trim_trailing_whitespace = false
 
 [{*.yml,*.yaml}]
 indent_size = 2

@@ -58,6 +58,11 @@ Copyright 2005 Bytecode Pty Ltd.
 This product includes software developed as part of the OpenCSV project
 ( https://opencsv.sourceforge.net/ ).
 
+AstraSDK DevOps
+Copyright 2021- DataStax
+This product includes software developed as part of the Astra Software Development Kit project
+( https://github.com/datastax/astra-sdk-java ).
+
 Semver4j
 Copyright 2022-present Semver4j contributors
 This product includes software developed as part of the Semver4j project

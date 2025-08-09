@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -262,6 +263,12 @@ class AmazonKeyspacesIntegrationTest {
         prepStatement.setString(2, SIMPLE_TABLE_NAME);
         final ResultSet resultSet = prepStatement.executeQuery();
         return resultSet.next() && resultSet.getString(1) != null;
+    }
+
+    @AfterAll
+    static void resetTrustStore() {
+        System.clearProperty(JSSE_TRUSTSTORE_PROPERTY);
+        System.clearProperty(JSSE_TRUSTSTORE_PASSWORD_PROPERTY);
     }
 
 }

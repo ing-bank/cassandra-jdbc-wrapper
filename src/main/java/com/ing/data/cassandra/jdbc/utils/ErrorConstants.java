@@ -226,6 +226,12 @@ public final class ErrorConstants {
     public static final String SECURECONENCTBUNDLE_REQUIRED = "A 'secureconnectbundle' parameter is required.";
 
     /**
+     * Error message used in any SQL exception thrown when the required parameter {@code token} is missing in the JDBC
+     * URL.
+     */
+    public static final String TOKEN_REQUIRED = "A 'token' parameter is required.";
+
+    /**
      * Error message used in any SQL exception thrown when the required parameter {@code awsregion} is missing in the
      * JDBC URL.
      */

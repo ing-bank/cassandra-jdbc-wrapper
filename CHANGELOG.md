@@ -6,14 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [4.16.0] - Unreleased
 ### Added
+- Add new specific protocol `jdbc:cassandra:astra` for support of Datastax AstraDB without specifying a secure connect
+  bundle.
 - Add a parameter `customcodecs` to configure additional custom codecs for the Cassandra session.
 ### Changed
+- Deprecate protocol `jdbc:cassandra:dbaas`, to be replaced by `jdbc:cassandra:astra` protocol in a future release.
 - Update Apache Commons Collections to version 4.5.0.
 - Update Apache Commons IO to version 2.20.0.
 - Update Apache Commons Lang to version 3.18.0.
 - Update Jackson dependencies to version 2.19.2.
-- Update AWS Secrets Manager SDK to 2.32.4.
-- Update OpenCSV to 5.11.2.
+- Update AWS Secrets Manager SDK to 2.32.18.
+- Update OpenCSV to 5.12.0.
 ### Fixed
 - Fix implementation of `CassandraDatabaseMetaData.getStringFunctions()`.
 - Fix issue [#79](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/79) setting username and password to `null`
