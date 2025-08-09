@@ -30,7 +30,12 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn deploy -Prelease -DskipTests
+        run: |
+          sed -E \
+          -e 's#(<password>)(.{3}).*(.{3})(</password>)#\1\2***\3\4#g' \
+          -e 's#(<gpg\.passphrase>).*?(</gpg\.passphrase>)#\1***\2#g' \
+          ~/.m2/settings.xml
+          mvn deploy -Prelease -DskipTests
 
       - name: Maven build bundle
         run: mvn clean package -Pbundle
