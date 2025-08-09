@@ -28,14 +28,9 @@ jobs:
       - name: Maven package and publish
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          mvn help:effective-settings -DshowPasswords=true \
-          | sed -E \
-          -e 's#(<password>)(.{3}).*(.{3})(</password>)#\1\2***\3\4#g' \
-          -e 's#(<gpg\.passphrase>).*?(</gpg\.passphrase>)#\1***\2#g'
-          mvn deploy -Prelease -DskipTests
+        run: mvn deploy -Prelease
 
       - name: Maven build bundle
         run: mvn clean package -Pbundle
