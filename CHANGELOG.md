@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.16.1] - Unreleased
+## [4.16.1] - 2025-10-25
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.1.
+- Update Apache Commons Lang to version 3.19.0.
+- Update Jackson dependencies to version 2.20.0.
+- Update Semver4j to version 5.8.0.
+- Update AWS Secrets Manager SDK to 2.36.1.
 ### Fixed
 - Fix issue [#85](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/85) when checking the validity of a 
   connection to AstraDB with `CassandraConnection.isValid(int)`.
