@@ -35,6 +35,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test JDBC Driver against DBaaS Astra.
@@ -75,7 +76,7 @@ class DbaasAstraIntegrationTest {
              * It can take up to 1 min to create the database if not exists.
              */
             String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
-            Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
+            assertTrue(astraDbClient.findById(dbId).isPresent());
             Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
             LOG.debug("Database ready.");
 
@@ -111,7 +112,7 @@ class DbaasAstraIntegrationTest {
             .withColumn("lastname", DataTypes.TEXT)
             .build().getQuery());
         // Then
-        Assertions.assertTrue(tableExists("simple_table"));
+        assertTrue(tableExists("simple_table"));
     }
 
     @Test
@@ -119,7 +120,7 @@ class DbaasAstraIntegrationTest {
     @EnabledIf("canRunWithToken")
     void givenTable_whenInsert_shouldRetrieveData() throws Exception {
         // Given
-        Assertions.assertTrue(tableExists("simple_table"));
+        assertTrue(tableExists("simple_table"));
         // When
         String insertSimpleCQL = "INSERT INTO simple_table (email, firstname, lastname) VALUES(?,?,?)";
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(insertSimpleCQL);
@@ -142,7 +143,7 @@ class DbaasAstraIntegrationTest {
                     "    product_name   TEXT," +
                     "    product_vector vector<float, 14>)");
         // Then
-        Assertions.assertTrue(tableExists("pet_supply_vectors"));
+        assertTrue(tableExists("pet_supply_vectors"));
         sqlConnection.createStatement().execute(
                     "CREATE CUSTOM INDEX IF NOT EXISTS idx_vector " +
                     "ON pet_supply_vectors(product_vector) " +
@@ -175,7 +176,7 @@ class DbaasAstraIntegrationTest {
     @EnabledIf("canRunWithToken")
     void givenVectorTable_whenSimilaritySearch_shouldReturnResults() throws Exception {
         // Given
-        Assertions.assertTrue(tableExists("pet_supply_vectors"));
+        assertTrue(tableExists("pet_supply_vectors"));
         Assertions.assertEquals(6, countRecords("pet_supply_vectors"));
         // When
         final CassandraPreparedStatement prepStatement = sqlConnection.prepareStatement(
@@ -188,10 +189,17 @@ class DbaasAstraIntegrationTest {
             "LIMIT 2;");
         final ResultSet rs = prepStatement.executeQuery();
         // A result has been found
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         // Parsing Results
         Assertions.assertNotNull(rs.getObject("product_vector"));
         Assertions.assertEquals(3.0d, rs.getDouble("similarity"));
+    }
+
+    @Test
+    @Order(5)
+    @EnabledIf("canRunWithToken")
+    void givenConnection_whenIsValid_shouldReturnTrue() throws Exception {
+        assertTrue(sqlConnection.isValid(3));
     }
 
     private boolean tableExists(final String tableName) throws SQLException {

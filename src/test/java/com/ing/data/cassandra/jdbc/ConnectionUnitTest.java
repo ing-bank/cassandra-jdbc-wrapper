@@ -688,4 +688,11 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
             );
     }
 
+    @Test
+    void givenConnection_whenIsValid_shouldReturnTrue() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        assertTrue(sqlConnection.isValid(3));
+    }
+
 }

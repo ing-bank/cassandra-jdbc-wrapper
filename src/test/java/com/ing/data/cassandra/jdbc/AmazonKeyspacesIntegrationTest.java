@@ -45,6 +45,7 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSW
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 
@@ -242,7 +243,8 @@ class AmazonKeyspacesIntegrationTest {
 
     private void assertConnectionIsOperational(final CassandraConnection sqlConnection) throws SQLException {
         createTable(sqlConnection);
-        Assertions.assertTrue(tableExists(sqlConnection));
+        assertTrue(tableExists(sqlConnection));
+        assertTrue(sqlConnection.isValid(3));
     }
 
     private void createTable(final Connection sqlConnection) throws SQLException {

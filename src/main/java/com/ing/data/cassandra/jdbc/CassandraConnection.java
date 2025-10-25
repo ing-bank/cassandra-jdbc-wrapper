@@ -581,7 +581,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         try (final CassandraStatement stmt = (CassandraStatement) this.createStatement()) {
             // Wait at most the defined timeout duration (if requested) for the successful query execution.
             final ExecutorService stmtExecutor = Executors.newCachedThreadPool();
-            final Callable<Object> callableStmt = () -> stmt.execute("SELECT uuid() FROM system.local");
+            final Callable<Object> callableStmt = () -> stmt.execute("SELECT key FROM system.local");
             if (timeout != 0) {
                 final Future<Object> futureStmtExecution = stmtExecutor.submit(callableStmt);
                 try {
