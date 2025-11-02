@@ -4,7 +4,7 @@ name: CI Workflow
 on:
   push:
     branches:
-      - 'release/next'
+      - 'release/*'
   pull_request:
     branches:
       - 'release/next'
