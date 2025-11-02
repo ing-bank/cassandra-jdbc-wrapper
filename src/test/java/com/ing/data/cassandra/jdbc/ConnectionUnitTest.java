@@ -13,7 +13,6 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.driver.core.SimpleStatement;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
@@ -669,10 +668,11 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final CassandraConnection jdbcConnection = new CassandraConnection(spiedSession, KEYSPACE,
             sqlConnection.getConsistencyLevel(), false, null, customProfileName);
         jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
-        final ArgumentCaptor<SimpleStatement> stmtCaptor = ArgumentCaptor.forClass(SimpleStatement.class);
-        verify(spiedSession).execute((com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.capture());
-        final com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt =
-            (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<com.datastax.oss.driver.api.core.cql.Statement<?>> stmtCaptor =
+            ArgumentCaptor.forClass(com.datastax.oss.driver.api.core.cql.Statement.class);
+        verify(spiedSession).execute(stmtCaptor.capture());
+        final com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt = stmtCaptor.getValue();
         assertNotNull(executedStmt.getExecutionProfile());
         assertEquals(customProfileName, executedStmt.getExecutionProfile().getName());
     }
