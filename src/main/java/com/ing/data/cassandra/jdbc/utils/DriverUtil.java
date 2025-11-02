@@ -35,8 +35,8 @@ import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.apache.commons.lang3.StringUtils;
-import org.semver4j.RangesExpression;
 import org.semver4j.Semver;
+import org.semver4j.range.RangeExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,9 +244,9 @@ public final class DriverUtil {
         if (versionedMetadata.isValidFrom() != null) {
             minVersion = versionedMetadata.isValidFrom();
         }
-        final RangesExpression validRange = RangesExpression.greaterOrEqual(minVersion);
+        final RangeExpression validRange = RangeExpression.greaterOrEqual(minVersion);
         if (versionedMetadata.isInvalidFrom() != null) {
-            validRange.and(RangesExpression.less(versionedMetadata.isInvalidFrom()));
+            validRange.and(RangeExpression.less(versionedMetadata.isInvalidFrom()));
         }
         return parseDatabaseVersion.satisfies(validRange);
     }

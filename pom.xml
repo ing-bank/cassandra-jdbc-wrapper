@@ -108,20 +108,20 @@
         <java.version>17</java.version>
 
         <!-- Versions for dependencies -->
-        <astra-sdk.version>1.2.9</astra-sdk.version>
-        <aws-secretsmanager.version>2.36.1</aws-secretsmanager.version>
+        <astra-sdk.version>2.1.2</astra-sdk.version>
+        <aws-secretsmanager.version>2.37.2</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>9.3</checkstyle.version>
-        <caffeine.version>2.9.3</caffeine.version>
+        <caffeine.version>3.2.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-io.version>2.20.0</commons-io.version>
         <commons-lang3.version>3.19.0</commons-lang3.version>
         <java.driver.version>4.19.1</java.driver.version>
-        <jackson.version>2.20.0</jackson.version>
+        <jackson.version>3.0.1</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
         <opencsv.version>5.12.0</opencsv.version>
-        <semver4j.version>5.8.0</semver4j.version>
+        <semver4j.version>6.0.0</semver4j.version>
         <!-- Versions for test dependencies -->
         <approvaltests.version>25.7.0</approvaltests.version>
         <dotenv.version>2.3.2</dotenv.version>
@@ -183,19 +183,20 @@
 
         <!-- Jackson -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <groupId>tools.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
+            <!-- TODO: use a release version as soon as it's available -->
+            <version>3.0.0-rc2</version>
         </dependency>
 
         <!-- Semver for operations on versions -->

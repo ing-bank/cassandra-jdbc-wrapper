@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - Unreleased
+### Changed
+- **BREAKING CHANGE**: upgrade minimal required JDK to 17.
+- Update Jackson dependencies to version 3.0.1.
+- Update Caffeine to version 3.2.3.
+- Update Semver4j to version 6.0.0.
+- Update Astra SDK to 2.1.2.
+- Update AWS Secrets Manager SDK to 2.37.2.
+
 ## [4.16.1] - 2025-10-25
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.1.
@@ -381,6 +390,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v5.0.0
 [4.16.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.0...v4.16.1
 [4.16.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.15.0...v4.16.0
 [4.15.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.14.0...v4.15.0

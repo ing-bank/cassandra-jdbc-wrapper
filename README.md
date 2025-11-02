@@ -28,15 +28,15 @@ The JDBC wrapper offers access to most of the core module features:
 
 ### Prerequisites
 
-The wrapper uses Java Driver for Apache Cassandra® 4.x. This driver is designed for Apache 
-Cassandra® 2.1+ and DataStax Enterprise (5.0+). So, it will throw "unsupported feature" exceptions if used against an 
-older version of Cassandra cluster. For more information, please check the 
+The wrapper uses [Java Driver for Apache Cassandra® 4.x](https://github.com/apache/cassandra-java-driver). This driver 
+is designed for Apache Cassandra® 2.1+ and DataStax Enterprise (5.0+). So, it will throw "unsupported feature" 
+exceptions if used against an older version of Cassandra cluster. For more information, please check the 
 [compatibility table](https://github.com/ing-bank/cassandra-jdbc-wrapper/wiki/Compatibility).
 
 If you meet issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check if your
 configuration is correct, and you specified a valid local datacenter if you use the default load-balancing policy.
 
-This project requires Java 8 JDK (minimum).
+This project requires **Java 17 JDK (minimum)**.
 
 ### Installing
 
