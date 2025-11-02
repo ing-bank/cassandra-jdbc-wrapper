@@ -111,7 +111,7 @@
         <astra-sdk.version>2.1.2</astra-sdk.version>
         <aws-secretsmanager.version>2.37.2</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
-        <checkstyle.version>9.3</checkstyle.version>
+        <checkstyle.version>12.1.1</checkstyle.version>
         <caffeine.version>3.2.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.5.0</commons-collections.version>
