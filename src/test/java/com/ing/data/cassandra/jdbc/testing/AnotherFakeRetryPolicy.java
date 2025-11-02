@@ -21,7 +21,7 @@ import com.datastax.oss.driver.api.core.servererrors.CoordinatorException;
 import com.datastax.oss.driver.api.core.servererrors.WriteType;
 import com.datastax.oss.driver.api.core.session.Request;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public class AnotherFakeRetryPolicy implements RetryPolicy {
 

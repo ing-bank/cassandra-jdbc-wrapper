@@ -21,7 +21,7 @@ import com.ing.data.cassandra.jdbc.CassandraStatement;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

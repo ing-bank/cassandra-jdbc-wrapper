@@ -28,7 +28,7 @@ import com.ing.data.cassandra.jdbc.commands.SpecialCommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;

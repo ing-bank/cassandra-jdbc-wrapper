@@ -22,7 +22,7 @@ import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.Collections;

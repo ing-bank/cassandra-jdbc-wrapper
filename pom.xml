@@ -119,7 +119,7 @@
         <commons-lang3.version>3.19.0</commons-lang3.version>
         <java.driver.version>4.19.1</java.driver.version>
         <jackson.version>3.0.1</jackson.version>
-        <javax-jsr305.version>3.0.2</javax-jsr305.version>
+        <jakarta.version>3.0.0</jakarta.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
         <!-- Versions for test dependencies -->
@@ -213,11 +213,11 @@
             <version>${cassandra-driver-krb5.version}</version>
         </dependency>
 
-        <!-- Javax annotations (JSR-305) -->
+        <!-- Jakarta annotations -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>${javax-jsr305.version}</version>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${jakarta.version}</version>
         </dependency>
 
         <!-- AWS Auth provider support -->

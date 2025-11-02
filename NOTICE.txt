@@ -48,10 +48,12 @@ Copyright 2012 FasterXML.com
 This product includes software developed as part of the Jackson project
 ( https://github.com/FasterXML/jackson ).
 
-JSR305 Annotations for Findbugs
-Copyright 2009 Google
-This product includes software developed as part of the JSR305 Annotations for Findbugs project
-( https://code.google.com/archive/p/jsr-305/ ).
+Jakarta Annotations™ API
+Copyright 2018 Eclipse Fonundation
+This product includes software developed as part of the Jakarta Annotations™ project
+( https://projects.eclipse.org/projects/ee4j.ca )( https://github.com/jakartaee/common-annotations-api ), which is
+available under Eclipse Public license v2.0.
+For details, see https://github.com/jakartaee/common-annotations-api/blob/master/LICENSE.md
 
 OpenCSV
 Copyright 2005 Bytecode Pty Ltd.

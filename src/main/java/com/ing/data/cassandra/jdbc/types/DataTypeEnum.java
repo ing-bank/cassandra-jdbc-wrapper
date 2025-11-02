@@ -27,7 +27,7 @@ import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import org.semver4j.Semver;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;

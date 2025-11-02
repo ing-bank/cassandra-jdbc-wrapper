@@ -21,7 +21,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;

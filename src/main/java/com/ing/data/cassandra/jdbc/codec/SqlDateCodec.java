@@ -24,7 +24,7 @@ import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
 import com.datastax.oss.driver.internal.core.util.Strings;
 import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.time.LocalDate;
