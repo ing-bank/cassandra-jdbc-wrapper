@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.16.1</version>
+    <version>5.0.0-beta.1</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -105,7 +105,7 @@
 
     <properties>
         <encoding>UTF-8</encoding>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
 
         <!-- Versions for dependencies -->
         <astra-sdk.version>1.2.9</astra-sdk.version>
@@ -419,8 +419,7 @@
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <encoding>${encoding}</encoding>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${java.version}</release>
                     <parameters>true</parameters>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>

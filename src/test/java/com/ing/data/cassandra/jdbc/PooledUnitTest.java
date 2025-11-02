@@ -39,6 +39,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     private static final String LOCAL_DATACENTER = "datacenter1";
 
     @Test
+    @SuppressWarnings("deprecation")
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
@@ -55,6 +56,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void givenPooledDataSource_whenExecute5ThousandsPreparedStatements_getExpectedResults() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
@@ -80,6 +82,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void givenPooledDataSource_whenExecuteStatement_getExpectedResults() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
@@ -99,6 +102,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void givenPooledCassandraDataSource_whenUnwrap_returnUnwrappedDataSource() throws Exception {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(
@@ -108,6 +112,7 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void givenPooledCassandraDataSource_whenUnwrapToInvalidInterface_throwException() {
         final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
             Collections.singletonList(ContactPoint.of(

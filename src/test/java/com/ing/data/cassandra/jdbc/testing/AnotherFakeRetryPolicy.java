@@ -30,6 +30,7 @@ public class AnotherFakeRetryPolicy implements RetryPolicy {
     }
 
     @Override
+    @Deprecated
     public RetryDecision onReadTimeout(@Nonnull final Request request, @Nonnull final ConsistencyLevel cl,
                                        final int blockFor, final int received, final boolean dataPresent,
                                        final int retryCount) {
@@ -38,6 +39,7 @@ public class AnotherFakeRetryPolicy implements RetryPolicy {
     }
 
     @Override
+    @Deprecated
     public RetryDecision onWriteTimeout(@Nonnull final Request request, @Nonnull final ConsistencyLevel cl,
                                         @Nonnull final WriteType writeType, final int blockFor, final int received,
                                         final int retryCount) {
@@ -46,6 +48,7 @@ public class AnotherFakeRetryPolicy implements RetryPolicy {
     }
 
     @Override
+    @Deprecated
     public RetryDecision onUnavailable(@Nonnull final Request request, @Nonnull final ConsistencyLevel cl,
                                        final int required, final int alive, final int retryCount) {
         // Do nothing. For testing purpose only.
@@ -53,6 +56,7 @@ public class AnotherFakeRetryPolicy implements RetryPolicy {
     }
 
     @Override
+    @Deprecated
     public RetryDecision onRequestAborted(@Nonnull final Request request, @Nonnull final Throwable error,
                                           final int retryCount) {
         // Do nothing. For testing purpose only.
@@ -60,6 +64,7 @@ public class AnotherFakeRetryPolicy implements RetryPolicy {
     }
 
     @Override
+    @Deprecated
     public RetryDecision onErrorResponse(@Nonnull final Request request, @Nonnull final CoordinatorException error,
                                          final int retryCount) {
         // Do nothing. For testing purpose only.

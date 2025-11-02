@@ -159,6 +159,7 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
+    @Deprecated
     public void setUnicodeStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

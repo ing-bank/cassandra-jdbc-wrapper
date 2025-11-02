@@ -20,6 +20,7 @@ import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CODEC_INSTANTIATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CODEC_CLASS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * A set of static utility methods and constants used to parse the JDBC URL used to establish a connection to a
@@ -86,6 +88,7 @@ public final class JdbcUrlUtil {
      * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
      * protocol will be removed in a future version.
      */
+    @Deprecated
     public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
 
     /**
@@ -434,6 +437,7 @@ public final class JdbcUrlUtil {
      * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
      * protocol will be removed in a future version.
      */
+    @Deprecated
     public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
 
     /**
@@ -761,7 +765,7 @@ public final class JdbcUrlUtil {
         // Make the keyspace always start with a "/" for URI.
         String keyspace = props.getProperty(TAG_DATABASE_NAME);
         if (keyspace != null) {
-            keyspace = StringUtils.prependIfMissing(keyspace, "/");
+            keyspace = CS.prependIfMissing(keyspace, "/");
         }
 
         String hostsAndPorts = null;
