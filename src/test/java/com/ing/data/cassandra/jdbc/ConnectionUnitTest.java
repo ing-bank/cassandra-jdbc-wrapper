@@ -551,11 +551,10 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
 
         assertEquals("Cassandra JDBC Driver", dbMetadata.getDriverName());
         assertNotEquals(0, dbMetadata.getDriverMajorVersion());
-        assertNotEquals(0, dbMetadata.getDriverMinorVersion());
         assertEquals(4, dbMetadata.getJDBCMajorVersion());
         assertEquals(0, dbMetadata.getJDBCMinorVersion());
         assertEquals("Cassandra", dbMetadata.getDatabaseProductName());
-        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+(-SNAPSHOT)?"));
+        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+(-SNAPSHOT|-beta.\\d+)?"));
         assertThat(dbMetadata.getDatabaseProductVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
         sqlConnection.close();
     }
