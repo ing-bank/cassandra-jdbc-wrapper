@@ -39,15 +39,15 @@ import java.sql.SQLException;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- * Test JDBC Driver against DBaaS Astra (legacy connection).
+ * Test JDBC Driver against DBaaS Astra using Secure Connect Bundle.
  * To run this test class, define an environment variable ASTRA_DB_APPLICATION_TOKEN containing the AstraDB token,
  * but not having any token does not block the build.
  */
 @Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
-class DbaasAstraLegacyIntegrationTest {
+class DbaasAstraScbIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DbaasAstraLegacyIntegrationTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DbaasAstraScbIntegrationTest.class);
     private static final Dotenv DOTENV = Dotenv.load();
     private static final String ASTRA_DB_TOKEN_ENV_VARIABLE = "ASTRA_DB_APPLICATION_TOKEN";
     private static final String ASTRA_DB_TOKEN = DOTENV.get(ASTRA_DB_TOKEN_ENV_VARIABLE);
@@ -96,7 +96,7 @@ class DbaasAstraLegacyIntegrationTest {
              * Note: Astra can be accessed with only a token (username='token').
              */
             sqlConnection = (CassandraConnection) DriverManager.getConnection(
-                "jdbc:cassandra:dbaas:///" + KEYSPACE_NAME +
+                "jdbc:cassandra:astra:///" + KEYSPACE_NAME +
                     "?user=token&password=" + ASTRA_DB_TOKEN +
                     "&consistency=" + "LOCAL_QUORUM&requesttimeout=10000&connecttimeout=15000" +
                     "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");

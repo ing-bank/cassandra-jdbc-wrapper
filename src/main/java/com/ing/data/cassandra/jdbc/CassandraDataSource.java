@@ -119,47 +119,6 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         this.setDatabaseName(keyspace);
     }
 
-    /**
-     * Constructor.
-     *
-     * @param contactPoints The contact points.
-     * @param keyspace      The keyspace.
-     * @param user          The username used to connect.
-     * @param password      The password used to connect.
-     * @param consistency   The consistency level.
-     * @deprecated Use {@link #CassandraDataSource(List, String)} and specific setters instead. This constructor will
-     * be removed in a future release.
-     */
-    @Deprecated
-    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String consistency) {
-        this(contactPoints, keyspace, user, password, consistency, null);
-    }
-
-    /**
-     * Constructor specifying a local datacenter (required to use {@link DefaultLoadBalancingPolicy}).
-     *
-     * @param contactPoints     The contact points.
-     * @param keyspace          The keyspace.
-     * @param user              The username used to connect.
-     * @param password          The password used to connect.
-     * @param consistency       The consistency level.
-     * @param localDataCenter   The local datacenter.
-     * @deprecated Use {@link #CassandraDataSource(List, String)} and specific setters instead. This constructor will
-     * be removed in a future release.
-     */
-    @Deprecated
-    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String consistency,
-                               final String localDataCenter) {
-        this.setContactPoints(contactPoints);
-        this.setConsistency(consistency);
-        this.setLocalDataCenter(localDataCenter);
-        this.setDatabaseName(keyspace);
-        this.setUser(user);
-        this.setPassword(password);
-    }
-
     @Override
     public CassandraConnection getConnection() throws SQLException {
         return getConnection(null, null);

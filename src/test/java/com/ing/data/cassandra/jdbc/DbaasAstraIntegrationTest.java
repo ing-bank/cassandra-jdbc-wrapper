@@ -87,7 +87,7 @@ class DbaasAstraIntegrationTest {
                 "jdbc:cassandra:astra://" + DATABASE_NAME + "/" + KEYSPACE_NAME +
                     "?token=" + ASTRA_DB_TOKEN +
                     (ASTRA_DB_REGION != null ? "&astraregion=" + ASTRA_DB_REGION : "") +
-                    "&consistency=" + "LOCAL_QUORUM&requesttimeout=10000&connecttimeout=15000");
+                    "&consistency=" + "LOCAL_QUORUM&requesttimeout=20000&connecttimeout=15000");
         } else {
             LOG.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests.");
         }

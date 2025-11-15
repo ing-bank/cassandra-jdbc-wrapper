@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Astra SDK to 2.1.2.
 - Update AWS Secrets Manager SDK to 2.37.2.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
+### Removed
+- Remove deprecated protocol `jdbc:cassandra:dbaas`.
+- Remove deprecated `CassandraDataSource` constructors.
 
 ## [4.16.1] - 2025-10-25
 ### Changed

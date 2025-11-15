@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,14 +81,6 @@ public final class JdbcUrlUtil {
      * JDBC protocol for Cassandra connection.
      */
     public static final String PROTOCOL = "jdbc:cassandra:";
-
-    /**
-     * JDBC protocol for Cassandra DBaaS connection.
-     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
-     * protocol will be removed in a future version.
-     */
-    @Deprecated
-    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
 
     /**
      * JDBC protocol for Cassandra DBaaS connection.
@@ -432,20 +423,17 @@ public final class JdbcUrlUtil {
 
     /**
      * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
-     * a case, the hostname can be ignored.
-     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
-     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
-     * protocol will be removed in a future version.
-     */
-    @Deprecated
-    public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
-
-    /**
-     * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
-     * a case, the hostname must contain the database name in AstraDB.
+     * a case, the hostname must contain the database name in AstraDB, or it must be empty and a secure connect bundle
+     * (SCB) must be provided (see {@link #TAG_SCB_REQUIRED}).
      * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_ASTRA}).
      */
     public static final String TAG_ASTRA_CONNECTION = "isAstraConnection";
+
+    /**
+     * Property name used to determine if the current connection is established to an AstraDB cloud database and
+     * requires a secure connect bundle (SCB). In such a case, the path to the secure connect bundle must be provided.
+     */
+    public static final String TAG_SCB_REQUIRED = "isSecureConnectBundleRequired";
 
     /**
      * Property name used to determine if the current connection is established to an Amazon Keyspaces database.
@@ -477,8 +465,8 @@ public final class JdbcUrlUtil {
     /**
      * Parses a URL for the Cassandra JDBC Driver.
      * <p>
-     *     The URL must start with the protocol {@value #PROTOCOL} or {@value #PROTOCOL_DBAAS} for a connection to a
-     *     cloud database.
+     *     The URL must start with the protocol {@value #PROTOCOL}, or {@value PROTOCOL_AWS} or
+     *     {@value #PROTOCOL_ASTRA} for a connection to a cloud database.
      *     The URI part (the "sub-name") must contain a host, an optional port and optional keyspace name, for example:
      *     "//localhost:9160/Test1", except for a connection to a cloud database, in this case, a simple keyspace with
      *     a secure connect bundle is sufficient, for example: "///Test1?secureconnectbundle=/path/to/bundle.zip".
@@ -503,13 +491,6 @@ public final class JdbcUrlUtil {
                 isAstraConnection = true;
                 props.put(TAG_ASTRA_CONNECTION, true);
             }
-            // NOTE: Protocol jdbc:cassandra:dbaas is deprecated and will be removed in a future version.
-            boolean isDbaasConnection = false;
-            if (url.startsWith(PROTOCOL_DBAAS)) {
-                uriStartIndex = PROTOCOL_DBAAS.length();
-                isDbaasConnection = true;
-                props.put(TAG_DBAAS_CONNECTION, true);
-            }
             // Handle specific protocol for Amazon Keyspaces connections.
             boolean isAwsConnection = false;
             if (url.startsWith(PROTOCOL_AWS)) {
@@ -523,7 +504,15 @@ public final class JdbcUrlUtil {
             final Map<String, String> ipV6Map = uriParsingResult.getRight();
             final URI uri = uriParsingResult.getLeft();
 
-            if (!isDbaasConnection) {
+            boolean isSecureConnectBundleRequired = false;
+            if (isAstraConnection) {
+                if (StringUtils.isNotBlank(uri.getAuthority())) {
+                    props.put(TAG_ASTRA_DATABASE_NAME, uri.getAuthority());
+                } else {
+                    isSecureConnectBundleRequired = true;
+                }
+                props.put(TAG_SCB_REQUIRED, isSecureConnectBundleRequired);
+            } else {
                 try {
                     if (StringUtils.isBlank(uri.getAuthority())) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
@@ -537,13 +526,6 @@ public final class JdbcUrlUtil {
                 } catch (final RuntimeException e) {
                     throw new SQLNonTransientConnectionException(e.getMessage());
                 }
-            }
-
-            if (isAstraConnection) {
-                if (StringUtils.isBlank(uri.getAuthority())) {
-                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
-                }
-                props.put(TAG_ASTRA_DATABASE_NAME, uri.getAuthority());
             }
 
             String keyspace = uri.getPath();
@@ -599,12 +581,12 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
                     props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
-                } else if (isDbaasConnection) {
+                } else if (isSecureConnectBundleRequired) {
                     throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
                 }
                 if (params.containsKey(KEY_TOKEN)) {
                     props.setProperty(TAG_TOKEN, params.get(KEY_TOKEN));
-                } else if (isAstraConnection) {
+                } else if (isAstraConnection && !isSecureConnectBundleRequired) {
                     throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
                 }
                 if (params.containsKey(KEY_ASTRA_REGION)) {
@@ -644,7 +626,7 @@ public final class JdbcUrlUtil {
                     props.setProperty(TAG_CUSTOM_CODECS, params.get(KEY_CUSTOM_CODECS));
                 }
                 handleAwsProperties(props, params, isAwsConnection);
-            } else if (isDbaasConnection) {
+            } else if (isSecureConnectBundleRequired) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
             } else if (isAstraConnection) {
                 throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
@@ -777,12 +759,12 @@ public final class JdbcUrlUtil {
         }
 
         final boolean isAstraConnection = (boolean) props.getOrDefault(TAG_ASTRA_CONNECTION, false);
+        final boolean isSecureConnectBundleRequired = (boolean) props.getOrDefault(TAG_SCB_REQUIRED, false);
         if (isAstraConnection) {
             hostsAndPorts = props.getProperty(TAG_ASTRA_DATABASE_NAME);
         }
 
-        final boolean isDbaasConnection = (boolean) props.getOrDefault(TAG_DBAAS_CONNECTION, false);
-        if (hostsAndPorts == null && !isDbaasConnection) {
+        if (hostsAndPorts == null && !isSecureConnectBundleRequired) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);
         }
 

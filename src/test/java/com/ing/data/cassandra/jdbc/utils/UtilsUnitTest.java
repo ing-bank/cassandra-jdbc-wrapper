@@ -95,7 +95,7 @@ class UtilsUnitTest {
                     put(TAG_USER, "user1");
                     put(TAG_PASSWORD, "password1");
                 }}),
-            Arguments.of("jdbc:cassandra:dbaas:///astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
+            Arguments.of("jdbc:cassandra:astra:///astra?secureconnectbundle=/path/to/location/filename.extn&user=user1&password=password1",
                 new HashMap<String, Object>() {{
                     put(TAG_CONTACT_POINTS, null);
                     put(TAG_DATABASE_NAME, "astra");
@@ -309,7 +309,7 @@ class UtilsUnitTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"jdbc:cassandra:dbaas:///astra", "jdbc:cassandra:dbaas:///astra?user=User1"})
+    @ValueSource(strings = {"jdbc:cassandra:astra:///astra", "jdbc:cassandra:astra:///astra?user=User1"})
     void testMissingSecureConnectBundleOnDbaasConenctionString(final String jdbcUrl) {
         final SQLNonTransientConnectionException exception = assertThrows(SQLNonTransientConnectionException.class,
             () -> parseURL(jdbcUrl));

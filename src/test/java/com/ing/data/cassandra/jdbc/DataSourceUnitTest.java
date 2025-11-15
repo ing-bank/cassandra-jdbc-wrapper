@@ -285,40 +285,4 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         assertThrows(SQLException.class, () -> ds.unwrap(this.getClass()));
     }
 
-    @Test
-    @Deprecated
-    void givenParameters_whenConstructDataSourceWithDeprecatedConstructors_returnCassandraDataSource() throws Exception {
-        final CassandraDataSource cds = new CassandraDataSource(
-            Collections.singletonList(ContactPoint.of("localhost", 9042)), KEYSPACE, USER,
-            PASSWORD, CONSISTENCY, "datacenter1");
-        assertNotNull(cds.getContactPoints());
-        assertEquals(1, cds.getContactPoints().size());
-        final ContactPoint dsContactPoint = cds.getContactPoints().get(0);
-        assertEquals("localhost", dsContactPoint.getHost());
-        assertEquals(9042, dsContactPoint.getPort());
-        assertEquals(KEYSPACE, cds.getDatabaseName());
-        assertEquals(USER, cds.getUser());
-        assertEquals(PASSWORD, cds.getPassword());
-
-        final CassandraDataSource ds = new CassandraDataSource(Collections.singletonList(ContactPoint.of(
-            cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE, USER, PASSWORD, CONSISTENCY, "datacenter1");
-        ds.setComplianceMode(COMPLIANCE_MODE);
-        assertNotNull(ds);
-
-        // null username and password
-        CassandraConnection cnx = ds.getConnection(null, null);
-        assertFalse(cnx.isClosed());
-        ds.setLoginTimeout(5);
-        assertEquals(5, ds.getLoginTimeout());
-
-        // no username and password
-        cnx = ds.getConnection();
-        assertFalse(cnx.isClosed());
-        ds.setLoginTimeout(5);
-        assertEquals(CONSISTENCY, cnx.getConnectionProperties().get(TAG_CONSISTENCY_LEVEL));
-        assertEquals(COMPLIANCE_MODE, cnx.getConnectionProperties().get(TAG_COMPLIANCE_MODE));
-
-        assertEquals(5, ds.getLoginTimeout());
-    }
 }
