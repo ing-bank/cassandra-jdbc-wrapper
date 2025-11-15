@@ -7,11 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [5.0.0] - Unreleased
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JDK to 17.
-- Update Jackson dependencies to version 3.0.1.
+- Update Apache Commons IO to version 2.21.0.
+- Update Jackson dependencies to version 3.0.2.
 - Update Caffeine to version 3.2.3.
 - Update Semver4j to version 6.0.0.
 - Update Astra SDK to 2.1.2.
-- Update AWS Secrets Manager SDK to 2.37.2.
+- Update AWS Secrets Manager SDK to 2.38.7.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
 ### Removed
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.

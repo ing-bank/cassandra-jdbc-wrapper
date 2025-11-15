@@ -17,13 +17,13 @@ package com.ing.data.cassandra.jdbc.commands;
 
 import com.ing.data.cassandra.jdbc.UsingCassandraContainerTest;
 import com.ing.data.cassandra.jdbc.optionset.Default;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.IOException;

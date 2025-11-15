@@ -109,16 +109,16 @@
 
         <!-- Versions for dependencies -->
         <astra-sdk.version>2.1.2</astra-sdk.version>
-        <aws-secretsmanager.version>2.37.2</aws-secretsmanager.version>
+        <aws-secretsmanager.version>2.38.7</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
-        <checkstyle.version>12.1.1</checkstyle.version>
+        <checkstyle.version>12.1.2</checkstyle.version>
         <caffeine.version>3.2.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.5.0</commons-collections.version>
-        <commons-io.version>2.20.0</commons-io.version>
+        <commons-io.version>2.21.0</commons-io.version>
         <commons-lang3.version>3.19.0</commons-lang3.version>
         <java.driver.version>4.19.1</java.driver.version>
-        <jackson.version>3.0.1</jackson.version>
+        <jackson.version>3.0.2</jackson.version>
         <jakarta.version>3.0.0</jakarta.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
@@ -130,7 +130,7 @@
         <lombok.version>1.18.42</lombok.version>
         <mockito.version>5.20.0</mockito.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
         <!-- Versions for plugins -->
         <central-publishing-plugin.version>0.9.0</central-publishing-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
@@ -305,20 +305,20 @@
         <!-- Embedded Cassandra for unit tests -->
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>cassandra</artifactId>
+            <artifactId>testcontainers-cassandra</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- LocalStack containers for tests using Amazon Secrets manager -->
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>localstack</artifactId>
+            <artifactId>testcontainers-localstack</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
