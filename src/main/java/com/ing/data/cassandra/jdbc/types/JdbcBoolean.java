@@ -18,6 +18,10 @@ package com.ing.data.cassandra.jdbc.types;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 /**
  * JDBC description of {@code BOOLEAN} CQL type (corresponding Java type: {@link Boolean}).
  */
@@ -61,11 +65,7 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
 
     @Override
     public String toString(final Boolean obj) {
-        if (obj == null) {
-            return null;
-        } else {
-            return obj.toString();
-        }
+        return toStringOrNull(obj);
     }
 
     @Override
@@ -75,16 +75,16 @@ public class JdbcBoolean extends AbstractJdbcType<Boolean> {
 
     public String getString(final ByteBuffer bytes) {
         if (bytes.remaining() == 0) {
-            return Boolean.FALSE.toString();
+            return FALSE.toString();
         }
         if (bytes.remaining() != 1) {
             throw new MarshalException("A boolean is stored in exactly 1 byte, but found: " + bytes.remaining());
         }
         final byte value = bytes.get(bytes.position());
         if (value == 0) {
-            return Boolean.FALSE.toString();
+            return FALSE.toString();
         } else {
-            return Boolean.TRUE.toString();
+            return TRUE.toString();
         }
     }
 

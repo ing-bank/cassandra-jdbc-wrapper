@@ -21,15 +21,17 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.type.codec.TimestampCodec;
-import com.datastax.oss.driver.internal.core.util.Strings;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
+import static com.datastax.oss.driver.internal.core.util.Strings.quote;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toLong;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#TIMESTAMP} and the Java type {@link Timestamp}.
@@ -66,7 +68,7 @@ public class SqlTimestampCodec extends AbstractCodec<Timestamp> implements TypeC
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value.toInstant().toEpochMilli());
+        return bytes(value.toInstant().toEpochMilli());
     }
 
     @Override
@@ -75,7 +77,7 @@ public class SqlTimestampCodec extends AbstractCodec<Timestamp> implements TypeC
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        return new Timestamp(ByteBufferUtil.toLong(bytes.duplicate()));
+        return new Timestamp(toLong(bytes.duplicate()));
     }
 
     @Override
@@ -90,7 +92,7 @@ public class SqlTimestampCodec extends AbstractCodec<Timestamp> implements TypeC
 
     @Override
     String formatNonNull(@Nonnull final Timestamp value) {
-        return Strings.quote(DEFAULT_TIMESTAMP_FORMAT.format(value.toInstant()));
+        return quote(DEFAULT_TIMESTAMP_FORMAT.format(value.toInstant()));
     }
 
 }

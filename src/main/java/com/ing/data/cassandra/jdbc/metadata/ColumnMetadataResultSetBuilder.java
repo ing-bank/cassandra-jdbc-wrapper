@@ -19,28 +19,27 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE;
+import static java.util.Comparator.comparing;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to columns.
  */
+@Slf4j
 public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBuilder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ColumnMetadataResultSetBuilder.class);
 
     /**
      * Constructor.
@@ -191,10 +190,9 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
                     // Define value of DATA_TYPE.
                     int jdbcType = Types.OTHER;
                     try {
-                        jdbcType = getTypeForComparator(columnMetadata.getType().toString())
-                            .getJdbcType();
+                        jdbcType = getTypeForComparator(columnMetadata.getType().toString()).getJdbcType();
                     } catch (final Exception e) {
-                        LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, columnMetadata.getType(), e.getMessage());
+                        log.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, columnMetadata.getType(), e.getMessage());
                     }
 
                     final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
@@ -228,11 +226,10 @@ public class ColumnMetadataResultSetBuilder extends AbstractMetadataResultSetBui
 
         // Results should all have the same TABLE_CAT, so just sort them by TABLE_SCHEM, TABLE_NAME then
         // ORDINAL_POSITION.
-        columns.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
+        columns.sort(comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TABLE_NAME))
             .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(columns));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(columns));
     }
 
 }

@@ -322,9 +322,12 @@ public final class ErrorConstants {
 
     /**
      * Error message used in any runtime exception thrown when populating a {@link MetadataRow} failed due to a mismatch
-     * between the number of provided values and the number of columns in the row.
+     * between the number of provided values and the number of columns in the row. This message is a template expecting
+     * the expected number of values and the number of provided ones (example:
+     * {@code String.format(UNABLE_TO_POPULATE_METADATA_ROW, 5, 2)}).
      */
-    public static final String UNABLE_TO_POPULATE_METADATA_ROW = "Unable to populate a metadata row.";
+    public static final String UNABLE_TO_POPULATE_METADATA_ROW =
+        "Unable to populate a metadata row, expected %d values but got %d.";
 
     /**
      * Error message used in any SQL exception thrown when the number of CQL queries included in a single batch of

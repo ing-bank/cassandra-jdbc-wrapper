@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,10 +25,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.profiles.ProfileProperty;
@@ -46,7 +45,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPE
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 
 /**
@@ -77,9 +75,9 @@ import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 @Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 @Testcontainers
+@Slf4j
 class AmazonKeyspacesIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmazonKeyspacesIntegrationTest.class);
     private static final Dotenv DOTENV = Dotenv.load();
     private static final String AWS_REGION = DOTENV.get("AWS_REGION");
     private static final String AWS_USER = DOTENV.get("AWS_USER");
@@ -99,7 +97,7 @@ class AmazonKeyspacesIntegrationTest {
         new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
             .withEnv(AWS_ACCESS_KEY_ID.toUpperCase(Locale.ROOT), AWS_ACCESS_KEY)
             .withEnv(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase(Locale.ROOT), AWS_SECRET_ACCESS_KEY)
-            .withServices(SECRETSMANAGER);
+            .withServices("secretsmanager");
 
     @BeforeAll
     static void setupAwsKeyspaces() {
@@ -139,7 +137,7 @@ class AmazonKeyspacesIntegrationTest {
          */
 
         if (canRunTests()) {
-            LOG.debug("AWS_* variables are provided, Amazon Keyspaces integration tests will be executed.");
+            log.debug("AWS_* variables are provided, Amazon Keyspaces integration tests will be executed.");
 
             /*
              * Configure truststore.
@@ -158,7 +156,7 @@ class AmazonKeyspacesIntegrationTest {
                 System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), AWS_SECRET_ACCESS_KEY);
             }
         } else {
-            LOG.debug("AWS_* variables are not defined, skipping Amazon Keyspaces integration tests.");
+            log.debug("AWS_* variables are not defined, skipping Amazon Keyspaces integration tests.");
         }
     }
 

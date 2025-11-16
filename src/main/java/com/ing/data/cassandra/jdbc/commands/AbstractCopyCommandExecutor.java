@@ -17,26 +17,30 @@ package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
 import java.sql.SQLSyntaxErrorException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.datastax.oss.driver.api.core.type.DataTypes.TEXT;
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_OPTION_VALUE;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
  * Executor abstraction for common parts of the special commands {@code COPY}.
@@ -44,6 +48,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * @see CopyFromCommandExecutor
  * @see CopyToCommandExecutor
  */
+@Slf4j
 public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecutor {
 
     static final char DEFAULT_DECIMAL_SEPARATOR = '.';
@@ -91,7 +96,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         final Set<String> invalidKeys = new HashSet<>(this.options.stringPropertyNames());
         invalidKeys.removeAll(SUPPORTED_OPTIONS);
         if (!invalidKeys.isEmpty()) {
-            throw new SQLSyntaxErrorException(String.format(UNSUPPORTED_COPY_OPTIONS, invalidKeys));
+            throw new SQLSyntaxErrorException(format(UNSUPPORTED_COPY_OPTIONS, invalidKeys));
         }
     }
 
@@ -111,14 +116,15 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         this.decimalFormat.setDecimalFormatSymbols(decimalSymbols);
     }
 
+    @SuppressWarnings("SameParameterValue")
     String getOptionValueAsString(final String optionName, final String defaultValue) {
         final String optionValue = this.options.getProperty(optionName);
-        return StringUtils.defaultIfBlank(optionValue, defaultValue);
+        return defaultIfBlank(optionValue, defaultValue);
     }
 
     char getOptionValueAsChar(final String optionName, final char defaultValue) {
         final String optionValue = this.options.getProperty(optionName);
-        if (StringUtils.isNotEmpty(optionValue)) {
+        if (isNotEmpty(optionValue)) {
             return optionValue.charAt(0);
         }
         return defaultValue;
@@ -128,9 +134,9 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         final String optionValue = this.options.getProperty(optionName);
         if (optionValue != null) {
             try {
-                return Integer.parseInt(optionValue);
+                return parseInt(optionValue);
             } catch (final NumberFormatException e) {
-                LOG.warn(INVALID_OPTION_VALUE, optionName, optionValue, defaultValue);
+                log.warn(INVALID_OPTION_VALUE, optionName, optionValue, defaultValue);
             }
         }
         return defaultValue;
@@ -151,22 +157,21 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
      * <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cqlshCopy.html#Examples">cqlsh
      * documentation</a>.
      */
-    ResultSet buildCopyCommandResultSet(final String actionVerb, final long processedRows, final int executedBatches,
+    ResultSet buildCopyCommandResultSet(final String actionVerb,
+                                        final long processedRows,
+                                        final int executedBatches,
                                         final int skippedRows) {
         String skippedRowsInfo = EMPTY;
         if (skippedRows >= 0) {
-            skippedRowsInfo = String.format(" (%d skipped)", skippedRows);
+            skippedRowsInfo = format(" (%d skipped)", skippedRows);
         }
-        final String result = String.format("%d row(s) %s 1 file in %d batch(es)%s.",
+        final String result = format("%d row(s) %s 1 file in %d batch(es)%s.",
             processedRows, actionVerb, executedBatches, skippedRowsInfo);
         final ByteBuffer resultAsBytes = bytes(result);
         return buildSpecialCommandResultSet(
             new ColumnDefinitions.Definition[]{
-                ColumnDefinitions.Definition.buildDefinitionInAnonymousTable("result", TEXT)
-            },
-            Collections.singletonList(
-                Collections.singletonList(resultAsBytes)
-            )
+                buildDefinitionInAnonymousTable("result", TEXT)
+            }, List.of(List.of(resultAsBytes))
         );
     }
 

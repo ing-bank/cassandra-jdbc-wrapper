@@ -18,6 +18,8 @@ package com.ing.data.cassandra.jdbc.types;
 import java.math.BigInteger;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code VARINT} CQL type (corresponding Java type: {@link BigInteger}).
  * <p>CQL type description: 64-bit signed integer.</p>
@@ -65,11 +67,7 @@ public class JdbcInteger extends AbstractJdbcType<BigInteger> {
 
     @Override
     public String toString(final BigInteger obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

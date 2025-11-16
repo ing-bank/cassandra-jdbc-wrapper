@@ -17,13 +17,12 @@ package com.ing.data.cassandra.jdbc.commands;
 
 import com.ing.data.cassandra.jdbc.UsingCassandraContainerTest;
 import com.ing.data.cassandra.jdbc.optionset.Default;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,9 +46,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Slf4j
 public class SourceCommandTest extends UsingCassandraContainerTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SourceCommandTest.class);
     private static final String KEYSPACE = "test_keyspace";
     private static final String USE_FULL_RESOURCE_PATH = "$$USE_FULL_RESOURCE_PATH$$";
 
@@ -115,7 +114,7 @@ public class SourceCommandTest extends UsingCassandraContainerTest {
             filename = cqlScriptResourceUrl.getPath();
         }
 
-        LOG.debug("CQL script filename: {}", filename);
+        log.debug("CQL script filename: {}", filename);
 
         assertNotNull(sqlConnection);
         final Statement stmt = sqlConnection.createStatement();

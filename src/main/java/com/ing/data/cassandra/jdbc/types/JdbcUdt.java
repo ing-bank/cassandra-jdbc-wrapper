@@ -20,6 +20,8 @@ import com.datastax.oss.driver.api.core.data.UdtValue;
 import jakarta.annotation.Nonnull;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of a CQL user-defined type (corresponding Java type: {@link UdtValue}).
  */
@@ -59,11 +61,7 @@ public class JdbcUdt extends AbstractJdbcType<UdtValue> {
     }
 
     public String getString(final Object obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

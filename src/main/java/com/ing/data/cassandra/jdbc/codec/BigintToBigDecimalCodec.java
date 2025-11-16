@@ -20,11 +20,13 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toLong;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#BIGINT} and the Java type {@link BigDecimal}.
@@ -55,7 +57,7 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value.longValue());
+        return bytes(value.longValue());
     }
 
     @Override
@@ -64,7 +66,7 @@ public class BigintToBigDecimalCodec extends AbstractCodec<BigDecimal> implement
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        final long value = ByteBufferUtil.toLong(bytes.duplicate());
+        final long value = toLong(bytes.duplicate());
         return new BigDecimal(value);
     }
 

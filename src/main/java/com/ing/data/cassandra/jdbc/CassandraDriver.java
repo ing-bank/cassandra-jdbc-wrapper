@@ -18,10 +18,9 @@ package com.ing.data.cassandra.jdbc;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -80,6 +79,7 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PROPERTIES_PARS
 /**
  * The Cassandra driver implementation.
  */
+@Slf4j
 public class CassandraDriver implements Driver {
 
     static {
@@ -92,11 +92,10 @@ public class CassandraDriver implements Driver {
         }
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraDriver.class);
-
     // Caching sessions so that multiple CassandraConnections created with the same parameters use the same Session.
+    @SuppressWarnings("NullableProblems")
     private final LoadingCache<Map<String, String>, SessionHolder> sessionsCache = Caffeine.newBuilder()
-        .build(new CacheLoader<Map<String, String>, SessionHolder>() {
+        .build(new CacheLoader<>() {
             @Override
             public SessionHolder load(@Nonnull final Map<String, String> params) throws Exception {
                 return new SessionHolder(params, sessionsCache);
@@ -137,8 +136,8 @@ public class CassandraDriver implements Driver {
                 }
             } catch (final Exception e) {
                 final Throwable cause = e.getCause();
-                if (cause instanceof SQLException) {
-                    throw (SQLException) cause;
+                if (cause instanceof SQLException sqlEx) {
+                    throw sqlEx;
                 }
                 throw new SQLNonTransientConnectionException(CONNECTION_CREATION_FAILED, e);
             }
@@ -166,7 +165,7 @@ public class CassandraDriver implements Driver {
                 properties.putIfAbsent(propEntry.getKey(), propEntry.getValue());
             }
         } catch (final SQLException e) {
-            LOG.warn(PROPERTIES_PARSING_FROM_URL_FAILED, e);
+            log.warn(PROPERTIES_PARSING_FROM_URL_FAILED, e);
             properties = new Properties(props);
         }
 

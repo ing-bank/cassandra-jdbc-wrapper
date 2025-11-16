@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code DURATION} CQL type (corresponding Java type: {@link CqlDuration}).
  * <p>CQL type description: a duration with nanosecond precision.</p>
@@ -40,16 +42,7 @@ public class JdbcDuration extends JdbcOther {
 
     @Override
     public String compose(final Object value) {
-        if (value == null) {
-            return null;
-        } else {
-            return value.toString();
-        }
-    }
-
-    @Override
-    public Object decompose(final String value) {
-        return value;
+        return toStringOrNull(value);
     }
 
 }

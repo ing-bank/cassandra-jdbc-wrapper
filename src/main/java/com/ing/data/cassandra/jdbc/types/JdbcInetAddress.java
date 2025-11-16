@@ -20,6 +20,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code INET} CQL type (corresponding Java type: {@link InetAddress}).
  * <p>CQL type description: IP address string in IPv4 or IPv6 format, used by the python-cql driver and CQL native
@@ -70,11 +72,7 @@ public class JdbcInetAddress extends AbstractJdbcType<InetAddress> {
 
     @Override
     public String toString(final InetAddress obj) {
-        if (obj != null) {
-            return obj.getHostAddress();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

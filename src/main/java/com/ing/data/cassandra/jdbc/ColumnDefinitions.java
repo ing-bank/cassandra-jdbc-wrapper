@@ -18,9 +18,10 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.protocol.internal.response.result.ColumnSpec;
 import com.datastax.oss.protocol.internal.response.result.RawType;
+import jakarta.annotation.Nonnull;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -293,11 +294,24 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
     /**
      * A column definition.
      */
+    @Getter
     public static class Definition {
 
+        /**
+         * The name of the keyspace this column is part of.
+         */
         private final String keyspace;
+        /**
+         * The name of the table this column is part of.
+         */
         private final String table;
+        /**
+         * The name of the column.
+         */
         private final String name;
+        /**
+         * The type of the column.
+         */
         private final DataType type;
 
         /**
@@ -337,42 +351,6 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
                 RawType.PRIMITIVES.get(this.type.getProtocolCode()));
         }
 
-        /**
-         * Gets the name of the keyspace this column is part of.
-         *
-         * @return The name of the keyspace this column is part of.
-         */
-        public String getKeyspace() {
-            return this.keyspace;
-        }
-
-        /**
-         * Gets the name of the table this column is part of.
-         *
-         * @return The name of the table this column is part of.
-         */
-        public String getTable() {
-            return this.table;
-        }
-
-        /**
-         * Gets the name of the column.
-         *
-         * @return The name of the column.
-         */
-        public String getName() {
-            return this.name;
-        }
-
-        /**
-         * Gets the type of the column.
-         *
-         * @return The type of the column.
-         */
-        public DataType getType() {
-            return this.type;
-        }
-
         @Override
         public final int hashCode() {
             return Arrays.hashCode(new Object[]{this.keyspace, this.table, this.name, this.type});
@@ -380,11 +358,10 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
 
         @Override
         public final boolean equals(final Object o) {
-            if (!(o instanceof Definition)) {
+            if (!(o instanceof Definition other)) {
                 return false;
             }
 
-            final Definition other = (Definition) o;
             return this.keyspace.equals(other.keyspace)
                 && this.table.equals(other.table)
                 && this.name.equals(other.name)

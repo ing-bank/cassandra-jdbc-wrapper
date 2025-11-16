@@ -19,6 +19,7 @@ import com.dtsx.astra.sdk.db.AstraDBOpsClient;
 import com.dtsx.astra.sdk.db.domain.DatabaseStatusType;
 import com.dtsx.astra.sdk.utils.TestUtils;
 import io.github.cdimascio.dotenv.Dotenv;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,8 +28,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -44,9 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
+@Slf4j
 class DbaasAstraIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DbaasAstraIntegrationTest.class);
     private static final Dotenv DOTENV = Dotenv.load();
     private static final String ASTRA_DB_TOKEN_ENV_VARIABLE = "ASTRA_DB_APPLICATION_TOKEN";
     private static final String ASTRA_DB_TOKEN = DOTENV.get(ASTRA_DB_TOKEN_ENV_VARIABLE);
@@ -60,7 +59,7 @@ class DbaasAstraIntegrationTest {
     @BeforeAll
     static void setupAstra() throws Exception {
         if (ASTRA_DB_TOKEN != null) {
-            LOG.debug("ASTRA_DB_APPLICATION_TOKEN is provided, AstraDB tests are executed.");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is provided, AstraDB tests are executed.");
             // Set token as standard environment variable to allow TestUtils methods to work.
             System.setProperty(ASTRA_DB_TOKEN_ENV_VARIABLE, ASTRA_DB_TOKEN);
 
@@ -68,7 +67,7 @@ class DbaasAstraIntegrationTest {
              * Devops API Client (create database, resume, delete)
              */
             final AstraDBOpsClient astraDbClient = new AstraDBOpsClient(ASTRA_DB_TOKEN);
-            LOG.debug("Connected the DBaaS API.");
+            log.debug("Connected the DBaaS API.");
 
             /*
              * Set up a Database in Astra: create if not exist, resume if needed.
@@ -78,7 +77,7 @@ class DbaasAstraIntegrationTest {
             String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
             assertTrue(astraDbClient.findById(dbId).isPresent());
             Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
-            LOG.debug("Database ready.");
+            log.debug("Database ready.");
 
             /*
              * Building jdbcUrl and sqlConnection, simply using the token.
@@ -89,7 +88,7 @@ class DbaasAstraIntegrationTest {
                     (ASTRA_DB_REGION != null ? "&astraregion=" + ASTRA_DB_REGION : "") +
                     "&consistency=" + "LOCAL_QUORUM&requesttimeout=20000&connecttimeout=15000");
         } else {
-            LOG.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests.");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests.");
         }
     }
 

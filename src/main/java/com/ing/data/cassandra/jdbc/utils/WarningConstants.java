@@ -36,13 +36,13 @@ public final class WarningConstants {
     /**
      * Warning message used when retrieving a value in the internal {@code jdbc-driver.properties} file fails.
      * This message is a template expecting the name of the not found property (example:
-     * {@code LOG.warn(DRIVER_PROPERTY_NOT_FOUND, "unknownProperty")}).
+     * {@code log.warn(DRIVER_PROPERTY_NOT_FOUND, "unknownProperty")}).
      */
     public static final String DRIVER_PROPERTY_NOT_FOUND = "Unable to get JDBC driver property: {}.";
 
     /**
      * Warning message used when the specified configuration file cannot be found. This message is a template expecting
-     * the name of the configuration file (example: {@code LOG.warn(CONFIGURATION_FILE_NOT_FOUND, "cassandra.conf")}).
+     * the name of the configuration file (example: {@code log.warn(CONFIGURATION_FILE_NOT_FOUND, "cassandra.conf")}).
      */
     public static final String CONFIGURATION_FILE_NOT_FOUND =
         "The configuration file {} cannot be found, it will be ignored.";
@@ -54,7 +54,7 @@ public final class WarningConstants {
      *     <li>the invalid value of the parameter</li>
      *     <li>the alternative value used (or if the parameter is ignored)</li>
      * </ol>
-     * (example: {@code LOG.warn(PARAMETER_PARSING_FAILED, "retry policy", e.getMessage(), "skipping")}).
+     * (example: {@code log.warn(PARAMETER_PARSING_FAILED, "retry policy", e.getMessage(), "skipping")}).
      */
     public static final String PARAMETER_PARSING_FAILED = "Error occurred while parsing {}: {} / {}...";
 
@@ -66,7 +66,7 @@ public final class WarningConstants {
     /**
      * Warning message used when the given execution profile does not exist and cannot be applied. This message is a
      * template expecting the name of the invalid profile (example:
-     * {@code LOG.warn(INVALID_PROFILE_NAME, "undefined_profile")}).
+     * {@code log.warn(INVALID_PROFILE_NAME, "undefined_profile")}).
      */
     public static final String INVALID_PROFILE_NAME =
         "No execution profile named [{}], keep the current active profile.";
@@ -74,7 +74,7 @@ public final class WarningConstants {
     /**
      * Warning message used when the fetch size parameter is invalid and cannot be parsed. This message is a template
      * expecting the value of the invalid fetch size as first placeholder and the fallback value as second placeholder
-     * (example: {@code LOG.warn(INVALID_FETCH_SIZE_PARAMETER, "invalid_size", 5000)}).
+     * (example: {@code log.warn(INVALID_FETCH_SIZE_PARAMETER, "invalid_size", 5000)}).
      */
     public static final String INVALID_FETCH_SIZE_PARAMETER =
         "Invalid fetch size parameter: '{}'. The default fetch size ({}) will be used instead.";
@@ -82,14 +82,14 @@ public final class WarningConstants {
     /**
      * Warning message used when trying to close a prepared statement, and it failed for some reason. This message is a
      * template expecting the error message of the failure cause (example:
-     * {@code LOG.warn(PREPARED_STATEMENT_CLOSING_FAILED, e.getMessage())}).
+     * {@code log.warn(PREPARED_STATEMENT_CLOSING_FAILED, e.getMessage())}).
      */
     public static final String PREPARED_STATEMENT_CLOSING_FAILED = "Unable to close the prepared statement: {}";
 
     /**
      * Warning message used when the given class when setting an array value in a statement is not a valid
      * implementation of {@link Array}. This message is a template expecting the name of the invalid class (example:
-     * {@code LOG.warn(INVALID_ARRAY_IMPLEMENTATION, x.getClass().getName())}).
+     * {@code log.warn(INVALID_ARRAY_IMPLEMENTATION, x.getClass().getName())}).
      */
     public static final String INVALID_ARRAY_IMPLEMENTATION =
         "Unsupported SQL Array implementation: {}, an empty list will be inserted.";
@@ -116,14 +116,14 @@ public final class WarningConstants {
      * Warning message used when the value of an option in a special CQL command is invalid. This message is a template
      * expecting the name of the option as first placeholder, the invalid value as second placeholder, and the default
      * value used instead as last placeholder (example:
-     * {@code LOG.warn(INVALID_OPTION_VALUE, "optionName", "abc", "100")}).
+     * {@code log.warn(INVALID_OPTION_VALUE, "optionName", "abc", "100")}).
      */
     public static final String INVALID_OPTION_VALUE =
         "Invalid value for option {}: {}. Will use the default value: {}.";
 
     /**
      * Warning message used when parsing a value in a CSV file used in the command {@code COPY FROM} fails. This
-     * message is a template expecting the invalid value (example: {@code LOG.warn(PARSING_VALUE_FAILED, "abc")}).
+     * message is a template expecting the invalid value (example: {@code log.warn(PARSING_VALUE_FAILED, "abc")}).
      */
     public static final String PARSING_VALUE_FAILED =
         "Failed to parse and convert value: {}, the value will be ignored.";
@@ -136,14 +136,14 @@ public final class WarningConstants {
 
     /**
      * Warning message used when adding a statement to a batch fails. This message is a template expecting the CQL
-     * statement (example: {@code LOG.warn(ADD_STATEMENT_TO_BATCH_FAILED, "INSERT INTO table VALUES (1, 'a')")}).
+     * statement (example: {@code log.warn(ADD_STATEMENT_TO_BATCH_FAILED, "INSERT INTO table VALUES (1, 'a')")}).
      */
     public static final String ADD_STATEMENT_TO_BATCH_FAILED = "Failed to add statement to the batch: {}";
 
     /**
      * Warning message used when retrieving the JDBC type corresponding to a CQL type fails. This message is a template
      * expecting the CQL type as first placeholder and the error message as second placeholder (example:
-     * {@code LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, "unknown", e.getMessage())}).
+     * {@code log.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, "unknown", e.getMessage())}).
      */
     public static final String JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE = "Unable to get JDBC type for comparator [{}]: {}";
 
@@ -156,26 +156,26 @@ public final class WarningConstants {
      *     <li>the target type</li>
      *     <li>the returned value, by default</li>
      * </ol>
-     * (example: {@code LOG.warn(INVALID_CAST, "abc", 1, "integer", 0)}).
+     * (example: {@code log.warn(INVALID_CAST, "abc", 1, "integer", 0)}).
      */
     public static final String INVALID_CAST = "Unable to cast [{}] (index {}) as {}, it will return {}.";
 
     /**
      * Warning message used when retrieving the cluster name fails. This message is a template
-     * expecting the message of the cause (example: {@code LOG.warn(CLUSTER_NAME_NOT_FOUND, e.getMessage())}).
+     * expecting the message of the cause (example: {@code log.warn(CLUSTER_NAME_NOT_FOUND, e.getMessage())}).
      */
     public static final String CLUSTER_NAME_NOT_FOUND = "Unable to retrieve the cluster name: {}";
 
     /**
      * Warning message used when retrieving the schema name fails. This message is a template
-     * expecting the message of the cause (example: {@code LOG.warn(SCHEMA_NAME_NOT_FOUND, e.getMessage())}).
+     * expecting the message of the cause (example: {@code log.warn(SCHEMA_NAME_NOT_FOUND, e.getMessage())}).
      */
     public static final String SCHEMA_NAME_NOT_FOUND = "Unable to retrieve the schema name: {}";
 
     /**
      * Warning message used when representing a {@link Map} as a string fails. This message is a template
      * expecting the basic string representation of the map value (example:
-     * {@code LOG.warn(MAP_TO_STRING_FORMATTING_FAILED, map.toString())}).
+     * {@code log.warn(MAP_TO_STRING_FORMATTING_FAILED, map.toString())}).
      */
     public static final String MAP_TO_STRING_FORMATTING_FAILED = "Unable to format map [{}] as string";
 
@@ -188,21 +188,21 @@ public final class WarningConstants {
     /**
      * Warning message used when converting of an object to a byte array fails. This message is a template
      * expecting the class name of the converted object (example:
-     * {@code LOG.warn(BINARY_FAILED_CONVERSION, o.getClass().getName())}).
+     * {@code log.warn(BINARY_FAILED_CONVERSION, o.getClass().getName())}).
      */
     public static final String BINARY_FAILED_CONVERSION = "Unable to convert {} object to byte array.";
 
     /**
      * Warning message used when the specific class is not a valid codec, i.e. does not implement TypeCodec interface.
      * This message is a template expecting the class name (example:
-     * {@code LOG.warn(INVALID_CODEC_CLASS, codecClassName)}).
+     * {@code log.warn(INVALID_CODEC_CLASS, codecClassName)}).
      */
     public static final String INVALID_CODEC_CLASS =
         "{} is a not a valid codec (doesn't implement TypeCodec interface), skip it";
 
     /**
      * Warning message used when the instantiation of the specific codec class failed. This message is a template
-     * expecting the codec class name (example: {@code LOG.warn(CODEC_INSTANTIATION_FAILED, codecClassName)}).
+     * expecting the codec class name (example: {@code log.warn(CODEC_INSTANTIATION_FAILED, codecClassName)}).
      */
     public static final String CODEC_INSTANTIATION_FAILED = "Unable to instantiate codec: {}, skip it";
 

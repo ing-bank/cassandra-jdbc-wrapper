@@ -15,9 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,13 +39,14 @@ import java.time.ZoneId;
 import java.util.Calendar;
 
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
+import static org.apache.commons.io.IOUtils.EMPTY_BYTE_ARRAY;
+import static org.apache.commons.io.IOUtils.toByteArray;
 
 /**
  * A set of static utility methods for types conversions.
  */
+@Slf4j
 public final class ConversionsUtil {
-
-    static final Logger LOG = LoggerFactory.getLogger(ConversionsUtil.class);
 
     private ConversionsUtil() {
         // Private constructor to hide the public one.
@@ -68,36 +67,31 @@ public final class ConversionsUtil {
      * the conversion failed for some reason (see the logged error for further details).
      * @throws SQLException when the type of the object to convert is not supported.
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static byte[] convertToByteArray(final Object x) throws SQLException {
-        byte[] array = new byte[0];
-        if (x instanceof ByteArrayInputStream) {
-            array = new byte[((ByteArrayInputStream) x).available()];
+        if (x instanceof ByteArrayInputStream byteArrayInputStream) {
             try {
-                ((ByteArrayInputStream) x).read(array);
+                return toByteArray(byteArrayInputStream, byteArrayInputStream.available());
             } catch (final IOException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
-        } else if (x instanceof byte[]) {
-            array = (byte[]) x;
-        } else if (x instanceof Blob) {
+        } else if (x instanceof byte[] byteArray) {
+            return byteArray;
+        } else if (x instanceof Blob blob) {
             try {
-                final InputStream stream = ((Blob) x).getBinaryStream();
-                array = new byte[stream.available()];
-                stream.read(array);
+                final InputStream stream = blob.getBinaryStream();
+                return toByteArray(stream, stream.available());
             } catch (final IOException | SQLException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
-        } else if (x instanceof Clob) {
-            try (Reader reader = ((Clob) x).getCharacterStream()) {
-                array = IOUtils.toByteArray(reader, StandardCharsets.UTF_8);
+        } else if (x instanceof Clob clob) {
+            try (Reader reader = clob.getCharacterStream()) {
+                return toByteArray(reader, StandardCharsets.UTF_8);
             } catch (final IOException | SQLException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
         } else {
             throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
-        return array;
     }
 
     /**
@@ -112,10 +106,10 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static LocalDate convertToLocalDate(final Object x) throws SQLException {
-        if (x instanceof LocalDate) {
-            return (LocalDate) x;
-        } else if (x instanceof java.sql.Date) {
-            return ((Date) x).toLocalDate();
+        if (x instanceof LocalDate localDate) {
+            return localDate;
+        } else if (x instanceof java.sql.Date date) {
+            return date.toLocalDate();
         } else {
             throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
@@ -133,12 +127,12 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static LocalTime convertToLocalTime(final Object x) throws SQLException {
-        if (x instanceof LocalTime) {
-            return (LocalTime) x;
-        } else if (x instanceof java.sql.Time) {
-            return ((Time) x).toLocalTime();
-        } else if (x instanceof OffsetTime) {
-            return ((OffsetTime) x).toLocalTime();
+        if (x instanceof LocalTime localTime) {
+            return localTime;
+        } else if (x instanceof java.sql.Time time) {
+            return time.toLocalTime();
+        } else if (x instanceof OffsetTime offsetTime) {
+            return offsetTime.toLocalTime();
         } else {
             throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
@@ -159,18 +153,23 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static Instant convertToInstant(final Object x) throws SQLException {
-        if (x instanceof LocalDateTime) {
-            return ((LocalDateTime) x).atZone(ZoneId.systemDefault()).toInstant();
-        } else if (x instanceof java.sql.Timestamp) {
-            return ((Timestamp) x).toInstant();
-        } else if (x instanceof java.util.Date) {
-            return ((java.util.Date) x).toInstant();
-        } else if (x instanceof Calendar) {
-            return ((Calendar) x).toInstant();
-        } else if (x instanceof OffsetDateTime) {
-            return ((OffsetDateTime) x).toInstant();
+        if (x instanceof LocalDateTime localDateTime) {
+            return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+        } else if (x instanceof java.sql.Timestamp timestamp) {
+            return timestamp.toInstant();
+        } else if (x instanceof java.util.Date date) {
+            return date.toInstant();
+        } else if (x instanceof Calendar calendar) {
+            return calendar.toInstant();
+        } else if (x instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime.toInstant();
         } else {
             throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
+    }
+
+    private static byte[] onBinaryFailedConversion(final Exception e, final Object obj) {
+        log.warn(BINARY_FAILED_CONVERSION, obj.getClass().getName(), e);
+        return EMPTY_BYTE_ARRAY;
     }
 }

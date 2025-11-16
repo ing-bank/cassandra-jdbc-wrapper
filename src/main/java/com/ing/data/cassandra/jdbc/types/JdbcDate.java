@@ -15,12 +15,12 @@
 
 package com.ing.data.cassandra.jdbc.types;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Types;
 import java.time.format.DateTimeFormatter;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * JDBC description of {@code DATE} CQL type (corresponding Java type: {@link Date}).
@@ -82,7 +82,7 @@ public class JdbcDate extends AbstractJdbcType<Date> {
 
     public String getString(final ByteBuffer bytes) {
         if (bytes.remaining() == 0) {
-            return StringUtils.EMPTY;
+            return EMPTY;
         }
         if (bytes.remaining() != 8) {
             throw new MarshalException("A date is exactly 8 bytes (stored as a long), but found: " + bytes.remaining());

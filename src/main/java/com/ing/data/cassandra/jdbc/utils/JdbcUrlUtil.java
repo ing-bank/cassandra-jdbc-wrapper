@@ -19,10 +19,9 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -34,7 +33,6 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +44,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_FOR_SECRET_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
@@ -57,6 +56,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOKEN_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CODEC_INSTANTIATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CODEC_CLASS;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.Strings.CS;
 
@@ -65,6 +66,7 @@ import static org.apache.commons.lang3.Strings.CS;
  * Cassandra database.
  */
 @SuppressWarnings("unchecked")
+@Slf4j
 public final class JdbcUrlUtil {
 
     /**
@@ -453,8 +455,6 @@ public final class JdbcUrlUtil {
      */
     public static final String TAG_CUSTOM_CODECS = "customCodecs";
 
-    static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
-
     private static final String HOST_SEPARATOR = "--";
     private static final String IPV6_FAKE_HOST = "ipv6_addr_%d";
 
@@ -635,18 +635,19 @@ public final class JdbcUrlUtil {
             }
         }
 
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("URL: '{}' parsed to: {}", url, props);
+        if (log.isTraceEnabled()) {
+            log.trace("URL: '{}' parsed to: {}", url, props);
         }
 
         return props;
     }
 
-    private static void handleAwsProperties(final Properties props, final Map<String, String> params,
+    private static void handleAwsProperties(final Properties props,
+                                            final Map<String, String> params,
                                             final boolean isAwsConnection) throws SQLException {
         if (isAwsConnection) {
-            props.setProperty(TAG_ENABLE_SSL, Boolean.TRUE.toString());
-            props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, Boolean.FALSE.toString());
+            props.setProperty(TAG_ENABLE_SSL, TRUE.toString());
+            props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, FALSE.toString());
         }
 
         boolean awsRegionIsDefined = false;
@@ -699,7 +700,8 @@ public final class JdbcUrlUtil {
         return new ImmutablePair<>(uri, ipV6Map);
     }
 
-    private static List<ContactPoint> parseContactPoints(final String toParse, final Map<String, String> ipV6Map,
+    private static List<ContactPoint> parseContactPoints(final String toParse,
+                                                         final Map<String, String> ipV6Map,
                                                          final boolean isAwsConnection) {
         // Check whether the value to parse ends with a port. If yes, we'll use this port as the common port for all
         // the hosts except if another port is specified for the host. When no port is specified at all, use the default
@@ -728,10 +730,10 @@ public final class JdbcUrlUtil {
                     final String host = splitPart[0];
                     return ContactPoint.of(ipV6Map.getOrDefault(host, host), port);
                 } catch (final Exception e) {
-                    throw new RuntimeException(String.format(INVALID_CONTACT_POINT, part));
+                    throw new IllegalArgumentException(String.format(INVALID_CONTACT_POINT, part));
                 }
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -776,8 +778,8 @@ public final class JdbcUrlUtil {
             throw new SQLNonTransientConnectionException(e);
         }
 
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Sub-name: '{}' created from: {}", uri, props);
+        if (log.isTraceEnabled()) {
+            log.trace("Sub-name: '{}' created from: {}", uri, props);
         }
 
         return uri.toString();
@@ -796,7 +798,7 @@ public final class JdbcUrlUtil {
         if (StringUtils.isNotBlank(consistency)) {
             sb.append(KEY_CONSISTENCY).append("=").append(consistency);
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             return sb.toString().trim();
         } else {
             return null;
@@ -861,7 +863,7 @@ public final class JdbcUrlUtil {
                                                                    final String parameters) {
         final Map<DriverOption, Object> policyParametersMap = new HashMap<>();
         String primaryReconnectionPolicyClass = primaryReconnectionPolicy;
-        if (!primaryReconnectionPolicy.contains(".")) {
+        if (!primaryReconnectionPolicy.contains(DOT)) {
             primaryReconnectionPolicyClass = "com.datastax.oss.driver.internal.core.connection."
                 + primaryReconnectionPolicy;
         }
@@ -908,26 +910,28 @@ public final class JdbcUrlUtil {
      * @param customCodecs The string containing the custom codecs class names to instantiate.
      * @return A list of instantiated codecs parsed from the given string.
      */
-    public static List<TypeCodec<?>> parseCustomCodecs(final String customCodecs) {
+    public static List<TypeCodec<Object>> parseCustomCodecs(final String customCodecs) {
         if (StringUtils.isBlank(customCodecs)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return Arrays.stream(customCodecs.split(COMMA))
             .map(String::trim)
-            .map(codecClassName -> {
-                try {
-                    final Class<?> codecClass = Class.forName(codecClassName);
-                    if (!TypeCodec.class.isAssignableFrom(codecClass)) {
-                        LOG.warn(INVALID_CODEC_CLASS, codecClassName);
-                        return null;
-                    }
-                    return (TypeCodec<?>) codecClass.getDeclaredConstructor().newInstance();
-                } catch (final Exception e) {
-                    LOG.warn(CODEC_INSTANTIATION_FAILED, codecClassName, e);
-                }
-                return null;
-            })
+            .map(JdbcUrlUtil::getCustomCodecInstance)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
+    }
+
+    private static TypeCodec<Object> getCustomCodecInstance(final String codecClassName) {
+        try {
+            final Class<?> codecClass = Class.forName(codecClassName);
+            if (!TypeCodec.class.isAssignableFrom(codecClass)) {
+                log.warn(INVALID_CODEC_CLASS, codecClassName);
+                return null;
+            }
+            return (TypeCodec<Object>) codecClass.getDeclaredConstructor().newInstance();
+        } catch (final Exception e) {
+            log.warn(CODEC_INSTANTIATION_FAILED, codecClassName, e);
+        }
+        return null;
     }
 }

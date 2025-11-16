@@ -34,11 +34,10 @@ import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.semver4j.Semver;
 import org.semver4j.range.RangeExpression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,17 +50,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
+import static java.lang.Boolean.getBoolean;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * A set of static utility methods and constants used by the JDBC driver.
  */
+@Slf4j
 public final class DriverUtil {
 
     /**
@@ -115,6 +119,11 @@ public final class DriverUtil {
     public static final String COMMA = ",";
 
     /**
+     * Dot character.
+     */
+    public static final String DOT = ".";
+
+    /**
      * Single quote character.
      */
     public static final String SINGLE_QUOTE = "'";
@@ -159,8 +168,6 @@ public final class DriverUtil {
     public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
         "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
 
-    static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
-
     private DriverUtil() {
         // Private constructor to hide the public one.
     }
@@ -201,7 +208,7 @@ public final class DriverUtil {
             driverProperties.load(propertiesFile);
             return driverProperties.getProperty(name, EMPTY);
         } catch (final IOException ex) {
-            LOG.warn(DRIVER_PROPERTY_NOT_FOUND, name, ex);
+            log.warn(DRIVER_PROPERTY_NOT_FOUND, name, ex);
             return EMPTY;
         }
     }
@@ -220,10 +227,7 @@ public final class DriverUtil {
             return Semver.ZERO;
         } else {
             final Semver parsedVersion = Semver.coerce(version);
-            if (parsedVersion == null) {
-                return Semver.ZERO;
-            }
-            return parsedVersion;
+            return requireNonNullElse(parsedVersion, Semver.ZERO);
         }
     }
 
@@ -260,14 +264,15 @@ public final class DriverUtil {
      * @param connection   The database connection.
      * @return The formatted list of metadata.
      */
-    public static String buildMetadataList(final List<VersionedMetadata> metadataList, final String dbVersion,
+    public static String buildMetadataList(final List<VersionedMetadata> metadataList,
+                                           final String dbVersion,
                                            final CassandraConnection connection) {
         return metadataList.stream()
             .filter(metadata -> existsInDatabaseVersion(dbVersion, metadata)
                 && metadata.fulfillAdditionalCondition(connection))
             .map(VersionedMetadata::getName)
             .sorted()
-            .collect(Collectors.joining(COMMA));
+            .collect(joining(COMMA));
     }
 
     /**
@@ -295,10 +300,10 @@ public final class DriverUtil {
         final String driverPropertyDefinition = "driver.properties." + propertyName;
 
         final String propertyChoices = getDriverProperty(driverPropertyDefinition + ".choices");
-        if (StringUtils.isNotBlank(propertyChoices)) {
+        if (isNotBlank(propertyChoices)) {
             propertyInfo.choices = propertyChoices.split(COMMA);
         }
-        propertyInfo.required = Boolean.getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
+        propertyInfo.required = getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
         propertyInfo.description = getDriverProperty(driverPropertyDefinition);
         return propertyInfo;
     }
@@ -326,7 +331,7 @@ public final class DriverUtil {
      */
     public static String redactSensitiveValuesInJdbcUrl(final String jdbcUrl) {
         if (!jdbcUrl.contains("://")) {
-            LOG.warn(URL_REDACTION_FAILED);
+            log.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
         try {
@@ -336,19 +341,19 @@ public final class DriverUtil {
             final URI uri = new URI("//" + splitUrl[1]);
 
             // Redact sensitive values, then re-build the entire JDBC URL.
-            final String redactedQuery = Arrays.stream(StringUtils.defaultIfBlank(uri.getQuery(), EMPTY).split("&"))
+            final String redactedQuery = Arrays.stream(defaultIfBlank(uri.getQuery(), EMPTY).split("&"))
                 .map(param -> {
                     if (param.startsWith(TAG_PASSWORD + "=")) {
                         return TAG_PASSWORD + "=***";
                     }
                     return param;
                 })
-                .collect(Collectors.joining("&"));
+                .collect(joining("&"));
             return new URI(
                 splitUrl[0], uri.getAuthority(), uri.getPath(), redactedQuery, uri.getFragment()
             ).toString();
         } catch (final URISyntaxException e) {
-            LOG.warn(URL_REDACTION_FAILED);
+            log.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
     }
@@ -385,7 +390,22 @@ public final class DriverUtil {
     public static String formatContactPoints(final List<ContactPoint> contactPoints) {
         return emptyIfNull(contactPoints).stream()
             .map(ContactPoint::toString)
-            .collect(Collectors.joining(", "));
+            .collect(joining(", "));
+    }
+
+    /**
+     * Gets the string representation of the specified object if not {@code null}. Otherwise, return {@code null}.
+     *
+     * @param obj The object.
+     * @return The string representation of the specified object if not {@code null}, otherwise, {@code null}.
+     * @param <T> The type of the given object.
+     */
+    public static <T> String toStringOrNull(final T obj) {
+        if (obj == null) {
+            return null;
+        } else {
+            return obj.toString();
+        }
     }
 
 }

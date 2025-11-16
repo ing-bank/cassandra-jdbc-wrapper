@@ -382,14 +382,14 @@ class UtilsUnitTest {
 
     @Test
     void givenEmptyCustomCodecsList_whenParse_returnEmptyList() {
-        final List<TypeCodec<?>> parsedCodecs = parseCustomCodecs(StringUtils.EMPTY);
+        final List<TypeCodec<Object>> parsedCodecs = parseCustomCodecs(StringUtils.EMPTY);
         assertNotNull(parsedCodecs);
         assertThat(parsedCodecs, hasSize(0));
     }
 
     @Test
     void givenCustomCodecsList_whenParse_returnInstantiatedCodecList() {
-        final List<TypeCodec<?>> parsedCodecs = parseCustomCodecs(
+        final List<TypeCodec<Object>> parsedCodecs = parseCustomCodecs(
             "com.ing.data.cassandra.jdbc.testing.ValidTestCodec, "
             + "com.ing.data.cassandra.jdbc.testing.InvalidTestCodec, "
             + "com.ing.data.cassandra.jdbc.testing.NotInstantiableValidTestCodec, "

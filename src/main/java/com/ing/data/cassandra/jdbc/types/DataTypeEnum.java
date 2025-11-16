@@ -25,9 +25,9 @@ import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import jakarta.annotation.Nonnull;
 import org.semver4j.Semver;
 
-import jakarta.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -218,8 +218,12 @@ public enum DataTypeEnum implements VersionedMetadata {
      *                            greater than {@code validFrom}.
      * @param additionalCondition An additional condition to verify on the current connection to the database.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom,
-                 final String invalidFrom, final Function<CassandraConnection, Boolean> additionalCondition) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
+                 final String validFrom,
+                 final String invalidFrom,
+                 final Function<CassandraConnection, Boolean> additionalCondition) {
         this.protocolId = protocolId;
         this.javaType = javaType;
         this.cqlType = cqlType;
@@ -238,7 +242,10 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param cqlType    The CQL type name.
      * @param validFrom  The minimal Cassandra version from which the CQL type exists.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
+                 final String validFrom) {
         this(protocolId, javaType, cqlType, validFrom, null, connection -> true);
     }
 
@@ -252,7 +259,9 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param cqlType             The CQL type name.
      * @param additionalCondition An additional condition to verify on the current connection to the database.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType,
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
                  final Function<CassandraConnection, Boolean> additionalCondition) {
         this(protocolId, javaType, cqlType, null, null, additionalCondition);
     }
@@ -266,7 +275,9 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param javaType   The corresponding Java type.
      * @param cqlType    The CQL type name.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType) {
         this(protocolId, javaType, cqlType, (String) null);
     }
 
@@ -317,15 +328,10 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @return {@code true} if this data type name represents the name of a collection type, {@code false} otherwise.
      */
     public boolean isCollection() {
-        switch (this) {
-            case LIST:
-            case SET:
-            case MAP:
-            case VECTOR:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case LIST, SET, MAP, VECTOR -> true;
+            default -> false;
+        };
     }
 
     /**

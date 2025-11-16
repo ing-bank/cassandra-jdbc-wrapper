@@ -17,13 +17,14 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
-import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
-import com.ing.data.cassandra.jdbc.types.TypesMap;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.cqlName;
+import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static java.lang.String.format;
 
 /**
  * Cassandra parameter metadata: implementation class for {@link ParameterMetaData}.
@@ -45,11 +46,11 @@ public class CassandraParameterMetaData implements ParameterMetaData {
     }
 
     private String getParameterCqlType(final int i) {
-        return DataTypeEnum.cqlName(this.boundStatement.getType(i - 1));
+        return cqlName(this.boundStatement.getType(i - 1));
     }
 
     private AbstractJdbcType<?> getParameterJdbcType(final int i) {
-        return TypesMap.getTypeForComparator(getParameterCqlType(i).toLowerCase());
+        return getTypeForComparator(getParameterCqlType(i).toLowerCase());
     }
 
     @Override
@@ -128,7 +129,7 @@ public class CassandraParameterMetaData implements ParameterMetaData {
         if (isWrapperFor(iface)) {
             return iface.cast(this);
         } else {
-            throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+            throw new SQLException(format(NO_INTERFACE, iface.getSimpleName()));
         }
     }
 }

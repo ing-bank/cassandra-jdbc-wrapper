@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code BIGINT} CQL type (corresponding Java type: {@link Long}).
  * <p>CQL type description: 64-bit signed integer.</p>
@@ -67,11 +69,7 @@ public class JdbcLong extends AbstractJdbcType<Long> {
 
     @Override
     public String toString(final Long obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

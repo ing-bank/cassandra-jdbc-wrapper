@@ -58,6 +58,7 @@ import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD
 import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertCommandResultSet;
 import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertRowValues;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -176,7 +177,7 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithInvalidIntOption_useDefaultOptionValue()
         throws SQLException {
         final ResultSet resultSet = executeCopyFromCommand(
-            COPY_CMD_TEST_KEYSPACE + "." + COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
+            COPY_CMD_TEST_KEYSPACE + DOT + COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
             "WITH SKIPROWS=a");
         assertCommandResultSet(resultSet, true, 4, 1, 0);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");

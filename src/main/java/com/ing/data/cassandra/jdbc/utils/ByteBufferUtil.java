@@ -16,8 +16,11 @@
 package com.ing.data.cassandra.jdbc.utils;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+
+import static java.nio.ByteBuffer.allocate;
+import static java.nio.ByteBuffer.wrap;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.copyOfRange;
 
 /**
  * Utility methods for {@link ByteBuffer} manipulation.
@@ -39,7 +42,7 @@ public final class ByteBufferUtil {
      * @return The encoded string.
      */
     public static ByteBuffer bytes(final String s) {
-        return ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8));
+        return wrap(s.getBytes(UTF_8));
     }
 
     /**
@@ -49,7 +52,7 @@ public final class ByteBufferUtil {
      * @return The encoded byte.
      */
     public static ByteBuffer bytes(final byte b) {
-        return ByteBuffer.allocate(1).put(0, b);
+        return allocate(1).put(0, b);
     }
 
     /**
@@ -59,7 +62,7 @@ public final class ByteBufferUtil {
      * @return The encoded short.
      */
     public static ByteBuffer bytes(final short s) {
-        return ByteBuffer.allocate(2).putShort(0, s);
+        return allocate(2).putShort(0, s);
     }
 
     /**
@@ -69,7 +72,7 @@ public final class ByteBufferUtil {
      * @return The encoded int.
      */
     public static ByteBuffer bytes(final int i) {
-        return ByteBuffer.allocate(4).putInt(0, i);
+        return allocate(4).putInt(0, i);
     }
 
     /**
@@ -79,7 +82,7 @@ public final class ByteBufferUtil {
      * @return The encoded long.
      */
     public static ByteBuffer bytes(final long n) {
-        return ByteBuffer.allocate(8).putLong(0, n);
+        return allocate(8).putLong(0, n);
     }
 
     /**
@@ -89,7 +92,7 @@ public final class ByteBufferUtil {
      * @return The encoded float.
      */
     public static ByteBuffer bytes(final float f) {
-        return ByteBuffer.allocate(4).putFloat(0, f);
+        return allocate(4).putFloat(0, f);
     }
 
     /**
@@ -99,7 +102,7 @@ public final class ByteBufferUtil {
      * @return The encoded double.
      */
     public static ByteBuffer bytes(final double d) {
-        return ByteBuffer.allocate(8).putDouble(0, d);
+        return allocate(8).putDouble(0, d);
     }
 
     /**
@@ -167,7 +170,7 @@ public final class ByteBufferUtil {
         final int length = buffer.remaining();
         if (buffer.hasArray()) {
             final int boff = buffer.arrayOffset() + buffer.position();
-            return Arrays.copyOfRange(buffer.array(), boff, boff + length);
+            return copyOfRange(buffer.array(), boff, boff + length);
         } else {
             final byte[] bytes = new byte[length];
             buffer.duplicate().get(bytes);

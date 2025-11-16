@@ -23,9 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ARRAY_WAS_FREED;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Implementation of {@link Array} interface.
@@ -115,7 +115,7 @@ public class ArrayImpl implements Array {
             return String.format("[%s]",
                 Arrays.stream(this.array)
                     .map(item -> Objects.toString(item, nullValueAsString))
-                    .collect(Collectors.joining(", "))
+                    .collect(joining(", "))
             );
         }
         return nullValueAsString;

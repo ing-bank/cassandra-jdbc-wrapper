@@ -16,12 +16,10 @@
 package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import jakarta.annotation.Nonnull;
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +30,7 @@ import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmpt
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_OPEN_SOURCE_FILE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Executor for special command executing a CQL script file.
@@ -76,11 +75,10 @@ public class SourceCommandExecutor implements SpecialCommandExecutor {
      */
     @Override
     public ResultSet execute(final CassandraStatement statement, final String cql) throws SQLException {
-        if (StringUtils.isBlank(this.filename)) {
+        if (isBlank(this.filename)) {
             throw new SQLSyntaxErrorException(MISSING_SOURCE_FILENAME);
         }
 
-        final CassandraConnection connection = (CassandraConnection) statement.getConnection();
         final File sourceFile = new File(translateFilename(this.filename));
         final String cqlStatement;
         try {
@@ -88,7 +86,7 @@ public class SourceCommandExecutor implements SpecialCommandExecutor {
         } catch (final IOException e) {
             throw new SQLException(String.format(CANNOT_OPEN_SOURCE_FILE, this.filename, e), e);
         }
-        connection.createStatement().execute(cqlStatement);
+        statement.execute(cqlStatement);
         return buildEmptyResultSet();
     }
 

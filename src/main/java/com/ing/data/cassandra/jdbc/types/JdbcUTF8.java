@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code VARCHAR} CQL type (corresponding Java type: {@link String}).
  * <p>CQL type description: UTF-8 encoded string.</p>
@@ -70,11 +72,7 @@ public class JdbcUTF8 extends AbstractJdbcType<String> {
     }
 
     public String getString(final Object bytes) {
-        if (bytes != null) {
-            return bytes.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(bytes);
     }
 
     @Override

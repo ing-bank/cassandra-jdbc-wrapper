@@ -20,10 +20,12 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
+
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toInt;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#VARINT} and the Java type {@link Integer}.
@@ -54,7 +56,7 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value);
+        return bytes(value);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class VarintToIntCodec extends AbstractCodec<Integer> implements TypeCode
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        return ByteBufferUtil.toInt(bytes.duplicate());
+        return toInt(bytes.duplicate());
     }
 
     @Override

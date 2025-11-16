@@ -15,8 +15,8 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClientBuilder;
@@ -35,14 +35,13 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_AWS_SEC
 /**
  * Utility methods used for support of Amazon Keyspaces.
  */
+@Slf4j
 public final class AwsUtil {
 
     /**
      * Name of the system property used to override the default endpoint of the Amazon Secrets manager.
      */
     public static final String AWS_SECRETSMANAGER_ENDPOINT_PROPERTY = "aws.secretsmanager.endpoint";
-
-    static final Logger LOG = LoggerFactory.getLogger(AwsUtil.class);
 
     private AwsUtil() {
         // Private constructor to hide the public one.
@@ -99,12 +98,14 @@ public final class AwsUtil {
     public static String getSecretValue(final String regionName, final String secretName) throws SQLTransientException {
         final Region region = Region.of(regionName);
         final String customEndpoint = System.getProperty(AWS_SECRETSMANAGER_ENDPOINT_PROPERTY);
-        final SecretsManagerClientBuilder secretsClientBuilder = SecretsManagerClient.builder().region(region);
+        final SecretsManagerClientBuilder secretsClientBuilder = SecretsManagerClient.builder()
+            .region(region)
+            .credentialsProvider(DefaultCredentialsProvider.builder().build());
         if (customEndpoint != null) {
             try {
                 secretsClientBuilder.endpointOverride(URI.create(customEndpoint));
             } catch (final IllegalArgumentException e) {
-                LOG.warn(INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT, e);
+                log.warn(INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT, e);
             }
         }
         final SecretsManagerClient secretsClient = secretsClientBuilder.build();

@@ -22,28 +22,27 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE;
 import static java.sql.DatabaseMetaData.bestRowNotPseudo;
+import static java.util.Comparator.comparing;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to tables.
  */
+@Slf4j
 public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuilder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TableMetadataResultSetBuilder.class);
 
     /**
      * Constructor.
@@ -76,7 +75,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
 
         tableTypes.add(new MetadataRow().withTemplate(rowTemplate, TABLE));
 
-        return CassandraMetadataResultSet.buildFrom(this.statement,
+        return buildFrom(this.statement,
             new MetadataResultSet(rowTemplate).setRows(tableTypes));
     }
 
@@ -151,10 +150,9 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             }, null), null);
 
         // Results should all have the same TABLE_CAT, so just sort them by TABLE_SCHEM then TABLE_NAME.
-        tables.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
+        tables.sort(comparing(row -> ((MetadataRow) row).getString(TABLE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TABLE_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(tables));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(tables));
     }
 
     /**
@@ -219,7 +217,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
      */
     @SuppressWarnings("unused")
     public CassandraMetadataResultSet buildIndexes(final String schema,
-                                                   final String tableName, final boolean unique,
+                                                   final String tableName,
+                                                   final boolean unique,
                                                    final boolean approximate) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> indexes = new ArrayList<>();
@@ -262,9 +261,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             }, null), null);
 
         // Results should all have the same NON_UNIQUE, TYPE and ORDINAL_POSITION, so just sort them by INDEX_NAME.
-        indexes.sort(Comparator.comparing(row -> row.getString(INDEX_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(indexes));
+        indexes.sort(comparing(row -> row.getString(INDEX_NAME)));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(indexes));
     }
 
     /**
@@ -296,8 +294,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
      * @return A valid result set for implementation of {@link DatabaseMetaData#getPrimaryKeys(String, String, String)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet buildPrimaryKeys(final String schema, final String tableName)
-        throws SQLException {
+    public CassandraMetadataResultSet buildPrimaryKeys(final String schema,
+                                                       final String tableName) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> primaryKeys = new ArrayList<>();
         final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
@@ -326,9 +324,8 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             }, null), null);
 
         // Sort the results by COLUMN_NAME.
-        primaryKeys.sort(Comparator.comparing(row -> row.getString(COLUMN_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(primaryKeys));
+        primaryKeys.sort(comparing(row -> row.getString(COLUMN_NAME)));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(primaryKeys));
     }
 
     /**
@@ -384,8 +381,9 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
      * {@link DatabaseMetaData#getBestRowIdentifier(String, String, String, int, boolean)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet buildBestRowIdentifier(final String schema, final String table, final int scope)
-        throws SQLException {
+    public CassandraMetadataResultSet buildBestRowIdentifier(final String schema,
+                                                             final String table,
+                                                             final int scope) throws SQLException {
         final ArrayList<MetadataRow> bestRowIdentifiers = new ArrayList<>();
         final MetadataRow.MetadataRowTemplate rowTemplate = new MetadataRow.MetadataRowTemplate(
             buildDefinitionInAnonymousTable(SCOPE, DataTypes.SMALLINT),
@@ -416,7 +414,7 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
                     try {
                         jdbcType = getTypeForComparator(columnMetadata.getType().toString()).getJdbcType();
                     } catch (final Exception e) {
-                        LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, columnMetadata.getType(), e.getMessage());
+                        log.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, columnMetadata.getType(), e.getMessage());
                     }
 
                     final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
@@ -433,7 +431,6 @@ public class TableMetadataResultSetBuilder extends AbstractMetadataResultSetBuil
             }, null), null);
 
         // All the rows of the result set have the same scope, so there is no need to perform an additional sort.
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(bestRowIdentifiers));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(bestRowIdentifiers));
     }
 }

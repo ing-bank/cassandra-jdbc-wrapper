@@ -67,12 +67,15 @@ abstract class AbstractConnection implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public CallableStatement prepareCall(final String cql, final int resultSetType, final int resultSetConcurrency)
-        throws SQLException {
+    public CallableStatement prepareCall(final String cql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public CallableStatement prepareCall(final String cql, final int resultSetType, final int resultSetConcurrency,
+    public CallableStatement prepareCall(final String cql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency,
                                          final int resultSetHoldability) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

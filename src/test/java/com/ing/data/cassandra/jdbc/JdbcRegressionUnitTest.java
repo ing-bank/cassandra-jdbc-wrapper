@@ -95,7 +95,7 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
             statement.execute("UPDATE system.local SET cluster_name = '" + configuredClusterName
                 + "' WHERE key = 'local'");
         } catch (final SQLException e) {
-            LOG.error("Cannot update cluster_name in system.local table.", e);
+            log.error("Cannot update cluster_name in system.local table.", e);
         }
         */
     }

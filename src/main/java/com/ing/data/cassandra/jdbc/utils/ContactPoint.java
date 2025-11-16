@@ -15,10 +15,14 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import lombok.Getter;
+
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.DEFAULT_PORT;
+import static java.net.InetSocketAddress.createUnresolved;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * The representation of contact point in a Cassandra cluster.
@@ -26,9 +30,16 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.DEFAULT_PORT;
  *     This class is used to parse JDBC URL and extract hosts and ports of the contact points.
  * </p>
  */
+@Getter
 public final class ContactPoint {
 
+    /**
+     * The hostname of the contact point.
+     */
     private final String host;
+    /**
+     * The port of the contact point.
+     */
     private final int port;
 
     private ContactPoint(final String host, final int port) {
@@ -44,28 +55,7 @@ public final class ContactPoint {
      * @return The contact point representation.
      */
     public static ContactPoint of(final String host, final Integer port) {
-        if (port == null) {
-            return new ContactPoint(host, DEFAULT_PORT);
-        }
-        return new ContactPoint(host, port);
-    }
-
-    /**
-     * Gets the hostname of the contact point.
-     *
-     * @return The hostname of the contact point.
-     */
-    public String getHost() {
-        return this.host;
-    }
-
-    /**
-     * Gets the port of the contact point.
-     *
-     * @return The port of the contact point.
-     */
-    public Integer getPort() {
-        return this.port;
+        return new ContactPoint(host, requireNonNullElse(port, DEFAULT_PORT));
     }
 
     /**
@@ -74,7 +64,7 @@ public final class ContactPoint {
      * @return The socket address corresponding to the contact point.
      */
     public InetSocketAddress toInetSocketAddress() {
-        return InetSocketAddress.createUnresolved(this.host, this.port);
+        return createUnresolved(this.host, this.port);
     }
 
     @Override

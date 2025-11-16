@@ -20,10 +20,12 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
+
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toFloat;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#FLOAT} and the Java type {@link Double}.
@@ -54,7 +56,7 @@ public class FloatToDoubleCodec extends AbstractCodec<Double> implements TypeCod
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value.floatValue());
+        return bytes(value.floatValue());
     }
 
     @Override
@@ -63,7 +65,7 @@ public class FloatToDoubleCodec extends AbstractCodec<Double> implements TypeCod
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        final float value = ByteBufferUtil.toFloat(bytes.duplicate());
+        final float value = toFloat(bytes.duplicate());
         return (double) value;
     }
 

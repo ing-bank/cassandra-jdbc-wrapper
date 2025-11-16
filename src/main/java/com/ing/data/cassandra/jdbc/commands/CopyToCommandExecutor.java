@@ -22,14 +22,14 @@ import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
 import com.opencsv.ResultSetHelperService;
-import org.apache.commons.io.IOUtils;
+import jakarta.annotation.Nonnull;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.ResultSetMetaData;
@@ -44,10 +44,11 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.COUNTING_EXPORTED_ROWS_FAILED;
+import static java.nio.file.Files.lines;
+import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.time.TimeZones.GMT;
 
@@ -126,6 +127,7 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     is not supported.
  * </p>
  */
+@Slf4j
 public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
     private static final int DEFAULT_FETCH_SIZE = 1000;
@@ -145,7 +147,9 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
      *                  instance.
      * @throws SQLSyntaxErrorException if an unknown option is used.
      */
-    public CopyToCommandExecutor(@Nonnull final String tableName, final String columns, @Nonnull final String target,
+    public CopyToCommandExecutor(@Nonnull final String tableName,
+                                 final String columns,
+                                 @Nonnull final String target,
                                  @Nonnull final Properties options) throws SQLSyntaxErrorException {
         this.tableName = tableName;
         this.columns = StringUtils.defaultIfBlank(columns, "*");
@@ -164,47 +168,41 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
     @Override
     public ResultSet execute(final CassandraStatement statement, final String cql) throws SQLException {
         final CassandraConnection connection = statement.getCassandraConnection();
-        final Statement selectStatement = connection.createStatement();
-        selectStatement.setFetchSize(getOptionValueAsInt(OPTION_PAGESIZE, DEFAULT_FETCH_SIZE));
-        final java.sql.ResultSet rs = selectStatement.executeQuery(
-            String.format("SELECT %s FROM %s", this.columns, this.tableName)
-        );
-
         final Path targetPath = Paths.get(translateFilename(this.target));
-        ICSVWriter csvWriter = null;
         long exportedRows = 0;
-        try {
-            final CSVWriterBuilder builder = new CSVWriterBuilder(
-                new OutputStreamWriter(
-                    Files.newOutputStream(targetPath),
-                    StandardCharsets.UTF_8.newEncoder() // Use UTF-8 encoding by default
-                )
-            );
 
-            csvWriter = builder
-                .withResultSetHelper(configureResultSetHelperService())
-                .withQuoteChar(getOptionValueAsChar(OPTION_QUOTE, DEFAULT_QUOTE_CHAR))
-                .withSeparator(getOptionValueAsChar(OPTION_DELIMITER, DEFAULT_DELIMITER_CHAR))
-                .withEscapeChar(getOptionValueAsChar(OPTION_ESCAPE, DEFAULT_ESCAPE_CHAR))
-                .build();
+        try (final Statement selectStatement = connection.createStatement()) {
+            selectStatement.setFetchSize(getOptionValueAsInt(OPTION_PAGESIZE, DEFAULT_FETCH_SIZE));
 
-            final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
-            if (includeHeaders) {
-                exportedRows -= 1;
+            try (
+                final java.sql.ResultSet rs = selectStatement.executeQuery(
+                    String.format("SELECT %s FROM %s", this.columns, this.tableName)
+                );
+                final OutputStreamWriter outWriter = new OutputStreamWriter(
+                    newOutputStream(targetPath),
+                     StandardCharsets.UTF_8.newEncoder() // Use UTF-8 encoding by default
+                );
+                final ICSVWriter csvWriter = new CSVWriterBuilder(outWriter)
+                    .withResultSetHelper(configureResultSetHelperService())
+                    .withQuoteChar(getOptionValueAsChar(OPTION_QUOTE, DEFAULT_QUOTE_CHAR))
+                    .withSeparator(getOptionValueAsChar(OPTION_DELIMITER, DEFAULT_DELIMITER_CHAR))
+                    .withEscapeChar(getOptionValueAsChar(OPTION_ESCAPE, DEFAULT_ESCAPE_CHAR))
+                    .build();
+            ) {
+                final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
+                if (includeHeaders) {
+                    exportedRows -= 1;
+                }
+                csvWriter.writeAll(rs, includeHeaders);
+            } catch (final IOException e) {
+                throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
             }
-            csvWriter.writeAll(rs, includeHeaders);
-        } catch (final IOException e) {
-            throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
-        } finally {
-            rs.close();
-            selectStatement.close();
-            IOUtils.closeQuietly(csvWriter);
         }
 
-        try (Stream<String> csvLines = Files.lines(targetPath)) {
+        try (Stream<String> csvLines = lines(targetPath)) {
             exportedRows += csvLines.count();
         } catch (final IOException e) {
-            LOG.warn(COUNTING_EXPORTED_ROWS_FAILED);
+            log.warn(COUNTING_EXPORTED_ROWS_FAILED);
         }
         return buildCopyCommandResultSet("exported to", exportedRows, 1, -1);
     }
@@ -220,21 +218,17 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private static final class EnhancedResultSetHelperService extends ResultSetHelperService {
+        /**
+         * Sets a default format for {@code null} values that will be used by the service.
+         */
+        @Setter
         private String nullFormat = DEFAULT_NULL_FORMAT;
 
-        /**
-         * Set a default format for {@code null} values that will be used by the service.
-         *
-         * @param nullFormat The desired format for {@code null} values.
-         */
-        public void setNullFormat(final String nullFormat) {
-            this.nullFormat = nullFormat;
-        }
-
         @Override
-        public String[] getColumnValues(final java.sql.ResultSet rs, final boolean trim,
-                                        final String dateFormatString, final String timeFormatString)
-            throws SQLException, IOException {
+        public String[] getColumnValues(final java.sql.ResultSet rs,
+                                        final boolean trim,
+                                        final String dateFormatString,
+                                        final String timeFormatString) throws SQLException, IOException {
             // Keep the same logic as the parent class, but use the enhanced getColumnValue method.
             final ResultSetMetaData metadata = rs.getMetaData();
             final String[] valueArray = new String[metadata.getColumnCount()];
@@ -264,8 +258,11 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             return timeFormat.format(timestamp);
         }
 
-        private String getColumnValueFromResultSet(final java.sql.ResultSet rs, final int colType, final int colIndex,
-                                                   final boolean trim, final String dateFormatString,
+        private String getColumnValueFromResultSet(final java.sql.ResultSet rs,
+                                                   final int colType,
+                                                   final int colIndex,
+                                                   final boolean trim,
+                                                   final String dateFormatString,
                                                    final String timestampFormatString)
             throws SQLException, IOException {
             String value;
@@ -280,9 +277,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.CLOB:
                     value = handleClob(rs, colIndex);
                     break;
-                case Types.DECIMAL:
-                case Types.REAL:
-                case Types.NUMERIC:
+                case Types.DECIMAL, Types.REAL, Types.NUMERIC:
                     value = applyNumberFormatter(this.floatingPointFormat, rs.getBigDecimal(colIndex));
                     break;
                 case Types.DOUBLE:
@@ -312,19 +307,13 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.TIMESTAMP:
                     value = handleTimestamp(rs.getTimestamp(colIndex), timestampFormatString);
                     break;
-                case Types.NVARCHAR:
-                case Types.NCHAR:
-                case Types.LONGNVARCHAR:
+                case Types.NVARCHAR, Types.NCHAR, Types.LONGNVARCHAR:
                     value = handleNVarChar(rs, colIndex, trim);
                     break;
-                case Types.LONGVARCHAR:
-                case Types.VARCHAR:
-                case Types.CHAR:
+                case Types.LONGVARCHAR, Types.VARCHAR, Types.CHAR:
                     value = handleVarChar(rs, colIndex, trim);
                     break;
-                case Types.BINARY:
-                case Types.VARBINARY:
-                case Types.LONGVARBINARY:
+                case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY:
                     value = new String(rs.getBytes(colIndex), StandardCharsets.UTF_8);
                     break;
                 default:

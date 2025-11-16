@@ -23,10 +23,9 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.ICSVParser;
 import com.opencsv.exceptions.CsvException;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -44,9 +43,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_FORMAT_PATTERN;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_ISO8601_ALT_FORMAT_PATTERN;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DURATION_ISO8601_FORMAT_PATTERN;
@@ -59,7 +58,13 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CSV_FILE_NOT_FOUN
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_COLUMN_DEFINITIONS;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.ADD_STATEMENT_TO_BATCH_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PARSING_VALUE_FAILED;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.String.format;
+import static java.lang.String.join;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.wrap;
 
 /**
@@ -146,6 +151,7 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *     {@value DEFAULT_TIME_FORMAT} and {@value DEFAULT_DATETIME_FORMAT}.
  * </p>
  */
+@Slf4j
 public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
 
     private static final int DEFAULT_BATCH_SIZE = 20;
@@ -171,10 +177,12 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
      *                  instance.
      * @throws SQLSyntaxErrorException if an unknown option is used.
      */
-    public CopyFromCommandExecutor(@Nonnull final String tableName, final String columns, @Nonnull final String origin,
+    public CopyFromCommandExecutor(@Nonnull final String tableName,
+                                   final String columns,
+                                   @Nonnull final String origin,
                                    @Nonnull final Properties options) throws SQLSyntaxErrorException {
         this.tableName = tableName;
-        this.columns = StringUtils.defaultIfBlank(columns, EMPTY);
+        this.columns = defaultIfBlank(columns, EMPTY);
         this.origin = origin;
         this.options = options;
 
@@ -201,24 +209,23 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
 
         final CassandraStatement insertStatement = (CassandraStatement) connection.createStatement();
 
-        final boolean hasHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
-        final Set<String> skippedColumns = Arrays.stream(((String) this.options.getOrDefault(OPTION_SKIPCOLS, EMPTY))
-                .split(COMMA))
+        final boolean hasHeaders = parseBoolean(this.options.getProperty(OPTION_HEADER));
+        final Set<String> skippedColumns =
+            Arrays.stream(((String) this.options.getOrDefault(OPTION_SKIPCOLS, EMPTY)).split(COMMA))
             .map(String::trim)
-            .collect(Collectors.toSet());
+            .collect(toSet());
         final int batchSize = getOptionValueAsInt(OPTION_BATCHSIZE, DEFAULT_BATCH_SIZE);
-
-        CSVReader csvReader = null;
 
         int executedBatches = 0;
         final int importedRows;
         int skippedRows = getOptionValueAsInt(OPTION_SKIPROWS, DEFAULT_SKIPPED_ROWS);
 
-        try {
-            csvReader = new CSVReaderBuilder(new FileReader(translateFilename(this.origin)))
+        try (
+            final CSVReader csvReader = new CSVReaderBuilder(new FileReader(translateFilename(this.origin)))
                 .withSkipLines(skippedRows)
                 .withCSVParser(configureCsvParser())
-                .build();
+                .build()
+        ) {
             final List<String[]> allRows = csvReader.readAll();
 
             final Map<Integer, String> csvColumns;
@@ -245,12 +252,11 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             importedRows = maxRows - startRow;
             skippedRows += allRows.size() - importedRows - startRow;
         } catch (final FileNotFoundException e) {
-            throw new SQLException(String.format(CSV_FILE_NOT_FOUND, this.origin), e);
+            throw new SQLException(format(CSV_FILE_NOT_FOUND, this.origin), e);
         } catch (final IOException | CsvException e) {
-            throw new SQLException(String.format(CANNOT_READ_CSV_FILE, this.origin, e.getMessage()), e);
+            throw new SQLException(format(CANNOT_READ_CSV_FILE, this.origin, e.getMessage()), e);
         } finally {
             insertStatement.close();
-            IOUtils.closeQuietly(csvReader);
         }
 
         return buildCopyCommandResultSet("imported from", importedRows, executedBatches, skippedRows);
@@ -272,7 +278,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         try {
             String keyspaceName = connection.getSchema();
             String tableName = this.tableName;
-            if (this.tableName.contains(".")) {
+            if (this.tableName.contains(DOT)) {
                 final String[] keyspaceAndTable = this.tableName.split("\\.");
                 keyspaceName = keyspaceAndTable[0];
                 tableName = keyspaceAndTable[1];
@@ -291,8 +297,8 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
     }
 
     private void setTargetColumnsIfNotSpecified() {
-        if (StringUtils.isBlank(this.columns)) {
-            this.columns = String.join(COMMA, this.columnsTypesInTargetTable.keySet());
+        if (isBlank(this.columns)) {
+            this.columns = join(COMMA, this.columnsTypesInTargetTable.keySet());
         }
     }
 
@@ -300,7 +306,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         return Arrays.stream(this.columns.split(COMMA))
             .map(String::trim)
             .filter(col -> !skippedColumns.contains(col))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private Map<Integer, String> mapColumnsFromArray(final String[] columnsNames) {
@@ -324,18 +330,18 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
                 values.add(o);
             }
         }
-        final String cql = String.format("INSERT INTO %s(%s) VALUES (%s)", this.tableName,
+        final String cql = format("INSERT INTO %s(%s) VALUES (%s)", this.tableName,
             csvColumns.values().stream()
                 .filter(columnsToImport::contains)
                 .collect(Collectors.joining(COMMA)),
-            String.join(COMMA, values));
+            join(COMMA, values));
         try {
             statement.addBatch(cql);
-            if (LOG.isTraceEnabled() || statement.getCassandraConnection().isDebugMode()) {
-                LOG.trace("Added to batch: {}", cql);
+            if (log.isTraceEnabled() || statement.getCassandraConnection().isDebugMode()) {
+                log.trace("Added to batch: {}", cql);
             }
         } catch (final SQLException e) {
-            LOG.warn(ADD_STATEMENT_TO_BATCH_FAILED, cql, e);
+            log.warn(ADD_STATEMENT_TO_BATCH_FAILED, cql, e);
         }
     }
 
@@ -347,7 +353,7 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             final Number number = this.decimalFormat.parse(strValue.trim());
             return number.toString();
         } catch (final ParseException e) {
-            LOG.warn(PARSING_VALUE_FAILED, strValue);
+            log.warn(PARSING_VALUE_FAILED, strValue);
         }
         return null;
     }
@@ -357,45 +363,22 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             return null;
         }
         switch (colType) {
-            case Types.BIT:
-            case Types.BOOLEAN:
-                return String.valueOf(Boolean.parseBoolean(value));
-            case Types.BIGINT:
-            case Types.DECIMAL:
-            case Types.NUMERIC:
-            case Types.REAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.INTEGER:
-            case Types.SMALLINT:
-            case Types.TINYINT:
+            case Types.BIT, Types.BOOLEAN:
+                return String.valueOf(parseBoolean(value));
+            case Types.BIGINT, Types.DECIMAL, Types.NUMERIC, Types.REAL, Types.FLOAT, Types.DOUBLE, Types.INTEGER,
+                 Types.SMALLINT, Types.TINYINT:
                 return handleNumberValue(value);
-            case Types.DATE:
+            case Types.DATE, Types.TIME, Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE,
+                 Types.NVARCHAR, Types.NCHAR, Types.LONGNVARCHAR, Types.LONGVARCHAR, Types.VARCHAR, Types.CHAR,
+                 Types.DATALINK:
                 // We assume here the date values respect the default date format supported by Cassandra CQL.
-            case Types.TIME:
-            case Types.TIME_WITH_TIMEZONE:
                 // We assume here the time values respect the default time format supported by Cassandra CQL.
-            case Types.TIMESTAMP:
-            case Types.TIMESTAMP_WITH_TIMEZONE:
                 // We assume here the date-time values respect the default date-time format supported by Cassandra CQL.
-            case Types.NVARCHAR:
-            case Types.NCHAR:
-            case Types.LONGNVARCHAR:
-            case Types.LONGVARCHAR:
-            case Types.VARCHAR:
-            case Types.CHAR:
-            case Types.DATALINK:
                 return wrap(value, SINGLE_QUOTE);
-            case Types.BINARY:
-            case Types.VARBINARY:
-            case Types.LONGVARBINARY:
-            case Types.BLOB:
-            case Types.CLOB:
-            case Types.NCLOB:
+            case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB, Types.CLOB, Types.NCLOB:
                 // We assume blob values are represented as text in imported CSV files.
-                return String.format("textAsBlob('%s')", value);
-            case Types.ARRAY:
-            case Types.OTHER:
+                return format("textAsBlob('%s')", value);
+            case Types.ARRAY, Types.OTHER:
                 // We assume the format provided for collection types (tuples, maps, arrays, ...) is correct and does
                 // not require any transformation.
                 if (value.matches("[\\[({].*[])}]")) {

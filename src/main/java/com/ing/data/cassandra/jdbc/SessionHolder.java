@@ -37,10 +37,9 @@ import com.ing.data.cassandra.jdbc.utils.AwsUtil;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import com.instaclustr.cassandra.driver.auth.KerberosAuthProviderBase;
 import com.instaclustr.cassandra.driver.auth.ProgrammaticKerberosAuthProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.aws.mcs.auth.SigV4AuthProvider;
 
 import java.io.ByteArrayInputStream;
@@ -115,10 +114,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * </p>
  */
 @SuppressWarnings("LoggingSimilarMessage")
+@Slf4j
 class SessionHolder {
     static final String URL_KEY = "jdbcUrl";
-
-    private static final Logger LOG = LoggerFactory.getLogger(SessionHolder.class);
 
     final Session session;
     final Properties properties;
@@ -148,8 +146,8 @@ class SessionHolder {
         params.keySet().stream()
             .filter(key -> !URL_KEY.equals(key))
             .forEach(key -> this.properties.put(key, params.get(key)));
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Final Properties to Connection: {}", toStringWithoutSensitiveValues(this.properties));
+        if (log.isDebugEnabled()) {
+            log.debug("Final Properties to Connection: {}", toStringWithoutSensitiveValues(this.properties));
         }
 
         this.session = createSession(this.properties);
@@ -174,10 +172,10 @@ class SessionHolder {
         }
         final String jdbcUrl = redactSensitiveValuesInJdbcUrl(this.cacheKey.get(URL_KEY));
         if (newRef == -1) {
-            LOG.debug("Released last reference to {}, closing Session.", jdbcUrl);
+            log.debug("Released last reference to {}, closing Session.", jdbcUrl);
             dispose();
         } else {
-            LOG.debug("Released reference to {}, new count = {}.", jdbcUrl, newRef);
+            log.debug("Released reference to {}, new count = {}.", jdbcUrl, newRef);
         }
     }
 
@@ -192,11 +190,11 @@ class SessionHolder {
             final String jdbcUrl = redactSensitiveValuesInJdbcUrl((String) this.cacheKey.get(URL_KEY));
             if (ref < 0) {
                 // We raced with the release of the last reference, the caller will need to create a new session.
-                LOG.debug("Failed to acquire reference to {}.", jdbcUrl);
+                log.debug("Failed to acquire reference to {}.", jdbcUrl);
                 return false;
             }
             if (this.references.compareAndSet(ref, ref + 1)) {
-                LOG.debug("Acquired reference to {}, new count = {}.", jdbcUrl, ref + 1);
+                log.debug("Acquired reference to {}, new count = {}.", jdbcUrl, ref + 1);
                 return true;
             }
         }
@@ -227,10 +225,10 @@ class SessionHolder {
                 this.properties.remove(TAG_KEEP_ALIVE);
                 this.properties.remove(TAG_TCP_NO_DELAY);
                 this.properties.remove(TAG_USE_KERBEROS);
-                LOG.info("The configuration file {} will be used and will override the parameters defined into the "
+                log.info("The configuration file {} will be used and will override the parameters defined into the "
                     + "JDBC URL except contact points and keyspace.", configurationFilePath);
             } else {
-                LOG.warn(CONFIGURATION_FILE_NOT_FOUND, configurationFilePath);
+                log.warn(CONFIGURATION_FILE_NOT_FOUND, configurationFilePath);
             }
         }
 
@@ -276,7 +274,7 @@ class SessionHolder {
             EMPTY));
         final boolean useAwsSigV4AuthProvider = Boolean.TRUE.toString().equals(properties.getProperty(TAG_USE_SIG_V4,
             EMPTY));
-        final List<TypeCodec<?>> customCodecs =
+        final List<TypeCodec<Object>> customCodecs =
             parseCustomCodecs(properties.getProperty(TAG_CUSTOM_CODECS, EMPTY));
 
         // Instantiate the session builder and set the contact points.
@@ -287,7 +285,7 @@ class SessionHolder {
 
         if (StringUtils.isNotBlank(cloudSecureConnectBundle)) {
             builder.withCloudSecureConnectBundle(Paths.get(cloudSecureConnectBundle));
-            LOG.info("Cloud secure connect bundle used. Host(s) {} will be ignored.",
+            log.info("Cloud secure connect bundle used. Host(s) {} will be ignored.",
                 formatContactPoints(contactPoints));
         } else if (StringUtils.isNotBlank(astraToken)) {
             final ByteArrayInputStream secureConnectBundle =
@@ -331,7 +329,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn(PARAMETER_PARSING_FAILED, "load balancing policy", e.getMessage(),
+                log.warn(PARAMETER_PARSING_FAILED, "load balancing policy", e.getMessage(),
                     "Forcing to DefaultLoadBalancingPolicy");
                 driverConfigLoaderBuilder.withString(DefaultDriverOption.LOAD_BALANCING_POLICY_CLASS,
                     DefaultLoadBalancingPolicy.class.getSimpleName());
@@ -346,7 +344,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn(PARAMETER_PARSING_FAILED, "retry policy", e.getMessage(), "skipping");
+                log.warn(PARAMETER_PARSING_FAILED, "retry policy", e.getMessage(), "skipping");
             }
         }
 
@@ -370,7 +368,7 @@ class SessionHolder {
                 if (debugMode) {
                     throw new SQLNonTransientConnectionException(e);
                 }
-                LOG.warn(PARAMETER_PARSING_FAILED, "reconnection policy", e.getMessage(), "skipping");
+                log.warn(PARAMETER_PARSING_FAILED, "reconnection policy", e.getMessage(), "skipping");
             }
         }
 
@@ -407,7 +405,7 @@ class SessionHolder {
                 }
             }
         } else {
-            LOG.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL "
+            log.info("Cloud secure connect bundle used. SSL will always be enabled. All manual SSL "
                 + "configuration(s) will be ignored.");
         }
 

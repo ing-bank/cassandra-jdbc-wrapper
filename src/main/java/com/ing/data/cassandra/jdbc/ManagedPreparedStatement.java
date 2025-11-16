@@ -727,7 +727,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
-    public void setObject(final int parameterIndex, final Object x, final int targetSqlType,
+    public void setObject(final int parameterIndex,
+                          final Object x,
+                          final int targetSqlType,
                           final int scaleOrLength) throws SQLException {
         checkNotClosed();
         try {

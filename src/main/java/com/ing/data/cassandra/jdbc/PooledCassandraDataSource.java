@@ -15,8 +15,7 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
@@ -34,11 +33,11 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 /**
  * Pooled Cassandra data source: implementation class for {@link DataSource} and {@link ConnectionEventListener}.
  */
+@Slf4j
 public class PooledCassandraDataSource implements DataSource, ConnectionEventListener {
 
     private static final int CONNECTION_IS_VALID_DEFAULT_TIMEOUT = 5;
     private static final int MIN_POOL_SIZE = 4;
-    private static final Logger LOG = LoggerFactory.getLogger(PooledCassandraDataSource.class);
 
     private final CassandraDataSource connectionPoolDataSource;
     private final Set<PooledCassandraConnection> freeConnections = new HashSet<>();
@@ -83,7 +82,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                LOG.error(e.getMessage());
+                log.error(e.getMessage());
             }
         }
     }
@@ -96,7 +95,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
                 connection.getConnection().close();
             }
         } catch (final SQLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         this.usedConnections.remove(connection);
     }
@@ -114,7 +113,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                LOG.error(e.getMessage());
+                log.error(e.getMessage());
             }
         }
     }

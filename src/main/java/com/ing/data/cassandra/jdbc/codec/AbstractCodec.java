@@ -16,11 +16,10 @@
 package com.ing.data.cassandra.jdbc.codec;
 
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
-import org.apache.commons.lang3.StringUtils;
-
 import jakarta.annotation.Nonnull;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.NULL_KEYWORD;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Provides a minimal implementation for the methods {@link TypeCodec#parse(String)} and
@@ -40,7 +39,7 @@ public abstract class AbstractCodec<T> {
      * @return The parsed value or {@code null} if the value to parse is {@code NULL} CQL keyword or blank.
      */
     public T parse(final String value) {
-        if (StringUtils.isBlank(value) || NULL_KEYWORD.equals(value)) {
+        if (isBlank(value) || NULL_KEYWORD.equals(value)) {
             return null;
         }
         return parseNonNull(value);

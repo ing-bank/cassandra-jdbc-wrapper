@@ -20,6 +20,8 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import jakarta.annotation.Nonnull;
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of CQL tuple (corresponding Java type: {@link TupleValue}).
  * <p>CQL type description: a group of 2-3 fields.</p>
@@ -60,11 +62,7 @@ public class JdbcTuple extends AbstractJdbcType<TupleValue> {
     }
 
     public String getString(final Object obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

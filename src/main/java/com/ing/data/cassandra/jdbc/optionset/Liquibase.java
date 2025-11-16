@@ -15,8 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.optionset;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 
@@ -25,8 +24,8 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.SCHEMA_NAME_NOT
 /**
  * Option set implementation for Liquibase compatibility and flavour of JDBC.
  */
+@Slf4j
 public class Liquibase extends AbstractOptionSet {
-    private static final Logger LOG = LoggerFactory.getLogger(Liquibase.class);
 
     @Override
     public String getCatalog() {
@@ -36,7 +35,7 @@ public class Liquibase extends AbstractOptionSet {
         try {
             return getConnection().getSchema();
         } catch (final SQLException e) {
-            LOG.warn(SCHEMA_NAME_NOT_FOUND, e.getMessage());
+            log.warn(SCHEMA_NAME_NOT_FOUND, e.getMessage());
             return null;
         }
     }

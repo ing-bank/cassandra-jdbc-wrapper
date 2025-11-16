@@ -45,7 +45,9 @@ public class BasicVersionedMetadata implements VersionedMetadata {
      *                              database greater than {@code validFrom}.
      * @param additionalCondition   An additional condition to verify on the current connection to the database.
      */
-    public BasicVersionedMetadata(final String metadataName, final String validFrom, final String invalidFrom,
+    public BasicVersionedMetadata(final String metadataName,
+                                  final String validFrom,
+                                  final String invalidFrom,
                                   final Function<CassandraConnection, Boolean> additionalCondition) {
         this.metadataName = metadataName;
         this.validFrom = Semver.coerce(validFrom);
@@ -75,7 +77,8 @@ public class BasicVersionedMetadata implements VersionedMetadata {
      * @param validFrom             The minimal Cassandra version from which the metadata exists.
      * @param additionalCondition   An additional condition to verify on the current connection to the database.
      */
-    public BasicVersionedMetadata(final String metadataName, final String validFrom,
+    public BasicVersionedMetadata(final String metadataName,
+                                  final String validFrom,
                                   final Function<CassandraConnection, Boolean> additionalCondition) {
         this(metadataName, validFrom, null, additionalCondition);
     }

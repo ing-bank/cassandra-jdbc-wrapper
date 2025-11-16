@@ -38,8 +38,10 @@ import java.sql.Timestamp;
 import java.sql.Wrapper;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.cqlName;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 /**
  * Provides a default implementation (returning a {@link SQLFeatureNotSupportedException}) to hold the unimplemented
@@ -58,7 +60,7 @@ abstract class AbstractResultSet implements Wrapper {
      * @throws SQLException when the CQL type cannot be determined for the given column.
      */
     boolean isCqlType(final int columnIndex, @Nonnull final DataTypeEnum type) throws SQLException {
-        final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnIndex)), "<");
+        final String columnType = substringBefore(cqlName(getCqlDataType(columnIndex)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
 
@@ -71,7 +73,7 @@ abstract class AbstractResultSet implements Wrapper {
      * @throws SQLException when the CQL type cannot be determined for the given column.
      */
     boolean isCqlType(final String columnLabel, @Nonnull final DataTypeEnum type) throws SQLException {
-        final String columnType = StringUtils.substringBefore(DataTypeEnum.cqlName(getCqlDataType(columnLabel)), "<");
+        final String columnType = substringBefore(cqlName(getCqlDataType(columnLabel)), "<");
         return type.cqlType.equalsIgnoreCase(columnType);
     }
 

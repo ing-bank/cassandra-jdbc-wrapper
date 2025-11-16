@@ -30,10 +30,8 @@ import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,7 +41,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Array;
@@ -92,7 +89,9 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JDBC_
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_ARRAY_IMPLEMENTATION;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.PREPARED_STATEMENT_CLOSING_FAILED;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Cassandra prepared statement: implementation class for {@link PreparedStatement}.
@@ -103,10 +102,9 @@ import static java.util.Collections.emptyList;
  *     {@code INSERT INTO ... JSON} and {@code fromJson()} provided by Cassandra.
  * </p>
  */
+@Slf4j
 public class CassandraPreparedStatement extends CassandraStatement
     implements PreparedStatement, CassandraStatementJsonSupport {
-
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraPreparedStatement.class);
 
     // The count of bound variable markers ('?') encountered during the parsing of the CQL server-side.
     private final int count;
@@ -146,8 +144,8 @@ public class CassandraPreparedStatement extends CassandraStatement
     CassandraPreparedStatement(final CassandraConnection connection, final String cql, final int resultSetType,
                                final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
         super(connection, cql, resultSetType, resultSetConcurrency, resultSetHoldability);
-        if (LOG.isTraceEnabled() || connection.isDebugMode()) {
-            LOG.trace("CQL: {}", this.cql);
+        if (log.isTraceEnabled() || connection.isDebugMode()) {
+            log.trace("CQL: {}", this.cql);
         }
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
@@ -155,7 +153,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                 .setExecutionProfile(this.connection.getActiveExecutionProfile())
                 .build();
             this.batchStatements = new ArrayList<>();
-            this.count = cql.length() - cql.replace("?", StringUtils.EMPTY).length();
+            this.count = cql.length() - cql.replace("?", EMPTY).length();
         } catch (final Exception e) {
             throw new SQLTransientException(e);
         }
@@ -163,10 +161,10 @@ public class CassandraPreparedStatement extends CassandraStatement
 
     private void checkIndex(final int index) throws SQLException {
         if (index > this.count) {
-            throw new SQLRecoverableException(String.format(OUT_OF_BOUNDS_BINDING_INDEX, index, this.count));
+            throw new SQLRecoverableException(format(OUT_OF_BOUNDS_BINDING_INDEX, index, this.count));
         }
         if (index < 1) {
-            throw new SQLRecoverableException(String.format(MUST_BE_POSITIVE_BINDING_INDEX, index));
+            throw new SQLRecoverableException(format(MUST_BE_POSITIVE_BINDING_INDEX, index));
         }
     }
 
@@ -211,7 +209,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             this.connection.removeStatement(this);
         } catch (final Exception e) {
-            LOG.warn(PREPARED_STATEMENT_CLOSING_FAILED, e.getMessage());
+            log.warn(PREPARED_STATEMENT_CLOSING_FAILED, e.getMessage());
         }
     }
 
@@ -219,8 +217,8 @@ public class CassandraPreparedStatement extends CassandraStatement
     private void doExecute() throws SQLException {
         try {
             resetResults();
-            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.trace("CQL: {}", this.cql);
+            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                log.trace("CQL: {}", this.cql);
             }
             this.boundStatement = this.boundStatement
                 .setPageSize(this.getFetchSize()) // Set paging to avoid timeout and node harm.
@@ -245,7 +243,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             .setExecutionProfile(this.connection.getActiveExecutionProfile())
             .build();
         if (this.batchStatements.size() > MAX_ASYNC_QUERIES) {
-            throw new SQLNonTransientException(String.format(TOO_MANY_QUERIES, batchStatements.size()));
+            throw new SQLNonTransientException(format(TOO_MANY_QUERIES, batchStatements.size()));
         }
     }
 
@@ -269,8 +267,8 @@ public class CassandraPreparedStatement extends CassandraStatement
         final int[] returnCounts = new int[this.batchStatements.size()];
         try {
             final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.trace("CQL statements: {}", this.batchStatements.size());
+            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                log.trace("CQL statements: {}", this.batchStatements.size());
             }
             for (final BoundStatement statement : this.batchStatements) {
                 for (int i = 0; i < statement.getPreparedStatement().getVariableDefinitions().size(); i++) {
@@ -279,8 +277,8 @@ public class CassandraPreparedStatement extends CassandraStatement
                         statement.setToNull(i);
                     }
                 }
-                if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                    LOG.trace("CQL: {}", this.cql);
+                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                    log.trace("CQL: {}", this.cql);
                 }
                 final BoundStatement boundStmt = statement
                     .setConsistencyLevel(this.consistencyLevel)
@@ -298,7 +296,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                     if (asyncResultSet.getColumnDefinitions().size() > 0) {
                         returnCounts[i] = EXECUTE_FAILED;
                         hasFailures = true;
-                        errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i,
+                        errMsgBuilder.append(format(BATCH_STATEMENT_FAILURE_MSG, i,
                             "attempts to return a result set"));
                     } else {
                         returnCounts[i] = SUCCESS_NO_INFO;
@@ -306,7 +304,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                 } catch (final Exception e) {
                     returnCounts[i] = EXECUTE_FAILED;
                     hasFailures = true;
-                    errMsgBuilder.append(String.format(BATCH_STATEMENT_FAILURE_MSG, i, e.getMessage()));
+                    errMsgBuilder.append(format(BATCH_STATEMENT_FAILURE_MSG, i, e.getMessage()));
                 } finally {
                     i++;
                 }
@@ -375,10 +373,10 @@ public class CassandraPreparedStatement extends CassandraStatement
         // empty list with a warning.
         if (x == null) {
             this.boundStatement = this.boundStatement.setToNull(parameterIndex - 1);
-        } else if (x instanceof ArrayImpl) {
-            this.setObject(parameterIndex, ((ArrayImpl) x).toList());
+        } else if (x instanceof ArrayImpl array) {
+            this.setObject(parameterIndex, array.toList());
         } else {
-            LOG.warn(INVALID_ARRAY_IMPLEMENTATION, x.getClass().getName());
+            log.warn(INVALID_ARRAY_IMPLEMENTATION, x.getClass().getName());
             this.setObject(parameterIndex, emptyList());
         }
     }
@@ -488,7 +486,7 @@ public class CassandraPreparedStatement extends CassandraStatement
     /**
      * Sets the designated parameter to the given {@link CqlDuration} value.
      * <p>
-     *     This method is not JDBC standard but it helps to set {@code DURATION} CQL values into a prepared statement.
+     *     This method is not JDBC standard, but it helps to set {@code DURATION} CQL values into a prepared statement.
      * </p>
      *
      * @param parameterIndex    The first parameter is 1, the second is 2, ...
@@ -618,54 +616,42 @@ public class CassandraPreparedStatement extends CassandraStatement
 
     @SuppressWarnings({"ResultOfMethodCallIgnored", "unchecked", "rawtypes"})
     @Override
-    public final void setObject(final int parameterIndex, final Object x, final int targetSqlType,
+    public final void setObject(final int parameterIndex,
+                                final Object x,
+                                final int targetSqlType,
                                 final int scaleOrLength) throws SQLException {
         checkNotClosed();
         checkIndex(parameterIndex);
 
         switch (targetSqlType) {
             case Types.BIGINT:
-                if (x instanceof BigInteger) {
-                    this.boundStatement = this.boundStatement.setBigInteger(parameterIndex - 1, (BigInteger) x);
+                if (x instanceof BigInteger bigInteger) {
+                    this.boundStatement = this.boundStatement.setBigInteger(parameterIndex - 1, bigInteger);
                 } else {
                     this.boundStatement = this.boundStatement.setLong(parameterIndex - 1, Long.parseLong(x.toString()));
                 }
                 break;
-            case Types.BINARY:
-            case Types.VARBINARY:
-            case Types.LONGVARBINARY:
-            case Types.BLOB:
-            case Types.CLOB:
-            case Types.NCLOB:
+            case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB, Types.CLOB, Types.NCLOB:
                 final byte[] array = convertToByteArray(x);
                 this.boundStatement = this.boundStatement.setByteBuffer(parameterIndex - 1, ByteBuffer.wrap(array));
                 break;
-            case Types.BOOLEAN:
-            case Types.BIT:
+            case Types.BOOLEAN, Types.BIT:
                 this.boundStatement = this.boundStatement.setBoolean(parameterIndex - 1, (Boolean) x);
                 break;
-            case Types.CHAR:
-            case Types.VARCHAR:
-            case Types.LONGVARCHAR:
-            case Types.NCHAR:
-            case Types.NVARCHAR:
-            case Types.LONGNVARCHAR:
-            case Types.DATALINK:
+            case Types.CHAR, Types.VARCHAR, Types.LONGVARCHAR, Types.NCHAR, Types.NVARCHAR, Types.LONGNVARCHAR,
+                 Types.DATALINK:
                 this.boundStatement = this.boundStatement.setString(parameterIndex - 1, x.toString());
                 break;
-            case Types.TIMESTAMP:
-            case Types.TIMESTAMP_WITH_TIMEZONE:
+            case Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE:
                 this.boundStatement = this.boundStatement.setInstant(parameterIndex - 1, convertToInstant(x));
                 break;
-            case Types.DECIMAL:
-            case Types.NUMERIC:
+            case Types.DECIMAL, Types.NUMERIC:
                 this.boundStatement = this.boundStatement.setBigDecimal(parameterIndex - 1, (BigDecimal) x);
                 break;
             case Types.DOUBLE:
                 this.boundStatement = this.boundStatement.setDouble(parameterIndex - 1, (Double) x);
                 break;
-            case Types.FLOAT:
-            case Types.REAL:
+            case Types.FLOAT, Types.REAL:
                 this.boundStatement = this.boundStatement.setFloat(parameterIndex - 1, (Float) x);
                 break;
             case Types.INTEGER:
@@ -687,8 +673,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             case Types.DATE:
                 this.boundStatement = this.boundStatement.setLocalDate(parameterIndex - 1, convertToLocalDate(x));
                 break;
-            case Types.TIME:
-            case Types.TIME_WITH_TIMEZONE:
+            case Types.TIME, Types.TIME_WITH_TIMEZONE:
                 this.boundStatement = this.boundStatement.setLocalTime(parameterIndex - 1, convertToLocalTime(x));
                 break;
             case Types.ROWID:
@@ -698,21 +683,20 @@ public class CassandraPreparedStatement extends CassandraStatement
                 this.setArray(parameterIndex, (Array) x);
                 break;
             case Types.OTHER:
-                if (x instanceof TupleValue) {
-                    this.boundStatement = this.boundStatement.setTupleValue(parameterIndex - 1, (TupleValue) x);
-                } else if (x instanceof UUID) {
-                    this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, (UUID) x);
-                } else if (x instanceof CqlDuration) {
-                    this.boundStatement = this.boundStatement.setCqlDuration(parameterIndex - 1, (CqlDuration) x);
-                } else if (x instanceof CqlVector) {
-                    final CqlVector vector = (CqlVector) x;
+                if (x instanceof TupleValue tupleValue) {
+                    this.boundStatement = this.boundStatement.setTupleValue(parameterIndex - 1, tupleValue);
+                } else if (x instanceof UUID uuid) {
+                    this.boundStatement = this.boundStatement.setUuid(parameterIndex - 1, uuid);
+                } else if (x instanceof CqlDuration duration) {
+                    this.boundStatement = this.boundStatement.setCqlDuration(parameterIndex - 1, duration);
+                } else if (x instanceof CqlVector vector) {
                     final DefaultVectorType vectorType =
                         (DefaultVectorType) getBoundStatementVariableDefinitions().get(parameterIndex - 1).getType();
                     final Class<?> itemsClass = DataTypeEnum.fromCqlTypeName(vectorType.getElementType()
                         .asCql(false, false)).javaType;
                     this.boundStatement = this.boundStatement.setVector(parameterIndex - 1, vector, itemsClass);
-                } else if (x instanceof java.net.InetAddress) {
-                    this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, (InetAddress) x);
+                } else if (x instanceof java.net.InetAddress inetAddress) {
+                    this.boundStatement = this.boundStatement.setInetAddress(parameterIndex - 1, inetAddress);
                 } else if (List.class.isAssignableFrom(x.getClass())) {
                     final List handledList = handleAsList(x.getClass(), x);
                     final DefaultListType listType =
@@ -740,7 +724,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                 }
                 break;
             default:
-                throw new SQLException(String.format(UNSUPPORTED_JDBC_TYPE, targetSqlType));
+                throw new SQLException(format(UNSUPPORTED_JDBC_TYPE, targetSqlType));
         }
     }
 
@@ -817,7 +801,7 @@ public class CassandraPreparedStatement extends CassandraStatement
             setString(parameterIndex, json);
         } catch (final JsonProcessingException e) {
             throw new SQLException(
-                String.format(UNSUPPORTED_CONVERSION_TO_JSON, x.getClass().getName(), parameterIndex));
+                format(UNSUPPORTED_CONVERSION_TO_JSON, x.getClass().getName(), parameterIndex));
         }
     }
 

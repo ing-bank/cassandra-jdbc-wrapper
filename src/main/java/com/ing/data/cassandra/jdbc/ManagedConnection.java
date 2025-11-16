@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 
 /**
  * Cassandra connection from a pool managed by a {@link PooledCassandraDataSource}.
@@ -108,11 +108,12 @@ class ManagedConnection extends AbstractConnection implements Connection {
     }
 
     @Override
-    public Statement createStatement(final int resultSetType, final int resultSetConcurrency,
+    public Statement createStatement(final int resultSetType,
+                                     final int resultSetConcurrency,
                                      final int resultSetHoldability) throws SQLException {
         checkNotClosed();
-        final Statement statement = this.physicalConnection.createStatement(resultSetType, resultSetConcurrency,
-            resultSetHoldability);
+        final Statement statement =
+            this.physicalConnection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
         this.statements.add(statement);
         return statement;
     }
@@ -348,13 +349,16 @@ class ManagedConnection extends AbstractConnection implements Connection {
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency)
-        throws SQLException {
+    public PreparedStatement prepareStatement(final String sql,
+                                              final int resultSetType,
+                                              final int resultSetConcurrency) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency,
+    public PreparedStatement prepareStatement(final String sql,
+                                              final int resultSetType,
+                                              final int resultSetConcurrency,
                                               final int resultSetHoldability) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

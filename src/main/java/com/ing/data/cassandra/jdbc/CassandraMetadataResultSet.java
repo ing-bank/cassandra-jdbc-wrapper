@@ -77,6 +77,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_RETRIEVE_METADATA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
+import static java.lang.String.format;
 
 /**
  * Cassandra metadata result set. This is an implementation of {@link ResultSet} for database metadata.
@@ -161,8 +162,8 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
      * @throws SQLException if a database access error occurs or this constructor is called with a closed
      * {@link Statement}.
      */
-    CassandraMetadataResultSet(final CassandraStatement statement, final MetadataResultSet metadataResultSet)
-        throws SQLException {
+    CassandraMetadataResultSet(final CassandraStatement statement,
+                               final MetadataResultSet metadataResultSet) throws SQLException {
         this.metadata = new CResultSetMetaData();
         this.statement = statement;
         this.resultSetType = statement.getResultSetType();
@@ -240,7 +241,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         if (this.currentRow != null) {
             if (this.currentRow.getColumnDefinitions() != null) {
                 if (index < 1 || index > this.currentRow.getColumnDefinitions().asList().size()) {
-                    throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
+                    throw new SQLSyntaxErrorException(format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
                         + this.currentRow.getColumnDefinitions().asList().size());
                 }
             }
@@ -248,7 +249,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         } else if (this.driverResultSet != null) {
             if (this.driverResultSet.getColumnDefinitions() != null) {
                 if (index < 1 || index > this.driverResultSet.getColumnDefinitions().asList().size()) {
-                    throw new SQLSyntaxErrorException(String.format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
+                    throw new SQLSyntaxErrorException(format(MUST_BE_POSITIVE, index) + StringUtils.SPACE
                         + this.driverResultSet.getColumnDefinitions().asList().size());
                 }
             }
@@ -258,13 +259,13 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     private void checkName(final String name) throws SQLException {
         if (this.currentRow != null) {
             if (!this.currentRow.getColumnDefinitions().contains(name)) {
-                throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
+                throw new SQLSyntaxErrorException(format(VALID_LABELS, name));
             }
             this.wasNull = this.currentRow.isNull(name);
         } else if (this.driverResultSet != null) {
             if (this.driverResultSet.getColumnDefinitions() != null) {
                 if (!this.driverResultSet.getColumnDefinitions().contains(name)) {
-                    throw new SQLSyntaxErrorException(String.format(VALID_LABELS, name));
+                    throw new SQLSyntaxErrorException(format(VALID_LABELS, name));
                 }
             }
         }
@@ -299,7 +300,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         } else if (this.driverResultSet != null && this.driverResultSet.getColumnDefinitions() != null) {
             return this.driverResultSet.getColumnDefinitions().getIndexOf(columnLabel) + 1;
         }
-        throw new SQLSyntaxErrorException(String.format(VALID_LABELS, columnLabel));
+        throw new SQLSyntaxErrorException(format(VALID_LABELS, columnLabel));
     }
 
     @Override
@@ -516,6 +517,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         return this.currentRow.getDuration(columnLabel);
     }
 
+    @SuppressWarnings("MagicConstant")
     @Override
     public int getFetchDirection() throws SQLException {
         checkNotClosed();
@@ -527,11 +529,11 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkNotClosed();
         if (direction == FETCH_FORWARD || direction == FETCH_REVERSE || direction == FETCH_UNKNOWN) {
             if (getType() == TYPE_FORWARD_ONLY && direction != FETCH_FORWARD) {
-                throw new SQLSyntaxErrorException(String.format(ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY, direction));
+                throw new SQLSyntaxErrorException(format(ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY, direction));
             }
             this.fetchDirection = direction;
         }
-        throw new SQLSyntaxErrorException(String.format(BAD_FETCH_DIR, direction));
+        throw new SQLSyntaxErrorException(format(BAD_FETCH_DIR, direction));
     }
 
     @Override
@@ -544,7 +546,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
     public void setFetchSize(final int size) throws SQLException {
         checkNotClosed();
         if (size < 0) {
-            throw new SQLException(String.format(BAD_FETCH_SIZE, size));
+            throw new SQLException(format(BAD_FETCH_SIZE, size));
         }
         this.fetchSize = size;
     }
@@ -683,48 +685,26 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkIndex(columnIndex);
         final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(getCqlDataType(columnIndex).asCql(false, false));
 
-        switch (dataType) {
-            case VARCHAR:
-            case ASCII:
-            case TEXT:
-                return this.currentRow.getString(columnIndex - 1);
-            case VARINT:
-                return this.currentRow.getVarint(columnIndex - 1);
-            case INT:
-                return this.currentRow.getInt(columnIndex - 1);
-            case SMALLINT:
-                return this.currentRow.getShort(columnIndex - 1);
-            case TINYINT:
-                return this.currentRow.getByte(columnIndex - 1);
-            case BIGINT:
-            case COUNTER:
-                return this.currentRow.getLong(columnIndex - 1);
-            case BLOB:
-                return this.currentRow.getBytes(columnIndex - 1);
-            case BOOLEAN:
-                return this.currentRow.getBool(columnIndex - 1);
-            case DATE:
-                return this.currentRow.getDate(columnIndex - 1);
-            case TIME:
-                return this.currentRow.getTime(columnIndex - 1);
-            case DECIMAL:
-                return this.currentRow.getDecimal(columnIndex - 1);
-            case DOUBLE:
-                return this.currentRow.getDouble(columnIndex - 1);
-            case FLOAT:
-                return this.currentRow.getFloat(columnIndex - 1);
-            case INET:
-                return this.currentRow.getInet(columnIndex - 1);
-            case TIMESTAMP:
-                return new Timestamp((currentRow.getDate(columnIndex - 1)).getTime());
-            case DURATION:
-                return this.currentRow.getDuration(columnIndex - 1);
-            case UUID:
-            case TIMEUUID:
-                return this.currentRow.getUUID(columnIndex - 1);
-            default:
-                return null;
-        }
+        return switch (dataType) {
+            case VARCHAR, ASCII, TEXT -> this.currentRow.getString(columnIndex - 1);
+            case VARINT -> this.currentRow.getVarint(columnIndex - 1);
+            case INT -> this.currentRow.getInt(columnIndex - 1);
+            case SMALLINT -> this.currentRow.getShort(columnIndex - 1);
+            case TINYINT -> this.currentRow.getByte(columnIndex - 1);
+            case BIGINT, COUNTER -> this.currentRow.getLong(columnIndex - 1);
+            case BLOB -> this.currentRow.getBytes(columnIndex - 1);
+            case BOOLEAN -> this.currentRow.getBool(columnIndex - 1);
+            case DATE -> this.currentRow.getDate(columnIndex - 1);
+            case TIME -> this.currentRow.getTime(columnIndex - 1);
+            case DECIMAL -> this.currentRow.getDecimal(columnIndex - 1);
+            case DOUBLE -> this.currentRow.getDouble(columnIndex - 1);
+            case FLOAT -> this.currentRow.getFloat(columnIndex - 1);
+            case INET -> this.currentRow.getInet(columnIndex - 1);
+            case TIMESTAMP -> new Timestamp((currentRow.getDate(columnIndex - 1)).getTime());
+            case DURATION -> this.currentRow.getDuration(columnIndex - 1);
+            case UUID, TIMEUUID -> this.currentRow.getUUID(columnIndex - 1);
+            default -> null;
+        };
     }
 
     @Override
@@ -732,48 +712,26 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         checkName(columnLabel);
         final DataTypeEnum dataType = DataTypeEnum.fromCqlTypeName(getCqlDataType(columnLabel).asCql(false, false));
 
-        switch (dataType) {
-            case VARCHAR:
-            case ASCII:
-            case TEXT:
-                return this.currentRow.getString(columnLabel);
-            case VARINT:
-                return this.currentRow.getVarint(columnLabel);
-            case INT:
-                return this.currentRow.getInt(columnLabel);
-            case SMALLINT:
-                return this.currentRow.getShort(columnLabel);
-            case TINYINT:
-                return this.currentRow.getByte(columnLabel);
-            case BIGINT:
-            case COUNTER:
-                return this.currentRow.getLong(columnLabel);
-            case BLOB:
-                return this.currentRow.getBytes(columnLabel);
-            case BOOLEAN:
-                return this.currentRow.getBool(columnLabel);
-            case DATE:
-                return this.currentRow.getDate(columnLabel);
-            case TIME:
-                return this.currentRow.getTime(columnLabel);
-            case DECIMAL:
-                return this.currentRow.getDecimal(columnLabel);
-            case DOUBLE:
-                return this.currentRow.getDouble(columnLabel);
-            case FLOAT:
-                return this.currentRow.getFloat(columnLabel);
-            case INET:
-                return this.currentRow.getInet(columnLabel);
-            case TIMESTAMP:
-                return new Timestamp((this.currentRow.getDate(columnLabel)).getTime());
-            case DURATION:
-                return this.currentRow.getDuration(columnLabel);
-            case UUID:
-            case TIMEUUID:
-                return this.currentRow.getUUID(columnLabel);
-            default:
-                return null;
-        }
+        return switch (dataType) {
+            case VARCHAR, ASCII, TEXT -> this.currentRow.getString(columnLabel);
+            case VARINT -> this.currentRow.getVarint(columnLabel);
+            case INT -> this.currentRow.getInt(columnLabel);
+            case SMALLINT -> this.currentRow.getShort(columnLabel);
+            case TINYINT -> this.currentRow.getByte(columnLabel);
+            case BIGINT, COUNTER -> this.currentRow.getLong(columnLabel);
+            case BLOB -> this.currentRow.getBytes(columnLabel);
+            case BOOLEAN -> this.currentRow.getBool(columnLabel);
+            case DATE -> this.currentRow.getDate(columnLabel);
+            case TIME -> this.currentRow.getTime(columnLabel);
+            case DECIMAL -> this.currentRow.getDecimal(columnLabel);
+            case DOUBLE -> this.currentRow.getDouble(columnLabel);
+            case FLOAT -> this.currentRow.getFloat(columnLabel);
+            case INET -> this.currentRow.getInet(columnLabel);
+            case TIMESTAMP -> new Timestamp((this.currentRow.getDate(columnLabel)).getTime());
+            case DURATION -> this.currentRow.getDuration(columnLabel);
+            case UUID, TIMEUUID -> this.currentRow.getUUID(columnLabel);
+            default -> null;
+        };
     }
 
     private String getObjectAsString(final int columnIndex) throws SQLException {
@@ -934,6 +892,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
         return getTimestamp(columnLabel);
     }
 
+    @SuppressWarnings("MagicConstant")
     @Override
     public int getType() throws SQLException {
         checkNotClosed();
@@ -951,7 +910,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 return new URI(storedUrl).toURL();
             } catch (final URISyntaxException | MalformedURLException e) {
-                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
+                throw new SQLException(format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
@@ -967,7 +926,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             try {
                 return new URI(storedUrl).toURL();
             } catch (final URISyntaxException | MalformedURLException e) {
-                throw new SQLException(String.format(MALFORMED_URL, storedUrl), e);
+                throw new SQLException(format(MALFORMED_URL, storedUrl), e);
             }
         }
     }
@@ -1301,7 +1260,7 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             if (isWrapperFor(iface)) {
                 return iface.cast(this);
             } else {
-                throw new SQLException(String.format(NO_INTERFACE, iface.getSimpleName()));
+                throw new SQLException(format(NO_INTERFACE, iface.getSimpleName()));
             }
         }
     }

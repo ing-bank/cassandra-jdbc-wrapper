@@ -21,14 +21,16 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
-import com.datastax.oss.driver.internal.core.util.Strings;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.time.LocalDate;
 
+import static com.datastax.oss.driver.internal.core.util.Strings.quote;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toInt;
+import static java.sql.Date.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
 /**
@@ -62,7 +64,7 @@ public class SqlDateCodec extends AbstractCodec<Date> implements TypeCodec<Date>
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(signedToUnsigned((int) value.toLocalDate().toEpochDay()));
+        return bytes(signedToUnsigned((int) value.toLocalDate().toEpochDay()));
     }
 
     @Override
@@ -71,8 +73,8 @@ public class SqlDateCodec extends AbstractCodec<Date> implements TypeCodec<Date>
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        final int readInt = ByteBufferUtil.toInt(bytes.duplicate());
-        return Date.valueOf(LocalDate.ofEpochDay(unsignedToSigned(readInt)));
+        final int readInt = toInt(bytes.duplicate());
+        return valueOf(LocalDate.ofEpochDay(unsignedToSigned(readInt)));
     }
 
     @Override
@@ -82,12 +84,12 @@ public class SqlDateCodec extends AbstractCodec<Date> implements TypeCodec<Date>
         if (parsedLocalDate == null) {
             return null;
         }
-        return Date.valueOf(parsedLocalDate);
+        return valueOf(parsedLocalDate);
     }
 
     @Override
     String formatNonNull(@Nonnull final Date value) {
-        return Strings.quote(ISO_LOCAL_DATE.format(value.toLocalDate()));
+        return quote(ISO_LOCAL_DATE.format(value.toLocalDate()));
     }
 
     static int signedToUnsigned(final int signed) {

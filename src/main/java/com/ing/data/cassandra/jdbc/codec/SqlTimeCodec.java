@@ -21,14 +21,17 @@ import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.type.codec.TimeCodec;
-import com.datastax.oss.driver.internal.core.util.Strings;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+
+import static com.datastax.oss.driver.internal.core.util.Strings.quote;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toLong;
+import static java.sql.Time.valueOf;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#TIME} and the Java type {@link Time}.
@@ -64,7 +67,7 @@ public class SqlTimeCodec extends AbstractCodec<Time> implements TypeCodec<Time>
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value.toLocalTime().toNanoOfDay());
+        return bytes(value.toLocalTime().toNanoOfDay());
     }
 
     @Override
@@ -73,7 +76,7 @@ public class SqlTimeCodec extends AbstractCodec<Time> implements TypeCodec<Time>
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        return Time.valueOf(LocalTime.ofNanoOfDay(ByteBufferUtil.toLong(bytes.duplicate())));
+        return valueOf(LocalTime.ofNanoOfDay(toLong(bytes.duplicate())));
     }
 
     @Override
@@ -83,12 +86,12 @@ public class SqlTimeCodec extends AbstractCodec<Time> implements TypeCodec<Time>
         if (parsedLocalTime == null) {
             return null;
         }
-        return Time.valueOf(parsedLocalTime);
+        return valueOf(parsedLocalTime);
     }
 
     @Override
     String formatNonNull(@Nonnull final Time value) {
-        return Strings.quote(DEFAULT_TIME_FORMAT.format(value.toLocalTime()));
+        return quote(DEFAULT_TIME_FORMAT.format(value.toLocalTime()));
     }
 
 }

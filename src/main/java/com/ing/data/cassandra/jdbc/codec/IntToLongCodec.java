@@ -20,10 +20,12 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.ing.data.cassandra.jdbc.utils.ByteBufferUtil;
-
 import jakarta.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
+
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.toLong;
 
 /**
  * Manages the two-way conversion between the CQL type {@link DataTypes#INT} and the Java type {@link Long}.
@@ -54,7 +56,7 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
         if (value == null) {
             return null;
         }
-        return ByteBufferUtil.bytes(value.intValue());
+        return bytes(value.intValue());
     }
 
     @Override
@@ -63,7 +65,7 @@ public class IntToLongCodec extends AbstractCodec<Long> implements TypeCodec<Lon
             return null;
         }
         // always duplicate the ByteBuffer instance before consuming it!
-        return ByteBufferUtil.toLong(bytes.duplicate());
+        return toLong(bytes.duplicate());
     }
 
     @Override

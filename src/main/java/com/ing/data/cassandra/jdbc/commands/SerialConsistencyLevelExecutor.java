@@ -21,14 +21,15 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-
 import jakarta.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 import static com.datastax.oss.driver.api.core.type.DataTypes.TEXT;
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildEmptyResultSet;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
@@ -87,11 +88,8 @@ public class SerialConsistencyLevelExecutor implements SpecialCommandExecutor {
             final ByteBuffer currentLevelAsBytes = bytes(currentLevel);
             return buildSpecialCommandResultSet(
                 new ColumnDefinitions.Definition[]{
-                    ColumnDefinitions.Definition.buildDefinitionInAnonymousTable("serial_consistency_level", TEXT)
-                },
-                Collections.singletonList(
-                    Collections.singletonList(currentLevelAsBytes)
-                )
+                    buildDefinitionInAnonymousTable("serial_consistency_level", TEXT)
+                }, List.of(List.of(currentLevelAsBytes))
             );
         }
     }

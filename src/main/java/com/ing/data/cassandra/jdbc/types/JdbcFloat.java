@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code FLOAT} CQL type (corresponding Java type: {@link Float}).
  * <p>CQL type description: 32-bit IEEE-754 floating point.</p>
@@ -61,11 +63,7 @@ public class JdbcFloat extends AbstractJdbcType<Float> {
 
     @Override
     public String toString(final Float obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

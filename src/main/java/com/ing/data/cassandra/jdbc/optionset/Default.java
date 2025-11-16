@@ -15,8 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.optionset;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,8 +26,8 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CLUSTER_NAME_NO
 /**
  * Default option set implementing the methods of {@code OptionSet} accordingly to the JDBC API standard.
  */
+@Slf4j
 public class Default extends AbstractOptionSet {
-    private static final Logger LOG = LoggerFactory.getLogger(Default.class);
 
     @Override
     public String getCatalog() {
@@ -40,7 +39,7 @@ public class Default extends AbstractOptionSet {
                 return rs.getString("cluster_name");
             }
         } catch (final SQLException e) {
-            LOG.warn(CLUSTER_NAME_NOT_FOUND, e.getMessage());
+            log.warn(CLUSTER_NAME_NOT_FOUND, e.getMessage());
             return null;
         }
 

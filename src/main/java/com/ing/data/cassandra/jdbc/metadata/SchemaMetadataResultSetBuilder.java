@@ -22,9 +22,10 @@ import com.ing.data.cassandra.jdbc.CassandraStatement;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
+import static java.util.Comparator.comparing;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to schemas.
@@ -79,9 +80,8 @@ public class SchemaMetadataResultSetBuilder extends AbstractMetadataResultSetBui
         }, null);
 
         // Results should all have the same TABLE_CATALOG, so just sort them by TABLE_SCHEM.
-        schemas.sort(Comparator.comparing(row -> row.getString(TABLE_SCHEMA)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(schemas));
+        schemas.sort(comparing(row -> row.getString(TABLE_SCHEMA)));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(schemas));
     }
 
 }

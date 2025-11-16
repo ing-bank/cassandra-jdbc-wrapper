@@ -120,6 +120,7 @@
         <java.driver.version>4.19.1</java.driver.version>
         <jackson.version>3.0.2</jackson.version>
         <jakarta.version>3.0.0</jakarta.version>
+        <lombok.version>1.18.42</lombok.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
         <!-- Versions for test dependencies -->
@@ -127,7 +128,6 @@
         <dotenv.version>3.2.0</dotenv.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>6.0.1</junit.version>
-        <lombok.version>1.18.42</lombok.version>
         <mockito.version>5.20.0</mockito.version>
         <slf4j.version>2.0.17</slf4j.version>
         <testcontainers.version>2.0.2</testcontainers.version>
@@ -217,6 +217,14 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>${jakarta.version}</version>
+        </dependency>
+
+        <!-- Lombok annotations -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>optional</scope>
         </dependency>
 
         <!-- AWS Auth provider support -->
@@ -341,13 +349,6 @@
             <groupId>com.approvaltests</groupId>
             <artifactId>approvaltests</artifactId>
             <version>${approvaltests.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- Lombok (used only for some tests) -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Dotenv for tests only running locally (integration with DBaaS) -->

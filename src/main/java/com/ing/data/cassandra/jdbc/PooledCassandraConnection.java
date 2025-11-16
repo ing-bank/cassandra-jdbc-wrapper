@@ -15,8 +15,7 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
@@ -35,8 +34,8 @@ import java.util.Set;
  * Pooled Cassandra connection: implementation class for {@link PooledConnection} to create a JDBC pooled connection to
  * a Cassandra cluster.
  */
+@Slf4j
 public class PooledCassandraConnection implements PooledConnection {
-    private static final Logger LOG = LoggerFactory.getLogger(PooledCassandraConnection.class);
 
     volatile Set<ConnectionEventListener> connectionEventListeners = new HashSet<>();
     volatile Set<StatementEventListener> statementEventListeners = new HashSet<>();
@@ -92,9 +91,7 @@ public class PooledCassandraConnection implements PooledConnection {
      */
     void connectionClosed() {
         final ConnectionEvent event = new ConnectionEvent(this);
-        for (final ConnectionEventListener listener : this.connectionEventListeners) {
-            listener.connectionClosed(event);
-        }
+        this.connectionEventListeners.forEach(listener -> listener.connectionClosed(event));
     }
 
     /**
@@ -106,9 +103,7 @@ public class PooledCassandraConnection implements PooledConnection {
      */
     void connectionErrorOccurred(final SQLException sqlException) {
         final ConnectionEvent event = new ConnectionEvent(this, sqlException);
-        for (final ConnectionEventListener listener : this.connectionEventListeners) {
-            listener.connectionErrorOccurred(event);
-        }
+        this.connectionEventListeners.forEach(listener -> listener.connectionErrorOccurred(event));
     }
 
     /**
@@ -119,9 +114,7 @@ public class PooledCassandraConnection implements PooledConnection {
      */
     void statementClosed(final CassandraPreparedStatement preparedStatement) {
         final StatementEvent event = new StatementEvent(this, preparedStatement);
-        for (final StatementEventListener listener : this.statementEventListeners) {
-            listener.statementClosed(event);
-        }
+        this.statementEventListeners.forEach(listener -> listener.statementClosed(event));
 
         final String cql = preparedStatement.getCql();
         final Set<CassandraPreparedStatement> freeStatements = this.freePreparedStatements.get(cql);
@@ -134,7 +127,7 @@ public class PooledCassandraConnection implements PooledConnection {
             preparedStatement.clearParameters();
             freeStatements.add(preparedStatement);
         } catch (final SQLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
     }
 
@@ -147,9 +140,7 @@ public class PooledCassandraConnection implements PooledConnection {
      */
     void statementErrorOccurred(final CassandraPreparedStatement preparedStatement, final SQLException sqlException) {
         final StatementEvent event = new StatementEvent(this, preparedStatement, sqlException);
-        for (final StatementEventListener listener : this.statementEventListeners) {
-            listener.statementErrorOccurred(event);
-        }
+        this.statementEventListeners.forEach(listener -> listener.statementErrorOccurred(event));
 
         final String cql = preparedStatement.getCql();
         final Set<CassandraPreparedStatement> usedStatements = this.usedPreparedStatements.get(cql);
@@ -171,10 +162,8 @@ public class PooledCassandraConnection implements PooledConnection {
      */
     public synchronized ManagedPreparedStatement prepareStatement(final ManagedConnection managedConnection,
                                                                   final String cql) throws SQLException {
-        if (!this.freePreparedStatements.containsKey(cql)) {
-            this.freePreparedStatements.put(cql, new HashSet<>());
-            this.usedPreparedStatements.put(cql, new HashSet<>());
-        }
+        this.freePreparedStatements.putIfAbsent(cql, new HashSet<>());
+        this.usedPreparedStatements.putIfAbsent(cql, new HashSet<>());
 
         final Set<CassandraPreparedStatement> freeStatements = this.freePreparedStatements.get(cql);
         final Set<CassandraPreparedStatement> usedStatements = this.usedPreparedStatements.get(cql);

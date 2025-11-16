@@ -17,8 +17,7 @@ package com.ing.data.cassandra.jdbc.types;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
@@ -29,14 +28,13 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.MAP_TO_STRING_F
  * <p>CQL type description: a JSON-style array of literals.</p>
  */
 @SuppressWarnings("rawtypes")
+@Slf4j
 public class JdbcMap extends AbstractJdbcCollection<Map> {
 
     /**
      * Gets a {@code JdbcMap} instance.
      */
     public static final JdbcMap INSTANCE = new JdbcMap();
-
-    private static final Logger LOG = LoggerFactory.getLogger(JdbcMap.class);
 
     JdbcMap() {
     }
@@ -46,7 +44,7 @@ public class JdbcMap extends AbstractJdbcCollection<Map> {
         try {
             return new ObjectMapper().writeValueAsString(obj);
         } catch (final JsonProcessingException e) {
-            LOG.warn(MAP_TO_STRING_FORMATTING_FAILED, obj.toString(), e);
+            log.warn(MAP_TO_STRING_FORMATTING_FAILED, obj.toString(), e);
             return null;
         }
     }

@@ -38,12 +38,11 @@ import com.ing.data.cassandra.jdbc.testing.FakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeReconnectionPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeSslEngineFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -88,8 +87,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 class ConnectionUnitTest extends UsingCassandraContainerTest {
-    private static final Logger LOG = LoggerFactory.getLogger(ConnectionUnitTest.class);
 
     private static final String KEYSPACE = "system";
 
@@ -538,15 +537,15 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection.getMetaData());
 
         final DatabaseMetaData dbMetadata = sqlConnection.getMetaData();
-        LOG.debug("====================================================");
-        LOG.debug("Connection Metadata");
-        LOG.debug("====================================================");
-        LOG.debug("Driver name: {}", dbMetadata.getDriverName());
-        LOG.debug("Driver version: {}", dbMetadata.getDriverVersion());
-        LOG.debug("DB name: {}", dbMetadata.getDatabaseProductName());
-        LOG.debug("DB version: {}", dbMetadata.getDatabaseProductVersion());
-        LOG.debug("JDBC version: {}.{}", dbMetadata.getJDBCMajorVersion(), dbMetadata.getJDBCMinorVersion());
-        LOG.debug("====================================================");
+        log.debug("====================================================");
+        log.debug("Connection Metadata");
+        log.debug("====================================================");
+        log.debug("Driver name: {}", dbMetadata.getDriverName());
+        log.debug("Driver version: {}", dbMetadata.getDriverVersion());
+        log.debug("DB name: {}", dbMetadata.getDatabaseProductName());
+        log.debug("DB version: {}", dbMetadata.getDatabaseProductVersion());
+        log.debug("JDBC version: {}.{}", dbMetadata.getJDBCMajorVersion(), dbMetadata.getJDBCMinorVersion());
+        log.debug("====================================================");
 
         assertEquals("Cassandra JDBC Driver", dbMetadata.getDriverName());
         assertNotEquals(0, dbMetadata.getDriverMajorVersion());
