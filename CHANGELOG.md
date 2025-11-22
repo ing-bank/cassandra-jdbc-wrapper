@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [5.0.0] - Unreleased
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JDK to 17.
+- Update Java Driver for Apache Cassandra® to version 4.19.2.
 - Update Apache Commons IO to version 2.21.0.
 - Update Jackson dependencies to version 3.0.2.
 - Update Caffeine to version 3.2.3.
