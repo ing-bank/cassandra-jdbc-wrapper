@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [5.0.0] - Unreleased
+### Added
+- Implement methods `createArrayOf(String, Objects[])` and `createBlob()` in `CassandraConnection` and 
+  `ManagedConnection` classes.
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JDK to 17.
 - Update Java Driver for Apache Cassandra® to version 4.19.2.

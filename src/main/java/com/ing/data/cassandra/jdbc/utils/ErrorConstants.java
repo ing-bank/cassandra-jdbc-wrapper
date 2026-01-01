@@ -20,8 +20,10 @@ import com.ing.data.cassandra.jdbc.CassandraResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
+import java.io.OutputStream;
 import java.net.URI;
 import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -275,15 +277,26 @@ public final class ErrorConstants {
 
     /**
      * Error message used in any SQL exception thrown when the target JDBC type specified in the method
-     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported. This message
+     * is a template expecting the integer value of the unsupported JDBC type (example:
+     * {@code String.format(UNSUPPORTED_JDBC_TYPE, 100)}).
      */
-    public static final String UNSUPPORTED_JDBC_TYPE = "Unsupported JDBC type: %s";
+    public static final String UNSUPPORTED_JDBC_TYPE = "Unsupported JDBC type: %d";
 
     /**
      * Error message used in any SQL exception thrown when the conversion of the specified object in the method
-     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported.
+     * {@link CassandraPreparedStatement#setObject(int, Object, int)} and its variants is not supported. This message
+     * is a template expecting the name of the unsupported parameter type (example:
+     * {@code String.format(UNSUPPORTED_PARAMETER_TYPE, "java.io.File")}).
      */
     public static final String UNSUPPORTED_PARAMETER_TYPE = "Unsupported parameter type: %s";
+
+    /**
+     * Error message used in any SQL exception thrown when the specified CQL type, to create an {@link Array} for
+     * example, is not supported. This message is a template expecting the name of the unsupported CQL type (example:
+     * {@code String.format(UNSUPPORTED_CQL_TYPE, "INVALID")}).
+     */
+    public static final String UNSUPPORTED_CQL_TYPE = "The specified CQL type is not supported: %s";
 
     /**
      * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
@@ -361,12 +374,6 @@ public final class ErrorConstants {
     public static final String CONNECTION_CREATION_FAILED = "Unexpected error while creating connection.";
 
     /**
-     * Error message used in any SQL exception thrown when trying to access to an {@link Array} object previously
-     * freed.
-     */
-    public static final String ARRAY_WAS_FREED = "Array was freed.";
-
-    /**
      * Error message used in any batch update exception thrown when at least one statement fails or attempts to return
      * a result set in the method {@link Statement#executeBatch()}. This message should be followed by the details for
      * each failed statement (example: {@code BATCH_UPDATE_FAILED + "Statement failed"}).
@@ -438,6 +445,91 @@ public final class ErrorConstants {
      */
     public static final String COLUMN_DEFINITIONS_RETRIEVAL_FAILED =
         "Failed to retrieve the column definitions of the target table.";
+
+    /**
+     * Error message used when the specified CQL type to create an {@link Array} is {@code null}.
+     */
+    public static final String INVALID_NULL_TYPE_FOR_ARRAY = "The specified type for array is null.";
+
+    /**
+     * Error message used when the conversion of an array item to the Java type corresponding to the CQL type specified
+     * when creating an {@link Array} is not possible. This message is a template expecting the Java class name of the
+     * item to convert, the target Java type, the corresponding CQL type and the error message (example:
+     * {@code String.format(ARRAY_ITEM_CONVERSION_FAILED, "String", "java.sql.Date", "DATE", e.getMessage())}).
+     */
+    public static final String ARRAY_ITEM_CONVERSION_FAILED =
+        "Conversion of an array item of type %s to %s(%s) failed: %s";
+
+    /**
+     * Error message used when trying to write {@code null} array of bytes in a {@link Blob}.
+     */
+    public static final String INVALID_NULL_BYTEARRAY_FOR_BLOB = "Can't write null array of bytes.";
+
+    /**
+     * Error message used when trying to write bytes in a {@link Blob} exceeding the maximal allowed size.
+     */
+    public static final String MAX_BLOB_SIZE_EXCEEDED = "Failed to set bytes: new Blob size exceeds 2GB.";
+
+    /**
+     * Error message used when writing an {@link OutputStream} from {@link Blob} failed. This message is a template
+     * expecting the underlying error message (example:
+     * {@code String.format(WRITING_OUTPUT_STREAM_FROM_BLOB_FAILED, e.getMessage())}).
+     */
+    public static final String WRITING_OUTPUT_STREAM_FROM_BLOB_FAILED =
+        "Unable to write output binary stream from existing blob: %s";
+
+    /**
+     * Error message used when the specified start position in a {@link Blob} is invalid. This message is a template
+     * expecting the invalid position (example: {@code String.format(INVALID_START_SEARCH_POSITION, 0)}).
+     */
+    public static final String INVALID_START_SEARCH_POSITION =
+        "Invalid start search position: %d. It must be 1 or greater.";
+
+    /**
+     * Error message used when the specified offset for a byte array used as argument in a method of {@link Blob}
+     * implementation is invalid. This message is a template expecting the invalid offset (example:
+     * {@code String.format(INVALID_OFFSET_FOR_BYTEARRAY, 0)}).
+     */
+    public static final String INVALID_OFFSET_FOR_BYTEARRAY =
+        "Invalid offset: %d. It must be within incoming bytes boundaries.";
+
+    /**
+     * Error message used when the specified length for a byte array used as argument in a method of {@link Blob}
+     * implementation is invalid. This message is a template expecting the invalid length (example:
+     * {@code String.format(INVALID_LENGTH_FOR_BYTEARRAY, 100)}).
+     */
+    public static final String INVALID_LENGTH_FOR_BYTEARRAY =
+        "Invalid length: %d. It must be within incoming bytes boundaries.";
+
+    /**
+     * Error message used when the specified position used as argument in a method of {@link Blob} implementation is
+     * invalid (not in the boundaries of the existing blob). This message is a template expecting the invalid position
+     * (example: {@code String.format(INVALID_POSITION, 100)}).
+     */
+    public static final String INVALID_POSITION =
+        "Invalid position: %d. It must be included between 1 and the length of existing blob + 1.";
+
+    /**
+     * Error message used when the specified length used as argument in a method of {@link Blob} is invalid. This
+     * message is a template expecting the invalid length (example: {@code String.format(INVALID_LENGTH, -1)}).
+     */
+    public static final String INVALID_LENGTH = "Invalid length: %d. It must be 0 or greater.";
+
+    /**
+     * Error message used when the specified position used as argument in a method of {@link Blob} implementation is
+     * invalid (but can exceed the length of the blob). This message is a template expecting the invalid position
+     * (example: {@code String.format(INVALID_POSITION_NO_BOUNDARIES, 100)}).
+     */
+    public static final String INVALID_POSITION_NO_BOUNDARIES = "Invalid position: %d. It must be 1 or greater.";
+
+    /**
+     * Error message used when the specified position used as argument in a method of {@link Blob} implementation is
+     * invalid (in combination with a specified length argument, the position is not in the boundaries of the existing
+     * blob). This message is a template expecting the invalid position and specified length (example:
+     * {@code String.format(INVALID_POSITION_AND_OR_LENGTH, 100, 50)}).
+     */
+    public static final String INVALID_POSITION_AND_OR_LENGTH =
+        "Invalid position: %d and/or length: %d. It must be within existing blob boundaries.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

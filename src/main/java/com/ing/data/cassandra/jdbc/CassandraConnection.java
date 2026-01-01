@@ -24,11 +24,15 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.optionset.OptionSet;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import com.ing.data.cassandra.jdbc.utils.BlobImpl;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -40,6 +44,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -123,19 +128,11 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * Whether the connection is bound to an Amazon Keyspaces database.
      */
     private Boolean connectedToAmazonKeyspaces;
-
-    private final SessionHolder sessionHolder;
-    private final Session cSession;
     /**
      * The properties of this connection.
      */
     @Getter
     private final Properties connectionProperties;
-    private final Metadata metadata;
-    // Set of all the statements that have been created by this connection.
-    @SuppressWarnings("SortedCollectionWithNonComparableKeys")
-    private final Set<Statement> statements = new ConcurrentSkipListSet<>();
-    private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
     /**
      * The consistency level applied to this connection.
      */
@@ -153,15 +150,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     @Getter
     private int defaultFetchSize = FALLBACK_FETCH_SIZE;
-    private String currentKeyspace;
     /**
      * Whether the debug mode is active on this connection: {@code true} if the debug mode is active on this
      * connection, {@code false} otherwise.
      */
     @Getter
     private final boolean debugMode;
-    private Properties clientInfo;
-    private volatile boolean isClosed;
     /**
      * The compliance mode option set used for the connection.
      */
@@ -172,6 +166,17 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     @Getter
     private DriverExecutionProfile activeExecutionProfile;
+
+    private final SessionHolder sessionHolder;
+    private final Session cSession;
+    private final Metadata metadata;
+    // Set of all the statements that have been created by this connection.
+    @SuppressWarnings("SortedCollectionWithNonComparableKeys")
+    private final Set<Statement> statements = new ConcurrentSkipListSet<>();
+    private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
+    private String currentKeyspace;
+    private Properties clientInfo;
+    private volatile boolean isClosed;
     private DriverExecutionProfile lastUsedExecutionProfile;
 
     /**
@@ -353,6 +358,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         // Note that Cassandra only supports auto-commit mode, so this is a no-op, but it still throws an exception when
         // called on a closed connection.
         checkNotClosed();
+    }
+
+    @Override
+    public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
+        checkNotClosed();
+        if (elements == null) {
+            return new ArrayImpl();
+        }
+        return new ArrayImpl(List.of(elements), typeName);
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        checkNotClosed();
+        return new BlobImpl();
     }
 
     @Override

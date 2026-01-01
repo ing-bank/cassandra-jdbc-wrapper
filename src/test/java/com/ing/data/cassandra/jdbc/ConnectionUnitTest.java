@@ -38,6 +38,8 @@ import com.ing.data.cassandra.jdbc.testing.FakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeReconnectionPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeSslEngineFactory;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import com.ing.data.cassandra.jdbc.utils.BlobImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -62,18 +64,23 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.CUSTOM;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TEXT;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -691,6 +698,53 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertTrue(sqlConnection.isValid(3));
+    }
+
+    @Test
+    void givenConnection_whenCreateBlob_returnEmptyBlobInstance() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        final var createdBlob = sqlConnection.createBlob();
+        assertNotNull(createdBlob);
+        assertInstanceOf(BlobImpl.class, createdBlob);
+        assertEquals(0, createdBlob.length());
+    }
+
+    @Test
+    void givenClosedConnection_whenCreateBlob_throwException() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        sqlConnection.close();
+        final SQLException sqlEx = assertThrows(SQLException.class, () -> sqlConnection.createBlob());
+        assertEquals(WAS_CLOSED_CONN, sqlEx.getMessage());
+    }
+
+    @Test
+    void givenConnection_whenCreateArrayOf_returnExpectedArrayInstance() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+
+        // Array without data
+        var createdArray = sqlConnection.createArrayOf(CUSTOM.cqlType, null);
+        assertNotNull(createdArray);
+        assertInstanceOf(ArrayImpl.class, createdArray);
+        assertArrayEquals(new Object[0], (Object[]) createdArray.getArray());
+
+        // Array with data
+        createdArray = sqlConnection.createArrayOf(TEXT.cqlType, new Object[]{ "a", "b", "c" });
+        assertNotNull(createdArray);
+        assertInstanceOf(ArrayImpl.class, createdArray);
+        assertArrayEquals(new String[]{ "a", "b", "c" }, (Object[]) createdArray.getArray());
+    }
+
+    @Test
+    void givenClosedConnection_whenCreateArrayOf_throwException() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        sqlConnection.close();
+        final SQLException sqlEx = assertThrows(SQLException.class,
+            () -> sqlConnection.createArrayOf("varchar", new Object[0]));
+        assertEquals(WAS_CLOSED_CONN, sqlEx.getMessage());
     }
 
 }

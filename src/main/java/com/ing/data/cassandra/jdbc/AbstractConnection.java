@@ -15,8 +15,6 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import java.sql.Array;
-import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.NClob;
@@ -39,14 +37,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
  */
 @SuppressWarnings("unused")
 abstract class AbstractConnection implements Wrapper {
-    public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    public Blob createBlob() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
     public Clob createClob() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }

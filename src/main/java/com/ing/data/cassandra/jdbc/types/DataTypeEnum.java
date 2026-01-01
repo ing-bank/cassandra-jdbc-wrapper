@@ -26,6 +26,7 @@ import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
 import jakarta.annotation.Nonnull;
+import lombok.Getter;
 import org.semver4j.Semver;
 
 import java.math.BigDecimal;
@@ -35,6 +36,7 @@ import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,7 +193,12 @@ public enum DataTypeEnum implements VersionedMetadata {
      */
     public final String cqlType;
 
+    /**
+     * Gets the type ID as defined in CQL binary protocol.
+     */
+    @Getter
     final int protocolId;
+
     final Semver validFrom;
     final Semver invalidFrom;
     final Function<CassandraConnection, Boolean> additionalCondition;
@@ -319,6 +326,20 @@ public enum DataTypeEnum implements VersionedMetadata {
             return VECTOR;
         }
         return fromCqlTypeName(dataType.asCql(false, false));
+    }
+
+    /**
+     * Gets an enumeration item from a Java class. If several types could match, the first type found is returned.
+     * If no matching type is found, return {@link #CUSTOM}.
+     *
+     * @param javaClass The Java class.
+     * @return The first enumeration item corresponding to the given Java class.
+     */
+    public static DataTypeEnum fromJavaType(final Class<?> javaClass) {
+        return Arrays.stream(values())
+            .filter(dataType -> dataType.asJavaClass().equals(javaClass))
+            .findFirst()
+            .orElse(CUSTOM);
     }
 
     /**

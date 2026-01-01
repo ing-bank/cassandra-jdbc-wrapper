@@ -15,6 +15,8 @@
 
 package com.ing.data.cassandra.jdbc;
 
+import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -89,6 +91,18 @@ class ManagedConnection extends AbstractConnection implements Connection {
             this.pooledCassandraConnection.connectionErrorOccurred(sqlException);
             throw sqlException;
         }
+    }
+
+    @Override
+    public Array createArrayOf(final String typeName, final Object[] objects) throws SQLException {
+        checkNotClosed();
+        return this.physicalConnection.createArrayOf(typeName, objects);
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        checkNotClosed();
+        return this.physicalConnection.createBlob();
     }
 
     @Override
