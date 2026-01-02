@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.utils;
 
 import java.nio.ByteBuffer;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_FOR_BYTEBUFFER;
+import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
 import static java.nio.ByteBuffer.wrap;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,7 +28,7 @@ import static java.util.Arrays.copyOfRange;
  * Utility methods for {@link ByteBuffer} manipulation.
  * <p>
  *     This class is a partial copy of {@code org.apache.cassandra.utils.ByteBufferUtil} class from
- *     {@code cassandra-all} library.
+ *     {@code cassandra-all} library, with some additional methods.
  * </p>
  */
 public final class ByteBufferUtil {
@@ -103,6 +105,36 @@ public final class ByteBufferUtil {
      */
     public static ByteBuffer bytes(final double d) {
         return allocate(8).putDouble(0, d);
+    }
+
+    /**
+     * Encodes an object in a {@link ByteBuffer}. The type must be one of the following: {@link ByteBuffer},
+     * {@link String}, {@link Byte}, {@link Short}, {@link Integer}, {@link Long}, {@link Float}, or {@link Double}.
+     *
+     * @param o The object to encode.
+     * @return The encoded object.
+     * @throws IllegalArgumentException when the type of the specified object is not supported.
+     */
+    public static ByteBuffer bytes(final Object o) throws IllegalArgumentException {
+        if (o instanceof ByteBuffer byteBuffer) {
+            return byteBuffer;
+        } else if (o instanceof String str) {
+            return bytes(str);
+        } else if (o instanceof Byte b) {
+            return bytes((byte) b);
+        } else if (o instanceof Short s) {
+            return bytes((short) s);
+        } else if (o instanceof Integer i) {
+            return bytes((int) i);
+        } else if (o instanceof Long l) {
+            return bytes((long) l);
+        } else if (o instanceof Float f) {
+            return bytes((float) f);
+        } else if (o instanceof Double d) {
+            return bytes((double) d);
+        } else {
+            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE_FOR_BYTEBUFFER, o.getClass()));
+        }
     }
 
     /**

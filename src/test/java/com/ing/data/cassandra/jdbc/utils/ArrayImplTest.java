@@ -14,26 +14,66 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Array;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.ASCII;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.BIGINT;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.BLOB;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.BOOLEAN;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.COUNTER;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.CUSTOM;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.DATE;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.DECIMAL;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.DOUBLE;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.DURATION;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.FLOAT;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.INET;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.INT;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.SMALLINT;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TEXT;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TIME;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TIMESTAMP;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TIMEUUID;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TINYINT;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.VARCHAR;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.VARINT;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_NULL_TYPE_FOR_ARRAY;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -67,13 +107,13 @@ class ArrayImplTest {
     }
 
     @Test
-    void givenArray_whenGetBaseTypeName_returnExpectedTypeName() {
+    void givenArray_whenGetBaseTypeName_returnExpectedTypeName() throws SQLException {
         final var sut = new ArrayImpl(SAMPLE_ITEMS);
         assertEquals(ASCII.asLowercaseCql(), sut.getBaseTypeName());
     }
 
     @Test
-    void givenArray_whenGetBaseType_returnExpectedJdbcType() {
+    void givenArray_whenGetBaseType_returnExpectedJdbcType() throws SQLException {
         final var sut = new ArrayImpl(SAMPLE_ITEMS);
         assertEquals(Types.VARCHAR, sut.getBaseType());
     }
@@ -99,54 +139,110 @@ class ArrayImplTest {
         ));
     }
 
-    static Stream<Arguments> buildTypedArrayTestCases() {
+    static Stream<Arguments> buildTypedArrayTestCases() throws UnknownHostException {
+        // Testing array containing null values
         final List<String> dataIncludingNullValues = new ArrayList<>();
         dataIncludingNullValues.add("test_item");
         dataIncludingNullValues.add(null);
         dataIncludingNullValues.add("test_item2");
+        // BLOB and CUSTOM testing
+        final ByteBuffer sampleByteBuffer = ByteBuffer.wrap(new byte[]{1, 2, 3});
+        // TIMEUUID and UUID testing
+        final UUID uuid = UUID.randomUUID();
+        final String uuidAsString = "3d5eda6b-89eb-414b-bbd2-6b0b04856576";
+        // DATE, TIME and TIMESTAMP testing
+        final Instant nowInstant = Instant.now();
+        final Instant yesterdayInstant = nowInstant.minus(1, DAYS);
+        final Instant tomorrowInstant = nowInstant.plus(1, DAYS);
+        final Instant nextWeekInstant = nowInstant.plus(7, DAYS);
+        final Instant previousHourInstant = nowInstant.minus(1, HOURS);
+        final Instant twoHoursAgoInstant = nowInstant.minus(2, HOURS);
+        final Instant nextHourInstant = nowInstant.plus(1, HOURS);
+        final LocalDate nowLocalDate = LocalDate.ofInstant(nowInstant, systemDefault());
+        final LocalDate yesterdayLocalDate = LocalDate.ofInstant(yesterdayInstant, systemDefault());
+        final LocalDate tomorrowLocalDate = LocalDate.ofInstant(tomorrowInstant, systemDefault());
+        final LocalDate nextWeekLocalDate = LocalDate.ofInstant(nextWeekInstant, systemDefault());
+        final LocalTime nowLocalTime = LocalTime.ofInstant(nowInstant, systemDefault());
+        final LocalTime previousHourLocalTime = LocalTime.ofInstant(previousHourInstant, systemDefault());
+        final LocalTime nextHourLocalTime = LocalTime.ofInstant(nextHourInstant, systemDefault());
+        final LocalTime twoHoursAgoLocalTime = LocalTime.ofInstant(twoHoursAgoInstant, systemDefault());
+        final LocalDateTime nowLocalDateTime = LocalDateTime.ofInstant(nowInstant, systemDefault());
+        final LocalDateTime yesterdayLocalDateTime = LocalDateTime.ofInstant(yesterdayInstant, systemDefault());
+        final LocalDateTime tomorrowLocalDateTime = LocalDateTime.ofInstant(tomorrowInstant, systemDefault());
+        final LocalDateTime nextWeekLocalDateTime = LocalDateTime.ofInstant(nextWeekInstant, systemDefault());
+        final String sampleDateAsString = "2026-01-31";
+        final String sampleTimeAsString = "14:30:25";
+        final String sampleDateTimeAsString = "2026-01-31 14:30:25.678";
 
         return Stream.of(
-            Arguments.of(dataIncludingNullValues, VARCHAR.cqlType, new String[]{"test_item", null, "test_item2"}),
-            Arguments.of(List.of("a", 'b'), ASCII.cqlType, new String[]{"a", "b"})
-            /* TODO: implement test for all supported types and conversions
-            Arguments.of(ASCII.cqlType, new String[]{ "a", "1", "c", "true" }, new Object[]{ 'a', 1, "c", true }),
-            Arguments.of(TEXT.cqlType, new String[]{ "d", "2", "f", "false" }, new Object[]{ 'd', 2, "f", false }),
-            Arguments.of(VARCHAR.cqlType, new String[]{ "g", "3", "i", "true" }, new Object[]{ 'g', 3, "i", true }),
-            Arguments.of(BIGINT.cqlType, new Long[]{ 10L, 20L, 30L, 40L },
-                new Object[]{ 10, 20L, "30", Long.valueOf("40")}),
-            Arguments.of(COUNTER.cqlType, new Long[]{ 50L, 60L, 70L, 80L },
-                new Object[]{ 50, 60L, "70", Long.valueOf("80") }),
-            Arguments.of(BLOB.cqlType, new ByteBuffer[]{bytes(100), bytes("test")}, new Object[]{100, "test"}),
-            Arguments.of(CUSTOM.cqlType, new ByteBuffer[]{bytes(50.9), bytes("c")}, new Object[]{50.9d, 'c'}),
-            Arguments.of(DATE.cqlType, new Date[]{new Date(nowInMillis)},
-            new Object[]{new java.util.Date(nowInMillis)}),
-            Arguments.of(DECIMAL.cqlType, new BigDecimal[]{
-                new BigDecimal("36.85"), new BigDecimal("37.9"), new BigDecimal("38.04"), new BigDecimal("39.211"),
-                new BigDecimal("40.0")
-            }, new Object[]{ 36.85, 37.9d, "38.04", new BigDecimal("39.211"), Double.valueOf("40") }),
-            Arguments.of(DOUBLE.cqlType, new Double[]{ 15.5, 7.8, 3.6, 20.2 },
-                new Object[]{ 15.5, 7.8f, "3.6", Double.valueOf("20.2") }),
-            Arguments.of(DURATION.cqlType, new CqlDuration[]{
-                CqlDuration.from("P21W"), CqlDuration.from("P1YT6H30M35S"), CqlDuration.from("PT360H")
-            }, new Object[]{ "P21W", CqlDuration.from("P1YT6H30M35S"), Duration.ofDays(15) }),
-            Arguments.of(FLOAT.cqlType, new Float[]{ 24.4f, 3.0f, 16.5f, 87.98f, 15.3f },
-                new Object[]{ 24.4d, 3, 16.5f, "87.98", Float.valueOf("15.3") }),
-            Arguments.of(INET.cqlType, new InetAddress[]{
-                InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1")
-            }, new Object[]{ "127.0.0.1", "::1" }),
-            Arguments.of(INT.cqlType, new Integer[]{ 1, 2, 3, 4 }, new Object[]{ 1, Integer.valueOf("2"), "3", '4' }),
-            Arguments.of(SMALLINT.cqlType, new Short[]{ 1, 2, 3, 4 }, new Object[]{ 1, Short.valueOf("2"), "3", '4' }),
-            Arguments.of(TIME.cqlType, new Object[]{  }, new Object[]{  }),
-            Arguments.of(TIMESTAMP.cqlType, new Object[]{  }, new Object[]{  }),
-            Arguments.of(TIMEUUID.cqlType, new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) },
-                new Object[]{ uuid, uuidAsString }),
-            Arguments.of(UUID.cqlType, new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) },
-                new Object[]{ uuid, uuidAsString }),
-            Arguments.of(TINYINT.cqlType, new Byte[]{ 1, 2, 3, 4 }, new Object[]{ 1, Byte.valueOf("2"), "3", '4' }),
-            Arguments.of(VARINT.cqlType, new BigInteger[]{
-                new BigInteger("36"), new BigInteger("37"), new BigInteger("38"), new BigInteger("39")
-            }, new Object[]{ Integer.valueOf("36"), 37, "38", new BigInteger("39") })
-        */
+            Arguments.of(dataIncludingNullValues, VARCHAR.cqlType, new String[]{ "test_item", null, "test_item2" }),
+            Arguments.of(List.of("a", 'b', 1, true), ASCII.cqlType, new String[]{ "a", "b", "1", "true" }),
+            Arguments.of(List.of("c", 'd', 2, false), TEXT.cqlType, new String[]{ "c", "d", "2", "false" }),
+            Arguments.of(List.of("e", 'f', 3, 4.5), VARCHAR.cqlType, new String[]{ "e", "f", "3", "4.5" }),
+            Arguments.of(List.of(true, false, "true", "yes", 1), BOOLEAN.cqlType,
+                new Boolean[]{ true, false, true, false, false}),
+            Arguments.of(List.of(10, 20L, "30", Long.valueOf("40")), BIGINT.cqlType, new Long[]{ 10L, 20L, 30L, 40L }),
+            Arguments.of(List.of(50, 60L, "70", Long.valueOf("80")), COUNTER.cqlType, new Long[]{ 50L, 60L, 70L, 80L }),
+            Arguments.of(List.of("test", sampleByteBuffer, Byte.MAX_VALUE, Short.MAX_VALUE, Integer.MAX_VALUE,
+                    Long.MAX_VALUE, Float.MAX_VALUE, Double.MAX_VALUE),
+                BLOB.cqlType,
+                new ByteBuffer[]{ bytes("test"), sampleByteBuffer, bytes(Byte.MAX_VALUE),
+                    bytes(Short.MAX_VALUE), bytes(Integer.MAX_VALUE), bytes(Long.MAX_VALUE), bytes(Float.MAX_VALUE),
+                    bytes(Double.MAX_VALUE) }
+            ),
+            Arguments.of(List.of("test2", sampleByteBuffer), CUSTOM.cqlType,
+                new ByteBuffer[]{ bytes("test2"), sampleByteBuffer }
+            ),
+            Arguments.of(List.of(Date.valueOf(nowLocalDate), yesterdayLocalDate,
+                    new java.util.Date(tomorrowInstant.toEpochMilli()), nextWeekInstant, sampleDateAsString),
+                DATE.cqlType,
+                new Date[]{ Date.valueOf(nowLocalDate), Date.valueOf(yesterdayLocalDate),
+                    Date.valueOf(tomorrowLocalDate), Date.valueOf(nextWeekLocalDate), Date.valueOf(sampleDateAsString) }
+            ),
+            Arguments.of(List.of(36.85, 37.9d, "38.04", new BigDecimal("39.211"), Double.valueOf("40")),
+                DECIMAL.cqlType,
+                new BigDecimal[]{ new BigDecimal("36.85"), new BigDecimal("37.9"), new BigDecimal("38.04"),
+                    new BigDecimal("39.211"), new BigDecimal("40.0") }
+            ),
+            Arguments.of(List.of(15.5, 7.8f, "3.6", Double.valueOf("20.2")), DOUBLE.cqlType,
+                new Double[]{ 15.5, 7.8, 3.6, 20.2 }
+            ),
+            Arguments.of(List.of("P21W", CqlDuration.from("P1YT6H30M35S"), Duration.ofDays(15)), DURATION.cqlType,
+                new CqlDuration[]{ CqlDuration.from("P21W"), CqlDuration.from("P1YT6H30M35S"),
+                    CqlDuration.from("PT360H") }
+            ),
+            Arguments.of(List.of(24.4d, 3, 16.5f, "87.98", Float.valueOf("15.3")), FLOAT.cqlType,
+                new Float[]{ 24.4f, 3.0f, 16.5f, 87.98f, 15.3f }
+            ),
+            Arguments.of(List.of("127.0.0.1", "::1"), INET.cqlType,
+                new InetAddress[]{ InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1") }
+            ),
+            Arguments.of(List.of(1, Integer.valueOf("2"), "3", '4'), INT.cqlType, new Integer[]{ 1, 2, 3, 4 }),
+            Arguments.of(List.of(1, Short.valueOf("2"), "3", '4'), SMALLINT.cqlType, new Short[]{ 1, 2, 3, 4 }),
+            Arguments.of(List.of(Time.valueOf(nowLocalTime), previousHourLocalTime,
+                    OffsetTime.ofInstant(nextHourInstant, systemDefault()), twoHoursAgoInstant, sampleTimeAsString),
+                TIME.cqlType,
+                new Time[]{ Time.valueOf(nowLocalTime), Time.valueOf(previousHourLocalTime),
+                    Time.valueOf(nextHourLocalTime), Time.valueOf(twoHoursAgoLocalTime),
+                    Time.valueOf(sampleTimeAsString) }
+            ),
+            Arguments.of(List.of(Timestamp.valueOf(nowLocalDateTime), yesterdayLocalDateTime,
+                    OffsetDateTime.ofInstant(tomorrowInstant, systemDefault()), nextWeekInstant,
+                    new Calendar.Builder().setInstant(nowInstant.toEpochMilli()).build(), sampleDateTimeAsString),
+                TIMESTAMP.cqlType,
+                new Timestamp[]{ Timestamp.valueOf(nowLocalDateTime), Timestamp.valueOf(yesterdayLocalDateTime),
+                    Timestamp.valueOf(tomorrowLocalDateTime), Timestamp.valueOf(nextWeekLocalDateTime),
+                    Timestamp.valueOf(nowLocalDateTime.truncatedTo(MILLIS)), Timestamp.valueOf(sampleDateTimeAsString) }
+            ),
+            Arguments.of(List.of(uuid, uuidAsString), TIMEUUID.cqlType,
+                new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) }),
+            Arguments.of(List.of(uuid, uuidAsString), DataTypeEnum.UUID.cqlType,
+                new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) }),
+            Arguments.of(List.of(1, Byte.valueOf("2"), "3", '4'), TINYINT.cqlType, new Byte[]{ 1, 2, 3, 4 }),
+            Arguments.of(List.of(Integer.valueOf("36"), 37, "38", new BigInteger("39")), VARINT.cqlType,
+                new BigInteger[]{ new BigInteger("36"), new BigInteger("37"), new BigInteger("38"),
+                    new BigInteger("39") }
+            )
         );
     }
 
@@ -166,13 +262,13 @@ class ArrayImplTest {
     }
 
     @Test
-    void givenArray_whenGetArrayWithConversionMap_throwSQLFeatureNotSupportedException() {
+    void givenArray_whenGetArrayWithConversionMap_throwSQLFeatureNotSupportedException() throws SQLException {
         final var sut = new ArrayImpl(SAMPLE_ITEMS);
         assertThrows(SQLFeatureNotSupportedException.class, () -> sut.getArray(Map.of("text", ByteBuffer.class)));
     }
 
     @Test
-    void givenArray_whenGetResultSetWithConversionMap_throwSQLFeatureNotSupportedException() {
+    void givenArray_whenGetResultSetWithConversionMap_throwSQLFeatureNotSupportedException() throws SQLException {
         final var sut = new ArrayImpl(SAMPLE_ITEMS);
         assertThrows(SQLFeatureNotSupportedException.class, () -> sut.getResultSet(Map.of("text", ByteBuffer.class)));
     }

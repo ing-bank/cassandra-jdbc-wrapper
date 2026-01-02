@@ -23,20 +23,37 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.sql.Array;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.CUSTOM;
+import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlDate;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTime;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTimestamp;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ARRAY_ITEM_CONVERSION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_NULL_TYPE_FOR_ARRAY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_CQL_TYPE;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElseGet;
@@ -50,7 +67,7 @@ import static org.apache.commons.lang3.ArrayUtils.subarray;
 public class ArrayImpl implements Array {
 
     private Object[] array;
-    private DataTypeEnum cqlDataType;
+    private final DataTypeEnum cqlDataType;
 
     /**
      * Constructor of an empty array.
@@ -63,10 +80,11 @@ public class ArrayImpl implements Array {
     /**
      * Constructor.
      *
-     * @param list The list of object to wrap in a {@link Array} object.
+     * @param list The list of objects to wrap in a {@link Array} object.
+     * @throws SQLException if the type of specified of objects are not supported.
      */
-    public ArrayImpl(final List<?> list) {
-        buildArray(list);
+    public ArrayImpl(final List<?> list) throws SQLException {
+        this(list, determineCqlType(list));
     }
 
     /**
@@ -74,7 +92,85 @@ public class ArrayImpl implements Array {
      *
      * @param list     The list of object to wrap in a {@link Array} object.
      * @param typeName The CQL type of the wrapped objects. A conversion to the appropriate type is done if possible.
-     *                 TODO: document supported types and conversions
+     *                 The supported CQL types and the corresponding Java types are listed below:
+     *                 <table border="1">
+     *                 <caption>Supported CQL data types and corresponding Java classes for JDBC Arrays</caption>
+     *                 <tr><th>CQL data type</th><th>Supported Java class(es)</th></tr>
+     *                 <tr><td>ASCII    </td><td>{@link Object} <sup>1</sup></td></tr>
+     *                 <tr><td>BIGINT   </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>BLOB     </td>
+     *                     <td>{@link ByteBuffer}, {@link String}, {@link Byte}, {@link Short}, {@link Integer},
+     *                     {@link Long}, {@link Float}, or {@link Double}</td></tr>
+     *                 <tr><td>BOOLEAN  </td><td>{@link Object} <sup>1, 3</sup></td></tr>
+     *                 <tr><td>COUNTER  </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>CUSTOM   </td>
+     *                     <td>{@link ByteBuffer}, {@link String}, {@link Byte}, {@link Short}, {@link Integer},
+     *                     {@link Long}, {@link Float}, or {@link Double}</td></tr>
+     *                 <tr><td>DATE     </td>
+     *                     <td>{@link Date}, {@link LocalDate}, {@link java.util.Date}, {@link Instant}, or
+     *                     {@link String}<sup>4</sup></td></tr>
+     *                 <tr><td>DECIMAL  </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>DOUBLE   </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>DURATION </td>
+     *                     <td>{@link CqlDuration}, {@link Duration}, or {@link String}<sup>5</sup></td></tr>
+     *                 <tr><td>FLOAT    </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>INET     </td><td>{@link InetAddress} or {@link String}<sup>6</sup></td></tr>
+     *                 <tr><td>INT      </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>SMALLINT </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>TEXT     </td><td>{@link Object} <sup>1</sup></td></tr>
+     *                 <tr><td>TIME     </td>
+     *                     <td>{@link Time}, {@link LocalTime}, {@link OffsetTime}, {@link Instant},
+     *                     or {@link String}<sup>7</sup></td></tr>
+     *                 <tr><td>TIMESTAMP</td>
+     *                     <td>{@link Timestamp}, {@link LocalDateTime}, {@link OffsetDateTime}, {@link Calendar},
+     *                     {@link Instant}, or {@link String}<sup>8</sup></td></tr>
+     *                 <tr><td>TIMEUUID </td><td>{@link UUID} or {@link String}<sup>6</sup></td></tr>
+     *                 <tr><td>TINYINT  </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 <tr><td>UUID     </td><td>{@link UUID} or {@link String}<sup>9</sup></td></tr>
+     *                 <tr><td>VARCHAR  </td><td>{@link Object} <sup>1</sup></td></tr>
+     *                 <tr><td>VARINT   </td><td>{@link Object} <sup>1, 2</sup></td></tr>
+     *                 </table>
+     *                 <p>
+     *                     <sup>1</sup> When supported Java type is {@link Object}, the value is converted to
+     *                     {@link String} value first, using the method {@code toString()}.
+     *                 </p>
+     *                 <p>
+     *                     <sup>2</sup> Only valid numeric representations are allowed, otherwise an exception will be
+     *                     thrown. Also, the represented numeric value must respect the boundaries of the target numeric
+     *                     type.
+     *                 </p>
+     *                 <p>
+     *                     <sup>3</sup> see {@link Boolean#parseBoolean(String)} specifications regarding the applied
+     *                     parsing rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>4</sup> see {@link Date#valueOf(String)} specifications regarding the applied parsing
+     *                     rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>5</sup> see {@link CqlDuration#from(String)} specifications regarding the applied
+     *                     parsing rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>6</sup> see {@link InetAddress#getByName(String)} specifications regarding the applied
+     *                     parsing rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>7</sup> see {@link Time#valueOf(String)} specifications regarding the applied parsing
+     *                     rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>8</sup> see {@link Timestamp#valueOf(String)} specifications regarding the applied
+     *                     parsing rules.
+     *                 </p>
+     *                 <p>
+     *                     <sup>9</sup> see {@link UUID#fromString(String)} specifications regarding the applied
+     *                     parsing rules.
+     *                 </p>
+     *                 <p>
+     *                     The following CQL types are currently not supported: {@code LIST}, {@code MAP}, {@code SET},
+     *                     {@code TUPLE}, {@code UDT} and {@code VECTOR}.
+     *                 </p>
      * @throws SQLException if the JDBC type is not appropriate for the specified CQL type and the conversion is not
      * supported, or if the specified type is {@code null}.
      * @throws SQLFeatureNotSupportedException if the specified CQL type is not supported.
@@ -134,7 +230,7 @@ public class ArrayImpl implements Array {
     public Object getArray(final long index, final int count, final Map<String, Class<?>> map) throws SQLException {
         // Maps are currently not supported.
         if (isNotEmpty(map)) {
-            throw new SQLFeatureNotSupportedException();
+            throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
         }
 
         final int zeroBasedStartIndex = (int) index - 1;
@@ -203,24 +299,30 @@ public class ArrayImpl implements Array {
             builtArray[i] = list.get(i);
         }
         this.array = builtArray;
-
-        if (this.cqlDataType == null) {
-            if (!list.isEmpty()) {
-                this.cqlDataType = DataTypeEnum.fromJavaType(list.get(0).getClass());
-            } else {
-                this.cqlDataType = CUSTOM;
-            }
-        }
     }
 
     private ResultSet buildResultSetFromArray(final Object[] slicedArray) throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
         // TODO: implement this method.
+    }
+
+    private static String determineCqlType(final List<?> list) {
+        if (!list.isEmpty()) {
+            final boolean hasMixedTypes = list.stream()
+                .map(Object::getClass)
+                .distinct()
+                .count() > 1;
+            if (hasMixedTypes) {
+                return CUSTOM.asLowercaseCql();
+            }
+            return DataTypeEnum.fromJavaType(list.get(0).getClass()).asLowercaseCql();
+        }
+        return CUSTOM.asLowercaseCql();
     }
 
     private static Object convertObjectIfRequired(
         final Object element, final DataTypeEnum type
-    ) throws IllegalArgumentException, UnknownHostException, SecurityException, SQLFeatureNotSupportedException {
+    ) throws IllegalArgumentException, UnknownHostException, SecurityException, SQLException {
         if (element == null) {
             return null;
         }
@@ -229,9 +331,9 @@ public class ArrayImpl implements Array {
         return switch (type) {
             case ASCII, TEXT, VARCHAR -> elementAsString;
             case BIGINT, COUNTER -> Long.parseLong(elementAsString);
-            // FIXME case BLOB, CUSTOM -> bytes(elementAsString);
+            case BLOB, CUSTOM -> bytes(element);
             case BOOLEAN -> Boolean.parseBoolean(elementAsString);
-            // FIXME case DATE -> Date.valueOf(elementAsString); only accept some specific types and convert to Date
+            case DATE -> convertToSqlDate(element);
             case DECIMAL -> new BigDecimal(elementAsString);
             case DOUBLE -> Double.valueOf(elementAsString);
             case DURATION -> CqlDuration.from(elementAsString);
@@ -239,12 +341,12 @@ public class ArrayImpl implements Array {
             case INET -> InetAddress.getByName(elementAsString);
             case INT -> Integer.parseInt(elementAsString);
             case SMALLINT -> Short.valueOf(elementAsString);
-            // FIXME case TIME -> Time.valueOf(elementAsString); only accept some specific types and convert to Time
-            // FIXME case TIMESTAMP -> Timestamp.valueOf(elementAsString); only accept some  types and convert to Ts
+            case TIME -> convertToSqlTime(element);
+            case TIMESTAMP -> convertToSqlTimestamp(element);
             case TIMEUUID, UUID -> UUID.fromString(elementAsString);
             case TINYINT -> Byte.valueOf(elementAsString);
             case VARINT -> new BigInteger(elementAsString);
-            // LIST, MAP, SET, UDT and VECTOR are currently not supported.
+            // LIST, MAP, SET, TUPLE, UDT and VECTOR are currently not supported.
             default -> throw new SQLFeatureNotSupportedException("The specified CQL type is not supported.");
         };
     }

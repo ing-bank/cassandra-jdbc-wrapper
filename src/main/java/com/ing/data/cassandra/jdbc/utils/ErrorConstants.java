@@ -22,6 +22,7 @@ import com.ing.data.cassandra.jdbc.metadata.MetadataRow;
 
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -301,9 +302,19 @@ public final class ErrorConstants {
     /**
      * Error message used in any SQL exception thrown when the conversion to the specified type in the methods
      * {@link CassandraResultSet#getObject(int, Class)} and {@link CassandraResultSet#getObject(String, Class)} is not
-     * supported.
+     * supported. This message is a template expecting the name of the unsupported target type (example:
+     * {@code String.format(UNSUPPORTED_TYPE_CONVERSION, type.getSimpleName())}).
      */
     public static final String UNSUPPORTED_TYPE_CONVERSION = "Conversion to type %s not supported.";
+
+    /**
+     * Error message used in any SQL exception thrown when the conversion of a given object to a specific type to be
+     * used in a method of the JDBC API failed for some reason: the type of the given object is not supported for the
+     * conversion or the conversion failed due to an invalid input. This message is a template expecting the name of
+     * the unsupported type to convert, the name of the target type, and the underlying error message (example:
+     * {@code String.format(DATA_CONVERSION_FAILED, o.getClass(), targetType.getSimpleName(), e.getMessage())}).
+     */
+    public static final String DATA_CONVERSION_FAILED = "Conversion of %s object type %s failed: %s";
 
     /**
      * Error message used in any SQL exception thrown when the conversion to a specific type in a getter method of
@@ -530,6 +541,14 @@ public final class ErrorConstants {
      */
     public static final String INVALID_POSITION_AND_OR_LENGTH =
         "Invalid position: %d and/or length: %d. It must be within existing blob boundaries.";
+
+    /**
+     * Error message used in any exception thrown when the conversion of the specified type to a {@link ByteBuffer}
+     * instance is not supported. This message is a template expecting the unsupported object class (example:
+     * {@code String.format(UNSUPPORTED_TYPE_FOR_BYTEBUFFER, o.getClass())}).
+     */
+    public static final String UNSUPPORTED_TYPE_FOR_BYTEBUFFER =
+        "Conversion of type %s to ByteBuffer is not supported.";
 
     private ErrorConstants() {
         // Private constructor to hide the public one.

@@ -375,7 +375,7 @@ class UtilsUnitTest {
     }
 
     @Test
-    void testArrayImplToString() {
+    void testArrayImplToString() throws SQLException {
         final Array sut = new ArrayImpl(Arrays.asList("a", "b", "c"));
         assertEquals("[a, b, c]", sut.toString());
     }
