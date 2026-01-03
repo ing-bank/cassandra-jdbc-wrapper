@@ -115,6 +115,7 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_LIST_FAILED
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_SET_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_VECTOR_FAILED;
 import static java.lang.String.format;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.IteratorUtils.chainedIterator;
 import static org.apache.commons.io.IOUtils.toCharArray;
 import static org.apache.commons.lang3.StringUtils.SPACE;
@@ -190,7 +191,18 @@ public class CassandraResultSet extends AbstractResultSet
      * An empty Cassandra result set. It can be used to provide default implementations to methods returning
      * {@link ResultSet} objects.
      */
-    public static final CassandraResultSet EMPTY_RESULT_SET = new CassandraResultSet();
+    public static CassandraResultSet EMPTY_RESULT_SET;
+
+    static {
+        try {
+            EMPTY_RESULT_SET = new CassandraResultSet();
+        } catch (final SQLException e) {
+            // This should not happen, an SQLException is thrown when the statement passed to the method is closed, but
+            // here the statement is null.
+            log.warn(e.getMessage());
+        }
+    }
+
     /**
      * Default result set type for Cassandra implementation: {@link #TYPE_FORWARD_ONLY}.
      */
@@ -206,32 +218,26 @@ public class CassandraResultSet extends AbstractResultSet
 
     int rowNumber = 0;
     // Metadata of this result set.
-    private final CResultSetMetaData metadata;
+    private CResultSetMetaData metadata;
     private CassandraStatement statement;
     private Row currentRow;
-    private Iterator<Row> rowsIterator;
     private int resultSetType;
     private int fetchDirection;
     private int fetchSize;
     private boolean wasNull;
     private boolean isClosed;
+    private Iterator<Row> rowsIterator;
     // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
     private final List<String> driverWarnings = new ArrayList<>();
 
     /**
      * No argument constructor.
+     *
+     * @throws SQLException if a database access error occurs.
      */
-    CassandraResultSet() {
-        this.metadata = new CResultSetMetaData();
-        try {
-            populateStatementRelatedProperties(null);
-        } catch (final SQLException e) {
-            // This should not happen, an SQLException is thrown when the statement passed to the method is closed, but
-            // here the statement is null.
-            log.warn(e.getMessage());
-        }
-        this.isClosed = false;
+    CassandraResultSet() throws SQLException {
+        this(null, new ArrayList<>());
     }
 
     /**
@@ -243,19 +249,7 @@ public class CassandraResultSet extends AbstractResultSet
      *                      {@link Statement}.
      */
     CassandraResultSet(final CassandraStatement statement, final ResultSet resultSet) throws SQLException {
-        this.metadata = new CResultSetMetaData();
-        populateStatementRelatedProperties(statement);
-        this.driverResultSet = resultSet;
-        this.rowsIterator = resultSet.iterator();
-        this.isClosed = false;
-        if (!resultSet.getExecutionInfos().isEmpty()) {
-            this.driverWarnings.addAll(resultSet.getExecutionInfo().getWarnings());
-        }
-
-        // Initialize the column values from the first row.
-        if (hasMoreRows()) {
-            populateColumns();
-        }
+        this(statement, new ArrayList<>(List.of(resultSet)));
     }
 
     /**
@@ -268,11 +262,11 @@ public class CassandraResultSet extends AbstractResultSet
      */
     @SuppressWarnings("unchecked")
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
-        // TODO: factorize constructors to use this one and avoid code duplication.
-        this.metadata = new CResultSetMetaData();
-        populateStatementRelatedProperties(statement);
-        this.isClosed = false;
+        initResultSetProperties(statement);
 
+        if (isEmpty(resultSets)) {
+            return;
+        }
         // We have several result sets, but we will use only the first one for metadata needs. However, we aggregate the
         // warnings of all the available result sets.
         this.driverResultSet = resultSets.get(0);
@@ -293,7 +287,7 @@ public class CassandraResultSet extends AbstractResultSet
 
         // Initialize the column values from the first row.
         if (hasMoreRows()) {
-            populateColumns();
+            populateFirstRow();
         }
     }
 
@@ -308,11 +302,13 @@ public class CassandraResultSet extends AbstractResultSet
         return new CassandraResultSet(null, driverResultSet);
     }
 
-    private void populateColumns() {
+    private void populateFirstRow() {
         this.currentRow = this.rowsIterator.next();
     }
 
-    private void populateStatementRelatedProperties(final CassandraStatement statement) throws SQLException {
+    private void initResultSetProperties(final CassandraStatement statement) throws SQLException {
+        this.metadata = new CResultSetMetaData();
+        this.isClosed = false;
         this.statement = statement;
         if (statement != null) {
             this.resultSetType = statement.getResultSetType();
@@ -1619,9 +1615,9 @@ public class CassandraResultSet extends AbstractResultSet
     @Override
     public synchronized boolean next() {
         if (hasMoreRows()) {
-            // 'populateColumns()' is called upon init to set up the metadata fields; so skip the first call.
+            // 'populateFirstRow()' is called upon init to set up the metadata fields; so skip the first call.
             if (this.rowNumber != 0) {
-                populateColumns();
+                populateFirstRow();
             }
             this.rowNumber++;
             return true;

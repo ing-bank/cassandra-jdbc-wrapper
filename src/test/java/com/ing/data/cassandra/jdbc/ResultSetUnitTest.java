@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
@@ -79,7 +80,7 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenIncompleteResultSet_whenFindColumns_throwException() {
+    void givenIncompleteResultSet_whenFindColumns_throwException() throws SQLException {
         final CassandraResultSet rs = new CassandraResultSet();
         final SQLSyntaxErrorException exception = assertThrows(SQLSyntaxErrorException.class,
             () -> rs.findColumn("keyname"));
@@ -95,6 +96,7 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         when(mockDriverRs.getExecutionInfo()).thenReturn(mock(ExecutionInfo.class));
         when(mockDriverRs.getExecutionInfo().getWarnings())
             .thenReturn(Arrays.asList("First warning message", "Second warning message"));
+        when(mockDriverRs.iterator()).thenReturn(Collections.emptyIterator());
         final ResultSet fakeRs = new CassandraResultSet(mockStmt, mockDriverRs);
         when(mockStmt.executeQuery(anyString())).thenReturn(fakeRs);
 
