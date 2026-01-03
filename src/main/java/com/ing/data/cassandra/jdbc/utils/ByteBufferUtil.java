@@ -15,8 +15,27 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import java.nio.ByteBuffer;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.internal.core.type.codec.BooleanCodec;
+import com.datastax.oss.driver.internal.core.type.codec.CqlDurationCodec;
+import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
+import com.datastax.oss.driver.internal.core.type.codec.DecimalCodec;
+import com.datastax.oss.driver.internal.core.type.codec.InetCodec;
+import com.datastax.oss.driver.internal.core.type.codec.TimeCodec;
+import com.datastax.oss.driver.internal.core.type.codec.TimestampCodec;
+import com.datastax.oss.driver.internal.core.type.codec.UuidCodec;
+import com.datastax.oss.driver.internal.core.type.codec.VarIntCodec;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.UUID;
+
+import static com.datastax.oss.driver.api.core.ProtocolVersion.DEFAULT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_FOR_BYTEBUFFER;
 import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
@@ -107,9 +126,12 @@ public final class ByteBufferUtil {
         return allocate(8).putDouble(0, d);
     }
 
+
     /**
      * Encodes an object in a {@link ByteBuffer}. The type must be one of the following: {@link ByteBuffer},
-     * {@link String}, {@link Byte}, {@link Short}, {@link Integer}, {@link Long}, {@link Float}, or {@link Double}.
+     * {@link String}, {@link Byte}, {@link Short}, {@link Integer}, {@link Long}, {@link Float}, {@link Double},
+     * {@link Boolean}, {@link BigDecimal}, {@link BigInteger}, {@link CqlDuration}, {@link InetAddress},
+     * {@link Date}, {@link Time}, {@link Timestamp}, or {@link UUID}.
      *
      * @param o The object to encode.
      * @return The encoded object.
@@ -132,6 +154,24 @@ public final class ByteBufferUtil {
             return bytes((float) f);
         } else if (o instanceof Double d) {
             return bytes((double) d);
+        } else if (o instanceof BigDecimal bd) {
+            return new DecimalCodec().encode(bd, DEFAULT);
+        } else if (o instanceof Boolean b) {
+            return new BooleanCodec().encodePrimitive(b, DEFAULT);
+        } else if (o instanceof BigInteger bi) {
+            return new VarIntCodec().encode(bi, DEFAULT);
+        } else if (o instanceof CqlDuration duration) {
+            return new CqlDurationCodec().encode(duration, DEFAULT);
+        } else if (o instanceof InetAddress inet) {
+            return new InetCodec().encode(inet, DEFAULT);
+        } else if (o instanceof UUID uuid) {
+            return new UuidCodec().encode(uuid, DEFAULT);
+        } else if (o instanceof Date date) {
+            return new DateCodec().encode(date.toLocalDate(), DEFAULT);
+        } else if (o instanceof Time time) {
+            return new TimeCodec().encode(time.toLocalTime(), DEFAULT);
+        } else if (o instanceof Timestamp ts) {
+            return new TimestampCodec().encode(ts.toInstant(), DEFAULT);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE_FOR_BYTEBUFFER, o.getClass()));
         }

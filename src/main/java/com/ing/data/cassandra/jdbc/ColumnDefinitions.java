@@ -20,7 +20,6 @@ import com.datastax.oss.protocol.internal.response.result.ColumnSpec;
 import com.datastax.oss.protocol.internal.response.result.RawType;
 import jakarta.annotation.Nonnull;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Metadata describing the columns returned in a {@link CassandraResultSet} or a {@link CassandraPreparedStatement}.
@@ -337,7 +337,7 @@ public class ColumnDefinitions implements Iterable<ColumnDefinitions.Definition>
          * @return A new column definition instance.
          */
         public static Definition buildDefinitionInAnonymousTable(final String name, final DataType type) {
-            return new Definition(StringUtils.EMPTY, StringUtils.EMPTY, name, type);
+            return new Definition(EMPTY, EMPTY, name, type);
         }
 
         /**

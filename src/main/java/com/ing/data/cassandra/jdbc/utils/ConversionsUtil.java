@@ -40,6 +40,7 @@ import java.util.Calendar;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
 import static java.lang.String.format;
 import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.apache.commons.io.IOUtils.EMPTY_BYTE_ARRAY;
 import static org.apache.commons.io.IOUtils.toByteArray;
 
@@ -269,16 +270,19 @@ public final class ConversionsUtil {
             return null;
         }
         try {
+            // Note: Cassandra supports timestamps with millisecond-precision only.
             if (x instanceof Timestamp sqlTimestamp) {
                 return sqlTimestamp;
             } else if (x instanceof LocalDateTime localDateTime) {
-                return Timestamp.valueOf(localDateTime);
+                return Timestamp.valueOf(localDateTime.truncatedTo(MILLIS));
             } else if (x instanceof OffsetDateTime offsetDateTime) {
-                return Timestamp.valueOf(offsetDateTime.toLocalDateTime());
+                return Timestamp.valueOf(offsetDateTime.toLocalDateTime().truncatedTo(MILLIS));
             } else if (x instanceof Calendar calendar) {
-                return Timestamp.valueOf(LocalDateTime.ofInstant(calendar.toInstant(), systemDefault()));
+                return Timestamp.valueOf(
+                    LocalDateTime.ofInstant(calendar.toInstant(), systemDefault()).truncatedTo(MILLIS)
+                );
             } else if (x instanceof Instant instant) {
-                return Timestamp.valueOf(LocalDateTime.ofInstant(instant, systemDefault()));
+                return Timestamp.valueOf(LocalDateTime.ofInstant(instant, systemDefault()).truncatedTo(MILLIS));
             } else if (x instanceof String str) {
                 return Timestamp.valueOf(str);
             } else {

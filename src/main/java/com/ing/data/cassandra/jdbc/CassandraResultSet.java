@@ -89,6 +89,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.ing.data.cassandra.jdbc.CassandraConnection.FALLBACK_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromCqlTypeName;
@@ -206,7 +207,7 @@ public class CassandraResultSet extends AbstractResultSet
     int rowNumber = 0;
     // Metadata of this result set.
     private final CResultSetMetaData metadata;
-    private final CassandraStatement statement;
+    private CassandraStatement statement;
     private Row currentRow;
     private Iterator<Row> rowsIterator;
     private int resultSetType;
@@ -223,7 +224,13 @@ public class CassandraResultSet extends AbstractResultSet
      */
     CassandraResultSet() {
         this.metadata = new CResultSetMetaData();
-        this.statement = null;
+        try {
+            populateStatementRelatedProperties(null);
+        } catch (final SQLException e) {
+            // This should not happen, an SQLException is thrown when the statement passed to the method is closed, but
+            // here the statement is null.
+            log.warn(e.getMessage());
+        }
         this.isClosed = false;
     }
 
@@ -237,10 +244,7 @@ public class CassandraResultSet extends AbstractResultSet
      */
     CassandraResultSet(final CassandraStatement statement, final ResultSet resultSet) throws SQLException {
         this.metadata = new CResultSetMetaData();
-        this.statement = statement;
-        this.resultSetType = statement.getResultSetType();
-        this.fetchDirection = statement.getFetchDirection();
-        this.fetchSize = statement.getFetchSize();
+        populateStatementRelatedProperties(statement);
         this.driverResultSet = resultSet;
         this.rowsIterator = resultSet.iterator();
         this.isClosed = false;
@@ -264,11 +268,9 @@ public class CassandraResultSet extends AbstractResultSet
      */
     @SuppressWarnings("unchecked")
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
+        // TODO: factorize constructors to use this one and avoid code duplication.
         this.metadata = new CResultSetMetaData();
-        this.statement = statement;
-        this.resultSetType = statement.getResultSetType();
-        this.fetchDirection = statement.getFetchDirection();
-        this.fetchSize = statement.getFetchSize();
+        populateStatementRelatedProperties(statement);
         this.isClosed = false;
 
         // We have several result sets, but we will use only the first one for metadata needs. However, we aggregate the
@@ -295,8 +297,33 @@ public class CassandraResultSet extends AbstractResultSet
         }
     }
 
+    /**
+     * Instantiates a new Cassandra result set from a {@link ResultSet}, without specifying any statement.
+     *
+     * @param driverResultSet The result set from the Cassandra driver.
+     * @return A new {@code CassandraResultSet} instance.
+     * @throws SQLException if a database access error occurs.
+     */
+    public static CassandraResultSet from(final ResultSet driverResultSet) throws SQLException {
+        return new CassandraResultSet(null, driverResultSet);
+    }
+
     private void populateColumns() {
         this.currentRow = this.rowsIterator.next();
+    }
+
+    private void populateStatementRelatedProperties(final CassandraStatement statement) throws SQLException {
+        this.statement = statement;
+        if (statement != null) {
+            this.resultSetType = statement.getResultSetType();
+            this.fetchDirection = statement.getFetchDirection();
+            this.fetchSize = statement.getFetchSize();
+        } else {
+            // Set some default values.
+            this.resultSetType = java.sql.ResultSet.TYPE_FORWARD_ONLY;
+            this.fetchDirection = java.sql.ResultSet.FETCH_FORWARD;
+            this.fetchSize = FALLBACK_FETCH_SIZE;
+        }
     }
 
     @Override

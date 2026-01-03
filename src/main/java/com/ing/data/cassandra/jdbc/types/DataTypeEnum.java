@@ -206,7 +206,7 @@ public enum DataTypeEnum implements VersionedMetadata {
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
-            CQL_DATATYPE_TO_DATATYPE.put(dataType.cqlType, dataType);
+            CQL_DATATYPE_TO_DATATYPE.put(dataType.asLowercaseCql(), dataType);
         }
     }
 
@@ -309,7 +309,7 @@ public enum DataTypeEnum implements VersionedMetadata {
         if (collectionTypeCharPos > 0) {
             cqlDataType = cqlTypeName.substring(0, collectionTypeCharPos);
         }
-        return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType);
+        return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType.toLowerCase());
     }
 
     /**

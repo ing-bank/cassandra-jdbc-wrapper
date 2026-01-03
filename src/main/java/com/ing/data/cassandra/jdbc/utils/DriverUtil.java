@@ -15,6 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
@@ -34,6 +38,7 @@ import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.semver4j.Semver;
@@ -46,15 +51,18 @@ import java.net.URISyntaxException;
 import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_COLUMN_DEFINITIONS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
 import static java.lang.Boolean.getBoolean;
+import static java.util.Collections.emptyIterator;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
@@ -397,8 +405,8 @@ public final class DriverUtil {
      * Gets the string representation of the specified object if not {@code null}. Otherwise, return {@code null}.
      *
      * @param obj The object.
-     * @return The string representation of the specified object if not {@code null}, otherwise, {@code null}.
      * @param <T> The type of the given object.
+     * @return The string representation of the specified object if not {@code null}, otherwise, {@code null}.
      */
     public static <T> String toStringOrNull(final T obj) {
         if (obj == null) {
@@ -406,6 +414,58 @@ public final class DriverUtil {
         } else {
             return obj.toString();
         }
+    }
+
+    /**
+     * Builds a Cassandra driver result set from a list of rows, usable to build a {@link java.sql.ResultSet}.
+     *
+     * @param columnDefinitions The definitions of each column in the result set.
+     * @param rows              The rows in the result set.
+     * @return The result set instance.
+     * @throws IllegalArgumentException if the column definitions is {@code null}.
+     */
+    public static ResultSet buildDriverResultSet(final ColumnDefinitions columnDefinitions, final List<Row> rows) {
+        if (columnDefinitions == null) {
+            throw new IllegalArgumentException(INVALID_COLUMN_DEFINITIONS);
+        }
+
+        return new ResultSet() {
+            @Override
+            public boolean wasApplied() {
+                return true;
+            }
+
+            @Nonnull
+            @Override
+            public ColumnDefinitions getColumnDefinitions() {
+                return columnDefinitions;
+            }
+
+            @Nonnull
+            @Override
+            public List<ExecutionInfo> getExecutionInfos() {
+                return new ArrayList<>();
+            }
+
+            @Override
+            public boolean isFullyFetched() {
+                return true;
+            }
+
+            @Override
+            public int getAvailableWithoutFetching() {
+                return 0;
+            }
+
+            @Nonnull
+            @Override
+            public Iterator<Row> iterator() {
+                if (rows == null) {
+                    return emptyIterator();
+                }
+                return rows.iterator();
+            }
+        };
     }
 
 }

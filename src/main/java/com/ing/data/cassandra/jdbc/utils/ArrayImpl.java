@@ -15,7 +15,18 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinition;
+import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinitions;
+import com.datastax.oss.driver.internal.core.cql.DefaultRow;
+import com.datastax.oss.driver.internal.core.type.PrimitiveType;
+import com.datastax.oss.protocol.internal.ProtocolConstants;
+import com.ing.data.cassandra.jdbc.CassandraResultSet;
+import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.types.TypesMap;
 
@@ -46,11 +57,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.datastax.oss.driver.api.core.detach.AttachmentPoint.NONE;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.CUSTOM;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlDate;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTime;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTimestamp;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildDriverResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ARRAY_ITEM_CONVERSION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_NULL_TYPE_FOR_ARRAY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
@@ -60,6 +73,7 @@ import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.MapUtils.isNotEmpty;
 import static org.apache.commons.lang3.ArrayUtils.subarray;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Implementation of {@link Array} interface.
@@ -100,12 +114,16 @@ public class ArrayImpl implements Array {
      *                 <tr><td>BIGINT   </td><td>{@link Object} <sup>1, 2</sup></td></tr>
      *                 <tr><td>BLOB     </td>
      *                     <td>{@link ByteBuffer}, {@link String}, {@link Byte}, {@link Short}, {@link Integer},
-     *                     {@link Long}, {@link Float}, or {@link Double}</td></tr>
+     *                     {@link Long}, {@link Float}, {@link Double}, {@link Boolean}, {@link BigDecimal},
+     *                     {@link BigInteger}, {@link CqlDuration}, {@link InetAddress}, {@link Date}, {@link Time},
+     *                     {@link Timestamp}, or {@link UUID}</td></tr>
      *                 <tr><td>BOOLEAN  </td><td>{@link Object} <sup>1, 3</sup></td></tr>
      *                 <tr><td>COUNTER  </td><td>{@link Object} <sup>1, 2</sup></td></tr>
      *                 <tr><td>CUSTOM   </td>
      *                     <td>{@link ByteBuffer}, {@link String}, {@link Byte}, {@link Short}, {@link Integer},
-     *                     {@link Long}, {@link Float}, or {@link Double}</td></tr>
+     *                     {@link Long}, {@link Float}, {@link Double}, {@link Boolean}, {@link BigDecimal},
+     *                     {@link BigInteger}, {@link CqlDuration}, {@link InetAddress}, {@link Date}, {@link Time},
+     *                     {@link Timestamp}, or {@link UUID}</td></tr>
      *                 <tr><td>DATE     </td>
      *                     <td>{@link Date}, {@link LocalDate}, {@link java.util.Date}, {@link Instant}, or
      *                     {@link String}<sup>4</sup></td></tr>
@@ -256,7 +274,7 @@ public class ArrayImpl implements Array {
     public ResultSet getResultSet(final long index,
                                   final int count,
                                   final Map<String, Class<?>> map) throws SQLException {
-        return buildResultSetFromArray((Object[]) this.getArray(index, count, map));
+        return buildResultSetFromArray((Object[]) this.getArray(index, count, map), index);
     }
 
     @Override
@@ -301,9 +319,35 @@ public class ArrayImpl implements Array {
         this.array = builtArray;
     }
 
-    private ResultSet buildResultSetFromArray(final Object[] slicedArray) throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-        // TODO: implement this method.
+    private ResultSet buildResultSetFromArray(final Object[] slicedArray, final long startIndex) throws SQLException {
+        // Build columns definitions: first column is the index of the element in the array, the second one is the
+        // element value.
+        final List<ColumnDefinition> columnDefinitions = new ArrayList<>();
+        columnDefinitions.add(new DefaultColumnDefinition(
+            new ColumnDefinitions.Definition(EMPTY, EMPTY, "index", DataTypes.INT).toColumnSpec(0), NONE)
+        );
+        // Only CQL primitive types are currently supported (i.e. LIST, MAP, SET, TUPLE, UDT and VECTOR are
+        // excluded). Additionally, in this implementation, we consider CUSTOM type as BLOB.
+        int cqlTypeProtocolId = this.cqlDataType.getProtocolId();
+        if (cqlTypeProtocolId == ProtocolConstants.DataType.CUSTOM) {
+            cqlTypeProtocolId = ProtocolConstants.DataType.BLOB;
+        }
+        final DataType valueColumnType = new PrimitiveType(cqlTypeProtocolId);
+        columnDefinitions.add(new DefaultColumnDefinition(
+            new ColumnDefinitions.Definition(EMPTY, EMPTY, "value", valueColumnType).toColumnSpec(1), NONE)
+        );
+        final com.datastax.oss.driver.api.core.cql.ColumnDefinitions rsColumns =
+            DefaultColumnDefinitions.valueOf(columnDefinitions);
+
+        // Populate rows.
+        final List<Row> rsRows = new ArrayList<>();
+        for (int i = 0; i < slicedArray.length; i++) {
+            final var index = i + (int) startIndex;
+            final var value = slicedArray[i];
+            rsRows.add(new DefaultRow(rsColumns, List.of(bytes(index), bytes(value))));
+        }
+
+        return CassandraResultSet.from(buildDriverResultSet(rsColumns, rsRows));
     }
 
     private static String determineCqlType(final List<?> list) {

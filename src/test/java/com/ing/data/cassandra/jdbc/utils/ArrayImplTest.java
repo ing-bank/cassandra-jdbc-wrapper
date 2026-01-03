@@ -74,6 +74,7 @@ import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -148,10 +149,10 @@ class ArrayImplTest {
         // BLOB and CUSTOM testing
         final ByteBuffer sampleByteBuffer = ByteBuffer.wrap(new byte[]{1, 2, 3});
         // TIMEUUID and UUID testing
-        final UUID uuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
         final String uuidAsString = "3d5eda6b-89eb-414b-bbd2-6b0b04856576";
         // DATE, TIME and TIMESTAMP testing
-        final Instant nowInstant = Instant.now();
+        final Instant nowInstant = Instant.now().truncatedTo(MILLIS);
         final Instant yesterdayInstant = nowInstant.minus(1, DAYS);
         final Instant tomorrowInstant = nowInstant.plus(1, DAYS);
         final Instant nextWeekInstant = nowInstant.plus(7, DAYS);
@@ -175,53 +176,58 @@ class ArrayImplTest {
         final String sampleDateTimeAsString = "2026-01-31 14:30:25.678";
 
         return Stream.of(
-            Arguments.of(dataIncludingNullValues, VARCHAR.cqlType, new String[]{ "test_item", null, "test_item2" }),
-            Arguments.of(List.of("a", 'b', 1, true), ASCII.cqlType, new String[]{ "a", "b", "1", "true" }),
-            Arguments.of(List.of("c", 'd', 2, false), TEXT.cqlType, new String[]{ "c", "d", "2", "false" }),
-            Arguments.of(List.of("e", 'f', 3, 4.5), VARCHAR.cqlType, new String[]{ "e", "f", "3", "4.5" }),
-            Arguments.of(List.of(true, false, "true", "yes", 1), BOOLEAN.cqlType,
+            Arguments.of(dataIncludingNullValues, VARCHAR.asLowercaseCql(),
+                new String[]{ "test_item", null, "test_item2" }),
+            Arguments.of(List.of("a", 'b', 1, true), ASCII.asLowercaseCql(), new String[]{ "a", "b", "1", "true" }),
+            Arguments.of(List.of("c", 'd', 2, false), TEXT.asLowercaseCql(), new String[]{ "c", "d", "2", "false" }),
+            Arguments.of(List.of("e", 'f', 3, 4.5), VARCHAR.asLowercaseCql(), new String[]{ "e", "f", "3", "4.5" }),
+            Arguments.of(List.of(true, false, "true", "yes", 1), BOOLEAN.asLowercaseCql(),
                 new Boolean[]{ true, false, true, false, false}),
-            Arguments.of(List.of(10, 20L, "30", Long.valueOf("40")), BIGINT.cqlType, new Long[]{ 10L, 20L, 30L, 40L }),
-            Arguments.of(List.of(50, 60L, "70", Long.valueOf("80")), COUNTER.cqlType, new Long[]{ 50L, 60L, 70L, 80L }),
+            Arguments.of(List.of(10, 20L, "30", Long.valueOf("40")), BIGINT.asLowercaseCql(),
+                new Long[]{ 10L, 20L, 30L, 40L }),
+            Arguments.of(List.of(50, 60L, "70", Long.valueOf("80")), COUNTER.asLowercaseCql(),
+                new Long[]{ 50L, 60L, 70L, 80L }),
             Arguments.of(List.of("test", sampleByteBuffer, Byte.MAX_VALUE, Short.MAX_VALUE, Integer.MAX_VALUE,
                     Long.MAX_VALUE, Float.MAX_VALUE, Double.MAX_VALUE),
-                BLOB.cqlType,
+                BLOB.asLowercaseCql(),
                 new ByteBuffer[]{ bytes("test"), sampleByteBuffer, bytes(Byte.MAX_VALUE),
                     bytes(Short.MAX_VALUE), bytes(Integer.MAX_VALUE), bytes(Long.MAX_VALUE), bytes(Float.MAX_VALUE),
                     bytes(Double.MAX_VALUE) }
             ),
-            Arguments.of(List.of("test2", sampleByteBuffer), CUSTOM.cqlType,
+            Arguments.of(List.of("test2", sampleByteBuffer), CUSTOM.asLowercaseCql(),
                 new ByteBuffer[]{ bytes("test2"), sampleByteBuffer }
             ),
             Arguments.of(List.of(Date.valueOf(nowLocalDate), yesterdayLocalDate,
                     new java.util.Date(tomorrowInstant.toEpochMilli()), nextWeekInstant, sampleDateAsString),
-                DATE.cqlType,
+                DATE.asLowercaseCql(),
                 new Date[]{ Date.valueOf(nowLocalDate), Date.valueOf(yesterdayLocalDate),
                     Date.valueOf(tomorrowLocalDate), Date.valueOf(nextWeekLocalDate), Date.valueOf(sampleDateAsString) }
             ),
             Arguments.of(List.of(36.85, 37.9d, "38.04", new BigDecimal("39.211"), Double.valueOf("40")),
-                DECIMAL.cqlType,
+                DECIMAL.asLowercaseCql(),
                 new BigDecimal[]{ new BigDecimal("36.85"), new BigDecimal("37.9"), new BigDecimal("38.04"),
                     new BigDecimal("39.211"), new BigDecimal("40.0") }
             ),
-            Arguments.of(List.of(15.5, 7.8f, "3.6", Double.valueOf("20.2")), DOUBLE.cqlType,
+            Arguments.of(List.of(15.5, 7.8f, "3.6", Double.valueOf("20.2")), DOUBLE.asLowercaseCql(),
                 new Double[]{ 15.5, 7.8, 3.6, 20.2 }
             ),
-            Arguments.of(List.of("P21W", CqlDuration.from("P1YT6H30M35S"), Duration.ofDays(15)), DURATION.cqlType,
+            Arguments.of(List.of("P21W", CqlDuration.from("P1YT6H30M35S"), Duration.ofDays(15)),
+                DURATION.asLowercaseCql(),
                 new CqlDuration[]{ CqlDuration.from("P21W"), CqlDuration.from("P1YT6H30M35S"),
                     CqlDuration.from("PT360H") }
             ),
-            Arguments.of(List.of(24.4d, 3, 16.5f, "87.98", Float.valueOf("15.3")), FLOAT.cqlType,
+            Arguments.of(List.of(24.4d, 3, 16.5f, "87.98", Float.valueOf("15.3")), FLOAT.asLowercaseCql(),
                 new Float[]{ 24.4f, 3.0f, 16.5f, 87.98f, 15.3f }
             ),
-            Arguments.of(List.of("127.0.0.1", "::1"), INET.cqlType,
+            Arguments.of(List.of("127.0.0.1", "::1"), INET.asLowercaseCql(),
                 new InetAddress[]{ InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1") }
             ),
-            Arguments.of(List.of(1, Integer.valueOf("2"), "3", '4'), INT.cqlType, new Integer[]{ 1, 2, 3, 4 }),
-            Arguments.of(List.of(1, Short.valueOf("2"), "3", '4'), SMALLINT.cqlType, new Short[]{ 1, 2, 3, 4 }),
+            Arguments.of(List.of(1, Integer.valueOf("2"), "3", '4'), INT.asLowercaseCql(), new Integer[]{ 1, 2, 3, 4 }),
+            Arguments.of(List.of(1, Short.valueOf("2"), "3", '4'), SMALLINT.asLowercaseCql(),
+                new Short[]{ 1, 2, 3, 4 }),
             Arguments.of(List.of(Time.valueOf(nowLocalTime), previousHourLocalTime,
                     OffsetTime.ofInstant(nextHourInstant, systemDefault()), twoHoursAgoInstant, sampleTimeAsString),
-                TIME.cqlType,
+                TIME.asLowercaseCql(),
                 new Time[]{ Time.valueOf(nowLocalTime), Time.valueOf(previousHourLocalTime),
                     Time.valueOf(nextHourLocalTime), Time.valueOf(twoHoursAgoLocalTime),
                     Time.valueOf(sampleTimeAsString) }
@@ -229,12 +235,12 @@ class ArrayImplTest {
             Arguments.of(List.of(Timestamp.valueOf(nowLocalDateTime), yesterdayLocalDateTime,
                     OffsetDateTime.ofInstant(tomorrowInstant, systemDefault()), nextWeekInstant,
                     new Calendar.Builder().setInstant(nowInstant.toEpochMilli()).build(), sampleDateTimeAsString),
-                TIMESTAMP.cqlType,
+                TIMESTAMP.asLowercaseCql(),
                 new Timestamp[]{ Timestamp.valueOf(nowLocalDateTime), Timestamp.valueOf(yesterdayLocalDateTime),
                     Timestamp.valueOf(tomorrowLocalDateTime), Timestamp.valueOf(nextWeekLocalDateTime),
                     Timestamp.valueOf(nowLocalDateTime.truncatedTo(MILLIS)), Timestamp.valueOf(sampleDateTimeAsString) }
             ),
-            Arguments.of(List.of(uuid, uuidAsString), TIMEUUID.cqlType,
+            Arguments.of(List.of(uuid, uuidAsString), TIMEUUID.asLowercaseCql(),
                 new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) }),
             Arguments.of(List.of(uuid, uuidAsString), DataTypeEnum.UUID.cqlType,
                 new UUID[]{ uuid, java.util.UUID.fromString(uuidAsString) }),
@@ -265,6 +271,65 @@ class ArrayImplTest {
     void givenArray_whenGetArrayWithConversionMap_throwSQLFeatureNotSupportedException() throws SQLException {
         final var sut = new ArrayImpl(SAMPLE_ITEMS);
         assertThrows(SQLFeatureNotSupportedException.class, () -> sut.getArray(Map.of("text", ByteBuffer.class)));
+    }
+
+    static Stream<Arguments> buildArrayResultSetTestCases() {
+        return Stream.of(
+            Arguments.of(SAMPLE_ITEMS, ASCII.asLowercaseCql()),
+            Arguments.of(SAMPLE_ITEMS, TEXT.asLowercaseCql()),
+            Arguments.of(SAMPLE_ITEMS, VARCHAR.asLowercaseCql()),
+            Arguments.of(List.of(10L, 20L, 30L), BIGINT.asLowercaseCql()),
+            Arguments.of(List.of(40L, 50L, 60L), COUNTER.asLowercaseCql()),
+            Arguments.of(SAMPLE_ITEMS, BLOB.asLowercaseCql()),
+            Arguments.of(SAMPLE_ITEMS, CUSTOM.asLowercaseCql()),
+            Arguments.of(List.of(true, false, true, true), BOOLEAN.asLowercaseCql()),
+            Arguments.of(
+                List.of(LocalDate.now(), LocalDate.now().minusDays(1L), LocalDate.now().plusDays(1L)),
+                DATE.asLowercaseCql()),
+            Arguments.of(List.of(new BigDecimal("4.01"), 5.2, 6.3), DECIMAL.asLowercaseCql()),
+            Arguments.of(List.of(1.01d, 2.4d, 3.5d), DOUBLE.asLowercaseCql()),
+            Arguments.of(List.of(CqlDuration.from("P1W"), CqlDuration.from("PT3H")), DURATION.asLowercaseCql()),
+            Arguments.of(List.of(1.01f, 2.4f, 3.5f), FLOAT.asLowercaseCql()),
+            Arguments.of(List.of("127.0.0.1", "::1"), INET.asLowercaseCql()),
+            Arguments.of(List.of(1, 2, 3, 4), INT.asLowercaseCql()),
+            Arguments.of(List.of(6, 7, 8, 9), SMALLINT.asLowercaseCql()),
+            Arguments.of(
+                List.of(LocalTime.now(), LocalTime.now().minusHours(1L), LocalTime.now().plusHours(1L)),
+                TIME.asLowercaseCql()),
+            Arguments.of(
+                List.of(LocalDateTime.now(), LocalDateTime.now().minusDays(1L), LocalDateTime.now().plusDays(1L)),
+                TIMESTAMP.asLowercaseCql()),
+            Arguments.of(List.of(randomUUID(), randomUUID(), randomUUID()), TIMEUUID.asLowercaseCql()),
+            Arguments.of(List.of(randomUUID(), randomUUID(), randomUUID()), DataTypeEnum.UUID.asLowercaseCql()),
+            Arguments.of(List.of(-1, 0, 1), TINYINT.asLowercaseCql()),
+            Arguments.of(List.of(new BigInteger("100"), 200, 300), VARINT.asLowercaseCql())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildArrayResultSetTestCases")
+    void givenArray_whenGetResultSet_returnExpectedResultSet(final List<Object> data,
+                                                             final String cqlType) throws SQLException {
+        final var sut = new ArrayImpl(data, cqlType);
+        final var rs = sut.getResultSet();
+        for (int i = 0; i < data.size(); i++) {
+            rs.next();
+            assertEquals(i + 1, rs.getInt(1));
+            assertEquals(sut.getArray()[i], rs.getObject(2));
+        }
+    }
+
+    @Test
+    void givenArray_whenGetResultSetSlice_returnExpectedResultSet() throws SQLException {
+        final var sut = new ArrayImpl(SAMPLE_ITEMS);
+        final long startIndex = 3;
+        final int count = 2;
+        final var rs = sut.getResultSet(startIndex, count);
+        for (int i = 0; i < count; i++) {
+            rs.next();
+            assertEquals(i + (int) startIndex, rs.getInt(1));
+            assertEquals(sut.getArray()[i + (int) startIndex - 1], rs.getObject(2));
+        }
     }
 
     @Test

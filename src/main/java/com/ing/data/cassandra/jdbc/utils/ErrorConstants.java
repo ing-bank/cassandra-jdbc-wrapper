@@ -550,6 +550,12 @@ public final class ErrorConstants {
     public static final String UNSUPPORTED_TYPE_FOR_BYTEBUFFER =
         "Conversion of type %s to ByteBuffer is not supported.";
 
+    /**
+     * Error message used when the column definitions to build a {@link com.datastax.oss.driver.api.core.cql.ResultSet}
+     * are {@code null}.
+     */
+    public static final String INVALID_COLUMN_DEFINITIONS = "The column definitions cannot be null.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }
