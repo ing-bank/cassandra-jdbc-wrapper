@@ -34,6 +34,7 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -191,7 +192,7 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
     }
 
     @Test
-    void givenStringValue_whenFetchingAsByteBufferWithAppropriateCustomCodec_returnExpectedValue() throws Exception {
+    void givenStringValue_whenFetchingAsByteBufferWithAppropriateCustomCodec_returnExpectedValue() {
         try (Connection connectionWithCustomCodec = newConnection(KEYSPACE, "localdatacenter=datacenter1",
             "customcodecs=com.ing.data.cassandra.jdbc.testing.TextToByteBufferCodec")) {
             final String cql = "SELECT keyname FROM cf_test1";
@@ -203,5 +204,17 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         } catch (Exception e) {
             fail(e);
         }
+    }
+
+    @Test
+    void givenStatementFlaggedCloseOnCompletion_whenCloseResultSet_statementIsClosed() throws Exception {
+        final String cql = "select (int) 1 from system.local";
+        final Statement statement = sqlConnection.createStatement();
+        statement.closeOnCompletion();
+        final ResultSet rs = statement.executeQuery(cql);
+        assertTrue(rs.next());
+        assertFalse(statement.isClosed());
+        rs.close();
+        assertTrue(statement.isClosed());
     }
 }

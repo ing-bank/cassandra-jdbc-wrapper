@@ -347,7 +347,7 @@ public class ArrayImpl implements Array {
             rsRows.add(new DefaultRow(rsColumns, List.of(bytes(index), bytes(value))));
         }
 
-        return CassandraResultSet.from(buildDriverResultSet(rsColumns, rsRows));
+        return CassandraResultSet.buildFrom(buildDriverResultSet(rsColumns, rsRows));
     }
 
     private static String determineCqlType(final List<?> list) {

@@ -183,7 +183,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * Instantiates a new JDBC connection to a Cassandra cluster.
      *
      * @param sessionHolder The session holder.
-     * @throws SQLException if something went wrong during the initialisation of the connection.
+     * @throws SQLException if something went wrong during the initialization of the connection.
      */
     CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;

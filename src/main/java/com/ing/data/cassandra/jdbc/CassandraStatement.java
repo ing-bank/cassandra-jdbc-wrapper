@@ -156,6 +156,10 @@ public class CassandraStatement extends AbstractStatement
      */
     private boolean isClosed;
     /**
+     * Whether the statement should be closed when all the dependent result sets are closed.
+     */
+    private boolean isClosedOnCompletion;
+    /**
      * The custom execution profile used by the driver to execute the statement. If not defined, the default profile
      * will be used.
      */
@@ -179,23 +183,6 @@ public class CassandraStatement extends AbstractStatement
     }
 
     /**
-     * Constructor. It instantiates a new Cassandra statement with default values for a {@link CassandraConnection}.
-     * <p>
-     * By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
-     * {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
-     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
-     * </p>
-     *
-     * @param connection The Cassandra connection to the database.
-     * @param cql        The CQL statement.
-     * @throws SQLException when something went wrong during the instantiation of the statement.
-     */
-    CassandraStatement(final CassandraConnection connection, final String cql) throws SQLException {
-        this(connection, cql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-    }
-
-    /**
      * Constructor. It instantiates a new Cassandra statement with default holdability and specified result set type
      * and concurrency for a {@link CassandraConnection}.
      * <p>
@@ -208,7 +195,9 @@ public class CassandraStatement extends AbstractStatement
      * @param resultSetConcurrency The result set concurrency.
      * @throws SQLException when something went wrong during the instantiation of the statement.
      */
-    CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
+    CassandraStatement(final CassandraConnection connection,
+                       final String cql,
+                       final int resultSetType,
                        final int resultSetConcurrency) throws SQLException {
         this(connection, cql, resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
     }
@@ -225,8 +214,11 @@ public class CassandraStatement extends AbstractStatement
      * @throws SQLException            when something went wrong during the instantiation of the statement.
      * @throws SQLSyntaxErrorException when an argument for result set configuration is invalid.
      */
-    CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
-                       final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    CassandraStatement(final CassandraConnection connection,
+                       final String cql,
+                       final int resultSetType,
+                       final int resultSetConcurrency,
+                       final int resultSetHoldability) throws SQLException {
         this.connection = connection;
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
@@ -234,6 +226,7 @@ public class CassandraStatement extends AbstractStatement
         this.serialConsistencyLevel = connection.getSerialConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
+        this.isClosedOnCompletion = false;
 
         if (!(resultSetType == ResultSet.TYPE_FORWARD_ONLY
             || resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
@@ -290,6 +283,12 @@ public class CassandraStatement extends AbstractStatement
     public void close() {
         this.isClosed = true;
         this.cql = null;
+    }
+
+    @Override
+    public void closeOnCompletion() throws SQLException {
+        checkNotClosed();
+        this.isClosedOnCompletion = true;
     }
 
     @Override
@@ -769,6 +768,12 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public boolean isClosed() {
         return this.isClosed;
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        checkNotClosed();
+        return this.isClosedOnCompletion;
     }
 
     /**

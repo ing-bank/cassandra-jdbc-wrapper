@@ -113,24 +113,6 @@ public class CassandraPreparedStatement extends CassandraStatement
     private ArrayList<BoundStatement> batchStatements;
 
     /**
-     * Constructor. It instantiates a new Cassandra prepared statement with default values for a
-     * {@link CassandraConnection}.
-     * <p>
-     *     By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
-     *     {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
-     *     {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
-     * </p>
-     *
-     * @param connection    The Cassandra connection to the database.
-     * @param cql           The CQL statement.
-     * @throws SQLException when something went wrong during the initialisation of the statement.
-     */
-    CassandraPreparedStatement(final CassandraConnection connection, final String cql) throws SQLException {
-        this(connection, cql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-    }
-
-    /**
      * Constructor. It instantiates a new Cassandra prepared statement for a {@link CassandraConnection}.
      *
      * @param connection           The {@link CassandraConnection} instance.
@@ -138,11 +120,14 @@ public class CassandraPreparedStatement extends CassandraStatement
      * @param resultSetType        The result set type.
      * @param resultSetConcurrency The result set concurrency
      * @param resultSetHoldability The result set holdability.
-     * @throws SQLException when something went wrong during the initialisation of the statement.
-     * @throws SQLTransientException when something went wrong during the initialisation of the statement.
+     * @throws SQLException when something went wrong during the initialization of the statement.
+     * @throws SQLTransientException when something went wrong during the initialization of the statement.
      */
-    CassandraPreparedStatement(final CassandraConnection connection, final String cql, final int resultSetType,
-                               final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    CassandraPreparedStatement(final CassandraConnection connection,
+                               final String cql,
+                               final int resultSetType,
+                               final int resultSetConcurrency,
+                               final int resultSetHoldability) throws SQLException {
         super(connection, cql, resultSetType, resultSetConcurrency, resultSetHoldability);
         if (log.isTraceEnabled() || connection.isDebugMode()) {
             log.trace("CQL: {}", this.cql);

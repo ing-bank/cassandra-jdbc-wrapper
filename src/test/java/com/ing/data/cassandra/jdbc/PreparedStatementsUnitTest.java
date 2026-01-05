@@ -330,4 +330,12 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         assertTrue(resultSet.next());
         assertEquals(expectedTimestamp, resultSet.getTimestamp("col_ts"));
     }
+
+    @Test
+    void givenPreparedStatement_whenCloseOnCompletion_statementIsFlaggedAsExpected() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertFalse(statement.isCloseOnCompletion());
+        statement.closeOnCompletion();
+        assertTrue(statement.isCloseOnCompletion());
+    }
 }

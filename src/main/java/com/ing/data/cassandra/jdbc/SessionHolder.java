@@ -131,8 +131,8 @@ class SessionHolder {
      * @param parentCache   The cache.
      * @throws SQLException when something went wrong during the {@link Session} creation.
      */
-    SessionHolder(final Map<String, String> params, final LoadingCache<Map<String, String>, SessionHolder> parentCache)
-        throws SQLException {
+    SessionHolder(final Map<String, String> params,
+                  final LoadingCache<Map<String, String>, SessionHolder> parentCache) throws SQLException {
         this.cacheKey = params;
         this.parentCache = parentCache;
 

@@ -71,7 +71,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Constructor.
      *
      * @param connection The connection to a Cassandra database.
-     * @throws SQLException when something went wrong during the initialisation of the
+     * @throws SQLException when something went wrong during the initialization of the
      *                      {@code CassandraDatabaseMetaData}.
      */
     public CassandraDatabaseMetaData(final CassandraConnection connection) throws SQLException {
@@ -547,7 +547,9 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getPrimaryKeys(final String catalog, final String schema, final String table) throws SQLException {
+    public ResultSet getPrimaryKeys(final String catalog,
+                                    final String schema,
+                                    final String table) throws SQLException {
         checkStatementClosed();
         // Only null or the current catalog (i.e. cluster) name are supported.
         if (catalog == null || catalog.equals(this.connection.getCatalog())) {

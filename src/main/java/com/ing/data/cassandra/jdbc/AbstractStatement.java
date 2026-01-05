@@ -68,14 +68,6 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void closeOnCompletion() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    public boolean isCloseOnCompletion() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
     /*
      * From the PreparedStatement implementation.
      */
@@ -84,11 +76,15 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setAsciiStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {
+    public void setAsciiStream(final int parameterIndex,
+                               final InputStream x,
+                               final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setAsciiStream(final int parameterIndex, final InputStream x, final long length) throws SQLException {
+    public void setAsciiStream(final int parameterIndex,
+                               final InputStream x,
+                               final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -96,16 +92,21 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setBinaryStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {
+    public void setBinaryStream(final int parameterIndex,
+                                final InputStream x,
+                                final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setBinaryStream(final int parameterIndex, final InputStream x, final long length) throws SQLException {
+    public void setBinaryStream(final int parameterIndex,
+                                final InputStream x,
+                                final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setBlob(final int parameterIndex, final InputStream inputStream, final long length)
-        throws SQLException {
+    public void setBlob(final int parameterIndex,
+                        final InputStream inputStream,
+                        final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -113,8 +114,9 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setCharacterStream(final int parameterIndex, final Reader reader, final long length)
-        throws SQLException {
+    public void setCharacterStream(final int parameterIndex,
+                                   final Reader reader,
+                                   final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -126,7 +128,9 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setClob(final int parameterIndex, final Reader reader, final long length) throws SQLException {
+    public void setClob(final int parameterIndex,
+                        final Reader reader,
+                        final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -134,8 +138,9 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setNCharacterStream(final int parameterIndex, final Reader value, final long length)
-        throws SQLException {
+    public void setNCharacterStream(final int parameterIndex,
+                                    final Reader value,
+                                    final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -147,7 +152,9 @@ abstract class AbstractStatement implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public void setNClob(final int parameterIndex, final Reader reader, final long length) throws SQLException {
+    public void setNClob(final int parameterIndex,
+                         final Reader reader,
+                         final long length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
@@ -160,7 +167,9 @@ abstract class AbstractStatement implements Wrapper {
     }
 
     @Deprecated
-    public void setUnicodeStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {
+    public void setUnicodeStream(final int parameterIndex,
+                                 final InputStream x,
+                                 final int length) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

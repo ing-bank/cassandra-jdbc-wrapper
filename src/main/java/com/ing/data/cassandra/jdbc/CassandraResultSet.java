@@ -298,7 +298,7 @@ public class CassandraResultSet extends AbstractResultSet
      * @return A new {@code CassandraResultSet} instance.
      * @throws SQLException if a database access error occurs.
      */
-    public static CassandraResultSet from(final ResultSet driverResultSet) throws SQLException {
+    public static CassandraResultSet buildFrom(final ResultSet driverResultSet) throws SQLException {
         return new CassandraResultSet(null, driverResultSet);
     }
 
@@ -400,6 +400,9 @@ public class CassandraResultSet extends AbstractResultSet
     public void close() throws SQLException {
         if (!isClosed()) {
             this.isClosed = true;
+            if (this.statement.isCloseOnCompletion()) {
+                this.statement.close();
+            }
         }
     }
 
