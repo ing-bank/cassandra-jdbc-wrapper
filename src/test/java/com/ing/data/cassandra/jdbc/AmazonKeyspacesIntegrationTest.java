@@ -104,36 +104,61 @@ class AmazonKeyspacesIntegrationTest {
         /* Valid Amazon Keyspaces endpoints:
          * 1. Global
          *    cassandra.us-east-1.amazonaws.com
+         *    cassandra.us-east-1.api.aws
          *    cassandra-fips.us-east-1.amazonaws.com
+         *    cassandra-fips.us-east-1.api.aws
          *    cassandra.us-east-2.amazonaws.com
+         *    cassandra.us-east-2.api.aws
          *    cassandra.us-west-1.amazonaws.com
+         *    cassandra.us-west-1.api.aws
          *    cassandra.us-west-2.amazonaws.com
+         *    cassandra.us-west-2.api.aws
          *    cassandra-fips.us-west-2.amazonaws.com
+         *    cassandra-fips.us-west-2.api.aws
          *    cassandra.af-south-1.amazonaws.com
+         *    cassandra.af-south-1.api.aws
          *    cassandra.ap-east-1.amazonaws.com
+         *    cassandra.ap-east-1.api.aws
          *    cassandra.ap-south-1.amazonaws.com
+         *    cassandra.ap-south-1.api.aws
          *    cassandra.ap-northeast-1.amazonaws.com
+         *    cassandra.ap-northeast-1.api.aws
          *    cassandra.ap-northeast-2.amazonaws.com
+         *    cassandra.ap-northeast-2.api.aws
          *    cassandra.ap-southeast-1.amazonaws.com
+         *    cassandra.ap-southeast-1.api.aws
          *    cassandra.ap-southeast-2.amazonaws.com
+         *    cassandra.ap-southeast-2.api.aws
          *    cassandra.ca-central-1.amazonaws.com
+         *    cassandra.ca-central-1.api.aws
          *    cassandra.eu-central-1.amazonaws.com
+         *    cassandra.eu-central-1.api.aws
          *    cassandra.eu-west-1.amazonaws.com
+         *    cassandra.eu-west-1.api.aws
          *    cassandra.eu-west-2.amazonaws.com
+         *    cassandra.eu-west-2.api.aws
          *    cassandra.eu-west-3.amazonaws.com
+         *    cassandra.eu-west-3.api.aws
          *    cassandra.eu-north-1.amazonaws.com
+         *    cassandra.eu-north-1.api.aws
          *    cassandra.me-south-1.amazonaws.com
+         *    cassandra.me-south-1.api.aws
+         *    cassandra.me-central-1.amazonaws.com
+         *    cassandra.me-central-1.api.aws
          *    cassandra.sa-east-1.amazonaws.com
+         *    cassandra.sa-east-1.api.aws
          *
          * 2. AWS Gov Cloud (US)
          *    cassandra.us-gov-east-1.amazonaws.com
+         *    cassandra.us-gov-east-1.api.aws
          *    cassandra.us-gov-west-1.amazonaws.com
+         *    cassandra.us-gov-west-1.api.aws
          *
          * 3. China
          *    cassandra.cn-north-1.amazonaws.com.cn
          *    cassandra.cn-northwest-1.amazonaws.com.cn
          *
-         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Mar. 2025)
+         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Jan. 2026)
          */
 
         if (canRunTests()) {

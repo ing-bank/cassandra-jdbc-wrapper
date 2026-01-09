@@ -52,7 +52,7 @@ public final class AwsUtil {
      * Lists all the valid hosts for Amazon Keyspaces.
      * <p>
      *     See: <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html">
-     *     List of Amazon Keyspaces endpoints</a> (last update: March 2025).
+     *     List of Amazon Keyspaces endpoints</a> (last update: January 2026).
      * </p>
      *
      * @return All the valid hosts for Amazon Keyspaces.
@@ -60,28 +60,53 @@ public final class AwsUtil {
     public static Set<String> listAwsKeyspacesHosts() {
         final Set<String> hosts = new HashSet<>();
         hosts.add("cassandra.us-east-1.amazonaws.com");
+        hosts.add("cassandra.us-east-1.api.aws");
         hosts.add("cassandra-fips.us-east-1.amazonaws.com");
+        hosts.add("cassandra-fips.us-east-1.api.aws");
         hosts.add("cassandra.us-east-2.amazonaws.com");
+        hosts.add("cassandra.us-east-2.api.aws");
         hosts.add("cassandra.us-west-1.amazonaws.com");
+        hosts.add("cassandra.us-west-1.api.aws");
         hosts.add("cassandra.us-west-2.amazonaws.com");
+        hosts.add("cassandra.us-west-2.api.aws");
         hosts.add("cassandra-fips.us-west-2.amazonaws.com");
+        hosts.add("cassandra-fips.us-west-2.api.aws");
         hosts.add("cassandra.af-south-1.amazonaws.com");
+        hosts.add("cassandra.af-south-1.api.aws");
         hosts.add("cassandra.ap-east-1.amazonaws.com");
+        hosts.add("cassandra.ap-east-1.api.aws");
         hosts.add("cassandra.ap-south-1.amazonaws.com");
+        hosts.add("cassandra.ap-south-1.api.aws");
         hosts.add("cassandra.ap-northeast-1.amazonaws.com");
+        hosts.add("cassandra.ap-northeast-1.api.aws");
         hosts.add("cassandra.ap-northeast-2.amazonaws.com");
+        hosts.add("cassandra.ap-northeast-2.api.aws");
         hosts.add("cassandra.ap-southeast-1.amazonaws.com");
+        hosts.add("cassandra.ap-southeast-1.api.aws");
         hosts.add("cassandra.ap-southeast-2.amazonaws.com");
+        hosts.add("cassandra.ap-southeast-2.api.aws");
         hosts.add("cassandra.ca-central-1.amazonaws.com");
+        hosts.add("cassandra.ca-central-1.api.aws");
         hosts.add("cassandra.eu-central-1.amazonaws.com");
+        hosts.add("cassandra.eu-central-1.api.aws");
         hosts.add("cassandra.eu-west-1.amazonaws.com");
+        hosts.add("cassandra.eu-west-1.api.aws");
         hosts.add("cassandra.eu-west-2.amazonaws.com");
+        hosts.add("cassandra.eu-west-2.api.aws");
         hosts.add("cassandra.eu-west-3.amazonaws.com");
+        hosts.add("cassandra.eu-west-3.api.aws");
         hosts.add("cassandra.eu-north-1.amazonaws.com");
+        hosts.add("cassandra.eu-north-1.api.aws");
         hosts.add("cassandra.me-south-1.amazonaws.com");
+        hosts.add("cassandra.me-south-1.api.aws");
+        hosts.add("cassandra.me-central-1.amazonaws.com");
+        hosts.add("cassandra.me-central-1.api.aws");
         hosts.add("cassandra.sa-east-1.amazonaws.com");
+        hosts.add("cassandra.sa-east-1.api.aws");
         hosts.add("cassandra.us-gov-east-1.amazonaws.com");
+        hosts.add("cassandra.us-gov-east-1.api.aws");
         hosts.add("cassandra.us-gov-west-1.amazonaws.com");
+        hosts.add("cassandra.us-gov-west-1.api.aws");
         hosts.add("cassandra.cn-north-1.amazonaws.com.cn");
         hosts.add("cassandra.cn-northwest-1.amazonaws.com.cn");
         return hosts;

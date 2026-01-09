@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `ManagedPreparedStatement`. The behavior of `CassandraResultSet.close()` method has been adapted in consequence.
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JDK to 17.
+- Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).
 - Update Java Driver for Apache Cassandra® to version 4.19.2.
 - Update Apache Commons IO to version 2.21.0.
 - Update Jackson dependencies to version 3.0.2.
