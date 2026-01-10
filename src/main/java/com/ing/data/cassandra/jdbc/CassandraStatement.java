@@ -50,6 +50,7 @@ import static com.datastax.oss.driver.internal.core.util.concurrent.CompletableF
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.containsSpecialCommands;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.getCommandExecutor;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.traceCqlQuery;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_AUTO_GEN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_CONCURRENCY_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
@@ -363,9 +364,7 @@ public class CassandraStatement extends AbstractStatement
                     }
                 } else {
                     for (final String cqlQuery : cqlQueries) {
-                        if (log.isDebugEnabled() || this.connection.isDebugMode()) {
-                            log.debug("CQL: {}", cqlQuery);
-                        }
+                        traceCqlQuery(log, this.connection, this.cql);
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
                             .setExecutionProfile(this.connection.getActiveExecutionProfile())
                             .setConsistencyLevel(this.consistencyLevel)
@@ -406,9 +405,7 @@ public class CassandraStatement extends AbstractStatement
 
     private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql)
         throws SQLException {
-        if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-            log.debug("CQL: {}", cql);
-        }
+        traceCqlQuery(log, this.connection, this.cql);
 
         // If the CQL statement is a special command, execute it using the appropriate special command executor and
         // return the result. Otherwise, execute the statement through the driver.
@@ -459,9 +456,7 @@ public class CassandraStatement extends AbstractStatement
             }
 
             for (final String query : this.batchQueries) {
-                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                    log.debug("CQL: {}", query);
-                }
+                traceCqlQuery(log, this.connection, this.cql);
                 SimpleStatement stmt = SimpleStatement.newInstance(query)
                     .setExecutionProfile(this.connection.getActiveExecutionProfile())
                     .setConsistencyLevel(this.consistencyLevel)

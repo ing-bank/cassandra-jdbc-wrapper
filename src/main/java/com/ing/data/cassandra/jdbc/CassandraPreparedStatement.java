@@ -78,6 +78,7 @@ import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToByteArr
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToInstant;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalDate;
 import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToLocalTime;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.traceCqlQuery;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_STATEMENT_FAILURE_MSG;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BATCH_UPDATE_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE_BINDING_INDEX;
@@ -129,9 +130,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                                final int resultSetConcurrency,
                                final int resultSetHoldability) throws SQLException {
         super(connection, cql, resultSetType, resultSetConcurrency, resultSetHoldability);
-        if (log.isTraceEnabled() || connection.isDebugMode()) {
-            log.trace("CQL: {}", this.cql);
-        }
+        traceCqlQuery(log, connection, this.cql);
         try {
             this.preparedStatement = getCqlSession().prepare(cql);
             this.boundStatement = this.preparedStatement.boundStatementBuilder()
@@ -202,9 +201,7 @@ public class CassandraPreparedStatement extends CassandraStatement
     private void doExecute() throws SQLException {
         try {
             resetResults();
-            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                log.trace("CQL: {}", this.cql);
-            }
+            traceCqlQuery(log, this.connection, this.cql);
             this.boundStatement = this.boundStatement
                 .setPageSize(this.getFetchSize()) // Set paging to avoid timeout and node harm.
                 .setConsistencyLevel(this.consistencyLevel)
@@ -262,9 +259,7 @@ public class CassandraPreparedStatement extends CassandraStatement
                         statement.setToNull(i);
                     }
                 }
-                if (log.isTraceEnabled() || this.connection.isDebugMode()) {
-                    log.trace("CQL: {}", this.cql);
-                }
+                traceCqlQuery(log, this.connection, this.cql);
                 final BoundStatement boundStmt = statement
                     .setConsistencyLevel(this.consistencyLevel)
                     .setSerialConsistencyLevel(this.serialConsistencyLevel);

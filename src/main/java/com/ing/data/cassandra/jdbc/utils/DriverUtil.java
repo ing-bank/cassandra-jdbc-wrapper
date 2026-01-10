@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.semver4j.Semver;
 import org.semver4j.range.RangeExpression;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -413,6 +414,22 @@ public final class DriverUtil {
             return null;
         } else {
             return obj.toString();
+        }
+    }
+
+    /**
+     * Logs a CQL query at {@code TRACE} level, if this level is enabled or if the debug mode is enabled on the
+     * connection.
+     *
+     * @param logger     The logger to use.
+     * @param connection The Cassandra connection used to execute the CQL query.
+     * @param cql        The CQL query.
+     */
+    public static void traceCqlQuery(final Logger logger,
+                                     final CassandraConnection connection,
+                                     final String cql) {
+        if (logger.isTraceEnabled() || connection.isDebugMode()) {
+            logger.trace("CQL: {}", cql);
         }
     }
 
