@@ -18,12 +18,17 @@ import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
@@ -31,10 +36,17 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
+import static java.sql.ResultSet.CONCUR_READ_ONLY;
+import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
+import static java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -217,4 +229,170 @@ class ResultSetUnitTest extends UsingCassandraContainerTest {
         rs.close();
         assertTrue(statement.isClosed());
     }
+
+    static Stream<Arguments> buildMoveCursorNotForwardTestCases() {
+        return Stream.of(
+            Arguments.of("absolute", new Class<?>[]{ int.class }, new Object[]{ 0 }),
+            Arguments.of("afterLast", null, null),
+            Arguments.of("beforeFirst", null, null),
+            Arguments.of("first", null, null),
+            Arguments.of("last", null, null),
+            Arguments.of("previous", null, null),
+            Arguments.of("relative", new Class<?>[]{ int.class }, new Object[]{ 0 })
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildMoveCursorNotForwardTestCases")
+    void givenForwardOnlyStatement_whenMoveCursorNotForward_throwException(
+        final String moveCursorMethodName, final Class<?>[] argsTypes, final Object[] args
+    ) throws SQLException {
+        final String cql = "SELECT keyname FROM cf_test1";
+        final Statement statement = sqlConnection.createStatement(TYPE_FORWARD_ONLY, CONCUR_READ_ONLY);
+        final ResultSet rs = statement.executeQuery(cql);
+        final InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+            () -> ResultSet.class.getMethod(moveCursorMethodName, argsTypes).invoke(rs, args)
+        );
+        assertInstanceOf(SQLNonTransientException.class, ex.getCause());
+        final SQLNonTransientException sqlEx = (SQLNonTransientException) ex.getCause();
+        assertEquals(FORWARD_ONLY, sqlEx.getMessage());
+        rs.close();
+    }
+
+    static Stream<Arguments> buildMoveCursorOnClosedResultSetTestCases() {
+        return Stream.of(
+            Arguments.of("absolute", new Class<?>[]{ int.class }, new Object[]{ 0 }),
+            Arguments.of("afterLast", null, null),
+            Arguments.of("beforeFirst", null, null),
+            Arguments.of("first", null, null),
+            Arguments.of("last", null, null),
+            Arguments.of("next", null, null),
+            Arguments.of("previous", null, null),
+            Arguments.of("relative", new Class<?>[]{ int.class }, new Object[]{ 0 })
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildMoveCursorOnClosedResultSetTestCases")
+    void givenClosedResultSet_whenMoveCursor_throwException(
+        final String moveCursorMethodName, final Class<?>[] argsTypes, final Object[] args
+    ) throws SQLException {
+        final String cql = "SELECT keyname FROM cf_test1";
+        final Statement statement = sqlConnection.createStatement(TYPE_FORWARD_ONLY, CONCUR_READ_ONLY);
+        final ResultSet rs = statement.executeQuery(cql);
+        rs.close();
+        final InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+            () -> ResultSet.class.getMethod(moveCursorMethodName, argsTypes).invoke(rs, args)
+        );
+        assertInstanceOf(SQLException.class, ex.getCause());
+        final SQLException sqlEx = (SQLException) ex.getCause();
+        assertEquals(WAS_CLOSED_RS, sqlEx.getMessage());
+        rs.close();
+    }
+
+    @Test
+    void givenScrollableStatement_whenMoveCursor_moveToExpectedRow() throws SQLException {
+        final Statement insertStatement = sqlConnection.createStatement();
+        for (int i = 0; i < 5; i++) {
+            insertStatement.addBatch(
+                "INSERT INTO cf_test1 (keyname, t1bValue, t1iValue) VALUES('key" + i + "', true, " + i + ")"
+            );
+        }
+        insertStatement.executeBatch();
+        insertStatement.close();
+
+        final String cql = "SELECT keyname FROM cf_test1";
+        final Statement selectStatement = sqlConnection.createStatement(TYPE_SCROLL_SENSITIVE, CONCUR_READ_ONLY);
+        final ResultSet rs = selectStatement.executeQuery(cql);
+        // The result set for this query should contain 5 rows. At the beginning, the cursor is positioned before the
+        // first row (row number = 0).
+        // Move to next row, should return the first row of the result set (row number = 1).
+        assertTrue(rs.next());
+        assertEquals(1, rs.getRow());
+
+        // Move before first row, using previous (current row - 1).
+        assertFalse(rs.previous());
+        assertTrue(rs.isBeforeFirst());
+
+        // Move after last row.
+        rs.afterLast();
+        assertTrue(rs.isAfterLast());
+
+        // Move forward 2 rows, should stay after the last row the result set.
+        assertFalse(rs.relative(2));
+        assertTrue(rs.isAfterLast());
+
+        // Move before first row.
+        rs.beforeFirst();
+        assertTrue(rs.isBeforeFirst());
+
+        // Move to last row (row number = 5).
+        assertTrue(rs.last());
+        assertEquals(5, rs.getRow());
+
+        // Move to previous row (row number = 4).
+        assertTrue(rs.previous());
+        assertEquals(4, rs.getRow());
+
+        // Move to first row (row number = 1).
+        assertTrue(rs.first());
+        assertEquals(1, rs.getRow());
+
+        // Move forward 3 rows, should return the fourth row of the result set (current row + 3 = 4).
+        assertTrue(rs.relative(3));
+        assertEquals(4, rs.getRow());
+
+        // Move backward 2 rows, should return the second row of the result set (current row - 2 = 2).
+        assertTrue(rs.relative(-2));
+        assertEquals(2, rs.getRow());
+
+        // Keep the cursor at the same position, should stay on the second row of the result set (row number = 2).
+        assertTrue(rs.relative(0));
+        assertEquals(2, rs.getRow());
+
+        // Move to the third row, using absolute cursor position (row number = 3).
+        assertTrue(rs.absolute(3));
+        assertEquals(3, rs.getRow());
+
+        // Move to the second row, using absolute negative cursor position (row number = 2).
+        assertTrue(rs.absolute(-4));
+        assertEquals(2, rs.getRow());
+
+        // Move before first row, using absolute value 0.
+        assertFalse(rs.absolute(0));
+        assertTrue(rs.isBeforeFirst());
+
+        // Move backward 2 rows, should stay before the first row the result set.
+        assertFalse(rs.relative(-2));
+        assertTrue(rs.isBeforeFirst());
+
+        rs.close();
+        selectStatement.close();
+    }
+
+    @Test
+    void givenScrollableStatementWithEmptyResultSet_whenMoveCursor_doNothing() throws SQLException {
+        final String cql = "SELECT keyname FROM cf_test1 WHERE keyname = 'not found'";
+        final Statement selectStatement = sqlConnection.createStatement(TYPE_SCROLL_SENSITIVE, CONCUR_READ_ONLY);
+        final ResultSet rs = selectStatement.executeQuery(cql);
+
+        assertTrue(rs.isBeforeFirst());
+        assertFalse(rs.isAfterLast());
+        assertFalse(rs.next());
+        assertFalse(rs.last());
+        assertFalse(rs.previous());
+        assertFalse(rs.first());
+        assertFalse(rs.relative(2));
+        assertTrue(rs.isAfterLast());
+        assertFalse(rs.relative(-2));
+        assertTrue(rs.isBeforeFirst());
+        assertFalse(rs.absolute(2));
+        assertTrue(rs.isAfterLast());
+        assertFalse(rs.absolute(-2));
+        assertTrue(rs.isBeforeFirst());
+
+        rs.close();
+        selectStatement.close();
+    }
+
 }

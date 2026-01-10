@@ -17,9 +17,8 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
-import org.apache.commons.lang3.StringUtils;
-
 import jakarta.annotation.Nonnull;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -96,6 +95,14 @@ abstract class AbstractResultSet implements Wrapper {
     abstract DataType getCqlDataType(String columnLabel) throws SQLException;
 
     public boolean absolute(final int row) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void afterLast() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void beforeFirst() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

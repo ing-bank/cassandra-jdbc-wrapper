@@ -68,7 +68,6 @@ import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISI
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
@@ -219,22 +218,6 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             return this.driverResultSet.getColumnDefinitions().getType(columnLabel);
         }
         throw new SQLException(UNABLE_TO_RETRIEVE_METADATA);
-    }
-
-    @Override
-    public void afterLast() throws SQLException {
-        if (this.resultSetType == TYPE_FORWARD_ONLY) {
-            throw new SQLNonTransientException(FORWARD_ONLY);
-        }
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public void beforeFirst() throws SQLException {
-        if (this.resultSetType == TYPE_FORWARD_ONLY) {
-            throw new SQLNonTransientException(FORWARD_ONLY);
-        }
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     private void checkIndex(final int index) throws SQLException {

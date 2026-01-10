@@ -735,7 +735,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getResultSetConcurrency() throws SQLException {
         checkNotClosed();
-        return ResultSet.CONCUR_READ_ONLY;
+        return this.resultSetConcurrency;
     }
 
     @Override
@@ -748,7 +748,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getResultSetType() throws SQLException {
         checkNotClosed();
-        return ResultSet.TYPE_FORWARD_ONLY;
+        return this.resultSetType;
     }
 
     @Override

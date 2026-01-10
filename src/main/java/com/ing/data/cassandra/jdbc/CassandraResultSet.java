@@ -61,7 +61,6 @@ import java.sql.NClob;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLSyntaxErrorException;
@@ -81,9 +80,9 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -101,7 +100,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.ILLEGAL_FETCH_DIRECTION_FOR_FORWARD_ONLY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MALFORMED_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MUST_BE_POSITIVE;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_READ_VALUE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_JSON_TYPE_CONVERSION;
@@ -116,7 +114,6 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_SET_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_VECTOR_FAILED;
 import static java.lang.String.format;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.apache.commons.collections4.IteratorUtils.chainedIterator;
 import static org.apache.commons.io.IOUtils.toCharArray;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
@@ -226,7 +223,8 @@ public class CassandraResultSet extends AbstractResultSet
     private int fetchSize;
     private boolean wasNull;
     private boolean isClosed;
-    private Iterator<Row> rowsIterator;
+    private ListIterator<Row> rowsIterator;
+    private List<Row> rows;
     // Result set from the Cassandra driver.
     private ResultSet driverResultSet;
     private final List<String> driverWarnings = new ArrayList<>();
@@ -260,7 +258,6 @@ public class CassandraResultSet extends AbstractResultSet
      * @throws SQLException if a database access error occurs or this constructor is called with a closed
      *                      {@link Statement}.
      */
-    @SuppressWarnings("unchecked")
     CassandraResultSet(final CassandraStatement statement, final ArrayList<ResultSet> resultSets) throws SQLException {
         initResultSetProperties(statement);
 
@@ -276,18 +273,15 @@ public class CassandraResultSet extends AbstractResultSet
             }
         }
 
-        // Now, we concatenate iterators of the different result sets into a single one.
-        // This may lead to StackOverflowException when there are too many result sets.
-        final Iterator<Row>[] resultSetsIterators = new Iterator[resultSets.size()];
-        resultSetsIterators[0] = this.driverResultSet.iterator();
-        for (int i = 1; i < resultSets.size(); i++) {
-            resultSetsIterators[i] = resultSets.get(i).iterator();
-        }
-        this.rowsIterator = chainedIterator(resultSetsIterators);
+        // Now, we concatenate rows of the different result sets into a single list of rows.
+        // This may lead to StackOverflowException (or another exception) when there are too many result sets.
+        this.rows = new ArrayList<>();
+        resultSets.forEach(resultSet -> this.rows.addAll(resultSet.all()));
+        resetRowsIterator();
 
         // Initialize the column values from the first row.
         if (hasMoreRows()) {
-            populateFirstRow();
+            goToNextRow();
         }
     }
 
@@ -302,7 +296,7 @@ public class CassandraResultSet extends AbstractResultSet
         return new CassandraResultSet(null, driverResultSet);
     }
 
-    private void populateFirstRow() {
+    private void goToNextRow() {
         this.currentRow = this.rowsIterator.next();
     }
 
@@ -320,6 +314,44 @@ public class CassandraResultSet extends AbstractResultSet
             this.fetchDirection = java.sql.ResultSet.FETCH_FORWARD;
             this.fetchSize = FALLBACK_FETCH_SIZE;
         }
+    }
+
+    private void checkCursorIsMoveable() throws SQLException {
+        checkNotClosed();
+        if (this.resultSetType == TYPE_FORWARD_ONLY) {
+            throw new SQLNonTransientException(FORWARD_ONLY);
+        }
+    }
+
+    private void resetRowsIterator() {
+        this.rowsIterator = this.rows.listIterator();
+    }
+
+    @Override
+    public boolean absolute(final int row) throws SQLException {
+        checkCursorIsMoveable();
+        boolean successfulMove = !isBeforeFirst() && !isAfterLast();
+        if (row == 0) {
+            beforeFirst();
+            return false;
+        } else if (row > 0) {
+            beforeFirst();
+            for (int i = 0; i < row; i++) {
+                successfulMove = next();
+                if (!successfulMove) {
+                    break;
+                }
+            }
+        } else {
+            last();
+            for (int i = 1; i < -row; i++) {
+                successfulMove = previous();
+                if (!successfulMove) {
+                    break;
+                }
+            }
+        }
+        return successfulMove;
     }
 
     @Override
@@ -340,18 +372,18 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     public void afterLast() throws SQLException {
-        if (this.resultSetType == TYPE_FORWARD_ONLY) {
-            throw new SQLNonTransientException(FORWARD_ONLY);
-        }
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        checkCursorIsMoveable();
+        this.currentRow = null;
+        this.rowNumber = Integer.MAX_VALUE;
+        resetRowsIterator();
     }
 
     @Override
     public void beforeFirst() throws SQLException {
-        if (this.resultSetType == TYPE_FORWARD_ONLY) {
-            throw new SQLNonTransientException(FORWARD_ONLY);
-        }
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        checkCursorIsMoveable();
+        this.currentRow = null;
+        this.rowNumber = 0;
+        resetRowsIterator();
     }
 
     private void checkIndex(final int index) throws SQLException {
@@ -416,6 +448,16 @@ public class CassandraResultSet extends AbstractResultSet
             return this.driverResultSet.getColumnDefinitions().firstIndexOf(columnLabel) + 1;
         }
         throw new SQLSyntaxErrorException(format(VALID_LABELS, columnLabel));
+    }
+
+    @Override
+    public boolean first() throws SQLException {
+        beforeFirst();
+        if (!hasMoreRows()) {
+            return false;
+        }
+        next();
+        return true;
     }
 
     @Override
@@ -1616,17 +1658,68 @@ public class CassandraResultSet extends AbstractResultSet
     }
 
     @Override
-    public synchronized boolean next() {
+    public boolean last() throws SQLException {
+        beforeFirst();
+        if (!hasMoreRows()) {
+            return false;
+        }
+        do {
+            next();
+        } while (getRow() < this.rows.size());
+        return true;
+    }
+
+    @Override
+    public synchronized boolean next() throws SQLException {
+        checkNotClosed();
         if (hasMoreRows()) {
-            // 'populateFirstRow()' is called upon init to set up the metadata fields; so skip the first call.
+            // 'goToNextRow()' is called upon init to set up the metadata fields; so skip the first call.
             if (this.rowNumber != 0) {
-                populateFirstRow();
+                goToNextRow();
             }
             this.rowNumber++;
             return true;
         }
         this.rowNumber = Integer.MAX_VALUE;
         return false;
+    }
+
+    @Override
+    public boolean previous() throws SQLException {
+        checkCursorIsMoveable();
+        if (isBeforeFirst()) {
+            return false;
+        }
+        if (isFirst()) {
+            beforeFirst();
+            return false;
+        }
+        if (isAfterLast()) {
+            return last();
+        }
+        this.rowsIterator.previous();
+        this.rowNumber--;
+        return true;
+    }
+
+    @Override
+    public boolean relative(final int rows) throws SQLException {
+        checkCursorIsMoveable();
+        int i = 1;
+        boolean successfulMove = !isBeforeFirst() && !isAfterLast();
+
+        if (rows < 0 && !isBeforeFirst()) {
+            do {
+                successfulMove = previous();
+                i++;
+            } while (i <= -rows && successfulMove);
+        } else if (rows > 0 && !isAfterLast()) {
+            do {
+                successfulMove = next();
+                i++;
+            } while (i <= rows && successfulMove);
+        }
+        return successfulMove;
     }
 
     /**

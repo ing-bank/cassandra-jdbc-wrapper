@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   `ManagedConnection` classes.
 - Implement methods `closeOnCompletion()` and `isCloseOnCompletion()` in `CassandraStatement` and 
   `ManagedPreparedStatement`. The behavior of `CassandraResultSet.close()` method has been adapted in consequence.
+- Implement methods `absolute(int)`, `afterLast()`, `beforeFirst()`, `first()`, `last()`, `previous()` and 
+  `relative(int)` in `CassandraResultSet`.
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JDK to 17.
 - Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).

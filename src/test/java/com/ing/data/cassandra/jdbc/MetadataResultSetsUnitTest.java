@@ -20,6 +20,7 @@ import com.ing.data.cassandra.jdbc.metadata.FunctionMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.testing.AssertionsUtils;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,6 +62,20 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initConnection(KEYSPACE, "localdatacenter=datacenter1");
+    }
+
+    @Test
+    void givenResultSet_whenMoveCursor_throwException() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTableTypes();
+        AssertionsUtils.assertNotImplemented(() -> result.absolute(0));
+        AssertionsUtils.assertNotImplemented(() -> result.relative(0));
+        AssertionsUtils.assertNotImplemented(result::afterLast);
+        AssertionsUtils.assertNotImplemented(result::beforeFirst);
+        AssertionsUtils.assertNotImplemented(result::first);
+        AssertionsUtils.assertNotImplemented(result::last);
+        AssertionsUtils.assertNotImplemented(result::previous);
+        result.close();
     }
 
     /*
