@@ -556,6 +556,11 @@ public final class ErrorConstants {
      */
     public static final String INVALID_COLUMN_DEFINITIONS = "The column definitions cannot be null.";
 
+    /**
+     * Error message used when the specified CQL identifier is invalid.
+     */
+    public static final String INVALID_CQL_IDENTIFIER = "Invalid CQL name.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

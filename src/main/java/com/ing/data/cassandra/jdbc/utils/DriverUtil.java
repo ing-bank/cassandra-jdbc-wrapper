@@ -177,6 +177,20 @@ public final class DriverUtil {
     public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
         "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
 
+    /**
+     * Valid CQL identifier pattern.
+     * See: <a href="https://cassandra.apache.org/doc/latest/cassandra/developing/cql/definitions.html#identifiers">
+     *     CQL identifiers definition</a>.
+     */
+    public static final Pattern VALID_CQL_IDENTIFIER_PATTERN = Pattern.compile("\\p{Alpha}[\\p{Alnum}_]*");
+
+    /**
+     * Valid quoted CQL identifier pattern (only matching the content between the double quotes).
+     * See: <a href="https://cassandra.apache.org/doc/latest/cassandra/developing/cql/definitions.html#identifiers">
+     *     CQL identifiers definition</a>.
+     */
+    public static final Pattern VALID_QUOTED_CQL_IDENTIFIER_PATTERN = Pattern.compile("((?:[^\"]|\"\")+)");
+
     private DriverUtil() {
         // Private constructor to hide the public one.
     }

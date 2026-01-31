@@ -15,7 +15,11 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import javax.sql.ConnectionEventListener;
+import javax.sql.StatementEventListener;
+import javax.sql.XAConnection;
 import java.sql.Array;
+import java.sql.ConnectionBuilder;
 import java.sql.ResultSet;
 import java.util.Map;
 
@@ -205,6 +209,29 @@ public final class WarningConstants {
      * expecting the codec class name (example: {@code log.warn(CODEC_INSTANTIATION_FAILED, codecClassName)}).
      */
     public static final String CODEC_INSTANTIATION_FAILED = "Unable to instantiate codec: {}, skip it";
+
+    /**
+     * Warning message used when executing an operation on a {@link ConnectionEventListener} since it's not
+     * supported (example when trying to execute
+     * {@link XAConnection#addConnectionEventListener(ConnectionEventListener)}:
+     * {@code log.warn(NO_OP_CONNECTION_EVENT_LISTENER, "adding")}).
+     */
+    public static final String NO_OP_CONNECTION_EVENT_LISTENER =
+        "XAConnection is not supported: {} ConnectionEventListener is a no-op.";
+
+    /**
+     * Warning message used when executing an operation on a {@link StatementEventListener} since it's not
+     * supported (example when trying to execute
+     * {@link XAConnection#addStatementEventListener(StatementEventListener)}:
+     * {@code log.warn(NO_OP_STATEMENT_EVENT_LISTENER, "adding")}).
+     */
+    public static final String NO_OP_STATEMENT_EVENT_LISTENER =
+        "XAConnection is not supported: {} StatementEventListener is a no-op.";
+
+    /**
+     * Warning message used when setting sharding keys in a {@link ConnectionBuilder} since it's not supported.
+     */
+    public static final String UNSUPPORTED_SHARDING_KEYS = "Sharding keys are not supported: this is a no-op.";
 
     private WarningConstants() {
         // Private constructor to hide the public one.

@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
+import java.sql.ShardingKey;
 import java.sql.Struct;
 import java.sql.Wrapper;
 import java.util.Map;
@@ -111,6 +112,32 @@ abstract class AbstractConnection implements Wrapper {
     }
 
     public int getNetworkTimeout() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void beginRequest() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void endRequest() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean setShardingKeyIfValid(final ShardingKey shardingKey,
+                                         final ShardingKey superShardingKey,
+                                         final int timeout) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean setShardingKeyIfValid(final ShardingKey shardingKey, final int timeout) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void setShardingKey(final ShardingKey shardingKey, final ShardingKey superShardingKey) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void setShardingKey(final ShardingKey shardingKey) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 

@@ -36,9 +36,11 @@ import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.sql.ConnectionBuilder;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,7 +93,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         try {
             Class.forName("com.ing.data.cassandra.jdbc.CassandraDriver");
         } catch (final ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new DriverNotFoundException(e);
         }
     }
 
@@ -185,6 +187,16 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     @Override
     public PooledCassandraConnection getPooledConnection(final String user, final String password) throws SQLException {
         return new PooledCassandraConnection(getConnection(user, password));
+    }
+
+    @Override
+    public ConnectionBuilder createConnectionBuilder() throws SQLException {
+        return new CassandraConnectionBuilder(this);
+    }
+
+    @Override
+    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     /**

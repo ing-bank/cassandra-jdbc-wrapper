@@ -23,6 +23,10 @@ import com.ing.data.cassandra.jdbc.types.JdbcBoolean;
 import com.ing.data.cassandra.jdbc.types.JdbcInt32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
@@ -48,11 +52,15 @@ import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.UUID;
+import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CQL_IDENTIFIER;
 import static java.time.ZoneOffset.UTC;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
@@ -337,5 +345,51 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         assertFalse(statement.isCloseOnCompletion());
         statement.closeOnCompletion();
         assertTrue(statement.isCloseOnCompletion());
+    }
+
+    static Stream<Arguments> buildEnquoteIdentifierTestCases() {
+        return Stream.of(
+            Arguments.of("Hello", false, "Hello"),
+            Arguments.of("Hello", true, "\"Hello\""),
+            Arguments.of("G'day", false, "\"G'day\""),
+            Arguments.of("1234567890", true, "\"1234567890\""),
+            Arguments.of("1234567890", false, "\"1234567890\""),
+            Arguments.of("\"Valid\"\"identifier\"", false, "\"Valid\"\"identifier\""),
+            Arguments.of("\"Bruce Wayne\"", false, "\"Bruce Wayne\""),
+            Arguments.of("\"Bruce Wayne\"", true, "\"Bruce Wayne\""),
+            Arguments.of("GoodDay123$", false, "\"GoodDay123$\"")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildEnquoteIdentifierTestCases")
+    void givenIdentifier_whenEnquote_returnExpectedIdentifier(final String identifier,
+                                                              final boolean alwaysQuote,
+                                                              final String expectedIdentifier) throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertEquals(expectedIdentifier, statement.enquoteIdentifier(identifier, alwaysQuote));
+        statement.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "Hello\"World",
+        "\"Hello\"World\"",
+        "A\u0000bc_123",
+        "Abcdefghikj1234567890klmnopqrst1234567890uvwxyz_12345",
+        EMPTY
+    })
+    void givenInvalidIdentifier_whenEnquote_throwSqlException(final String identifier) throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        final SQLException ex = assertThrows(SQLException.class, () -> statement.enquoteIdentifier(identifier, true));
+        assertEquals(INVALID_CQL_IDENTIFIER, ex.getMessage());
+        statement.close();
+    }
+
+    @Test
+    void givenNullIdentifier_whenEnquote_throwNullPointerException() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertThrows(NullPointerException.class, () -> statement.enquoteIdentifier(null, false));
+        statement.close();
     }
 }

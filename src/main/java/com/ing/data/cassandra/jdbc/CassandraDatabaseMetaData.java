@@ -1446,6 +1446,25 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         return false;
     }
 
+    @Override
+    public long getMaxLogicalLobSize() {
+        // Theoretically, Cassandra database supports BLOB values up to 2GB, but it's recommended to store smaller
+        // LOBs.
+        // See: https://docs.datastax.com/en/cql-oss/3.3/cql/cql_reference/blob_r.html
+        // https://cassandra.apache.org/doc/5.0/cassandra/overview/faq/index.html#can-large-blob
+        return (long) Integer.MAX_VALUE + 1;
+    }
+
+    @Override
+    public boolean supportsRefCursors() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsSharding() {
+        return false;
+    }
+
     private void checkStatementClosed() throws SQLException {
         if (this.statement.isClosed()) {
             this.statement = new CassandraStatement(this.connection);
