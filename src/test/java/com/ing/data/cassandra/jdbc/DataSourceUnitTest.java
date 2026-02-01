@@ -198,6 +198,31 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         connection.close();
     }
 
+    @Test
+    void givenDataSource_whenBuildConnectionBuilder_returnCassandraConnection() throws Exception {
+        final CassandraDataSource ds = new CassandraDataSource(null, null);
+        final CassandraConnectionBuilder connectionBuilder = (CassandraConnectionBuilder) ds.createConnectionBuilder();
+        final CassandraConnection connection = (CassandraConnection) connectionBuilder
+            .user("testUser")
+            .password("testPassword")
+            .contactPoints(CONTACT_POINTS)
+            .databaseName(KEYSPACE)
+            .consistency("TWO")
+            .serialConsistency("LOCAL_SERIAL")
+            .fetchSize(5_000)
+            .localDataCenter("DC1")
+            .loadBalancingPolicy("com.ing.data.cassandra.jdbc.testing.AnotherFakeLoadBalancingPolicy")
+            .requestTimeout(8_000L)
+            .retryPolicy("com.ing.data.cassandra.jdbc.testing.AnotherFakeRetryPolicy")
+            .reconnectionPolicy("ConstantReconnectionPolicy((long)10)")
+            .connectionTimeout(15_000L)
+            .tcpNoDelayEnabled(false)
+            .tcpKeepAliveEnabled(true)
+            .build();
+        assertConnectionHasExpectedConfig(connection);
+        connection.close();
+    }
+
     private void assertConnectionHasExpectedConfig(final CassandraConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.getSession());

@@ -885,7 +885,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     /**
      * Sets the AWS region of the contact point of the Amazon Keyspaces instance.
      *
-     * @param region The string representation of the region.
+     * @param region The string representation of the AWS region.
      */
     public void setAwsRegion(final String region) {
         this.setDataSourceProperty(TAG_AWS_REGION, region);
@@ -908,7 +908,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Gets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
      * are stored. If not defined, the value is the one returned by {@link #getAwsRegion()}.
      *
-     * @return .
+     * @return The AWS region.
      */
     public String getAwsSecretRegion() {
         return (String) this.properties.getOrDefault(TAG_AWS_SECRET_REGION,
@@ -919,7 +919,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Sets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
      * are stored.
      *
-     * @param region The string representation of the region.
+     * @param region The string representation of the AWS region.
      */
     public void setAwsSecretRegion(final String region) {
         this.setDataSourceProperty(TAG_AWS_SECRET_REGION, region);
