@@ -36,7 +36,7 @@ exceptions if used against an older version of Cassandra cluster. For more infor
 If you meet issues connecting to the cluster (seeing `NoHostAvailableConnection` exceptions) please check if your
 configuration is correct, and you specified a valid local datacenter if you use the default load-balancing policy.
 
-This project requires **Java 17 JDK (minimum)**.
+This project requires **Java 17 (minimum)**.
 
 ### Installing
 

@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - in `Statement` implementations: methods `enquoteIdentifier(String, boolean)` and `isSimpleIdentifier(String)` are
     adapted to Cassandra-specific rules.
 ### Changed
-- **BREAKING CHANGE**: upgrade minimal required JDK to 17.
+- **BREAKING CHANGE**: upgrade minimal required JRE to 17.
 - Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).
 - Update Java Driver for Apache Cassandra® to version 4.19.2.
 - Update Apache Commons IO to version 2.21.0.
@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Astra SDK to 2.1.2.
 - Update AWS Secrets Manager SDK to 2.38.7.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
+### Fixed
+- Add missing keywords in the list returned by `CassandraDatabaseMetaData.getSQLKeywords()` method.
 ### Removed
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.

@@ -669,7 +669,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
         // Cassandra does not use SQL but CQL. Here are list all the keywords used by Cassandra and not in common with
         // SQL:2003 standard keywords (see: https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#xref-keywords).
         // The CQL keywords are listed here:
-        // https://cassandra.apache.org/doc/latest/cassandra/cql/appendices.html#appendix-A
+        // https://cassandra.apache.org/doc/stable/cassandra/developing/cql/appendices.html#appendix-A
         // Also add new keywords relative to vector type introduced by CEP-30 in Cassandra 5.0:
         // https://cwiki.apache.org/confluence/x/OQ40Dw
 
@@ -709,6 +709,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("LIMIT"),
             new BasicVersionedMetadata("LIST"),
             new BasicVersionedMetadata("LOGIN"),
+            new BasicVersionedMetadata("MASKED", CASSANDRA_5, ifNotAwsKeyspaces),
+            new BasicVersionedMetadata("MAXWRITETIME", CASSANDRA_5),
             new BasicVersionedMetadata("MODIFY"),
             new BasicVersionedMetadata("NAN"),
             new BasicVersionedMetadata("NOLOGIN"),
@@ -721,6 +723,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("REPLACE"),
             new BasicVersionedMetadata("RETURNS"),
             new BasicVersionedMetadata("ROLES"),
+            new BasicVersionedMetadata("SELECT_MASKED", CASSANDRA_5, ifNotAwsKeyspaces),
             new BasicVersionedMetadata("SFUNC"),
             new BasicVersionedMetadata("SMALLINT"),
             new BasicVersionedMetadata("STORAGE"),
@@ -734,6 +737,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
             new BasicVersionedMetadata("TTL"),
             new BasicVersionedMetadata("TUPLE"),
             new BasicVersionedMetadata("UNLOGGED"),
+            new BasicVersionedMetadata("UNMASK", CASSANDRA_5, ifNotAwsKeyspaces),
             new BasicVersionedMetadata("USE"),
             new BasicVersionedMetadata("USERS"),
             new BasicVersionedMetadata("UUID"),
