@@ -21,9 +21,13 @@ import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.optionset.Default;
+import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -60,8 +64,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static com.datastax.oss.driver.api.core.config.DriverExecutionProfile.DEFAULT_NAME;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_4;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -1226,6 +1233,42 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
             assertEquals(Duration.ofSeconds(10), executionProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
             assertTrue(executionProfile.getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
             assertEquals(50, connection.getDefaultFetchSize());
+        } catch (final Exception e) {
+            fail(e);
+        }
+    }
+
+    static Stream<Arguments> buildComplianceModeUpdateCountTestCases() {
+        return Stream.of(
+            Arguments.of("Default", 0),
+            Arguments.of("Liquibase", -1)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildComplianceModeUpdateCountTestCases")
+    public void testIngIssue86(final String complianceMode, final int expectedUpdateCount) {
+        final CassandraDataSource datasource = new CassandraDataSource(
+            Collections.singletonList(ContactPoint.of(
+                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort()
+            )),
+            KEYSPACE
+        );
+        datasource.setLocalDataCenter("datacenter1");
+        datasource.setComplianceMode(complianceMode);
+        try {
+            final CassandraConnection connection = datasource.getConnection();
+            final Statement stmt = connection.createStatement();
+
+            // Update query using execute(), getUpdateCount() should return the value defined in the specifications
+            // of the used compliance mode.
+            stmt.execute("INSERT INTO regressions_test (keyname, iValue) VALUES ('issue86', 1)");
+            assertEquals(expectedUpdateCount, stmt.getUpdateCount());
+
+            // Update query using executeUpdate() should return the value defined in the specifications of the used
+            // compliance mode.
+            stmt.execute("INSERT INTO regressions_test (keyname, iValue) VALUES ('issue86', 2)");
+            assertEquals(expectedUpdateCount, stmt.getUpdateCount());
         } catch (final Exception e) {
             fail(e);
         }
