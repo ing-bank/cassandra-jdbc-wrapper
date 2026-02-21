@@ -108,40 +108,40 @@
         <java.version>17</java.version>
 
         <!-- Versions for dependencies -->
-        <astra-sdk.version>2.1.2</astra-sdk.version>
-        <aws-secretsmanager.version>2.38.7</aws-secretsmanager.version>
+        <astra-sdk.version>2.1.7</astra-sdk.version>
+        <aws-secretsmanager.version>2.41.32</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
-        <checkstyle.version>12.1.2</checkstyle.version>
+        <checkstyle.version>13.2.0</checkstyle.version>
         <caffeine.version>3.2.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-lang3.version>3.19.0</commons-lang3.version>
         <java.driver.version>4.19.2</java.driver.version>
-        <jackson.version>3.0.2</jackson.version>
+        <jackson.version>3.0.4</jackson.version>
         <jakarta.version>3.0.0</jakarta.version>
         <lombok.version>1.18.42</lombok.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
         <!-- Versions for test dependencies -->
-        <approvaltests.version>25.7.0</approvaltests.version>
+        <approvaltests.version>27.0.0</approvaltests.version>
         <dotenv.version>3.2.0</dotenv.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <junit.version>6.0.1</junit.version>
-        <mockito.version>5.20.0</mockito.version>
+        <junit.version>6.0.3</junit.version>
+        <mockito.version>5.21.0</mockito.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <testcontainers.version>2.0.2</testcontainers.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
         <!-- Versions for plugins -->
-        <central-publishing-plugin.version>0.9.0</central-publishing-plugin.version>
+        <central-publishing-plugin.version>0.10.0</central-publishing-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
-        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
-        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
         <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
-        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
     </properties>
 
