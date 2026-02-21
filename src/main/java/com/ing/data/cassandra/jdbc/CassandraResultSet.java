@@ -30,13 +30,13 @@ import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.driver.internal.core.type.DefaultMapType;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import com.ing.data.cassandra.jdbc.utils.UdtUtil.WithFormattedContentsDefaultUdtValue;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JacksonException;
 
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
@@ -1337,7 +1337,7 @@ public class CassandraResultSet extends AbstractResultSet
         if (json != null) {
             try {
                 return getObjectMapper().readValue(json, type);
-            } catch (final JsonProcessingException e) {
+            } catch (final JacksonException e) {
                 throw new SQLException(format(UNSUPPORTED_JSON_TYPE_CONVERSION, columnIndex, type.getName()), e);
             }
         }

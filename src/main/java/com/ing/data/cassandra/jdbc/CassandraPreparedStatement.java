@@ -27,11 +27,11 @@ import com.datastax.oss.driver.internal.core.type.DefaultMapType;
 import com.datastax.oss.driver.internal.core.type.DefaultSetType;
 import com.datastax.oss.driver.internal.core.type.DefaultVectorType;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import tools.jackson.core.JacksonException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -779,7 +779,7 @@ public class CassandraPreparedStatement extends CassandraStatement
         try {
             final String json = getObjectMapper().writeValueAsString(x);
             setString(parameterIndex, json);
-        } catch (final JsonProcessingException e) {
+        } catch (final JacksonException e) {
             throw new SQLException(
                 format(UNSUPPORTED_CONVERSION_TO_JSON, x.getClass().getName(), parameterIndex));
         }

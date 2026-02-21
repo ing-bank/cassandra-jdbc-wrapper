@@ -15,7 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.json;
 
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import tools.jackson.databind.ext.javatime.deser.LocalDateDeserializer;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

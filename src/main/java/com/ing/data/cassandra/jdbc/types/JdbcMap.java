@@ -15,9 +15,9 @@
 
 package com.ing.data.cassandra.jdbc.types;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
@@ -43,7 +43,7 @@ public class JdbcMap extends AbstractJdbcCollection<Map> {
     public String toString(final Map obj) {
         try {
             return new ObjectMapper().writeValueAsString(obj);
-        } catch (final JsonProcessingException e) {
+        } catch (final JacksonException e) {
             log.warn(MAP_TO_STRING_FORMATTING_FAILED, obj.toString(), e);
             return null;
         }

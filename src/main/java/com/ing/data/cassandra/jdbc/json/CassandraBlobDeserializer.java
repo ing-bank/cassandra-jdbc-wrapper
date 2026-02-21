@@ -15,11 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static java.nio.ByteBuffer.wrap;
@@ -32,11 +31,11 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  *     {@code blob}).
  * </p>
  */
-public class CassandraBlobDeserializer extends JsonDeserializer<ByteBuffer> {
+public class CassandraBlobDeserializer extends ValueDeserializer<ByteBuffer> {
 
     @Override
     public ByteBuffer deserialize(final JsonParser jsonParser,
-                                  final DeserializationContext deserializationContext) throws IOException {
+                                  final DeserializationContext deserializationContext) {
         final String value = jsonParser.getValueAsString();
         if (value != null) {
             return wrap(hexStringToByteArray(value));
