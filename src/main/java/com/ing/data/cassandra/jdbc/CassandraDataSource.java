@@ -123,7 +123,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
 
     @Override
     public CassandraConnection getConnection() throws SQLException {
-        return getConnection(null, null);
+        return getConnection(getUser(), getPassword());
     }
 
     @Override

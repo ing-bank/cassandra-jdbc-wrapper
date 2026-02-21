@@ -17,24 +17,29 @@ package com.ing.data.cassandra.jdbc;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nonnull;
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
+import javax.sql.PooledConnectionBuilder;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 
 /**
- * Pooled Cassandra data source: implementation class for {@link DataSource} and {@link ConnectionEventListener}.
+ * Pooled Cassandra data source: implementation class for {@link ConnectionPoolDataSource} and
+ * {@link ConnectionEventListener}.
  */
 @Slf4j
-public class PooledCassandraDataSource implements DataSource, ConnectionEventListener {
+public class PooledCassandraDataSource implements DataSource, ConnectionPoolDataSource, ConnectionEventListener {
 
     private static final int CONNECTION_IS_VALID_DEFAULT_TIMEOUT = 5;
     private static final int MIN_POOL_SIZE = 4;
@@ -48,27 +53,40 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
      *
      * @param connectionPoolDataSource The underlying {@link CassandraDataSource}.
      */
-    public PooledCassandraDataSource(final CassandraDataSource connectionPoolDataSource) {
+    public PooledCassandraDataSource(@Nonnull final CassandraDataSource connectionPoolDataSource) {
         this.connectionPoolDataSource = connectionPoolDataSource;
     }
 
     @Override
-    public synchronized Connection getConnection() throws SQLException {
+    public synchronized PooledConnection getPooledConnection() throws SQLException {
+        return getPooledConnection(
+            this.connectionPoolDataSource.getUser(),
+            this.connectionPoolDataSource.getPassword()
+        );
+    }
+
+    @Override
+    public PooledConnection getPooledConnection(final String user, final String password) throws SQLException {
         final PooledCassandraConnection pooledConnection;
         if (this.freeConnections.isEmpty()) {
-            pooledConnection = this.connectionPoolDataSource.getPooledConnection();
+            pooledConnection = this.connectionPoolDataSource.getPooledConnection(user, password);
             pooledConnection.addConnectionEventListener(this);
         } else {
             pooledConnection = this.freeConnections.iterator().next();
             this.freeConnections.remove(pooledConnection);
         }
         this.usedConnections.add(pooledConnection);
-        return new ManagedConnection(pooledConnection);
+        return pooledConnection;
     }
 
     @Override
-    public Connection getConnection(final String username, final String password) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    public synchronized Connection getConnection() throws SQLException {
+        return getConnection(this.connectionPoolDataSource.getUser(), this.connectionPoolDataSource.getPassword());
+    }
+
+    @Override
+    public Connection getConnection(final String user, final String password) throws SQLException {
+        return new ManagedConnection((PooledCassandraConnection) getPooledConnection(user, password));
     }
 
     @Override
@@ -119,6 +137,12 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
     }
 
     @Override
+    public PooledConnectionBuilder createPooledConnectionBuilder() throws SQLException {
+        // todo
+        return null;
+    }
+
+    @Override
     public int getLoginTimeout() {
         return this.connectionPoolDataSource.getLoginTimeout();
     }
@@ -136,6 +160,11 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
     @Override
     public void setLogWriter(final PrintWriter writer) {
         this.connectionPoolDataSource.setLogWriter(writer);
+    }
+
+    @Override
+    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

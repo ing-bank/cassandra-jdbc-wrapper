@@ -41,7 +41,8 @@ class PooledUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenPooledDataSource_whenGetAndCloseConnection2MillionTimes_manageConnectionsProperly() throws Exception {
         final CassandraDataSource connectionPoolDataSource = buildConnectionPoolDataSource();
-        final DataSource pooledCassandraDataSource = new PooledCassandraDataSource(connectionPoolDataSource);
+        final PooledCassandraDataSource pooledCassandraDataSource =
+            new PooledCassandraDataSource(connectionPoolDataSource);
 
         for (int i = 0; i < 2_000_000; i++) {
             final Connection connection = pooledCassandraDataSource.getConnection();

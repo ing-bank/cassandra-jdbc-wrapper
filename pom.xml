@@ -191,12 +191,6 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        <dependency>
-            <groupId>tools.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <!-- TODO: use a release version as soon as it's available -->
-            <version>3.0.0-rc2</version>
-        </dependency>
 
         <!-- Semver for operations on versions -->
         <dependency>
