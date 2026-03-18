@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.16.3] - 2026-03-18
+### Changed
+- Update Jackson dependencies to version 2.21.1 to fix vulnerability specified in issue
+  [#87](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/87).
+
 ## [4.16.2] - 2026-02-14
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.2.
@@ -388,6 +393,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.0...v4.16.1
 [4.16.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.15.0...v4.16.0
