@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'release/*'
+      - 'fix/*'
   pull_request:
     branches:
       - 'release/next'
