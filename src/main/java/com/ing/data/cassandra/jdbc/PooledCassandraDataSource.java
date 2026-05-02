@@ -67,6 +67,30 @@ public class PooledCassandraDataSource implements DataSource, ConnectionPoolData
 
     @Override
     public PooledConnection getPooledConnection(final String user, final String password) throws SQLException {
+        return new PooledCassandraConnection(this.connectionPoolDataSource.getConnection(user, password));
+    }
+
+    /**
+     * Attempts to establish a connection with the data source that this {@link DataSource} object represents.
+     *
+     * @return A connection to the data source, among the available connections of a pool of connections.
+     * @throws SQLException if a database access error occurs.
+     */
+    @Override
+    public synchronized Connection getConnection() throws SQLException {
+        return getConnection(this.connectionPoolDataSource.getUser(), this.connectionPoolDataSource.getPassword());
+    }
+
+    /**
+     * Attempts to establish a connection with the data source that this {@link DataSource} object represents.
+     *
+     * @param user      The database user on whose behalf the connection is being made.
+     * @param password  The user's password.
+     * @return A connection to the data source, among the available connections of a pool of connections.
+     * @throws SQLException if a database access error occurs.
+     */
+    @Override
+    public Connection getConnection(final String user, final String password) throws SQLException {
         final PooledCassandraConnection pooledConnection;
         if (this.freeConnections.isEmpty()) {
             pooledConnection = this.connectionPoolDataSource.getPooledConnection(user, password);
@@ -76,17 +100,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionPoolData
             this.freeConnections.remove(pooledConnection);
         }
         this.usedConnections.add(pooledConnection);
-        return pooledConnection;
-    }
-
-    @Override
-    public synchronized Connection getConnection() throws SQLException {
-        return getConnection(this.connectionPoolDataSource.getUser(), this.connectionPoolDataSource.getPassword());
-    }
-
-    @Override
-    public Connection getConnection(final String user, final String password) throws SQLException {
-        return new ManagedConnection((PooledCassandraConnection) getPooledConnection(user, password));
+        return new ManagedConnection(pooledConnection);
     }
 
     @Override

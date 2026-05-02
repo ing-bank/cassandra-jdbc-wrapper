@@ -127,6 +127,7 @@
         <approvaltests.version>27.0.0</approvaltests.version>
         <dotenv.version>3.2.0</dotenv.version>
         <hamcrest.version>3.0</hamcrest.version>
+        <hikaricp.version>7.0.2</hikaricp.version>
         <junit.version>6.0.3</junit.version>
         <mockito.version>5.21.0</mockito.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -322,6 +323,13 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-localstack</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Pool manager for pooled connections testing -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikaricp.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Handy to build the CQL queries -->
