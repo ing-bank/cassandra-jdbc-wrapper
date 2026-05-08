@@ -270,7 +270,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
                                        final String foreignCatalog,
                                        final String foreignSchema,
                                        final String foreignTable) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
@@ -350,7 +350,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getExportedKeys(final String catalog,
                                      final String schema,
                                      final String table) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
@@ -411,7 +411,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getImportedKeys(final String catalog,
                                      final String schema,
                                      final String table) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
@@ -802,7 +802,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getSuperTables(final String catalog,
                                     final String schemaPattern,
                                     final String tableNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     /**
@@ -823,7 +823,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getSuperTypes(final String catalog,
                                    final String schemaPattern,
                                    final String typeNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
@@ -992,7 +992,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getVersionColumns(final String catalog,
                                        final String schema,
                                        final String table) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return CassandraResultSet.EMPTY_RESULT_SET;
     }
 
     @Override
