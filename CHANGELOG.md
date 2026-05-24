@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - in `CassandraDataSource`: `createConnectionBuilder()`.
   - in `Statement` implementations: methods `enquoteIdentifier(String, boolean)` and `isSimpleIdentifier(String)` are
     adapted to Cassandra-specific rules.
+- Add methods `getLocalTime(int | String)` and `getLocalDate(String)` in `CassandraResultSet`.
+- Add methods `getLocalTime(int | String)` and `getLocalDate(int | String)` in `CassandraMetadataResultSet`.
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JRE to 17.
 - Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).
@@ -31,7 +33,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Add missing keywords in the list returned by `CassandraDatabaseMetaData.getSQLKeywords()` method.
 - Fix issue [#88](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/88): `CassandraResultSet.getTime()` methods 
-  now preserve milliseconds precision.
+  now preserve milliseconds precision and `CassandraResultSet.getObject(x, LocalTime.class)` returns a 
+  `java.time.LocalTime` as expected.
 ### Removed
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.

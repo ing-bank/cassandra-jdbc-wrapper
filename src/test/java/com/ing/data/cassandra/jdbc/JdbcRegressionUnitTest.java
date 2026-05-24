@@ -1296,6 +1296,8 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
             resultSet.next();
             final Time timeVal = resultSet.getTime("time_val");
             assertTimeEquals(LocalTime.of(23, 59, 59, 999_000_000), timeVal);
+            final var localTimeVal = resultSet.getObject("time_val", LocalTime.class);
+            assertTimeEquals(localTimeVal, timeVal);
         }
     }
 

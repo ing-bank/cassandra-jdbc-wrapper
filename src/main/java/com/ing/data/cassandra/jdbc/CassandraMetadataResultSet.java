@@ -54,6 +54,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -599,6 +601,42 @@ public class CassandraMetadataResultSet extends AbstractResultSet implements Cas
             return new ArrayList<>(resultList);
         }
         return this.currentRow.getList(columnLabel, String.class);
+    }
+
+    @Override
+    public LocalDate getLocalDate(final int columnIndex) throws SQLException {
+        final Date date = getDate(columnIndex);
+        if (date == null) {
+            return null;
+        }
+        return date.toLocalDate();
+    }
+
+    @Override
+    public LocalDate getLocalDate(final String columnLabel) throws SQLException {
+        final Date date = getDate(columnLabel);
+        if (date == null) {
+            return null;
+        }
+        return date.toLocalDate();
+    }
+
+    @Override
+    public LocalTime getLocalTime(final int columnIndex) throws SQLException {
+        final Time time = getTime(columnIndex);
+        if (time == null) {
+            return null;
+        }
+        return time.toLocalTime();
+    }
+
+    @Override
+    public LocalTime getLocalTime(final String columnLabel) throws SQLException {
+        final Time time = getTime(columnLabel);
+        if (time == null) {
+            return null;
+        }
+        return time.toLocalTime();
     }
 
     @Override

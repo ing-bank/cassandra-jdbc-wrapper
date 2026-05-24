@@ -891,18 +891,28 @@ public class CassandraResultSet extends AbstractResultSet
         return this.currentRow.getList(columnLabel, String.class);
     }
 
-    /**
-     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
-     * {@link LocalDate}.
-     *
-     * @param columnIndex The column index (the first column is 1).
-     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
-     *                      on a closed result set.
-     */
+    @Override
     public LocalDate getLocalDate(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
         return this.currentRow.getLocalDate(columnIndex - 1);
+    }
+
+    @Override
+    public LocalDate getLocalDate(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getLocalDate(columnLabel);
+    }
+
+    @Override
+    public LocalTime getLocalTime(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getLocalTime(columnIndex - 1);
+    }
+
+    @Override
+    public LocalTime getLocalTime(final String columnLabel) throws SQLException {
+        checkName(columnLabel);
+        return this.currentRow.getLocalTime(columnLabel);
     }
 
     @Override
@@ -1256,7 +1266,9 @@ public class CassandraResultSet extends AbstractResultSet
             returnValue = getTimestamp(columnIndex);
         } else if (type == LocalDate.class) {
             returnValue = getLocalDate(columnIndex);
-        } else if (type == LocalDateTime.class || type == LocalTime.class || type == Calendar.class) {
+        } else if (type == LocalTime.class) {
+            returnValue = getLocalTime(columnIndex);
+        } else if (type == LocalDateTime.class || type == Calendar.class) {
             final Timestamp timestamp = getTimestamp(columnIndex, Calendar.getInstance());
             if (timestamp == null) {
                 returnValue = null;
@@ -1264,8 +1276,6 @@ public class CassandraResultSet extends AbstractResultSet
                 final LocalDateTime ldt = LocalDateTime.ofInstant(timestamp.toInstant(), ZoneId.of("UTC"));
                 if (type == java.time.LocalDateTime.class) {
                     returnValue = ldt;
-                } else if (type == java.time.LocalTime.class) {
-                    returnValue = ldt.toLocalTime();
                 } else {
                     returnValue = new Calendar.Builder().setInstant(ldt.toEpochSecond(ZoneOffset.UTC)).build();
                 }
@@ -1458,8 +1468,7 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     public Time getTime(final int columnIndex) throws SQLException {
-        checkIndex(columnIndex);
-        final LocalTime localTime = this.currentRow.getLocalTime(columnIndex - 1);
+        final LocalTime localTime = getLocalTime(columnIndex);
         if (localTime == null) {
             return null;
         }
@@ -1474,8 +1483,7 @@ public class CassandraResultSet extends AbstractResultSet
 
     @Override
     public Time getTime(final String columnLabel) throws SQLException {
-        checkName(columnLabel);
-        final LocalTime localTime = this.currentRow.getLocalTime(columnLabel);
+        final LocalTime localTime = getLocalTime(columnLabel);
         if (localTime == null) {
             return null;
         }
