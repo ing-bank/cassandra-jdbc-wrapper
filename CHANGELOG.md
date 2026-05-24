@@ -23,12 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JRE to 17.
 - Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).
-- Update Apache Commons IO to version 2.21.0.
-- Update Jackson dependencies to version 3.1.2.
-- Update Caffeine to version 3.2.3.
+- Update Apache Commons IO to version 2.22.0.
+- Update Apache Commons Lang to version 3.20.0.
+- Update Jackson dependencies to version 3.1.3.
+- Update Caffeine to version 3.2.4.
 - Update Semver4j to version 6.0.0.
-- Update Astra SDK to 2.1.7.
-- Update AWS Secrets Manager SDK to 2.41.32.
+- Update Astra SDK to 2.2.2.
+- Update AWS Secrets Manager SDK to 2.44.12.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
 - Return an empty result set instead of a `SQLFeatureNotSupportedException` for the following methods of 
   `CassandraDatabaseMetaData` to respect JDBC API specifications:
