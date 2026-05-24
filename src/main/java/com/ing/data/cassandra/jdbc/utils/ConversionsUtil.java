@@ -35,11 +35,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.temporal.ChronoField;
 import java.util.Calendar;
 
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
 import static java.lang.String.format;
 import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.apache.commons.io.IOUtils.EMPTY_BYTE_ARRAY;
 import static org.apache.commons.io.IOUtils.toByteArray;
@@ -233,11 +235,12 @@ public final class ConversionsUtil {
             if (x instanceof Time sqlTime) {
                 return sqlTime;
             } else if (x instanceof LocalTime localTime) {
-                return Time.valueOf(localTime);
+                // Keep milliseconds precision from LocalDate when converting to java.sql.Time.
+                return new Time(localTime.getLong(MILLI_OF_DAY));
             } else if (x instanceof OffsetTime offsetTime) {
-                return Time.valueOf(offsetTime.toLocalTime());
+                return new Time(offsetTime.toLocalTime().getLong(MILLI_OF_DAY));
             } else if (x instanceof Instant instant) {
-                return Time.valueOf(LocalTime.ofInstant(instant, systemDefault()));
+                return new Time(LocalTime.ofInstant(instant, systemDefault()).getLong(MILLI_OF_DAY));
             } else if (x instanceof String str) {
                 return Time.valueOf(str);
             } else {
@@ -293,6 +296,17 @@ public final class ConversionsUtil {
             throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
                 x.getClass(), Timestamp.class, ex.getMessage()));
         }
+    }
+
+    /**
+     * Converts a time value in milliseconds of day (i.e. milliseconds within the day, see
+     * {@link ChronoField#MILLI_OF_DAY}) to a {@link LocalTime} instance.
+     *
+     * @param millisOfDay The time value in milliseconds of day.
+     * @return The {@link LocalTime} instance resulting of the object conversion.
+     */
+    public static LocalTime milliOfDayToLocalTime(final long millisOfDay) {
+        return LocalTime.ofNanoOfDay(millisOfDay * 1_000_000);
     }
 
     private static byte[] onBinaryFailedConversion(final Exception e, final Object obj) {

@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalTime;
 import java.util.UUID;
 
 import static com.datastax.oss.driver.api.core.ProtocolVersion.DEFAULT;
@@ -169,7 +170,8 @@ public final class ByteBufferUtil {
         } else if (o instanceof Date date) {
             return new DateCodec().encode(date.toLocalDate(), DEFAULT);
         } else if (o instanceof Time time) {
-            return new TimeCodec().encode(time.toLocalTime(), DEFAULT);
+            // Ensure milliseconds are preserved.
+            return new TimeCodec().encode(LocalTime.ofNanoOfDay(time.getTime() * 1_000_000), DEFAULT);
         } else if (o instanceof Timestamp ts) {
             return new TimestampCodec().encode(ts.toInstant(), DEFAULT);
         } else {

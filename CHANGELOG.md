@@ -30,6 +30,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
 ### Fixed
 - Add missing keywords in the list returned by `CassandraDatabaseMetaData.getSQLKeywords()` method.
+- Fix issue [#88](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/88): `CassandraResultSet.getTime()` methods 
+  now preserve milliseconds precision.
 ### Removed
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.

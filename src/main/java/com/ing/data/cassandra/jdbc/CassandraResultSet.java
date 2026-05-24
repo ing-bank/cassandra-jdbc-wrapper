@@ -94,6 +94,7 @@ import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromCqlTypeName;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.fromDataType;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_SIZE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.FORWARD_ONLY;
@@ -1462,7 +1463,7 @@ public class CassandraResultSet extends AbstractResultSet
         if (localTime == null) {
             return null;
         }
-        return Time.valueOf(localTime);
+        return convertToSqlTime(localTime);
     }
 
     @Override
@@ -1478,7 +1479,7 @@ public class CassandraResultSet extends AbstractResultSet
         if (localTime == null) {
             return null;
         }
-        return Time.valueOf(localTime);
+        return convertToSqlTime(localTime);
     }
 
     @Override

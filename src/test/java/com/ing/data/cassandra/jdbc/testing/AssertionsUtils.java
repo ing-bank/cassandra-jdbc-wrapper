@@ -20,9 +20,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Time;
+import java.time.LocalTime;
+import java.time.temporal.ChronoField;
 
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.milliOfDayToLocalTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
+import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -41,6 +47,40 @@ public final class AssertionsUtils {
     public static void assertNotImplemented(final Executable executable) {
         final SQLFeatureNotSupportedException sqlEx = assertThrows(SQLFeatureNotSupportedException.class, executable);
         assertEquals(NOT_SUPPORTED, sqlEx.getMessage());
+    }
+
+    /**
+     * Assert that the specified {@link java.sql.Time} is equal to the expected time value in milliseconds since
+     * January 1, 1970, 00:00:00 GMT (i.e. in milliseconds within a day).
+     * <p>
+     *     Equality of timestamp in {@link ChronoField#MILLI_OF_DAY} and string representation of the corresponding
+     *     {@link LocalTime} are tested.
+     * </p>
+     *
+     * @param expected The expected time value.
+     * @param actual   The actual SQL time value to test.
+     */
+    public static void assertTimeEquals(final long expected, final Time actual) {
+        assertNotNull(actual);
+        assertEquals(expected, actual.getTime());
+        assertEquals(milliOfDayToLocalTime(expected).toString(), milliOfDayToLocalTime(actual.getTime()).toString());
+    }
+
+    /**
+     * Assert that the specified {@link java.sql.Time} is equal to the expected {@link LocalTime} value.
+     * <p>
+     *     Equality of timestamp in {@link ChronoField#MILLI_OF_DAY} and string representation of the corresponding
+     *     {@link LocalTime} are tested.
+     * </p>
+     *
+     * @param expected The expected {@link LocalTime} value.
+     * @param actual   The actual SQL time value to test.
+     */
+    public static void assertTimeEquals(final LocalTime expected, final Time actual) {
+        assertNotNull(expected);
+        assertNotNull(actual);
+        assertEquals(expected.getLong(MILLI_OF_DAY), actual.getTime());
+        assertEquals(expected.toString(), milliOfDayToLocalTime(actual.getTime()).toString());
     }
 
 }

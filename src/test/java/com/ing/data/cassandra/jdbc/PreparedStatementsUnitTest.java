@@ -54,6 +54,7 @@ import java.util.Calendar;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertTimeEquals;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CQL_IDENTIFIER;
 import static java.time.ZoneOffset.UTC;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -316,7 +317,7 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         ResultSet resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key1';");
         assertTrue(resultSet.next());
         // Note: Cassandra max precision for timestamps is milliseconds, not nanoseconds
-        assertEquals(Time.valueOf(LocalTime.of(15, 35, 40, 123000000)), resultSet.getTime("col_time"));
+        assertTimeEquals(LocalTime.of(15, 35, 40, 123000000), resultSet.getTime("col_time"));
         assertEquals(Date.valueOf(LocalDate.of(2023, Month.OCTOBER, 31)), resultSet.getDate("col_date"));
         assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, Month.OCTOBER, 31, 16, 40, 25, 123000000)),
             resultSet.getTimestamp("col_ts"));
@@ -326,8 +327,7 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
             .atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime());
         resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key2';");
         assertTrue(resultSet.next());
-        assertEquals(Time.valueOf(OffsetTime.of(15, 35, 40, 123000000, UTC).toLocalTime()),
-            resultSet.getTime("col_time"));
+        assertTimeEquals(OffsetTime.of(15, 35, 40, 123000000, UTC).toLocalTime(), resultSet.getTime("col_time"));
         assertEquals(expectedTimestamp, resultSet.getTimestamp("col_ts"));
 
         resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key3';");

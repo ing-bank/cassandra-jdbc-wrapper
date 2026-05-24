@@ -39,6 +39,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -59,6 +60,7 @@ import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertCo
 import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertRowValues;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
+import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -236,7 +238,8 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
                 add(3);
                 add(5);
             }},
-            Time.valueOf("12:30:45"),                                   // time
+            new Time(LocalTime.of(12, 30, 45, 789_000_000)              // time
+                .getLong(MILLI_OF_DAY)),
             Timestamp.valueOf(                                          // timestamp
                 OffsetDateTime.parse("2023-03-25T12:30:45.789Z")
                     .atZoneSameInstant(ZoneId.systemDefault())

@@ -21,7 +21,6 @@ import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.optionset.Default;
-import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,6 +52,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,8 +67,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static com.datastax.oss.driver.api.core.config.DriverExecutionProfile.DEFAULT_NAME;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_4;
-import static com.ing.data.cassandra.jdbc.utils.DriverUtil.CASSANDRA_5;
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertTimeEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -437,6 +436,8 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
     void testIssue80() throws Exception {
         final Statement stmt = sqlConnection.createStatement();
         final long now = OffsetDateTime.now().toEpochSecond() * 1_000;
+        final Instant nowAsInstant = Instant.ofEpochMilli(now);
+        final LocalTime nowAsLocalTime = LocalTime.ofInstant(nowAsInstant, ZoneId.systemDefault());
 
         // Create the target table with each basic data type available on Cassandra.
         final String createTableQuery = "CREATE TABLE t80 (bigint_col bigint PRIMARY KEY, ascii_col ascii, "
@@ -553,7 +554,7 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertTrue(retMap instanceof HashMap);
         assertEquals(2, retMap.keySet().size());
         assertEquals(new Date(now).toString(), result.getDate("date_col").toString());
-        assertEquals(new Time(now).toString(), result.getTime("time_col").toString());
+        assertTimeEquals(nowAsLocalTime, result.getTime("time_col"));
         assertEquals(1, result.getShort("smallint_col"));
         assertEquals(1, result.getByte("tinyint_col"));
         assertEquals(1, result.getShort("tinyint_col")); // TINYINT could also be retrieved as short.
@@ -589,7 +590,7 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         assertTrue(retMap instanceof HashMap);
         assertEquals(2, retMap.keySet().size());
         assertEquals(new Date(now).toString(), result.getDate("date_col").toString());
-        assertEquals(new Time(now).toString(), result.getTime("time_col").toString());
+        assertTimeEquals(nowAsLocalTime, result.getTime("time_col"));
         assertEquals(10, result.getShort("smallint_col"));
         assertEquals(2, result.getByte("tinyint_col"));
         assertEquals(testDuration2, result.getObject("duration_col", CqlDuration.class));
@@ -1271,6 +1272,30 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
             assertEquals(expectedUpdateCount, stmt.getUpdateCount());
         } catch (final Exception e) {
             fail(e);
+        }
+    }
+
+    @Test
+    void testIngIssue88() throws Exception {
+        // Create the table.
+        final String createTableQuery = "CREATE TABLE t88 (id int PRIMARY KEY, time_val time);";
+        try (final Statement stmt = sqlConnection.createStatement()) {
+            stmt.execute(createTableQuery);
+        }
+
+        // Insert data into the table.
+        try (final Statement insertStmt = sqlConnection.createStatement()) {
+            insertStmt.execute("INSERT INTO t88 (id, time_val) VALUES (1, '23:59:59.999');");
+        }
+
+        // Get data from the table.
+        try (
+            final Statement stmt2 = sqlConnection.createStatement();
+            final ResultSet resultSet = stmt2.executeQuery("SELECT * FROM t88 WHERE id = 1;")
+        ) {
+            resultSet.next();
+            final Time timeVal = resultSet.getTime("time_val");
+            assertTimeEquals(LocalTime.of(23, 59, 59, 999_000_000), timeVal);
         }
     }
 

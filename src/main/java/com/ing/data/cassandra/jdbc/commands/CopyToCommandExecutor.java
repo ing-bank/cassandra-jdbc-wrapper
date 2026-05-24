@@ -36,6 +36,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.NumberFormat;
@@ -45,6 +46,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.milliOfDayToLocalTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.COUNTING_EXPORTED_ROWS_FAILED;
 import static java.nio.file.Files.lines;
@@ -302,7 +304,13 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                     value = handleDate(rs, colIndex, dateFormatString);
                     break;
                 case Types.TIME:
-                    value = Objects.toString(rs.getTime(colIndex), EMPTY);
+                    final Time timeValue = rs.getTime(colIndex);
+                    if (timeValue == null) {
+                        value = EMPTY;
+                    } else {
+                        final long valueInMillisOfDay = timeValue.getTime();
+                        value = milliOfDayToLocalTime(valueInMillisOfDay).toString();
+                    }
                     break;
                 case Types.TIMESTAMP:
                     value = handleTimestamp(rs.getTimestamp(colIndex), timestampFormatString);

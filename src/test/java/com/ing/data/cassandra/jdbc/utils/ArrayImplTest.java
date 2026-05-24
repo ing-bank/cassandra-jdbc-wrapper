@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertTimeEquals;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.ASCII;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.BIGINT;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.BLOB;
@@ -69,6 +70,7 @@ import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TINYINT;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.VARCHAR;
 import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.VARINT;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.convertToSqlTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_NULL_TYPE_FOR_ARRAY;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -140,7 +142,7 @@ class ArrayImplTest {
         ));
     }
 
-    static Stream<Arguments> buildTypedArrayTestCases() throws UnknownHostException {
+    static Stream<Arguments> buildTypedArrayTestCases() throws UnknownHostException, SQLException {
         // Testing array containing null values
         final List<String> dataIncludingNullValues = new ArrayList<>();
         dataIncludingNullValues.add("test_item");
@@ -225,12 +227,12 @@ class ArrayImplTest {
             Arguments.of(List.of(1, Integer.valueOf("2"), "3", '4'), INT.asLowercaseCql(), new Integer[]{ 1, 2, 3, 4 }),
             Arguments.of(List.of(1, Short.valueOf("2"), "3", '4'), SMALLINT.asLowercaseCql(),
                 new Short[]{ 1, 2, 3, 4 }),
-            Arguments.of(List.of(Time.valueOf(nowLocalTime), previousHourLocalTime,
+            Arguments.of(List.of(convertToSqlTime(nowLocalTime), previousHourLocalTime,
                     OffsetTime.ofInstant(nextHourInstant, systemDefault()), twoHoursAgoInstant, sampleTimeAsString),
                 TIME.asLowercaseCql(),
-                new Time[]{ Time.valueOf(nowLocalTime), Time.valueOf(previousHourLocalTime),
-                    Time.valueOf(nextHourLocalTime), Time.valueOf(twoHoursAgoLocalTime),
-                    Time.valueOf(sampleTimeAsString) }
+                new Time[]{ convertToSqlTime(nowLocalTime), convertToSqlTime(previousHourLocalTime),
+                    convertToSqlTime(nextHourLocalTime), convertToSqlTime(twoHoursAgoLocalTime),
+                    convertToSqlTime(sampleTimeAsString) }
             ),
             Arguments.of(List.of(Timestamp.valueOf(nowLocalDateTime), yesterdayLocalDateTime,
                     OffsetDateTime.ofInstant(tomorrowInstant, systemDefault()), nextWeekInstant,
@@ -315,7 +317,11 @@ class ArrayImplTest {
         for (int i = 0; i < data.size(); i++) {
             rs.next();
             assertEquals(i + 1, rs.getInt(1));
-            assertEquals(sut.getArray()[i], rs.getObject(2));
+            if (TIME.asLowercaseCql().equals(cqlType)) {
+                assertTimeEquals(((Time) sut.getArray()[i]).getTime(), (Time) rs.getObject(2));
+            } else {
+                assertEquals(sut.getArray()[i], rs.getObject(2));
+            }
         }
     }
 
