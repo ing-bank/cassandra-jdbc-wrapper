@@ -175,6 +175,7 @@ We use [SemVer](http://semver.org/) for versioning.
 * Cedrick Lunven - **[@clun](https://github.com/clun)**
 * Madhavan Sridharan - **[@msmygit](https://github.com/msmygit)**
 * Lik Dan - **[@LikDan](https://github.com/LikDan)**
+* Muskan Maheshwari - **[@Muskan02](https://github.com/Muskan02)**
 
 And special thanks to the developer of the original project on which is based this one:
 * Alexander Dejanovski - **[@adejanovski](https://github.com/adejanovski)**

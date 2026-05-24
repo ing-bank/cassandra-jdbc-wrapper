@@ -31,7 +31,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Types;
 import java.util.Arrays;
@@ -47,7 +46,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CATALOG_NAME;
-import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -180,15 +178,15 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a list of the client info properties that the driver supports.
      * <p>
-     * Cassandra database does not support client info properties, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support client info properties, so this method will return an empty
+     * {@link ResultSet}.
      * </p>
      *
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     /**
@@ -196,8 +194,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * <p>
      * Java Driver for Apache Cassandra® currently does not provide information about permissions and only
      * superusers can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
-     * be implemented safely for any connection to the database, that's why this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * be implemented safely for any connection to the database, that's why this method will return an empty
+     * {@link ResultSet}.
      * </p>
      *
      * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
@@ -208,14 +206,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                          should not be used to narrow the search.
      * @param table             A table name pattern; must match the table name as it is stored in the database.
      * @param columnNamePattern A column name pattern; must match the column name as it is stored in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getColumnPrivileges(final String catalog,
                                          final String schema,
                                          final String table,
                                          final String columnNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -241,8 +239,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the foreign key columns in the given foreign key table that reference the primary key
      * or the columns representing a unique constraint of the parent table (could be the same or a different table).
      * <p>
-     * Cassandra database does not support foreign keys, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param parentCatalog  A catalog name; must match the catalog name as it is stored in the database; {@code ""}
@@ -261,7 +258,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                       criteria.
      * @param foreignTable   The name of the table that imports the key; must match the table name as it is stored
      *                       in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getCrossReference(final String parentCatalog,
@@ -270,7 +267,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
                                        final String foreignCatalog,
                                        final String foreignSchema,
                                        final String foreignTable) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -333,8 +330,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the foreign key columns that reference the given table's primary key columns (the
      * foreign keys exported by a table).
      * <p>
-     * Cassandra database does not support foreign keys, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog A catalog name; must match the catalog name as it is stored in this database; {@code ""}
@@ -344,13 +340,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                those without a schema; {@code null} means that the schema name should not be used to narrow
      *                the search.
      * @param table   A table name; must match the table name as it is stored in this database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getExportedKeys(final String catalog,
                                      final String schema,
                                      final String table) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -394,8 +390,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of the primary key columns that are referenced by the given table's foreign key columns
      * (the primary keys imported by a table).
      * <p>
-     * Cassandra database does not support foreign keys, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support foreign keys, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog A catalog name; must match the catalog name as it is stored in this database; {@code ""}
@@ -405,13 +400,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                those without a schema; {@code null} means that the schema name should not be used to narrow
      *                the search.
      * @param table   A table name; must match the table name as it is stored in this database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getImportedKeys(final String catalog,
                                      final String schema,
                                      final String table) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -561,8 +556,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the given catalog's stored procedure parameter and result columns.
      * <p>
-     * Cassandra database does not support procedures, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support procedures, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog              A catalog name; must match the catalog name as it is stored in the database;
@@ -574,14 +568,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * @param procedureNamePattern A procedure name pattern; must match the procedure name as it is stored in the
      *                             database.
      * @param columnNamePattern    A column name pattern; must match the column name as it is stored in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getProcedureColumns(final String catalog,
                                          final String schemaPattern,
                                          final String procedureNamePattern,
                                          final String columnNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     /**
@@ -598,8 +592,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the stored procedures available in the given catalog.
      * <p>
-     * Cassandra database does not support procedures, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support procedures, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog              A catalog name; must match the catalog name as it is stored in the database;
@@ -610,21 +603,21 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                             name should not be used to narrow the search.
      * @param procedureNamePattern A procedure name pattern; must match the procedure name as it is stored in the
      *                             database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getProcedures(final String catalog,
                                    final String schemaPattern,
                                    final String procedureNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     /**
      * Retrieves a description of the pseudo or hidden columns available in a given table within the specified catalog
      * and schema.
      * <p>
-     * Cassandra database does not support pseudo or hidden columns, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support pseudo or hidden columns, so this method will return an empty
+     * {@link ResultSet}.
      * </p>
      *
      * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
@@ -635,14 +628,14 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                          should not be used to narrow the search.
      * @param tableNamePattern  A table name pattern; must match the table name as it is stored in the database.
      * @param columnNamePattern A column name pattern; must match the column name as it is stored in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getPseudoColumns(final String catalog,
                                       final String schemaPattern,
                                       final String tableNamePattern,
                                       final String columnNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -788,42 +781,40 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
     /**
      * Retrieves a description of the table hierarchies defined in a particular schema in this database.
      * <p>
-     * Cassandra database does not support super tables, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support super tables, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog          A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
      *                         catalog name from the selection criteria.
      * @param schemaPattern    A schema name pattern; {@code ""} retrieves those without a schema.
      * @param tableNamePattern A table name pattern; may be a fully-qualified name.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getSuperTables(final String catalog,
                                     final String schemaPattern,
                                     final String tableNamePattern) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     /**
      * Retrieves a description of the user-defined type (UDT) hierarchies defined in a particular schema in this
      * database.
      * <p>
-     * Cassandra database does not support super types, so this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * Cassandra database does not support super types, so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog         A catalog name; {@code ""} retrieves those without a catalog; {@code null} means drop
      *                        catalog name from the selection criteria.
      * @param schemaPattern   A schema name pattern; {@code ""} retrieves those without a schema.
      * @param typeNamePattern A UDT name pattern; may be a fully-qualified name.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getSuperTypes(final String catalog,
                                    final String schemaPattern,
                                    final String typeNamePattern) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -838,8 +829,8 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * <p>
      * Java Driver for Apache Cassandra® currently does not provide information about permissions and only
      * superusers can access to such information through {@code LIST ALL PERMISSIONS ON <tableName>}, so it cannot
-     * be implemented safely for any connection to the database, that's why this method will throw a
-     * {@link SQLFeatureNotSupportedException}.
+     * be implemented safely for any connection to the database, that's why this method will return an empty
+     * {@link ResultSet}.
      * </p>
      *
      * @param catalog           A catalog name; must match the catalog name as it is stored in the database;
@@ -849,13 +840,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                          {@code ""} retrieves those without a schema; {@code null} means that the schema name
      *                          should not be used to narrow the search.
      * @param tableNamePattern  A table name pattern; must match the table name as it is stored in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getTablePrivileges(final String catalog,
                                         final String schemaPattern,
                                         final String tableNamePattern) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+        return EMPTY_RESULT_SET;
     }
 
     @Override
@@ -976,7 +967,7 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      * Retrieves a description of a table's columns that are automatically updated when any value in a row is updated.
      * <p>
      * Cassandra database does not support any mechanism of automatic column update when any value in a row is updated,
-     * so this method will throw a {@link SQLFeatureNotSupportedException}.
+     * so this method will return an empty {@link ResultSet}.
      * </p>
      *
      * @param catalog A catalog name; must match the catalog name as it is stored in the database; {@code ""} retrieves
@@ -986,13 +977,13 @@ public class CassandraDatabaseMetaData implements DatabaseMetaData {
      *                those without a schema; {@code null} means that the schema name should not be used to narrow the
      *                search.
      * @param table   A table name; must match the table name as it is stored in the database.
-     * @return Always throw a {@link SQLFeatureNotSupportedException}.
+     * @return Always return an empty {@link ResultSet}.
      */
     @Override
     public ResultSet getVersionColumns(final String catalog,
                                        final String schema,
                                        final String table) throws SQLException {
-        return CassandraResultSet.EMPTY_RESULT_SET;
+        return EMPTY_RESULT_SET;
     }
 
     @Override

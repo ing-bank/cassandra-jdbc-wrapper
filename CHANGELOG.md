@@ -30,6 +30,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Astra SDK to 2.1.7.
 - Update AWS Secrets Manager SDK to 2.41.32.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
+- Return an empty result set instead of a `SQLFeatureNotSupportedException` for the following methods of 
+  `CassandraDatabaseMetaData` to respect JDBC API specifications:
+  - `getClientInfoProperties()`
+  - `getColumnPrivileges(String, String, String, String)`
+  - `getCrossReference(String, String, String, String, String, String)`
+  - `getExportedKeys(String, String, String)`
+  - `getImportedKeys(String, String, String)`
+  - `getProcedureColumns(String, String, String, String)`
+  - `getProcedures(String, String, String)`
+  - `getPseudoColumns(String, String, String, String)`
+  - `getSuperTables(String, String, String)`
+  - `getSuperTypes(String, String, String)`
+  - `getTablePrivileges(String, String, String)`
+  - `getVersionColumns(String, String, String)`
 ### Fixed
 - Add missing keywords in the list returned by `CassandraDatabaseMetaData.getSQLKeywords()` method.
 - Fix issue [#88](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/88): `CassandraResultSet.getTime()` methods 
