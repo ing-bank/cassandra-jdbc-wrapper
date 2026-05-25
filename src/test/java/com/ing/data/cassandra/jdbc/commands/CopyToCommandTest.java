@@ -152,7 +152,7 @@ public class CopyToCommandTest extends UsingCassandraContainerTest {
             Arguments.of("test_default_options.csv", EMPTY),
             Arguments.of("test_with_header.csv", "WITH HEADER=true"),
             Arguments.of("test_with_format_options.csv",
-                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND NULLVAL=N/A")
+                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND NULLVAL=N/A AND BOOLSTYLE=YES,No")
         );
     }
 
@@ -199,6 +199,16 @@ public class CopyToCommandTest extends UsingCassandraContainerTest {
         final ResultSet resultSet = executeCopyToCommand(COPY_CMD_TEST_ALL_TYPES_TABLE_NAME, null, targetCsvFile,
             "WITH HEADER=true AND DELIMITER=;");
         assertCommandResultSet(resultSet, false, 1, 1);
+        Approvals.verify(new File(targetCsvFile), approvalTestsParameterName(targetCsvFile));
+    }
+
+    @Test
+    void givenTableWithColumnsAndTargetFileAndInvalidBoolstyle_whenExecuteCopyToCommand_generateExpectedCsvFile()
+        throws SQLException {
+        final String targetCsvFile = "test_bool_export.csv";
+        final ResultSet resultSet = executeCopyToCommand(COPY_CMD_TEST_TABLE_NAME,
+            Arrays.asList("table_key", "bool_val"), targetCsvFile, "WITH BOOLSTYLE=0,1,2");
+        assertCommandResultSet(resultSet, false, 3, 1);
         Approvals.verify(new File(targetCsvFile), approvalTestsParameterName(targetCsvFile));
     }
 

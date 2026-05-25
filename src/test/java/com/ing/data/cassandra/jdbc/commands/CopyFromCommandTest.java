@@ -113,7 +113,7 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
             Arguments.of("test_simple.csv", EMPTY),
             Arguments.of("test_with_headers.csv", "WITH HEADER=true"),
             Arguments.of("test_with_special_format.csv",
-                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=.")
+                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND BOOLSTYLE=yes,NO")
         );
     }
 

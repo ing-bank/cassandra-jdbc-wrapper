@@ -25,6 +25,7 @@ import com.opencsv.ResultSetHelperService;
 import jakarta.annotation.Nonnull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -63,6 +64,9 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     (with single quotes) representing the path to the destination file; and {@code options} are the options among
  *     the following:
  *     <ul>
+ *         <li>{@code BOOLSTYLE}: the boolean indicators for True and False. The value must be a comma-separated string
+ *         of two indicators where the first one is for True values. For example: yes,no. If the provided value is
+ *         invalid, the default style will be applied. Defaults to {@value #DEFAULT_BOOLEAN_STYLE}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>
  *         <li>{@code DELIMITER}: the character that is used to separate fields.
@@ -92,7 +96,6 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     The following options are not supported:
  *     <ul>
  *         <li>{@code BEGINTOKEN}</li>
- *         <li>{@code BOOLSTYLE}</li>
  *         <li>{@code CONFIGFILE}</li>
  *         <li>{@code DATETIMEFORMAT}</li>
  *         <li>{@code ENCODING}</li>
@@ -216,6 +219,8 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
         rsHelperService.setFloatingPointFormat(this.decimalFormat);
         rsHelperService.setIntegerFormat(this.decimalFormat);
         rsHelperService.setNullFormat(getOptionValueAsString(OPTION_NULLVAL, DEFAULT_NULL_FORMAT));
+        rsHelperService.setTrueValueFormat(this.trueValueFormat);
+        rsHelperService.setFalseValueFormat(this.falseValueFormat);
         return rsHelperService;
     }
 
@@ -225,6 +230,18 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
          */
         @Setter
         private String nullFormat = DEFAULT_NULL_FORMAT;
+
+        /**
+         * Sets a default format for boolean True values.
+         */
+        @Setter
+        private String trueValueFormat = DEFAULT_TRUE_VALUE_FORMAT;
+
+        /**
+         * Sets a default format for boolean False values.
+         */
+        @Setter
+        private String falseValueFormat = DEFAULT_FALSE_VALUE_FORMAT;
 
         @Override
         public String[] getColumnValues(final java.sql.ResultSet rs,
@@ -271,7 +288,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
             switch (colType) {
                 case Types.BOOLEAN:
-                    value = Objects.toString(rs.getBoolean(colIndex));
+                    value = BooleanUtils.toString(rs.getBoolean(colIndex), this.trueValueFormat, this.falseValueFormat);
                     break;
                 case Types.NCLOB:
                     value = handleNClob(rs, colIndex);

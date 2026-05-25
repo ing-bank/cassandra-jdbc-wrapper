@@ -25,6 +25,7 @@ import com.opencsv.ICSVParser;
 import com.opencsv.exceptions.CsvException;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -78,6 +79,10 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *     <ul>
  *         <li>{@code BATCHSIZE}: the number of rows inserted in a single batch.
  *         Defaults to {@value #DEFAULT_BATCH_SIZE}.</li>
+ *         <li>{@code BOOLSTYLE}: the boolean indicators for True and False. The value must be a comma-separated string
+ *         of two indicators where the first one is for True values. For example: yes,no. The values are not
+ *         case-sensitive. If the provided value is invalid, the default style will be applied.
+ *         Defaults to {@value #DEFAULT_BOOLEAN_STYLE}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>
  *         <li>{@code DELIMITER}: the character that is used to separate fields.
@@ -109,7 +114,6 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  * <p>
  *     The following options are not supported:
  *     <ul>
- *         <li>{@code BOOLSTYLE}</li>
  *         <li>{@code CHUNKSIZE}</li>
  *         <li>{@code CONFIGFILE}</li>
  *         <li>{@code DATETIMEFORMAT}</li>
@@ -358,13 +362,25 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
         return null;
     }
 
+    private String handleBooleanValue(final String strValue) {
+        if (strValue == null) {
+            return null;
+        }
+        if (this.trueValueFormat.equalsIgnoreCase(strValue)) {
+            return BooleanUtils.TRUE;
+        } else if (this.falseValueFormat.equalsIgnoreCase(strValue)) {
+            return BooleanUtils.FALSE;
+        }
+        return BooleanUtils.FALSE;
+    }
+
     private String parseValue(final String value, final Integer colType) {
         if (getOptionValueAsString(OPTION_NULLVAL, DEFAULT_NULL_FORMAT).equals(value)) {
             return null;
         }
         switch (colType) {
             case Types.BIT, Types.BOOLEAN:
-                return String.valueOf(parseBoolean(value));
+                return handleBooleanValue(value);
             case Types.BIGINT, Types.DECIMAL, Types.NUMERIC, Types.REAL, Types.FLOAT, Types.DOUBLE, Types.INTEGER,
                  Types.SMALLINT, Types.TINYINT:
                 return handleNumberValue(value);
