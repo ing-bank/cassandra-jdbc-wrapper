@@ -561,6 +561,11 @@ public final class ErrorConstants {
      */
     public static final String INVALID_CQL_IDENTIFIER = "Invalid CQL name.";
 
+    /**
+     * Error message used when the specified data source is {@code null}, but a non-null data source is required.
+     */
+    public static final String NON_NULL_DATASOURCE_REQUIRED = "Non-null data source is required.";
+
     private ErrorConstants() {
         // Private constructor to hide the public one.
     }

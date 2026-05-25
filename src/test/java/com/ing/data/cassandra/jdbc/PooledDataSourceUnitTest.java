@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertConnectionHasExpectedConfig;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -55,6 +56,10 @@ class PooledDataSourceUnitTest extends UsingCassandraContainerTest {
     private static final String PASSWORD = "secret";
     private static final String CONSISTENCY = "ONE";
     private static final String LOCAL_DATACENTER = "datacenter1";
+    private static final List<ContactPoint> CONTACT_POINTS = Collections.singletonList(
+        ContactPoint.of(cassandraContainer.getContactPoint().getHostName(),
+            cassandraContainer.getContactPoint().getPort())
+    );
 
     private static final int POOL_MIN_IDLE = 2;
     private static final int POOL_MAX_SIZE = 20;
@@ -65,10 +70,7 @@ class PooledDataSourceUnitTest extends UsingCassandraContainerTest {
     private HikariDataSource hikariDS;
 
     private static CassandraDataSource buildConnectionPoolDataSource() {
-        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(
-            Collections.singletonList(ContactPoint.of(
-                cassandraContainer.getContactPoint().getHostName(), cassandraContainer.getContactPoint().getPort())),
-            KEYSPACE);
+        final CassandraDataSource connectionPoolDataSource = new CassandraDataSource(CONTACT_POINTS, KEYSPACE);
         connectionPoolDataSource.setUser(USER);
         connectionPoolDataSource.setPassword(PASSWORD);
         connectionPoolDataSource.setConsistency(CONSISTENCY);
@@ -328,5 +330,32 @@ class PooledDataSourceUnitTest extends UsingCassandraContainerTest {
             assertTrue(conn.isValid(2));
         }
         assertEquals(0, hikariDS.getHikariPoolMXBean().getActiveConnections());
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("Build pooled connection using builder")
+    void givenDataSource_whenBuildPooledConnectionBuilder_returnCassandraPooledConnection() throws Exception {
+        final CassandraPooledConnectionBuilder connectionBuilder =
+            (CassandraPooledConnectionBuilder) sut.createPooledConnectionBuilder();
+        final PooledCassandraConnection connection = (PooledCassandraConnection) connectionBuilder
+            .user("testUser")
+            .password("testPassword")
+            .contactPoints(CONTACT_POINTS)
+            .databaseName(KEYSPACE)
+            .consistency("TWO")
+            .serialConsistency("LOCAL_SERIAL")
+            .fetchSize(5_000)
+            .localDataCenter("DC1")
+            .loadBalancingPolicy("com.ing.data.cassandra.jdbc.testing.AnotherFakeLoadBalancingPolicy")
+            .requestTimeout(8_000L)
+            .retryPolicy("com.ing.data.cassandra.jdbc.testing.AnotherFakeRetryPolicy")
+            .reconnectionPolicy("ConstantReconnectionPolicy((long)10)")
+            .connectionTimeout(15_000L)
+            .tcpNoDelayEnabled(false)
+            .tcpKeepAliveEnabled(true)
+            .build();
+        assertConnectionHasExpectedConfig(connection.getConnection(), KEYSPACE);
+        connection.close();
     }
 }

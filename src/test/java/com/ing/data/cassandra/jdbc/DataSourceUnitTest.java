@@ -13,19 +13,6 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.driver.core.PlainTextAuthProvider;
-import com.datastax.oss.driver.api.core.ConsistencyLevel;
-import com.datastax.oss.driver.api.core.auth.AuthProvider;
-import com.datastax.oss.driver.api.core.auth.PlainTextAuthProviderBase;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
-import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
-import com.datastax.oss.driver.api.core.connection.ReconnectionPolicy;
-import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
-import com.datastax.oss.driver.api.core.retry.RetryPolicy;
-import com.datastax.oss.driver.internal.core.connection.ConstantReconnectionPolicy;
-import com.datastax.oss.driver.internal.core.context.InternalDriverContext;
-import com.ing.data.cassandra.jdbc.testing.AnotherFakeLoadBalancingPolicy;
-import com.ing.data.cassandra.jdbc.testing.AnotherFakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +20,11 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.net.URL;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.CassandraDataSource.DATA_SOURCE_DESCRIPTION;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_COMPLIANCE_MODE;
-import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_CONSISTENCY_LEVEL;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertConnectionHasExpectedConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -179,7 +161,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
         ds.setConfigurationFile(new File(confTestUrl.toURI()).toPath());
 
         final CassandraConnection connection = ds.getConnection();
-        assertConnectionHasExpectedConfig(connection);
+        assertConnectionHasExpectedConfig(connection, KEYSPACE);
         connection.close();
     }
 
@@ -194,7 +176,7 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
             "keepalive=true", "user=testUser", "password=testPassword"));
 
         final CassandraConnection connection = ds.getConnection();
-        assertConnectionHasExpectedConfig(connection);
+        assertConnectionHasExpectedConfig(connection, KEYSPACE);
         connection.close();
     }
 
@@ -219,73 +201,8 @@ class DataSourceUnitTest extends UsingCassandraContainerTest {
             .tcpNoDelayEnabled(false)
             .tcpKeepAliveEnabled(true)
             .build();
-        assertConnectionHasExpectedConfig(connection);
+        assertConnectionHasExpectedConfig(connection, KEYSPACE);
         connection.close();
-    }
-
-    private void assertConnectionHasExpectedConfig(final CassandraConnection connection) {
-        assertNotNull(connection);
-        assertNotNull(connection.getSession());
-        assertNotNull(connection.getSession().getContext());
-        assertNotNull(connection.getSession().getContext().getConfig());
-        assertNotNull(connection.getSession().getContext().getConfig().getDefaultProfile());
-
-        final InternalDriverContext internalContext = (InternalDriverContext) connection.getSession().getContext();
-
-        assertNotNull(connection.getConsistencyLevel());
-        final ConsistencyLevel consistencyLevel = connection.getConsistencyLevel();
-        assertNotNull(consistencyLevel);
-        assertEquals(ConsistencyLevel.TWO, consistencyLevel);
-        final ConsistencyLevel serialConsistencyLevel = connection.getSerialConsistencyLevel();
-        assertNotNull(serialConsistencyLevel);
-        assertEquals(ConsistencyLevel.LOCAL_SERIAL, serialConsistencyLevel);
-
-        final int fetchSize = connection.getDefaultFetchSize();
-        assertEquals(5000, fetchSize);
-
-        final String localDC = connection.getSession().getContext().getConfig()
-            .getDefaultProfile().getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER,
-                internalContext.getLocalDatacenter(DriverExecutionProfile.DEFAULT_NAME));
-        assertEquals("DC1", localDC);
-
-        final Optional<AuthProvider> authProvider = connection.getSession().getContext().getAuthProvider();
-        assertTrue(authProvider.isPresent());
-        assertThat(authProvider.get(), instanceOf(PlainTextAuthProviderBase.class));
-        if (authProvider.get() instanceof PlainTextAuthProvider) {
-            assertEquals("testUser", connection.getSession().getContext().getConfig()
-                .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME));
-            assertEquals("testPassword", connection.getSession().getContext().getConfig()
-                .getDefaultProfile().getString(DefaultDriverOption.AUTH_PROVIDER_PASSWORD));
-        }
-
-        assertEquals(Duration.ofSeconds(8), connection.getSession().getContext().getConfig()
-            .getDefaultProfile().getDuration(DefaultDriverOption.REQUEST_TIMEOUT));
-
-        final LoadBalancingPolicy loadBalancingPolicy = connection.getSession().getContext()
-            .getLoadBalancingPolicy(DriverExecutionProfile.DEFAULT_NAME);
-        assertNotNull(loadBalancingPolicy);
-        assertThat(loadBalancingPolicy, instanceOf(AnotherFakeLoadBalancingPolicy.class));
-
-        final RetryPolicy retryPolicy = connection.getSession().getContext()
-            .getRetryPolicy(DriverExecutionProfile.DEFAULT_NAME);
-        assertNotNull(retryPolicy);
-        assertThat(retryPolicy, instanceOf(AnotherFakeRetryPolicy.class));
-
-        final ReconnectionPolicy reconnectionPolicy = connection.getSession().getContext().getReconnectionPolicy();
-        assertNotNull(reconnectionPolicy);
-        assertThat(reconnectionPolicy, instanceOf(ConstantReconnectionPolicy.class));
-        assertEquals(Duration.ofSeconds(10), reconnectionPolicy.newControlConnectionSchedule(false).nextDelay());
-
-        final DriverExecutionProfile driverConfigDefaultProfile =
-            connection.getSession().getContext().getConfig().getDefaultProfile();
-        assertEquals(Duration.ofSeconds(15),
-            driverConfigDefaultProfile.getDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT));
-        assertFalse(driverConfigDefaultProfile.getBoolean(DefaultDriverOption.SOCKET_TCP_NODELAY));
-        assertTrue(driverConfigDefaultProfile.getBoolean(DefaultDriverOption.SOCKET_KEEP_ALIVE));
-
-        // Check the not overridden values.
-        assertTrue(connection.getSession().getKeyspace().isPresent());
-        assertEquals(KEYSPACE, connection.getSession().getKeyspace().get().asCql(true));
     }
 
     @Test

@@ -152,8 +152,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionPoolData
 
     @Override
     public PooledConnectionBuilder createPooledConnectionBuilder() throws SQLException {
-        // todo
-        return null;
+        return new CassandraPooledConnectionBuilder(this.connectionPoolDataSource);
     }
 
     @Override
