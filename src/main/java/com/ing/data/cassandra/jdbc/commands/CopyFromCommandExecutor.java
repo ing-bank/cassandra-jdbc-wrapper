@@ -34,11 +34,13 @@ import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Types;
 import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -83,6 +85,11 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *         of two indicators where the first one is for True values. For example: yes,no. The values are not
  *         case-sensitive. If the provided value is invalid, the default style will be applied.
  *         Defaults to {@value #DEFAULT_BOOLEAN_STYLE}.</li>
+ *         <li>{@code DATETIMEFORMAT}: the format for reading time data. The timestamp uses the
+ *         <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format. Note that codes {@code %c},
+ *         {@code %x} and {@code %X} are not supported. Also, the code {@code %w} corresponds to the weekday number in
+ *         Java (Monday = 1 ... Sunday = 7). English locale is used to parse days and months names.
+ *         Defaults to {@value #DEFAULT_DATETIME_STRFTIME_FORMAT}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>
  *         <li>{@code DELIMITER}: the character that is used to separate fields.
@@ -116,7 +123,6 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  *     <ul>
  *         <li>{@code CHUNKSIZE}</li>
  *         <li>{@code CONFIGFILE}</li>
- *         <li>{@code DATETIMEFORMAT}</li>
  *         <li>{@code ERRFILE}</li>
  *         <li>{@code INGESTRATE}</li>
  *         <li>{@code MAXATTEMPTS}</li>
@@ -152,7 +158,8 @@ import static org.apache.commons.lang3.StringUtils.wrap;
  * <p>
  *     Insertions in date, time and timestamp columns expect the format used in the imported CSV file follows the
  *     Cassandra CQL standard for these types, i.e. respectively: {@value DEFAULT_DATE_FORMAT},
- *     {@value DEFAULT_TIME_FORMAT} and {@value DEFAULT_DATETIME_FORMAT}.
+ *     {@value DEFAULT_TIME_FORMAT} and {@value DEFAULT_DATETIME_FORMAT} (if another format is not specified in the
+ *     parameter {@code DATETIMEFORMAT}).
  * </p>
  */
 @Slf4j
@@ -384,13 +391,23 @@ public class CopyFromCommandExecutor extends AbstractCopyCommandExecutor {
             case Types.BIGINT, Types.DECIMAL, Types.NUMERIC, Types.REAL, Types.FLOAT, Types.DOUBLE, Types.INTEGER,
                  Types.SMALLINT, Types.TINYINT:
                 return handleNumberValue(value);
-            case Types.DATE, Types.TIME, Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE,
+            case Types.DATE, Types.TIME, Types.TIME_WITH_TIMEZONE,
                  Types.NVARCHAR, Types.NCHAR, Types.LONGNVARCHAR, Types.LONGVARCHAR, Types.VARCHAR, Types.CHAR,
                  Types.DATALINK:
                 // We assume here the date values respect the default date format supported by Cassandra CQL.
                 // We assume here the time values respect the default time format supported by Cassandra CQL.
-                // We assume here the date-time values respect the default date-time format supported by Cassandra CQL.
                 return wrap(value, SINGLE_QUOTE);
+            case Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE:
+                try {
+                    final DateTimeFormatter parsingFormat =
+                        DateTimeFormatter.ofPattern(this.dateTimeFormat, Locale.ENGLISH);
+                    final DateTimeFormatter dtFormat = DateTimeFormatter.ofPattern(DEFAULT_DATETIME_FORMAT);
+                    final var parsedTs = parsingFormat.parse(value);
+                    return wrap(dtFormat.format(parsedTs), SINGLE_QUOTE);
+                } catch (final Exception e) {
+                    log.warn(PARSING_VALUE_FAILED, value);
+                    return wrap(value, SINGLE_QUOTE);
+                }
             case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB, Types.CLOB, Types.NCLOB:
                 // We assume blob values are represented as text in imported CSV files.
                 return format("textAsBlob('%s')", value);

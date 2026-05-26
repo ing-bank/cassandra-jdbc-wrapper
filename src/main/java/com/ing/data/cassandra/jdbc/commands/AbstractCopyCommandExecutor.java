@@ -34,6 +34,7 @@ import static com.datastax.oss.driver.api.core.type.DataTypes.TEXT;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.strftimeToJavaPattern;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_OPTION_VALUE;
@@ -56,6 +57,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     static final String DEFAULT_FALSE_VALUE_FORMAT = "False";
     static final String DEFAULT_BOOLEAN_STYLE = DEFAULT_TRUE_VALUE_FORMAT + COMMA + DEFAULT_FALSE_VALUE_FORMAT;
     static final char DEFAULT_DECIMAL_SEPARATOR = '.';
+    static final String DEFAULT_DATETIME_STRFTIME_FORMAT = "%Y-%m-%d %H:%M:%S%z";
     static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ssZ";
     static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     static final String DEFAULT_TIME_FORMAT = "HH:mm:ss";
@@ -66,6 +68,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
 
     // Common supported options
     static final String OPTION_BOOLSTYLE = "BOOLSTYLE";
+    static final String OPTION_DATETIMEFORMAT = "DATETIMEFORMAT";
     static final String OPTION_DECIMALSEP = "DECIMALSEP";
     static final String OPTION_DELIMITER = "DELIMITER";
     static final String OPTION_ESCAPE = "ESCAPE";
@@ -88,6 +91,7 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     private static Set<String> initSupportedOptions() {
         final Set<String> options = new HashSet<>();
         options.add(OPTION_BOOLSTYLE);
+        options.add(OPTION_DATETIMEFORMAT);
         options.add(OPTION_DECIMALSEP);
         options.add(OPTION_DELIMITER);
         options.add(OPTION_ESCAPE);
@@ -110,7 +114,9 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
 
     void configureFormatters() {
         // Date & time formats
-        this.dateTimeFormat = DEFAULT_DATETIME_FORMAT;
+        this.dateTimeFormat = strftimeToJavaPattern(
+            getOptionValueAsString(OPTION_DATETIMEFORMAT, DEFAULT_DATETIME_STRFTIME_FORMAT)
+        );
         this.dateFormat = DEFAULT_DATE_FORMAT;
         this.timeFormat = DEFAULT_TIME_FORMAT;
 

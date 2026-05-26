@@ -41,7 +41,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -67,6 +69,11 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *         <li>{@code BOOLSTYLE}: the boolean indicators for True and False. The value must be a comma-separated string
  *         of two indicators where the first one is for True values. For example: yes,no. If the provided value is
  *         invalid, the default style will be applied. Defaults to {@value #DEFAULT_BOOLEAN_STYLE}.</li>
+ *         <li>{@code DATETIMEFORMAT}: the format for writing time data. The timestamp uses the
+ *         <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format. Note that codes {@code %c},
+ *         {@code %x} and {@code %X} are not supported. Also, the code {@code %w} corresponds to the weekday number in
+ *         Java (Monday = 1 ... Sunday = 7). English locale is used to fromat days and months names.
+ *         Defaults to {@value #DEFAULT_DATETIME_STRFTIME_FORMAT}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>
  *         <li>{@code DELIMITER}: the character that is used to separate fields.
@@ -97,7 +104,6 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     <ul>
  *         <li>{@code BEGINTOKEN}</li>
  *         <li>{@code CONFIGFILE}</li>
- *         <li>{@code DATETIMEFORMAT}</li>
  *         <li>{@code ENCODING}</li>
  *         <li>{@code ENDTOKEN}</li>
  *         <li>{@code MAXATTEMPTS}</li>
@@ -245,15 +251,15 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
         @Override
         public String[] getColumnValues(final java.sql.ResultSet rs,
-                                        final boolean trim,
-                                        final String dateFormatString,
-                                        final String timeFormatString) throws SQLException, IOException {
+                                          final boolean trim,
+                                          final String dateFormatString,
+                                          final String timestampFormatString) throws SQLException, IOException {
             // Keep the same logic as the parent class, but use the enhanced getColumnValue method.
             final ResultSetMetaData metadata = rs.getMetaData();
             final String[] valueArray = new String[metadata.getColumnCount()];
             for (int i = 1; i <= metadata.getColumnCount(); i++) {
                 valueArray[i - 1] = getColumnValueFromResultSet(rs, metadata.getColumnType(i), i,
-                    trim, dateFormatString, timeFormatString);
+                    trim, dateFormatString, timestampFormatString);
             }
             return valueArray;
         }
@@ -271,10 +277,10 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             if (timestamp == null) {
                 return null;
             }
-            final SimpleDateFormat timeFormat = new SimpleDateFormat(timestampFormatString);
+            final DateTimeFormatter dtFormat = DateTimeFormatter.ofPattern(timestampFormatString, Locale.ENGLISH);
             // Use GMT time zone for the timestamp values to get consistent and machine-independent results.
-            timeFormat.setTimeZone(GMT);
-            return timeFormat.format(timestamp);
+            dtFormat.withZone(GMT.toZoneId());
+            return dtFormat.format(OffsetDateTime.ofInstant(timestamp.toInstant(), GMT.toZoneId()));
         }
 
         private String getColumnValueFromResultSet(final java.sql.ResultSet rs,
@@ -320,7 +326,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.DATE:
                     value = handleDate(rs, colIndex, dateFormatString);
                     break;
-                case Types.TIME:
+                case Types.TIME, Types.TIME_WITH_TIMEZONE:
                     final Time timeValue = rs.getTime(colIndex);
                     if (timeValue == null) {
                         value = EMPTY;
@@ -329,7 +335,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                         value = milliOfDayToLocalTime(valueInMillisOfDay).toString();
                     }
                     break;
-                case Types.TIMESTAMP:
+                case Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE:
                     value = handleTimestamp(rs.getTimestamp(colIndex), timestampFormatString);
                     break;
                 case Types.NVARCHAR, Types.NCHAR, Types.LONGNVARCHAR:

@@ -113,7 +113,8 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
             Arguments.of("test_simple.csv", EMPTY),
             Arguments.of("test_with_headers.csv", "WITH HEADER=true"),
             Arguments.of("test_with_special_format.csv",
-                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND BOOLSTYLE=yes,NO")
+                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND BOOLSTYLE=yes,NO" +
+                    " AND DATETIMEFORMAT='%-d/%b/%y %-I.%M%p%z'")
         );
     }
 
@@ -124,8 +125,10 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
         throws SQLException {
         final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, csvFile, options);
         assertCommandResultSet(resultSet, true, 2, 1, 0);
-        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key1", true, new BigDecimal("654000.7"));
-        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key2", false, new BigDecimal("321000.8"));
+        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key1", true, new BigDecimal("654000.7"),
+            new Timestamp(OffsetDateTime.parse("2026-08-06T23:05:00.000+00:00").toInstant().toEpochMilli()));
+        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key2", false, new BigDecimal("321000.8"),
+            new Timestamp(OffsetDateTime.parse("2025-03-22T08:23:00.000+00:00").toInstant().toEpochMilli()));
     }
 
     @Test

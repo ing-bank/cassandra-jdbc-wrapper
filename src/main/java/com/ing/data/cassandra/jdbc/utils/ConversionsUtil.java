@@ -35,8 +35,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.Calendar;
+import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
 import static java.lang.String.format;
@@ -53,6 +55,43 @@ import static org.apache.commons.io.IOUtils.toByteArray;
 public final class ConversionsUtil {
 
     private static final String UNSUPPORTED_TYPE_MESSAGE = "type not supported";
+
+    /**
+     * Mapping of <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format codes to the equivalent
+     * codes in Java {@link DateTimeFormatter}.
+     * @implNote The {@code strftime} codes {@code %c}, {@code %x} and {@code %X} are not supported. Also, the code
+     * {@code %w} corresponds to the weekday number in Java (Monday = 1 ... Sunday = 7).
+     */
+    private static final Map<String, String> STRFTIME_TO_JAVA = Map.ofEntries(
+        Map.entry("%A", "EEEE"),   // Full weekday name
+        Map.entry("%a", "EEE"),    // Short weekday name
+        Map.entry("%w", "e"),      // Weekday number (in Java, Monday = 1 ... Sunday = 7)
+        Map.entry("%d", "dd"),     // Zero-padded day of the month (01-31)
+        Map.entry("%-d", "d"),     // Day of the month (1-31)
+        Map.entry("%B", "MMMM"),   // Full month name
+        Map.entry("%b", "MMM"),    // Short month name
+        Map.entry("%m", "MM"),     // Zero-padded month (01-12)
+        Map.entry("%-m", "M"),     // Month (1-12)
+        Map.entry("%Y", "yyyy"),   // 4-digit year
+        Map.entry("%y", "yy"),     // 2-digit year
+        Map.entry("%H", "HH"),     // Zero-padded hour 24h (00-23)
+        Map.entry("%-H", "H"),     // Hour 24h (0-23)
+        Map.entry("%I", "hh"),     // Zero-padded hour 12h (01-12)
+        Map.entry("%-I", "h"),     // Hour 12h (01-12)
+        Map.entry("%p", "a"),      // AM/PM
+        Map.entry("%M", "mm"),     // Zero-padded minute (00-59)
+        Map.entry("%-M", "m"),     // Minute (0-59)
+        Map.entry("%S", "ss"),     // Zero-padded second (00-59)
+        Map.entry("%-S", "s"),     // Second (0-59)
+        Map.entry("%f", "SSSSSS"), // Microseconds (Java supports up to nanoseconds)
+        Map.entry("%Z", "zzz"),    // Timezone name
+        Map.entry("%z", "Z"),      // Timezone UTC offset
+        Map.entry("%j", "DDD"),    // Zero-padded day of year
+        Map.entry("%-j", "D"),     // Day of year
+        Map.entry("%U", "ww"),     // Zero-padded week number of year
+        Map.entry("%-U", "w"),     // Week number of year
+        Map.entry("%%", "'%'")     // Percent character
+    );
 
     private ConversionsUtil() {
         // Private constructor to hide the public one.
@@ -307,6 +346,20 @@ public final class ConversionsUtil {
      */
     public static LocalTime milliOfDayToLocalTime(final long millisOfDay) {
         return LocalTime.ofNanoOfDay(millisOfDay * 1_000_000);
+    }
+
+    /**
+     * Converts a {@code strftime} pattern string to a Java {@link DateTimeFormatter} pattern.
+     *
+     * @param pattern The {@code strftime} pattern to convert.
+     * @return The converted pattern.
+     */
+    public static String strftimeToJavaPattern(final String pattern) {
+        String javaPattern = pattern;
+        for (final var entry : STRFTIME_TO_JAVA.entrySet()) {
+            javaPattern = javaPattern.replace(entry.getKey(), entry.getValue());
+        }
+        return javaPattern;
     }
 
     private static byte[] onBinaryFailedConversion(final Exception e, final Object obj) {

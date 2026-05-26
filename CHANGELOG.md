@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
     adapted to Cassandra-specific rules.
 - Add methods `getLocalTime(int | String)` and `getLocalDate(String)` in `CassandraResultSet`.
 - Add methods `getLocalTime(int | String)` and `getLocalDate(int | String)` in `CassandraMetadataResultSet`.
-- Add support for `BOOLSTYLE` option in special CQL commands `COPY FROM` and `COPY TO`.
+- Add support for `BOOLSTYLE` and `DATETIMEFORMAT` options in special CQL commands `COPY FROM` and `COPY TO`.
 ### Changed
 - **BREAKING CHANGE**: upgrade minimal required JRE to 17.
 - Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).

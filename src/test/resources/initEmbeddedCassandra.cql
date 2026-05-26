@@ -6,7 +6,8 @@ USE copy_cmd_keyspace;
 CREATE TABLE copy_cmd_table (
 table_key text PRIMARY KEY,
 bool_val boolean,
-decimal_val decimal);
+decimal_val decimal,
+ts_val timestamp);
 
 CREATE TABLE copy_cmd_skip_rows_table (
 table_key text PRIMARY KEY,
