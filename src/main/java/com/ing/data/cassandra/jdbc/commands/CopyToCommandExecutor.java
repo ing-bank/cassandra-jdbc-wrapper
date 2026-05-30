@@ -72,7 +72,7 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *         <li>{@code DATETIMEFORMAT}: the format for writing time data. The timestamp uses the
  *         <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format. Note that codes {@code %c},
  *         {@code %x} and {@code %X} are not supported. Also, the code {@code %w} corresponds to the weekday number in
- *         Java (Monday = 1 ... Sunday = 7). English locale is used to fromat days and months names.
+ *         Java (Monday = 1 ... Sunday = 7). English locale is used to format days and months names.
  *         Defaults to {@value #DEFAULT_DATETIME_STRFTIME_FORMAT}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>

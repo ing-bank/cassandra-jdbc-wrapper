@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.0] - Unreleased
+## [5.0.0] - 2026-05-31
 ### Added
 - Implement methods `createArrayOf(String, Objects[])` and `createBlob()` in `CassandraConnection` and 
   `ManagedConnection` classes.
@@ -30,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Caffeine to version 3.2.4.
 - Update Semver4j to version 6.0.0.
 - Update Astra SDK to 2.2.2.
-- Update AWS Secrets Manager SDK to 2.44.12.
+- Update AWS Secrets Manager SDK to 2.45.0.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
 - Return an empty result set instead of a `SQLFeatureNotSupportedException` for the following methods of 
   `CassandraDatabaseMetaData` to respect JDBC API specifications:
@@ -444,7 +444,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
-[5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v5.0.0
+[5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.0...v4.16.1

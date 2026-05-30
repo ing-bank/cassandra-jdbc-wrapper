@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>5.0.0-beta.1</version>
+    <version>5.0.0</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -115,10 +115,10 @@
         <java.version>17</java.version>
 
         <!-- Versions for dependencies -->
-        <astra-sdk.version>2.2.2</astra-sdk.version>
-        <aws-secretsmanager.version>2.44.12</aws-secretsmanager.version>
+        <astra-sdk-devops.version>2.2.2</astra-sdk-devops.version>
+        <aws-secretsmanager.version>2.45.0</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
-        <checkstyle.version>13.2.0</checkstyle.version>
+        <checkstyle.version>13.4.2</checkstyle.version>
         <caffeine.version>3.2.4</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.5.0</commons-collections.version>
@@ -137,7 +137,7 @@
         <hikaricp.version>7.0.2</hikaricp.version>
         <junit.version>6.1.0</junit.version>
         <mockito.version>5.23.0</mockito.version>
-        <slf4j.version>2.0.18</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <!-- Versions for plugins -->
         <central-publishing-plugin.version>0.10.0</central-publishing-plugin.version>
@@ -259,7 +259,7 @@
         <dependency>
             <groupId>com.datastax.astra</groupId>
             <artifactId>astra-sdk-devops</artifactId>
-            <version>${astra-sdk.version}</version>
+            <version>${astra-sdk-devops.version}</version>
         </dependency>
 
         <!-- OpenCSV for implementation of COPY special command -->
