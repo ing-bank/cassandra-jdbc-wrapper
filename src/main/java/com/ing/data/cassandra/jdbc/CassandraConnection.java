@@ -24,10 +24,15 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.optionset.OptionSet;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import com.ing.data.cassandra.jdbc.utils.BlobImpl;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -39,6 +44,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -49,7 +55,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -77,11 +82,13 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_FETCH_SIZE_PARAMETER;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_PROFILE_NAME;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * Cassandra connection: implementation class for {@link Connection} to create a JDBC connection to a Cassandra
  * cluster.
  */
+@Slf4j
 public class CassandraConnection extends AbstractConnection implements Connection {
 
     // Minimal Apache Cassandra version supported by the Java Driver for Apache Cassandra® on top which this wrapper is
@@ -107,7 +114,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     protected static final int FALLBACK_FETCH_SIZE = 100;
 
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraConnection.class);
     private static final boolean AUTO_COMMIT_DEFAULT = true;
 
     /**
@@ -122,31 +128,62 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * Whether the connection is bound to an Amazon Keyspaces database.
      */
     private Boolean connectedToAmazonKeyspaces;
+    /**
+     * The properties of this connection.
+     */
+    @Getter
+    private final Properties connectionProperties;
+    /**
+     * The consistency level applied to this connection.
+     */
+    @Getter
+    @Setter
+    private ConsistencyLevel consistencyLevel;
+    /**
+     * The serial consistency level applied to this connection.
+     */
+    @Getter
+    @Setter
+    private ConsistencyLevel serialConsistencyLevel;
+    /**
+     * The default fetch size applied to this connection.
+     */
+    @Getter
+    private int defaultFetchSize = FALLBACK_FETCH_SIZE;
+    /**
+     * Whether the debug mode is active on this connection: {@code true} if the debug mode is active on this
+     * connection, {@code false} otherwise.
+     */
+    @Getter
+    private final boolean debugMode;
+    /**
+     * The compliance mode option set used for the connection.
+     */
+    @Getter
+    private OptionSet optionSet = new Default();
+    /**
+     * The active execution profile.
+     */
+    @Getter
+    private DriverExecutionProfile activeExecutionProfile;
 
     private final SessionHolder sessionHolder;
     private final Session cSession;
-    private final Properties connectionProperties;
     private final Metadata metadata;
     // Set of all the statements that have been created by this connection.
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final Set<Statement> statements = new ConcurrentSkipListSet<>();
     private final ConcurrentMap<String, CassandraPreparedStatement> preparedStatements = new ConcurrentHashMap<>();
-    private ConsistencyLevel consistencyLevel;
-    private ConsistencyLevel serialConsistencyLevel;
-    private int defaultFetchSize = FALLBACK_FETCH_SIZE;
     private String currentKeyspace;
-    private final boolean debugMode;
     private Properties clientInfo;
     private volatile boolean isClosed;
-    private OptionSet optionSet = new Default();
-    private DriverExecutionProfile activeExecutionProfile;
     private DriverExecutionProfile lastUsedExecutionProfile;
 
     /**
      * Instantiates a new JDBC connection to a Cassandra cluster.
      *
      * @param sessionHolder The session holder.
-     * @throws SQLException if something went wrong during the initialisation of the connection.
+     * @throws SQLException if something went wrong during the initialization of the connection.
      */
     CassandraConnection(final SessionHolder sessionHolder) throws SQLException {
         this.sessionHolder = sessionHolder;
@@ -183,14 +220,14 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 this.defaultFetchSize = Integer.parseInt(fetchSizeParameter);
             }
         } catch (final NumberFormatException e) {
-            LOG.warn(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile);
+            log.warn(INVALID_FETCH_SIZE_PARAMETER, fetchSizeParameter, fetchSizeFromProfile);
             this.defaultFetchSize = fetchSizeFromProfile;
         }
 
-        LOG.info("Connected to cluster: {}, with session: {}",
-            Objects.toString(getCatalog(), "<not available>"), this.cSession.getName());
+        final String clusterName = Objects.toString(getCatalog(), "<not available>");
+        log.info("Connected to cluster: {}, with session: {}", clusterName, this.cSession.getName());
         this.metadata.getNodes().forEach(
-            (uuid, node) -> LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
+            (uuid, node) -> log.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
                 node.getEndPoint().resolve(), node.getRack())
         );
 
@@ -200,7 +237,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                 CassandraConnection.dbMajorVersion = cassandraVersion.getMajor();
                 CassandraConnection.dbMinorVersion = cassandraVersion.getMinor();
                 CassandraConnection.dbPatchVersion = cassandraVersion.getPatch();
-                LOG.info("Node: {} runs Cassandra v.{}", entry.getValue().getEndPoint().resolve(), cassandraVersion);
+                log.info("Node: {} runs Cassandra v.{}", entry.getValue().getEndPoint().resolve(), cassandraVersion);
             }
         });
     }
@@ -215,9 +252,11 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      * @param optionSet               The compliance mode option set to use.
      * @param defaultExecutionProfile The name of the default execution profile to use.
      */
-    public CassandraConnection(final Session cSession, final String currentKeyspace,
+    public CassandraConnection(final Session cSession,
+                               final String currentKeyspace,
                                final ConsistencyLevel defaultConsistencyLevel,
-                               final boolean debugMode, final OptionSet optionSet,
+                               final boolean debugMode,
+                               final OptionSet optionSet,
                                final String defaultExecutionProfile) {
         this.sessionHolder = null;
         this.connectionProperties = new Properties();
@@ -264,7 +303,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                         .map(node -> node.getEndPoint().resolve().toString())
                         .collect(Collectors.toSet());
                 } catch (final Exception e) {
-                    LOG.debug("Failed to retrieve the contact points of the connection to determine if the connection "
+                    log.debug("Failed to retrieve the contact points of the connection to determine if the connection "
                         + "is bound to AWS: {}", e.getMessage());
                 }
             }
@@ -279,7 +318,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
                     final ResultSet rs = stmt.getResultSet();
                     this.connectedToAmazonKeyspaces = rs != null && rs.next();
                 } catch (final Exception e) {
-                    LOG.debug("Failed to check existing keyspaces to determine if the connection is bound to AWS: {}",
+                    log.debug("Failed to check existing keyspaces to determine if the connection is bound to AWS: {}",
                         e.getMessage());
                 }
             }
@@ -322,6 +361,21 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
+    public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
+        checkNotClosed();
+        if (elements == null) {
+            return new ArrayImpl();
+        }
+        return new ArrayImpl(List.of(elements), typeName);
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        checkNotClosed();
+        return new BlobImpl();
+    }
+
+    @Override
     public java.sql.Statement createStatement() throws SQLException {
         checkNotClosed();
         final Statement statement = new CassandraStatement(this);
@@ -338,11 +392,12 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
-    public Statement createStatement(final int resultSetType, final int resultSetConcurrency,
+    public Statement createStatement(final int resultSetType,
+                                     final int resultSetConcurrency,
                                      final int resultSetHoldability) throws SQLException {
         checkNotClosed();
-        final Statement statement = new CassandraStatement(this, null, resultSetType, resultSetConcurrency,
-            resultSetHoldability);
+        final Statement statement =
+            new CassandraStatement(this, null, resultSetType, resultSetConcurrency, resultSetHoldability);
         this.statements.add(statement);
         return statement;
     }
@@ -373,15 +428,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         checkNotClosed();
     }
 
-    /**
-     * Gets a {@link Properties} object listing the properties of this connection.
-     *
-     * @return The properties of this connection.
-     */
-    public Properties getConnectionProperties() {
-        return this.connectionProperties;
-    }
-
     @Override
     public Properties getClientInfo() throws SQLException {
         checkNotClosed();
@@ -396,7 +442,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void setClientInfo(final Properties properties) {
-        // we don't use them, but we will happily collect them for now...
         if (properties != null) {
             this.clientInfo = properties;
         }
@@ -404,7 +449,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
     @Override
     public void setClientInfo(final String key, final String value) {
-        // we don't use them, but we will happily collect them for now...
         this.clientInfo.setProperty(key, value);
     }
 
@@ -415,60 +459,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
      */
     public Metadata getClusterMetadata() {
         return this.metadata;
-    }
-
-    /**
-     * Gets whether the debug mode is active on this connection.
-     *
-     * @return {@code true} if the debug mode is active on this connection, {@code false} otherwise.
-     */
-    public boolean isDebugMode() {
-        return this.debugMode;
-    }
-
-    /**
-     * Gets the consistency level currently applied to this connection.
-     *
-     * @return The consistency level currently applied to this connection.
-     */
-    public ConsistencyLevel getConsistencyLevel() {
-        return this.consistencyLevel;
-    }
-
-    /**
-     * Sets the consistency level applied to this connection.
-     *
-     * @param consistencyLevel  The consistency level to apply to this connection.
-     */
-    public void setConsistencyLevel(final ConsistencyLevel consistencyLevel) {
-        this.consistencyLevel = consistencyLevel;
-    }
-
-    /**
-     * Gets the serial consistency level currently applied to this connection.
-     *
-     * @return The serial consistency level currently applied to this connection.
-     */
-    public ConsistencyLevel getSerialConsistencyLevel() {
-        return this.serialConsistencyLevel;
-    }
-
-    /**
-     * Sets the serial consistency level applied to this connection.
-     *
-     * @param serialConsistencyLevel  The serial consistency level to apply to this connection.
-     */
-    public void setSerialConsistencyLevel(final ConsistencyLevel serialConsistencyLevel) {
-        this.serialConsistencyLevel = serialConsistencyLevel;
-    }
-
-    /**
-     * Gets the default fetch size applied to this connection.
-     *
-     * @return The default fetch size applied to this connection.
-     */
-    public int getDefaultFetchSize() {
-        return this.defaultFetchSize;
     }
 
     @Override
@@ -529,7 +519,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
         final HashMap<String, Class<?>> typeMap = new HashMap<>();
-        LOG.info("Current keyspace: {}", this.currentKeyspace);
+        log.info("Current keyspace: {}", this.currentKeyspace);
         this.metadata.getKeyspace(this.currentKeyspace)
             .ifPresent(keyspaceMetadata ->
                 keyspaceMetadata.getUserDefinedTypes().forEach((cqlIdentifier, userDefinedType) ->
@@ -580,7 +570,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
 
         try (final CassandraStatement stmt = (CassandraStatement) this.createStatement()) {
             // Wait at most the defined timeout duration (if requested) for the successful query execution.
-            final ExecutorService stmtExecutor = Executors.newCachedThreadPool();
+            final ExecutorService stmtExecutor = newCachedThreadPool();
             final Callable<Object> callableStmt = () -> stmt.execute("SELECT key FROM system.local");
             if (timeout != 0) {
                 final Future<Object> futureStmtExecution = stmtExecutor.submit(callableStmt);
@@ -616,8 +606,8 @@ public class CassandraConnection extends AbstractConnection implements Connectio
         CassandraPreparedStatement preparedStatement = this.preparedStatements.get(cql);
         if (preparedStatement == null) {
             // Statement didn't exist, create it and put it to the map of prepared statements.
-            preparedStatement = this.preparedStatements.putIfAbsent(cql, prepareStatement(cql, DEFAULT_TYPE,
-                DEFAULT_CONCURRENCY, DEFAULT_HOLDABILITY));
+            preparedStatement = this.preparedStatements.putIfAbsent(cql,
+                prepareStatement(cql, DEFAULT_TYPE, DEFAULT_CONCURRENCY, DEFAULT_HOLDABILITY));
             if (preparedStatement == null) {
                 // Statement has already been created by another thread, so we'll just get it.
                 return this.preparedStatements.get(cql);
@@ -628,13 +618,15 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     @Override
-    public CassandraPreparedStatement prepareStatement(final String cql, final int resultSetType,
+    public CassandraPreparedStatement prepareStatement(final String cql,
+                                                       final int resultSetType,
                                                        final int resultSetConcurrency) throws SQLException {
         return prepareStatement(cql, resultSetType, resultSetConcurrency, DEFAULT_HOLDABILITY);
     }
 
     @Override
-    public CassandraPreparedStatement prepareStatement(final String cql, final int resultSetType,
+    public CassandraPreparedStatement prepareStatement(final String cql,
+                                                       final int resultSetType,
                                                        final int resultSetConcurrency,
                                                        final int resultSetHoldability) throws SQLException {
         checkNotClosed();
@@ -670,15 +662,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     /**
-     * Gets the compliance mode option set used for the connection.
-     *
-     * @return The compliance mode option set used for the connection.
-     */
-    public OptionSet getOptionSet() {
-        return this.optionSet;
-    }
-
-    /**
      * Sets the compliance mode option set used for the connection.
      *
      * @param optionSet The compliance mode option set used for the connection.
@@ -702,15 +685,6 @@ public class CassandraConnection extends AbstractConnection implements Connectio
     }
 
     /**
-     * Gets the active execution profile.
-     *
-     * @return The active execution profile.
-     */
-    public DriverExecutionProfile getActiveExecutionProfile() {
-        return this.activeExecutionProfile;
-    }
-
-    /**
      * Sets a new execution profile for the current connection.
      * <p>
      *     If the given profile name is invalid, this method has no effect.
@@ -724,7 +698,7 @@ public class CassandraConnection extends AbstractConnection implements Connectio
             this.activeExecutionProfile = this.cSession.getContext().getConfig().getProfile(profile);
             this.lastUsedExecutionProfile = currentProfile;
         } catch (final IllegalArgumentException e) {
-            LOG.warn(INVALID_PROFILE_NAME, profile);
+            log.warn(INVALID_PROFILE_NAME, profile);
             if (this.activeExecutionProfile == null) {
                 this.activeExecutionProfile = this.cSession.getContext().getConfig().getDefaultProfile();
             }

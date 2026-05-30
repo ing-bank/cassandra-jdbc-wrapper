@@ -15,8 +15,8 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClientBuilder;
@@ -35,14 +35,13 @@ import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_AWS_SEC
 /**
  * Utility methods used for support of Amazon Keyspaces.
  */
+@Slf4j
 public final class AwsUtil {
 
     /**
      * Name of the system property used to override the default endpoint of the Amazon Secrets manager.
      */
     public static final String AWS_SECRETSMANAGER_ENDPOINT_PROPERTY = "aws.secretsmanager.endpoint";
-
-    static final Logger LOG = LoggerFactory.getLogger(AwsUtil.class);
 
     private AwsUtil() {
         // Private constructor to hide the public one.
@@ -53,7 +52,7 @@ public final class AwsUtil {
      * Lists all the valid hosts for Amazon Keyspaces.
      * <p>
      *     See: <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html">
-     *     List of Amazon Keyspaces endpoints</a> (last update: March 2025).
+     *     List of Amazon Keyspaces endpoints</a> (last update: January 2026).
      * </p>
      *
      * @return All the valid hosts for Amazon Keyspaces.
@@ -61,28 +60,53 @@ public final class AwsUtil {
     public static Set<String> listAwsKeyspacesHosts() {
         final Set<String> hosts = new HashSet<>();
         hosts.add("cassandra.us-east-1.amazonaws.com");
+        hosts.add("cassandra.us-east-1.api.aws");
         hosts.add("cassandra-fips.us-east-1.amazonaws.com");
+        hosts.add("cassandra-fips.us-east-1.api.aws");
         hosts.add("cassandra.us-east-2.amazonaws.com");
+        hosts.add("cassandra.us-east-2.api.aws");
         hosts.add("cassandra.us-west-1.amazonaws.com");
+        hosts.add("cassandra.us-west-1.api.aws");
         hosts.add("cassandra.us-west-2.amazonaws.com");
+        hosts.add("cassandra.us-west-2.api.aws");
         hosts.add("cassandra-fips.us-west-2.amazonaws.com");
+        hosts.add("cassandra-fips.us-west-2.api.aws");
         hosts.add("cassandra.af-south-1.amazonaws.com");
+        hosts.add("cassandra.af-south-1.api.aws");
         hosts.add("cassandra.ap-east-1.amazonaws.com");
+        hosts.add("cassandra.ap-east-1.api.aws");
         hosts.add("cassandra.ap-south-1.amazonaws.com");
+        hosts.add("cassandra.ap-south-1.api.aws");
         hosts.add("cassandra.ap-northeast-1.amazonaws.com");
+        hosts.add("cassandra.ap-northeast-1.api.aws");
         hosts.add("cassandra.ap-northeast-2.amazonaws.com");
+        hosts.add("cassandra.ap-northeast-2.api.aws");
         hosts.add("cassandra.ap-southeast-1.amazonaws.com");
+        hosts.add("cassandra.ap-southeast-1.api.aws");
         hosts.add("cassandra.ap-southeast-2.amazonaws.com");
+        hosts.add("cassandra.ap-southeast-2.api.aws");
         hosts.add("cassandra.ca-central-1.amazonaws.com");
+        hosts.add("cassandra.ca-central-1.api.aws");
         hosts.add("cassandra.eu-central-1.amazonaws.com");
+        hosts.add("cassandra.eu-central-1.api.aws");
         hosts.add("cassandra.eu-west-1.amazonaws.com");
+        hosts.add("cassandra.eu-west-1.api.aws");
         hosts.add("cassandra.eu-west-2.amazonaws.com");
+        hosts.add("cassandra.eu-west-2.api.aws");
         hosts.add("cassandra.eu-west-3.amazonaws.com");
+        hosts.add("cassandra.eu-west-3.api.aws");
         hosts.add("cassandra.eu-north-1.amazonaws.com");
+        hosts.add("cassandra.eu-north-1.api.aws");
         hosts.add("cassandra.me-south-1.amazonaws.com");
+        hosts.add("cassandra.me-south-1.api.aws");
+        hosts.add("cassandra.me-central-1.amazonaws.com");
+        hosts.add("cassandra.me-central-1.api.aws");
         hosts.add("cassandra.sa-east-1.amazonaws.com");
+        hosts.add("cassandra.sa-east-1.api.aws");
         hosts.add("cassandra.us-gov-east-1.amazonaws.com");
+        hosts.add("cassandra.us-gov-east-1.api.aws");
         hosts.add("cassandra.us-gov-west-1.amazonaws.com");
+        hosts.add("cassandra.us-gov-west-1.api.aws");
         hosts.add("cassandra.cn-north-1.amazonaws.com.cn");
         hosts.add("cassandra.cn-northwest-1.amazonaws.com.cn");
         return hosts;
@@ -99,12 +123,14 @@ public final class AwsUtil {
     public static String getSecretValue(final String regionName, final String secretName) throws SQLTransientException {
         final Region region = Region.of(regionName);
         final String customEndpoint = System.getProperty(AWS_SECRETSMANAGER_ENDPOINT_PROPERTY);
-        final SecretsManagerClientBuilder secretsClientBuilder = SecretsManagerClient.builder().region(region);
+        final SecretsManagerClientBuilder secretsClientBuilder = SecretsManagerClient.builder()
+            .region(region)
+            .credentialsProvider(DefaultCredentialsProvider.builder().build());
         if (customEndpoint != null) {
             try {
                 secretsClientBuilder.endpointOverride(URI.create(customEndpoint));
             } catch (final IllegalArgumentException e) {
-                LOG.warn(INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT, e);
+                log.warn(INVALID_AWS_SECRETS_MANAGER_CUSTOM_ENDPOINT, e);
             }
         }
         final SecretsManagerClient secretsClient = secretsClientBuilder.build();

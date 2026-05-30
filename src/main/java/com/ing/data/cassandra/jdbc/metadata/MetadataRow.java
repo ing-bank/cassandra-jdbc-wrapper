@@ -20,9 +20,9 @@ import com.datastax.oss.driver.api.core.type.DataType;
 import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -40,14 +40,14 @@ import java.util.UUID;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNABLE_TO_POPULATE_METADATA_ROW;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CAST;
+import static java.lang.String.format;
 
 /**
  * The content of a metadata row returned in a {@link CassandraMetadataResultSet}.
  */
 @SuppressWarnings({"unused", "LoggingSimilarMessage"})
+@Slf4j
 public class MetadataRow {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MetadataRow.class);
 
     // The 'entries' contains the ordered list of metadata values.
     private final ArrayList<Object> entries;
@@ -92,14 +92,18 @@ public class MetadataRow {
      * @param template The row template.
      * @param values   The values used to populate the metadata row.
      * @return The updated {@code MetadataRow} instance.
-     * @throws RuntimeException when the number of values does not match the number of columns defined in the row
-     * template.
+     * @throws IllegalArgumentException when the number of values does not match the number of columns defined in the
+     * row template.
      */
     public MetadataRow withTemplate(final MetadataRowTemplate template, final Object... values) {
-        if (template.getColumnDefinitions().length != values.length) {
-            throw new RuntimeException(UNABLE_TO_POPULATE_METADATA_ROW);
+        final int columnsInTemplate = template.getColumnDefinitions().length;
+        final int numberOfValues = values.length;
+        if (columnsInTemplate != numberOfValues) {
+            throw new IllegalArgumentException(
+                format(UNABLE_TO_POPULATE_METADATA_ROW, columnsInTemplate, numberOfValues)
+            );
         }
-        for (int i = 0; i < template.getColumnDefinitions().length; i++) {
+        for (int i = 0; i < columnsInTemplate; i++) {
             this.addEntry(template.getColumnDefinitions()[i].getName(), values[i],
                 template.getColumnDefinitions()[i].getType());
         }
@@ -154,7 +158,7 @@ public class MetadataRow {
         try {
             return (Boolean) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn(INVALID_CAST, entryValue, i, "boolean", Boolean.FALSE);
+            log.warn(INVALID_CAST, entryValue, i, "boolean", Boolean.FALSE);
             return false;
         }
     }
@@ -185,7 +189,7 @@ public class MetadataRow {
         try {
             return (byte) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn(INVALID_CAST, entryValue, i, "byte", 0);
+            log.warn(INVALID_CAST, entryValue, i, "byte", 0);
             return 0;
         }
     }
@@ -216,7 +220,7 @@ public class MetadataRow {
         try {
             return (short) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn(INVALID_CAST, entryValue, i, "short", 0);
+            log.warn(INVALID_CAST, entryValue, i, "short", 0);
             return 0;
         }
     }
@@ -247,7 +251,7 @@ public class MetadataRow {
         try {
             return (int) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn(INVALID_CAST, entryValue, i, "integer", 0);
+            log.warn(INVALID_CAST, entryValue, i, "integer", 0);
             return 0;
         }
     }
@@ -278,7 +282,7 @@ public class MetadataRow {
         try {
             return (long) entryValue;
         } catch (final ClassCastException e) {
-            LOG.warn(INVALID_CAST, entryValue, i, "long", 0);
+            log.warn(INVALID_CAST, entryValue, i, "long", 0);
             return 0;
         }
     }
@@ -682,7 +686,7 @@ public class MetadataRow {
     private Integer getIndex(final String name) {
         final Integer idx = this.names.get(name);
         if (idx == null) {
-            throw new IllegalArgumentException(String.format(VALID_LABELS, name));
+            throw new IllegalArgumentException(format(VALID_LABELS, name));
         }
         return idx;
     }
@@ -694,7 +698,10 @@ public class MetadataRow {
      * </p>
      */
     public static class MetadataRowTemplate {
-
+        /**
+         * The definitions of the columns in the row template.
+         */
+        @Getter
         private final Definition[] columnDefinitions;
 
         /**
@@ -705,16 +712,6 @@ public class MetadataRow {
         public MetadataRowTemplate(final Definition... columnDefinitions) {
             this.columnDefinitions = columnDefinitions;
         }
-
-        /**
-         * Gets the definitions of the columns in the row template.
-         *
-         * @return The array of columns definitions.
-         */
-        public Definition[] getColumnDefinitions() {
-            return this.columnDefinitions;
-        }
-
     }
 
 }

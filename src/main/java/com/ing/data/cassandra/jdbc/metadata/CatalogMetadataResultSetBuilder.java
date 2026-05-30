@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 
 /**
@@ -61,8 +62,7 @@ public class CatalogMetadataResultSetBuilder extends AbstractMetadataResultSetBu
 
         catalogs.add(new MetadataRow().withTemplate(rowTemplate, this.statement.getConnection().getCatalog()));
 
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(catalogs));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(catalogs));
     }
 
 }

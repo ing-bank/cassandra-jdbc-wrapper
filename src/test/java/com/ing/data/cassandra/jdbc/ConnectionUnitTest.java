@@ -13,7 +13,6 @@
  */
 package com.ing.data.cassandra.jdbc;
 
-import com.datastax.driver.core.SimpleStatement;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
@@ -39,12 +38,13 @@ import com.ing.data.cassandra.jdbc.testing.FakeLoadBalancingPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeReconnectionPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeRetryPolicy;
 import com.ing.data.cassandra.jdbc.testing.FakeSslEngineFactory;
+import com.ing.data.cassandra.jdbc.utils.ArrayImpl;
+import com.ing.data.cassandra.jdbc.utils.BlobImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -64,18 +64,23 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.ing.data.cassandra.jdbc.SessionHolder.URL_KEY;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.CUSTOM;
+import static com.ing.data.cassandra.jdbc.types.DataTypeEnum.TEXT;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_KEYSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PASSWORD_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPERTY;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.SSL_CONFIG_FAILED;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_CONN;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -89,8 +94,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 class ConnectionUnitTest extends UsingCassandraContainerTest {
-    private static final Logger LOG = LoggerFactory.getLogger(ConnectionUnitTest.class);
 
     private static final String KEYSPACE = "system";
 
@@ -539,23 +544,22 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         assertNotNull(sqlConnection.getMetaData());
 
         final DatabaseMetaData dbMetadata = sqlConnection.getMetaData();
-        LOG.debug("====================================================");
-        LOG.debug("Connection Metadata");
-        LOG.debug("====================================================");
-        LOG.debug("Driver name: {}", dbMetadata.getDriverName());
-        LOG.debug("Driver version: {}", dbMetadata.getDriverVersion());
-        LOG.debug("DB name: {}", dbMetadata.getDatabaseProductName());
-        LOG.debug("DB version: {}", dbMetadata.getDatabaseProductVersion());
-        LOG.debug("JDBC version: {}.{}", dbMetadata.getJDBCMajorVersion(), dbMetadata.getJDBCMinorVersion());
-        LOG.debug("====================================================");
+        log.debug("====================================================");
+        log.debug("Connection Metadata");
+        log.debug("====================================================");
+        log.debug("Driver name: {}", dbMetadata.getDriverName());
+        log.debug("Driver version: {}", dbMetadata.getDriverVersion());
+        log.debug("DB name: {}", dbMetadata.getDatabaseProductName());
+        log.debug("DB version: {}", dbMetadata.getDatabaseProductVersion());
+        log.debug("JDBC version: {}.{}", dbMetadata.getJDBCMajorVersion(), dbMetadata.getJDBCMinorVersion());
+        log.debug("====================================================");
 
         assertEquals("Cassandra JDBC Driver", dbMetadata.getDriverName());
         assertNotEquals(0, dbMetadata.getDriverMajorVersion());
-        assertNotEquals(0, dbMetadata.getDriverMinorVersion());
         assertEquals(4, dbMetadata.getJDBCMajorVersion());
-        assertEquals(0, dbMetadata.getJDBCMinorVersion());
+        assertEquals(3, dbMetadata.getJDBCMinorVersion());
         assertEquals("Cassandra", dbMetadata.getDatabaseProductName());
-        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+(-SNAPSHOT)?"));
+        assertThat(dbMetadata.getDriverVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+(-SNAPSHOT|-beta.\\d+)?"));
         assertThat(dbMetadata.getDatabaseProductVersion(), Matchers.matchesPattern("\\d.\\d+.\\d+"));
         sqlConnection.close();
     }
@@ -670,10 +674,11 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         final CassandraConnection jdbcConnection = new CassandraConnection(spiedSession, KEYSPACE,
             sqlConnection.getConsistencyLevel(), false, null, customProfileName);
         jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
-        final ArgumentCaptor<SimpleStatement> stmtCaptor = ArgumentCaptor.forClass(SimpleStatement.class);
-        verify(spiedSession).execute((com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.capture());
-        final com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt =
-            (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<com.datastax.oss.driver.api.core.cql.Statement<?>> stmtCaptor =
+            ArgumentCaptor.forClass(com.datastax.oss.driver.api.core.cql.Statement.class);
+        verify(spiedSession).execute(stmtCaptor.capture());
+        final com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt = stmtCaptor.getValue();
         assertNotNull(executedStmt.getExecutionProfile());
         assertEquals(customProfileName, executedStmt.getExecutionProfile().getName());
     }
@@ -693,6 +698,53 @@ class ConnectionUnitTest extends UsingCassandraContainerTest {
         initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
         assertNotNull(sqlConnection);
         assertTrue(sqlConnection.isValid(3));
+    }
+
+    @Test
+    void givenConnection_whenCreateBlob_returnEmptyBlobInstance() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        final var createdBlob = sqlConnection.createBlob();
+        assertNotNull(createdBlob);
+        assertInstanceOf(BlobImpl.class, createdBlob);
+        assertEquals(0, createdBlob.length());
+    }
+
+    @Test
+    void givenClosedConnection_whenCreateBlob_throwException() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        sqlConnection.close();
+        final SQLException sqlEx = assertThrows(SQLException.class, () -> sqlConnection.createBlob());
+        assertEquals(WAS_CLOSED_CONN, sqlEx.getMessage());
+    }
+
+    @Test
+    void givenConnection_whenCreateArrayOf_returnExpectedArrayInstance() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+
+        // Array without data
+        var createdArray = sqlConnection.createArrayOf(CUSTOM.cqlType, null);
+        assertNotNull(createdArray);
+        assertInstanceOf(ArrayImpl.class, createdArray);
+        assertArrayEquals(new Object[0], (Object[]) createdArray.getArray());
+
+        // Array with data
+        createdArray = sqlConnection.createArrayOf(TEXT.cqlType, new Object[]{ "a", "b", "c" });
+        assertNotNull(createdArray);
+        assertInstanceOf(ArrayImpl.class, createdArray);
+        assertArrayEquals(new String[]{ "a", "b", "c" }, (Object[]) createdArray.getArray());
+    }
+
+    @Test
+    void givenClosedConnection_whenCreateArrayOf_throwException() throws Exception {
+        initConnection(KEYSPACE, "password=cassandra", "localdatacenter=datacenter1");
+        assertNotNull(sqlConnection);
+        sqlConnection.close();
+        final SQLException sqlEx = assertThrows(SQLException.class,
+            () -> sqlConnection.createArrayOf("varchar", new Object[0]));
+        assertEquals(WAS_CLOSED_CONN, sqlEx.getMessage());
     }
 
 }

@@ -241,7 +241,7 @@ Please check the documentation for further information about the applied rules:
             <property name="endOfSentenceFormat" value="([.?!:][ \t\n\r\f])|([.?!:]$)"/>
         </module>
         <module name="JavadocVariable">
-            <property name="scope" value="protected"/>
+            <property name="accessModifiers" value="protected"/>
         </module>
         <module name="MissingJavadocMethod">
             <property name="ignoreMethodNamesRegex" value="^[gs]et[A-Z][a-zA-Z0-9]*$"/>

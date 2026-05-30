@@ -18,6 +18,8 @@ package com.ing.data.cassandra.jdbc.types;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
+
 /**
  * Mapping of Apache Cassandra CQL types to JDBC-equivalent types.
  */
@@ -94,7 +96,7 @@ public final class TypesMap {
      */
     public static AbstractJdbcType<?> getTypeForComparator(final String comparator) {
         // If not fully qualified, assume it's the short name for a built-in type.
-        if (comparator != null && !comparator.contains(".")) {
+        if (comparator != null && !comparator.contains(DOT)) {
             String cqlSimpleType = comparator.toLowerCase();
             // If the CQL type is a collection (map, list, set, ...), ignore the types of elements in the collection
             // to retrieve the corresponding JDBC type.

@@ -4,6 +4,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-05-31
+### Added
+- Implement methods `createArrayOf(String, Objects[])` and `createBlob()` in `CassandraConnection` and 
+  `ManagedConnection` classes.
+- Implement methods `closeOnCompletion()` and `isCloseOnCompletion()` in `CassandraStatement` and 
+  `ManagedPreparedStatement`. The behavior of `CassandraResultSet.close()` method has been adapted in consequence.
+- Implement methods `absolute(int)`, `afterLast()`, `beforeFirst()`, `first()`, `last()`, `previous()` and 
+  `relative(int)` in `CassandraResultSet`.
+- `PooledCassandraDataSource` now implements `ConnectionPoolDataSource` interface and `getConnection(String, String)`.
+- Implement some JDBC API 4.3 methods:
+  - in `CassandraDatabaseMetaData`: `getMaxLogicalLobSize()`, `supportsRefCursors()` and `supportsSharding()`.
+  - in `CassandraDataSource`: `createConnectionBuilder()`.
+  - in `Statement` implementations: methods `enquoteIdentifier(String, boolean)` and `isSimpleIdentifier(String)` are
+    adapted to Cassandra-specific rules.
+- Add methods `getLocalTime(int | String)` and `getLocalDate(String)` in `CassandraResultSet`.
+- Add methods `getLocalTime(int | String)` and `getLocalDate(int | String)` in `CassandraMetadataResultSet`.
+- Add support for `BOOLSTYLE` and `DATETIMEFORMAT` options in special CQL commands `COPY FROM` and `COPY TO`.
+### Changed
+- **BREAKING CHANGE**: upgrade minimal required JRE to 17.
+- Update supported hosts for Amazon Keyspaces: add `me-central-1` and dual-stack endpoints (`*.api.aws`).
+- Update Apache Commons IO to version 2.22.0.
+- Update Apache Commons Lang to version 3.20.0.
+- Update Jackson dependencies to version 3.1.3.
+- Update Caffeine to version 3.2.4.
+- Update Semver4j to version 6.0.0.
+- Update Astra SDK to 2.2.2.
+- Update AWS Secrets Manager SDK to 2.45.0.
+- Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
+- Return an empty result set instead of a `SQLFeatureNotSupportedException` for the following methods of 
+  `CassandraDatabaseMetaData` to respect JDBC API specifications:
+  - `getClientInfoProperties()`
+  - `getColumnPrivileges(String, String, String, String)`
+  - `getCrossReference(String, String, String, String, String, String)`
+  - `getExportedKeys(String, String, String)`
+  - `getImportedKeys(String, String, String)`
+  - `getProcedureColumns(String, String, String, String)`
+  - `getProcedures(String, String, String)`
+  - `getPseudoColumns(String, String, String, String)`
+  - `getSuperTables(String, String, String)`
+  - `getSuperTypes(String, String, String)`
+  - `getTablePrivileges(String, String, String)`
+  - `getVersionColumns(String, String, String)`
+### Fixed
+- Add missing keywords in the list returned by `CassandraDatabaseMetaData.getSQLKeywords()` method.
+- Fix issue [#88](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/88): `CassandraResultSet.getTime()` methods 
+  now preserve milliseconds precision and `CassandraResultSet.getObject(x, LocalTime.class)` returns a 
+  `java.time.LocalTime` as expected.
+### Removed
+- Remove deprecated protocol `jdbc:cassandra:dbaas`.
+- Remove deprecated `CassandraDataSource` constructors.
+
 ## [4.16.3] - 2026-03-18
 ### Changed
 - Update Jackson dependencies to version 2.21.1 to fix vulnerability specified in issue
@@ -13,7 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.2.
 ### Fixed
-- Fix issue [#86](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/86): return the expected value for 
+- Fix issue [#86](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/86): return the expected value for
   `Statement.getUpdateCount()` method in accordance with the selected compliance mode.
 
 ## [4.16.1] - 2025-10-25
@@ -244,7 +295,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Fix issue [#31](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/31) to return a 1-based index value.
   - Return a result even if there's no row in the result set but the column exist in the statement.
   - Fix the exception thrown by the method when the given column name does not exist in the result set (was an
-    `IllegalArgumentException` instead of an `SQLException`.
+    `IllegalArgumentException` instead of an `SQLException`).
 
 ## [4.10.0] - 2023-09-30
 ### Added
@@ -269,7 +320,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix issue [#25](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/25) causing failure when running with
   Liquibase. The fix includes several changes:
   - fixes result sets and statements closing.
-  - introduces a new behaviour in Liquibase compliance mode to run multiple queries in the same statement synchronously
+  - introduces a new behavior in Liquibase compliance mode to run multiple queries in the same statement synchronously
     (by default, they are executed asynchronously).
   - returns the schema name instead of `null` when the method `CassandraConnection.getCatalog()` is called in Liquibase
     compliance mode.
@@ -324,8 +375,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [4.7.0] - 2022-09-23
 ### Added
 - Add a system of compliance mode with the query parameter `compliancemode`: for some usages (for example with 
-  Liquibase), some default behaviours of the JDBC implementation have to be adapted. See the readme file for details 
-  about the overridable behaviours and the available compliance modes. See pull request
+  Liquibase), some default behaviors of the JDBC implementation have to be adapted. See the readme file for details 
+  about the overridable behaviors and the available compliance modes. See pull request
   [#8](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/8).
 - Add an additional `CassandraConnection` constructor using a pre-existing session (see pull request
   [#8](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/8)).
@@ -393,6 +444,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.0...v4.16.1

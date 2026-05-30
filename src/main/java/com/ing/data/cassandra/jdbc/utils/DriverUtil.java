@@ -15,6 +15,10 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
@@ -34,11 +38,12 @@ import com.ing.data.cassandra.jdbc.codec.TinyintToIntCodec;
 import com.ing.data.cassandra.jdbc.codec.TinyintToShortCodec;
 import com.ing.data.cassandra.jdbc.codec.VarintToIntCodec;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.semver4j.RangesExpression;
 import org.semver4j.Semver;
+import org.semver4j.range.RangeExpression;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,21 +52,29 @@ import java.net.URISyntaxException;
 import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_COLUMN_DEFINITIONS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
+import static java.lang.Boolean.getBoolean;
+import static java.util.Collections.emptyIterator;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * A set of static utility methods and constants used by the JDBC driver.
  */
+@Slf4j
 public final class DriverUtil {
 
     /**
@@ -115,6 +128,11 @@ public final class DriverUtil {
     public static final String COMMA = ",";
 
     /**
+     * Dot character.
+     */
+    public static final String DOT = ".";
+
+    /**
      * Single quote character.
      */
     public static final String SINGLE_QUOTE = "'";
@@ -159,7 +177,19 @@ public final class DriverUtil {
     public static final Pattern DURATION_ISO8601_ALT_FORMAT_PATTERN = Pattern.compile(
         "^P\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
 
-    static final Logger LOG = LoggerFactory.getLogger(DriverUtil.class);
+    /**
+     * Valid CQL identifier pattern.
+     * See: <a href="https://cassandra.apache.org/doc/latest/cassandra/developing/cql/definitions.html#identifiers">
+     *     CQL identifiers definition</a>.
+     */
+    public static final Pattern VALID_CQL_IDENTIFIER_PATTERN = Pattern.compile("\\p{Alpha}[\\p{Alnum}_]*");
+
+    /**
+     * Valid quoted CQL identifier pattern (only matching the content between the double quotes).
+     * See: <a href="https://cassandra.apache.org/doc/latest/cassandra/developing/cql/definitions.html#identifiers">
+     *     CQL identifiers definition</a>.
+     */
+    public static final Pattern VALID_QUOTED_CQL_IDENTIFIER_PATTERN = Pattern.compile("((?:[^\"]|\"\")+)");
 
     private DriverUtil() {
         // Private constructor to hide the public one.
@@ -201,7 +231,7 @@ public final class DriverUtil {
             driverProperties.load(propertiesFile);
             return driverProperties.getProperty(name, EMPTY);
         } catch (final IOException ex) {
-            LOG.warn(DRIVER_PROPERTY_NOT_FOUND, name, ex);
+            log.warn(DRIVER_PROPERTY_NOT_FOUND, name, ex);
             return EMPTY;
         }
     }
@@ -220,10 +250,7 @@ public final class DriverUtil {
             return Semver.ZERO;
         } else {
             final Semver parsedVersion = Semver.coerce(version);
-            if (parsedVersion == null) {
-                return Semver.ZERO;
-            }
-            return parsedVersion;
+            return requireNonNullElse(parsedVersion, Semver.ZERO);
         }
     }
 
@@ -244,9 +271,9 @@ public final class DriverUtil {
         if (versionedMetadata.isValidFrom() != null) {
             minVersion = versionedMetadata.isValidFrom();
         }
-        final RangesExpression validRange = RangesExpression.greaterOrEqual(minVersion);
+        final RangeExpression validRange = RangeExpression.greaterOrEqual(minVersion);
         if (versionedMetadata.isInvalidFrom() != null) {
-            validRange.and(RangesExpression.less(versionedMetadata.isInvalidFrom()));
+            validRange.and(RangeExpression.less(versionedMetadata.isInvalidFrom()));
         }
         return parseDatabaseVersion.satisfies(validRange);
     }
@@ -260,14 +287,15 @@ public final class DriverUtil {
      * @param connection   The database connection.
      * @return The formatted list of metadata.
      */
-    public static String buildMetadataList(final List<VersionedMetadata> metadataList, final String dbVersion,
+    public static String buildMetadataList(final List<VersionedMetadata> metadataList,
+                                           final String dbVersion,
                                            final CassandraConnection connection) {
         return metadataList.stream()
             .filter(metadata -> existsInDatabaseVersion(dbVersion, metadata)
                 && metadata.fulfillAdditionalCondition(connection))
             .map(VersionedMetadata::getName)
             .sorted()
-            .collect(Collectors.joining(COMMA));
+            .collect(joining(COMMA));
     }
 
     /**
@@ -295,10 +323,10 @@ public final class DriverUtil {
         final String driverPropertyDefinition = "driver.properties." + propertyName;
 
         final String propertyChoices = getDriverProperty(driverPropertyDefinition + ".choices");
-        if (StringUtils.isNotBlank(propertyChoices)) {
+        if (isNotBlank(propertyChoices)) {
             propertyInfo.choices = propertyChoices.split(COMMA);
         }
-        propertyInfo.required = Boolean.getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
+        propertyInfo.required = getBoolean(getDriverProperty(driverPropertyDefinition + ".required"));
         propertyInfo.description = getDriverProperty(driverPropertyDefinition);
         return propertyInfo;
     }
@@ -326,7 +354,7 @@ public final class DriverUtil {
      */
     public static String redactSensitiveValuesInJdbcUrl(final String jdbcUrl) {
         if (!jdbcUrl.contains("://")) {
-            LOG.warn(URL_REDACTION_FAILED);
+            log.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
         try {
@@ -336,19 +364,19 @@ public final class DriverUtil {
             final URI uri = new URI("//" + splitUrl[1]);
 
             // Redact sensitive values, then re-build the entire JDBC URL.
-            final String redactedQuery = Arrays.stream(StringUtils.defaultIfBlank(uri.getQuery(), EMPTY).split("&"))
+            final String redactedQuery = Arrays.stream(defaultIfBlank(uri.getQuery(), EMPTY).split("&"))
                 .map(param -> {
                     if (param.startsWith(TAG_PASSWORD + "=")) {
                         return TAG_PASSWORD + "=***";
                     }
                     return param;
                 })
-                .collect(Collectors.joining("&"));
+                .collect(joining("&"));
             return new URI(
                 splitUrl[0], uri.getAuthority(), uri.getPath(), redactedQuery, uri.getFragment()
             ).toString();
         } catch (final URISyntaxException e) {
-            LOG.warn(URL_REDACTION_FAILED);
+            log.warn(URL_REDACTION_FAILED);
             return "<invalid URL>";
         }
     }
@@ -385,7 +413,90 @@ public final class DriverUtil {
     public static String formatContactPoints(final List<ContactPoint> contactPoints) {
         return emptyIfNull(contactPoints).stream()
             .map(ContactPoint::toString)
-            .collect(Collectors.joining(", "));
+            .collect(joining(", "));
+    }
+
+    /**
+     * Gets the string representation of the specified object if not {@code null}. Otherwise, return {@code null}.
+     *
+     * @param obj The object.
+     * @param <T> The type of the given object.
+     * @return The string representation of the specified object if not {@code null}, otherwise, {@code null}.
+     */
+    public static <T> String toStringOrNull(final T obj) {
+        if (obj == null) {
+            return null;
+        } else {
+            return obj.toString();
+        }
+    }
+
+    /**
+     * Logs a CQL query at {@code TRACE} level, if this level is enabled or if the debug mode is enabled on the
+     * connection.
+     *
+     * @param logger     The logger to use.
+     * @param connection The Cassandra connection used to execute the CQL query.
+     * @param cql        The CQL query.
+     */
+    public static void traceCqlQuery(final Logger logger,
+                                     final CassandraConnection connection,
+                                     final String cql) {
+        if (logger.isTraceEnabled() || connection.isDebugMode()) {
+            logger.trace("CQL: {}", cql);
+        }
+    }
+
+    /**
+     * Builds a Cassandra driver result set from a list of rows, usable to build a {@link java.sql.ResultSet}.
+     *
+     * @param columnDefinitions The definitions of each column in the result set.
+     * @param rows              The rows in the result set.
+     * @return The result set instance.
+     * @throws IllegalArgumentException if the column definitions is {@code null}.
+     */
+    public static ResultSet buildDriverResultSet(final ColumnDefinitions columnDefinitions, final List<Row> rows) {
+        if (columnDefinitions == null) {
+            throw new IllegalArgumentException(INVALID_COLUMN_DEFINITIONS);
+        }
+
+        return new ResultSet() {
+            @Override
+            public boolean wasApplied() {
+                return true;
+            }
+
+            @Nonnull
+            @Override
+            public ColumnDefinitions getColumnDefinitions() {
+                return columnDefinitions;
+            }
+
+            @Nonnull
+            @Override
+            public List<ExecutionInfo> getExecutionInfos() {
+                return new ArrayList<>();
+            }
+
+            @Override
+            public boolean isFullyFetched() {
+                return true;
+            }
+
+            @Override
+            public int getAvailableWithoutFetching() {
+                return 0;
+            }
+
+            @Nonnull
+            @Override
+            public Iterator<Row> iterator() {
+                if (rows == null) {
+                    return emptyIterator();
+                }
+                return rows.iterator();
+            }
+        };
     }
 
 }

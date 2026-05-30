@@ -85,8 +85,20 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
+    public void closeOnCompletion() throws SQLException {
+        checkNotClosed();
+        this.preparedStatement.closeOnCompletion();
+    }
+
+    @Override
     public boolean isClosed() {
         return this.preparedStatement == null || this.preparedStatement.isClosed();
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        checkNotClosed();
+        return this.preparedStatement.isCloseOnCompletion();
     }
 
     @Override
@@ -727,7 +739,9 @@ class ManagedPreparedStatement extends AbstractStatement implements PreparedStat
     }
 
     @Override
-    public void setObject(final int parameterIndex, final Object x, final int targetSqlType,
+    public void setObject(final int parameterIndex,
+                          final Object x,
+                          final int targetSqlType,
                           final int scaleOrLength) throws SQLException {
         checkNotClosed();
         try {

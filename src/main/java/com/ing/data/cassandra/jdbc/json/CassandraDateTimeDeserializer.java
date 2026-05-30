@@ -15,16 +15,16 @@
 
 package com.ing.data.cassandra.jdbc.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.util.ClassUtil;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.exc.InvalidFormatException;
 
-import java.io.IOException;
 import java.time.DateTimeException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+
+import static tools.jackson.databind.util.ClassUtil.nameOf;
 
 /**
  * Deserializer for {@link OffsetDateTime}s in the context of a JSON returned by a CQL query.
@@ -33,11 +33,11 @@ import java.time.format.DateTimeFormatter;
  *     type {@code timestamp}.
  * </p>
  */
-public class CassandraDateTimeDeserializer extends JsonDeserializer<OffsetDateTime> {
+public class CassandraDateTimeDeserializer extends ValueDeserializer<OffsetDateTime> {
 
     @Override
-    public OffsetDateTime deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
-        throws IOException {
+    public OffsetDateTime deserialize(final JsonParser jsonParser,
+                                      final DeserializationContext deserializationContext) {
         String value = jsonParser.getValueAsString();
         if (value != null) {
             // Ensure the offset value is valid and can be parsed to an OffsetDateTime.
@@ -47,7 +47,7 @@ public class CassandraDateTimeDeserializer extends JsonDeserializer<OffsetDateTi
                 return OffsetDateTime.parse(value, dateTimeFormatter);
             } catch (final DateTimeException e) {
                 final String msg = String.format("Cannot deserialize value of type %s from: '%s'",
-                    ClassUtil.nameOf(OffsetDateTime.class), value);
+                    nameOf(OffsetDateTime.class), value);
                 throw InvalidFormatException.from(jsonParser, msg, value, OffsetDateTime.class);
             }
         } else {

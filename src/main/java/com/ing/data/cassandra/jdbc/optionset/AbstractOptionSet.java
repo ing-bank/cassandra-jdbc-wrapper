@@ -16,20 +16,19 @@
 package com.ing.data.cassandra.jdbc.optionset;
 
 import com.ing.data.cassandra.jdbc.CassandraConnection;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Abstract option set to set common parameter used by option sets.
  */
 public abstract class AbstractOptionSet implements OptionSet {
 
+    /**
+     * The connection to which the option set is applied.
+     */
+    @Getter
+    @Setter
     private CassandraConnection connection;
 
-    @Override
-    public CassandraConnection getConnection() {
-        return this.connection;
-    }
-
-    public void setConnection(final CassandraConnection connection) {
-        this.connection = connection;
-    }
 }

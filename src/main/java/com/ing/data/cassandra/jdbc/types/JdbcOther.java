@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of unknown or other CQL types (corresponding Java type: {@link String}).
  */
@@ -66,11 +68,7 @@ public class JdbcOther extends AbstractJdbcType<String> {
     }
 
     public String getString(final Object obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

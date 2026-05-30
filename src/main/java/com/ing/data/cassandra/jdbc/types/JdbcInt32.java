@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code INT} CQL type (corresponding Java type: {@link Integer}).
  * <p>CQL type description: 32-bit signed integer.</p>
@@ -64,11 +66,7 @@ public class JdbcInt32 extends AbstractJdbcType<Integer> {
 
     @Override
     public String toString(final Integer obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

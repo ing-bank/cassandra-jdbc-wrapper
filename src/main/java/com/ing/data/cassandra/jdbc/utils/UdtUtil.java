@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toCollection;
+
 /**
  * Utility methods used for User-defined types (UDTs) handling.
  */
@@ -48,7 +50,7 @@ public final class UdtUtil {
         if (list != null) {
             return list.stream()
                 .map(item -> udtValueUsingFormattedContents((UdtValue) item))
-                .collect(Collectors.toList());
+                .toList();
         }
         return null;
     }
@@ -65,7 +67,7 @@ public final class UdtUtil {
         if (set != null) {
             return set.stream()
                 .map(item -> udtValueUsingFormattedContents((UdtValue) item))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                .collect(toCollection(LinkedHashSet::new));
         }
         return null;
     }

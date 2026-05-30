@@ -36,9 +36,11 @@ import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.sql.ConnectionBuilder;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,7 +93,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         try {
             Class.forName("com.ing.data.cassandra.jdbc.CassandraDriver");
         } catch (final ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new DriverNotFoundException(e);
         }
     }
 
@@ -119,50 +121,9 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
         this.setDatabaseName(keyspace);
     }
 
-    /**
-     * Constructor.
-     *
-     * @param contactPoints The contact points.
-     * @param keyspace      The keyspace.
-     * @param user          The username used to connect.
-     * @param password      The password used to connect.
-     * @param consistency   The consistency level.
-     * @deprecated Use {@link #CassandraDataSource(List, String)} and specific setters instead. This constructor will
-     * be removed in a future release.
-     */
-    @Deprecated
-    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String consistency) {
-        this(contactPoints, keyspace, user, password, consistency, null);
-    }
-
-    /**
-     * Constructor specifying a local datacenter (required to use {@link DefaultLoadBalancingPolicy}).
-     *
-     * @param contactPoints     The contact points.
-     * @param keyspace          The keyspace.
-     * @param user              The username used to connect.
-     * @param password          The password used to connect.
-     * @param consistency       The consistency level.
-     * @param localDataCenter   The local datacenter.
-     * @deprecated Use {@link #CassandraDataSource(List, String)} and specific setters instead. This constructor will
-     * be removed in a future release.
-     */
-    @Deprecated
-    public CassandraDataSource(final List<ContactPoint> contactPoints, final String keyspace, final String user,
-                               final String password, final String consistency,
-                               final String localDataCenter) {
-        this.setContactPoints(contactPoints);
-        this.setConsistency(consistency);
-        this.setLocalDataCenter(localDataCenter);
-        this.setDatabaseName(keyspace);
-        this.setUser(user);
-        this.setPassword(password);
-    }
-
     @Override
     public CassandraConnection getConnection() throws SQLException {
-        return getConnection(null, null);
+        return getConnection(getUser(), getPassword());
     }
 
     @Override
@@ -226,6 +187,16 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     @Override
     public PooledCassandraConnection getPooledConnection(final String user, final String password) throws SQLException {
         return new PooledCassandraConnection(getConnection(user, password));
+    }
+
+    @Override
+    public ConnectionBuilder createConnectionBuilder() throws SQLException {
+        return new CassandraConnectionBuilder(this);
+    }
+
+    @Override
+    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     /**
@@ -914,7 +885,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
     /**
      * Sets the AWS region of the contact point of the Amazon Keyspaces instance.
      *
-     * @param region The string representation of the region.
+     * @param region The string representation of the AWS region.
      */
     public void setAwsRegion(final String region) {
         this.setDataSourceProperty(TAG_AWS_REGION, region);
@@ -937,7 +908,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Gets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
      * are stored. If not defined, the value is the one returned by {@link #getAwsRegion()}.
      *
-     * @return .
+     * @return The AWS region.
      */
     public String getAwsSecretRegion() {
         return (String) this.properties.getOrDefault(TAG_AWS_SECRET_REGION,
@@ -948,7 +919,7 @@ public class CassandraDataSource implements ConnectionPoolDataSource, DataSource
      * Sets the AWS region of the Amazon Secret Manager in which the credentials of the user used for the connection
      * are stored.
      *
-     * @param region The string representation of the region.
+     * @param region The string representation of the AWS region.
      */
     public void setAwsSecretRegion(final String region) {
         this.setDataSourceProperty(TAG_AWS_SECRET_REGION, region);

@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code DOUBLE} CQL type (corresponding Java type: {@link Double}).
  * <p>CQL type description: 64-bit IEEE-754 floating point.</p>
@@ -61,11 +63,7 @@ public class JdbcDouble extends AbstractJdbcType<Double> {
 
     @Override
     public String toString(final Double obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

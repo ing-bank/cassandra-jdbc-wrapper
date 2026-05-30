@@ -13,6 +13,7 @@
  */
 package com.ing.data.cassandra.jdbc;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
@@ -46,9 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Force to execute tests in a certain order to avoid "NoNodeAvailableException: No node was available to execute the
 // query" if several tests are executed simultaneously.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Slf4j
 class BatchStatementsUnitTest extends UsingCassandraContainerTest {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BatchStatementsUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace_batch";
     private static CassandraConnection sqlConnection2 = null;
@@ -258,7 +256,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         // Randomly put a statement inserting a null primary key (not allowed) into the batch.
         final int invalidStmtIndex = new Random().nextInt(7) + 1;
-        LOG.debug("Invalid statement at batch index: {}", invalidStmtIndex);
+        log.debug("Invalid statement at batch index: {}", invalidStmtIndex);
         for (int i = 0; i < 10; i++) {
             if (i == invalidStmtIndex) {
                 stmt2.addBatch("INSERT INTO tbl_batch_test (keyValue, listValue) VALUES(NULL, [1, 3, 12345])");
@@ -266,7 +264,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
                 stmt2.addBatch("INSERT INTO tbl_batch_test (keyValue, listValue) VALUES('" + i + "', [1, 3, 12345])");
             }
         }
-        LOG.debug("Add a statement returning values at the end of the batch (not allowed by executeBatch() method)");
+        log.debug("Add a statement returning values at the end of the batch (not allowed by executeBatch() method)");
         stmt2.addBatch("SELECT keyValue, listValue FROM tbl_batch_test");
 
         final BatchUpdateException ex = assertThrows(BatchUpdateException.class, stmt2::executeBatch);
@@ -298,7 +296,7 @@ class BatchStatementsUnitTest extends UsingCassandraContainerTest {
 
         // Randomly put a statement inserting a null primary key (not allowed) into the batch.
         final int invalidStmtIndex = new Random().nextInt(7) + 1;
-        LOG.debug("Invalid statement at batch index: {}", invalidStmtIndex);
+        log.debug("Invalid statement at batch index: {}", invalidStmtIndex);
         for (int i = 0; i < 10; i++) {
             if (i == invalidStmtIndex) {
                 statement.setString(1, null);

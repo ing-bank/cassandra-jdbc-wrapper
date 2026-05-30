@@ -19,10 +19,9 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -34,7 +33,6 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLSyntaxErrorException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +44,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_FOR_SECRET_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.AWS_REGION_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
@@ -57,13 +56,17 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOKEN_REQUIRED;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.URI_IS_SIMPLE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.CODEC_INSTANTIATION_FAILED;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_CODEC_CLASS;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * A set of static utility methods and constants used to parse the JDBC URL used to establish a connection to a
  * Cassandra database.
  */
 @SuppressWarnings("unchecked")
+@Slf4j
 public final class JdbcUrlUtil {
 
     /**
@@ -80,13 +83,6 @@ public final class JdbcUrlUtil {
      * JDBC protocol for Cassandra connection.
      */
     public static final String PROTOCOL = "jdbc:cassandra:";
-
-    /**
-     * JDBC protocol for Cassandra DBaaS connection.
-     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
-     * protocol will be removed in a future version.
-     */
-    public static final String PROTOCOL_DBAAS = "jdbc:cassandra:dbaas:";
 
     /**
      * JDBC protocol for Cassandra DBaaS connection.
@@ -429,19 +425,17 @@ public final class JdbcUrlUtil {
 
     /**
      * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
-     * a case, the hostname can be ignored.
-     * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_DBAAS}).
-     * @deprecated Use {@link #PROTOCOL_ASTRA} for connections to AstraDB. The support of {@value #PROTOCOL_DBAAS}
-     * protocol will be removed in a future version.
-     */
-    public static final String TAG_DBAAS_CONNECTION = "isDbaasConnection";
-
-    /**
-     * Property name used to determine if the current connection is established to an AstraDB cloud database. In such
-     * a case, the hostname must contain the database name in AstraDB.
+     * a case, the hostname must contain the database name in AstraDB, or it must be empty and a secure connect bundle
+     * (SCB) must be provided (see {@link #TAG_SCB_REQUIRED}).
      * This property is mapped from the JDBC URL protocol (see {@link #PROTOCOL_ASTRA}).
      */
     public static final String TAG_ASTRA_CONNECTION = "isAstraConnection";
+
+    /**
+     * Property name used to determine if the current connection is established to an AstraDB cloud database and
+     * requires a secure connect bundle (SCB). In such a case, the path to the secure connect bundle must be provided.
+     */
+    public static final String TAG_SCB_REQUIRED = "isSecureConnectBundleRequired";
 
     /**
      * Property name used to determine if the current connection is established to an Amazon Keyspaces database.
@@ -461,8 +455,6 @@ public final class JdbcUrlUtil {
      */
     public static final String TAG_CUSTOM_CODECS = "customCodecs";
 
-    static final Logger LOG = LoggerFactory.getLogger(JdbcUrlUtil.class);
-
     private static final String HOST_SEPARATOR = "--";
     private static final String IPV6_FAKE_HOST = "ipv6_addr_%d";
 
@@ -473,8 +465,8 @@ public final class JdbcUrlUtil {
     /**
      * Parses a URL for the Cassandra JDBC Driver.
      * <p>
-     *     The URL must start with the protocol {@value #PROTOCOL} or {@value #PROTOCOL_DBAAS} for a connection to a
-     *     cloud database.
+     *     The URL must start with the protocol {@value #PROTOCOL}, or {@value PROTOCOL_AWS} or
+     *     {@value #PROTOCOL_ASTRA} for a connection to a cloud database.
      *     The URI part (the "sub-name") must contain a host, an optional port and optional keyspace name, for example:
      *     "//localhost:9160/Test1", except for a connection to a cloud database, in this case, a simple keyspace with
      *     a secure connect bundle is sufficient, for example: "///Test1?secureconnectbundle=/path/to/bundle.zip".
@@ -499,13 +491,6 @@ public final class JdbcUrlUtil {
                 isAstraConnection = true;
                 props.put(TAG_ASTRA_CONNECTION, true);
             }
-            // NOTE: Protocol jdbc:cassandra:dbaas is deprecated and will be removed in a future version.
-            boolean isDbaasConnection = false;
-            if (url.startsWith(PROTOCOL_DBAAS)) {
-                uriStartIndex = PROTOCOL_DBAAS.length();
-                isDbaasConnection = true;
-                props.put(TAG_DBAAS_CONNECTION, true);
-            }
             // Handle specific protocol for Amazon Keyspaces connections.
             boolean isAwsConnection = false;
             if (url.startsWith(PROTOCOL_AWS)) {
@@ -519,7 +504,15 @@ public final class JdbcUrlUtil {
             final Map<String, String> ipV6Map = uriParsingResult.getRight();
             final URI uri = uriParsingResult.getLeft();
 
-            if (!isDbaasConnection) {
+            boolean isSecureConnectBundleRequired = false;
+            if (isAstraConnection) {
+                if (StringUtils.isNotBlank(uri.getAuthority())) {
+                    props.put(TAG_ASTRA_DATABASE_NAME, uri.getAuthority());
+                } else {
+                    isSecureConnectBundleRequired = true;
+                }
+                props.put(TAG_SCB_REQUIRED, isSecureConnectBundleRequired);
+            } else {
                 try {
                     if (StringUtils.isBlank(uri.getAuthority())) {
                         throw new SQLNonTransientConnectionException(HOST_IN_URL);
@@ -533,13 +526,6 @@ public final class JdbcUrlUtil {
                 } catch (final RuntimeException e) {
                     throw new SQLNonTransientConnectionException(e.getMessage());
                 }
-            }
-
-            if (isAstraConnection) {
-                if (StringUtils.isBlank(uri.getAuthority())) {
-                    throw new SQLNonTransientConnectionException(HOST_IN_URL);
-                }
-                props.put(TAG_ASTRA_DATABASE_NAME, uri.getAuthority());
             }
 
             String keyspace = uri.getPath();
@@ -595,12 +581,12 @@ public final class JdbcUrlUtil {
                 }
                 if (params.containsKey(KEY_CLOUD_SECURE_CONNECT_BUNDLE)) {
                     props.setProperty(TAG_CLOUD_SECURE_CONNECT_BUNDLE, params.get(KEY_CLOUD_SECURE_CONNECT_BUNDLE));
-                } else if (isDbaasConnection) {
+                } else if (isSecureConnectBundleRequired) {
                     throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
                 }
                 if (params.containsKey(KEY_TOKEN)) {
                     props.setProperty(TAG_TOKEN, params.get(KEY_TOKEN));
-                } else if (isAstraConnection) {
+                } else if (isAstraConnection && !isSecureConnectBundleRequired) {
                     throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
                 }
                 if (params.containsKey(KEY_ASTRA_REGION)) {
@@ -640,7 +626,7 @@ public final class JdbcUrlUtil {
                     props.setProperty(TAG_CUSTOM_CODECS, params.get(KEY_CUSTOM_CODECS));
                 }
                 handleAwsProperties(props, params, isAwsConnection);
-            } else if (isDbaasConnection) {
+            } else if (isSecureConnectBundleRequired) {
                 throw new SQLNonTransientConnectionException(SECURECONENCTBUNDLE_REQUIRED);
             } else if (isAstraConnection) {
                 throw new SQLNonTransientConnectionException(TOKEN_REQUIRED);
@@ -649,18 +635,19 @@ public final class JdbcUrlUtil {
             }
         }
 
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("URL: '{}' parsed to: {}", url, props);
+        if (log.isTraceEnabled()) {
+            log.trace("URL: '{}' parsed to: {}", url, props);
         }
 
         return props;
     }
 
-    private static void handleAwsProperties(final Properties props, final Map<String, String> params,
+    private static void handleAwsProperties(final Properties props,
+                                            final Map<String, String> params,
                                             final boolean isAwsConnection) throws SQLException {
         if (isAwsConnection) {
-            props.setProperty(TAG_ENABLE_SSL, Boolean.TRUE.toString());
-            props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, Boolean.FALSE.toString());
+            props.setProperty(TAG_ENABLE_SSL, TRUE.toString());
+            props.setProperty(TAG_SSL_HOSTNAME_VERIFICATION, FALSE.toString());
         }
 
         boolean awsRegionIsDefined = false;
@@ -713,7 +700,8 @@ public final class JdbcUrlUtil {
         return new ImmutablePair<>(uri, ipV6Map);
     }
 
-    private static List<ContactPoint> parseContactPoints(final String toParse, final Map<String, String> ipV6Map,
+    private static List<ContactPoint> parseContactPoints(final String toParse,
+                                                         final Map<String, String> ipV6Map,
                                                          final boolean isAwsConnection) {
         // Check whether the value to parse ends with a port. If yes, we'll use this port as the common port for all
         // the hosts except if another port is specified for the host. When no port is specified at all, use the default
@@ -742,10 +730,10 @@ public final class JdbcUrlUtil {
                     final String host = splitPart[0];
                     return ContactPoint.of(ipV6Map.getOrDefault(host, host), port);
                 } catch (final Exception e) {
-                    throw new RuntimeException(String.format(INVALID_CONTACT_POINT, part));
+                    throw new IllegalArgumentException(String.format(INVALID_CONTACT_POINT, part));
                 }
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -761,7 +749,7 @@ public final class JdbcUrlUtil {
         // Make the keyspace always start with a "/" for URI.
         String keyspace = props.getProperty(TAG_DATABASE_NAME);
         if (keyspace != null) {
-            keyspace = StringUtils.prependIfMissing(keyspace, "/");
+            keyspace = CS.prependIfMissing(keyspace, "/");
         }
 
         String hostsAndPorts = null;
@@ -773,12 +761,12 @@ public final class JdbcUrlUtil {
         }
 
         final boolean isAstraConnection = (boolean) props.getOrDefault(TAG_ASTRA_CONNECTION, false);
+        final boolean isSecureConnectBundleRequired = (boolean) props.getOrDefault(TAG_SCB_REQUIRED, false);
         if (isAstraConnection) {
             hostsAndPorts = props.getProperty(TAG_ASTRA_DATABASE_NAME);
         }
 
-        final boolean isDbaasConnection = (boolean) props.getOrDefault(TAG_DBAAS_CONNECTION, false);
-        if (hostsAndPorts == null && !isDbaasConnection) {
+        if (hostsAndPorts == null && !isSecureConnectBundleRequired) {
             throw new SQLNonTransientConnectionException(HOST_REQUIRED);
         }
 
@@ -790,8 +778,8 @@ public final class JdbcUrlUtil {
             throw new SQLNonTransientConnectionException(e);
         }
 
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Sub-name: '{}' created from: {}", uri, props);
+        if (log.isTraceEnabled()) {
+            log.trace("Sub-name: '{}' created from: {}", uri, props);
         }
 
         return uri.toString();
@@ -810,7 +798,7 @@ public final class JdbcUrlUtil {
         if (StringUtils.isNotBlank(consistency)) {
             sb.append(KEY_CONSISTENCY).append("=").append(consistency);
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             return sb.toString().trim();
         } else {
             return null;
@@ -875,7 +863,7 @@ public final class JdbcUrlUtil {
                                                                    final String parameters) {
         final Map<DriverOption, Object> policyParametersMap = new HashMap<>();
         String primaryReconnectionPolicyClass = primaryReconnectionPolicy;
-        if (!primaryReconnectionPolicy.contains(".")) {
+        if (!primaryReconnectionPolicy.contains(DOT)) {
             primaryReconnectionPolicyClass = "com.datastax.oss.driver.internal.core.connection."
                 + primaryReconnectionPolicy;
         }
@@ -922,26 +910,28 @@ public final class JdbcUrlUtil {
      * @param customCodecs The string containing the custom codecs class names to instantiate.
      * @return A list of instantiated codecs parsed from the given string.
      */
-    public static List<TypeCodec<?>> parseCustomCodecs(final String customCodecs) {
+    public static List<TypeCodec<Object>> parseCustomCodecs(final String customCodecs) {
         if (StringUtils.isBlank(customCodecs)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return Arrays.stream(customCodecs.split(COMMA))
             .map(String::trim)
-            .map(codecClassName -> {
-                try {
-                    final Class<?> codecClass = Class.forName(codecClassName);
-                    if (!TypeCodec.class.isAssignableFrom(codecClass)) {
-                        LOG.warn(INVALID_CODEC_CLASS, codecClassName);
-                        return null;
-                    }
-                    return (TypeCodec<?>) codecClass.getDeclaredConstructor().newInstance();
-                } catch (final Exception e) {
-                    LOG.warn(CODEC_INSTANTIATION_FAILED, codecClassName, e);
-                }
-                return null;
-            })
+            .map(JdbcUrlUtil::getCustomCodecInstance)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
+    }
+
+    private static TypeCodec<Object> getCustomCodecInstance(final String codecClassName) {
+        try {
+            final Class<?> codecClass = Class.forName(codecClassName);
+            if (!TypeCodec.class.isAssignableFrom(codecClass)) {
+                log.warn(INVALID_CODEC_CLASS, codecClassName);
+                return null;
+            }
+            return (TypeCodec<Object>) codecClass.getDeclaredConstructor().newInstance();
+        } catch (final Exception e) {
+            log.warn(CODEC_INSTANTIATION_FAILED, codecClassName, e);
+        }
+        return null;
     }
 }

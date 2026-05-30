@@ -24,38 +24,38 @@ import com.ing.data.cassandra.jdbc.CassandraMetadataResultSet;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.types.AbstractJdbcType;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_PRECISION;
 import static com.ing.data.cassandra.jdbc.types.AbstractJdbcType.DEFAULT_SCALE;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE;
 import static java.sql.DatabaseMetaData.typeNullable;
 import static java.sql.DatabaseMetaData.typePredBasic;
 import static java.sql.Types.JAVA_OBJECT;
+import static java.util.Comparator.comparing;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to types.
  */
+@Slf4j
 public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuilder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TypeMetadataResultSetBuilder.class);
 
     /**
      * Constructor.
@@ -131,7 +131,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         // Parse the fully-qualified type name, if necessary.
         String schemaName = schemaPattern;
         final AtomicReference<String> typeName = new AtomicReference<>(Objects.toString(typeNamePattern, "%"));
-        if (typeName.get().contains(".")) {
+        if (typeName.get().contains(DOT)) {
             final String[] fullyQualifiedTypeNameParts = typeNamePattern.split("\\.");
             schemaName = fullyQualifiedTypeNameParts[0];
             typeName.set(fullyQualifiedTypeNameParts[1]);
@@ -157,10 +157,9 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         }, null);
 
         // Results should all have the same DATA_TYPE and TYPE_CAT so just sort them by TYPE_SCHEM then TYPE_NAME.
-        udtsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
+        udtsRows.sort(comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(udtsRows));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(udtsRows));
     }
 
     /**
@@ -281,8 +280,8 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         }
 
         // Sort results by DATA_TYPE.
-        types.sort(Comparator.comparing(row -> row.getInt(DATA_TYPE)));
-        return CassandraMetadataResultSet.buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(types));
+        types.sort(comparing(row -> row.getInt(DATA_TYPE)));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(types));
     }
 
     /**
@@ -360,7 +359,8 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
      * {@link DatabaseMetaData#getAttributes(String, String, String, String)}.
      * @throws SQLException when something went wrong during the creation of the result set.
      */
-    public CassandraMetadataResultSet buildAttributes(final String schemaPattern, final String typeNamePattern,
+    public CassandraMetadataResultSet buildAttributes(final String schemaPattern,
+                                                      final String typeNamePattern,
                                                       final String attributesNamePattern) throws SQLException {
         final String catalog = this.connection.getCatalog();
         final ArrayList<MetadataRow> attributesRows = new ArrayList<>();
@@ -391,7 +391,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         // Parse the fully-qualified type name, if necessary.
         String schemaName = schemaPattern;
         final AtomicReference<String> typeName = new AtomicReference<>(typeNamePattern);
-        if (typeNamePattern.contains(".")) {
+        if (typeNamePattern.contains(DOT)) {
             final String[] fullyQualifiedTypeNameParts = typeNamePattern.split("\\.");
             schemaName = fullyQualifiedTypeNameParts[0];
             typeName.set(fullyQualifiedTypeNameParts[1]);
@@ -432,7 +432,7 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
                         try {
                             jdbcType = getTypeForComparator(attrType.toString()).getJdbcType();
                         } catch (final Exception e) {
-                            LOG.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, attrType, e.getMessage());
+                            log.warn(JDBC_TYPE_NOT_FOUND_FOR_CQL_TYPE, attrType, e.getMessage());
                         }
 
                         final MetadataRow row = new MetadataRow().withTemplate(rowTemplate,
@@ -464,11 +464,10 @@ public class TypeMetadataResultSetBuilder extends AbstractMetadataResultSetBuild
         }, null);
 
         // Results should all have the same TYPE_CAT so just sort them by TYPE_SCHEM, TYPE_NAME then ORDINAL_POSITION.
-        attributesRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
+        attributesRows.sort(comparing(row -> ((MetadataRow) row).getString(TYPE_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(TYPE_NAME))
             .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(attributesRows));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(attributesRows));
     }
 
 }

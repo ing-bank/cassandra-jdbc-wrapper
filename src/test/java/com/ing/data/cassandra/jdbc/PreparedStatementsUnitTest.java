@@ -23,6 +23,10 @@ import com.ing.data.cassandra.jdbc.types.JdbcBoolean;
 import com.ing.data.cassandra.jdbc.types.JdbcInt32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
@@ -36,7 +40,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -48,11 +51,16 @@ import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.UUID;
+import java.util.stream.Stream;
 
+import static com.ing.data.cassandra.jdbc.testing.AssertionsUtils.assertTimeEquals;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_CQL_IDENTIFIER;
 import static java.time.ZoneOffset.UTC;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
@@ -308,7 +316,7 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         ResultSet resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key1';");
         assertTrue(resultSet.next());
         // Note: Cassandra max precision for timestamps is milliseconds, not nanoseconds
-        assertEquals(Time.valueOf(LocalTime.of(15, 35, 40, 123000000)), resultSet.getTime("col_time"));
+        assertTimeEquals(LocalTime.of(15, 35, 40, 123000000), resultSet.getTime("col_time"));
         assertEquals(Date.valueOf(LocalDate.of(2023, Month.OCTOBER, 31)), resultSet.getDate("col_date"));
         assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, Month.OCTOBER, 31, 16, 40, 25, 123000000)),
             resultSet.getTimestamp("col_ts"));
@@ -318,8 +326,7 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
             .atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime());
         resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key2';");
         assertTrue(resultSet.next());
-        assertEquals(Time.valueOf(OffsetTime.of(15, 35, 40, 123000000, UTC).toLocalTime()),
-            resultSet.getTime("col_time"));
+        assertTimeEquals(OffsetTime.of(15, 35, 40, 123000000, UTC).toLocalTime(), resultSet.getTime("col_time"));
         assertEquals(expectedTimestamp, resultSet.getTimestamp("col_ts"));
 
         resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key3';");
@@ -329,5 +336,59 @@ class PreparedStatementsUnitTest extends UsingCassandraContainerTest {
         resultSet = statement.executeQuery("SELECT * FROM test_ps_datetimes WHERE col_key = 'key4';");
         assertTrue(resultSet.next());
         assertEquals(expectedTimestamp, resultSet.getTimestamp("col_ts"));
+    }
+
+    @Test
+    void givenPreparedStatement_whenCloseOnCompletion_statementIsFlaggedAsExpected() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertFalse(statement.isCloseOnCompletion());
+        statement.closeOnCompletion();
+        assertTrue(statement.isCloseOnCompletion());
+    }
+
+    static Stream<Arguments> buildEnquoteIdentifierTestCases() {
+        return Stream.of(
+            Arguments.of("Hello", false, "Hello"),
+            Arguments.of("Hello", true, "\"Hello\""),
+            Arguments.of("G'day", false, "\"G'day\""),
+            Arguments.of("1234567890", true, "\"1234567890\""),
+            Arguments.of("1234567890", false, "\"1234567890\""),
+            Arguments.of("\"Valid\"\"identifier\"", false, "\"Valid\"\"identifier\""),
+            Arguments.of("\"Bruce Wayne\"", false, "\"Bruce Wayne\""),
+            Arguments.of("\"Bruce Wayne\"", true, "\"Bruce Wayne\""),
+            Arguments.of("GoodDay123$", false, "\"GoodDay123$\"")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("buildEnquoteIdentifierTestCases")
+    void givenIdentifier_whenEnquote_returnExpectedIdentifier(final String identifier,
+                                                              final boolean alwaysQuote,
+                                                              final String expectedIdentifier) throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertEquals(expectedIdentifier, statement.enquoteIdentifier(identifier, alwaysQuote));
+        statement.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "Hello\"World",
+        "\"Hello\"World\"",
+        "A\u0000bc_123",
+        "Abcdefghikj1234567890klmnopqrst1234567890uvwxyz_12345",
+        EMPTY
+    })
+    void givenInvalidIdentifier_whenEnquote_throwSqlException(final String identifier) throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        final SQLException ex = assertThrows(SQLException.class, () -> statement.enquoteIdentifier(identifier, true));
+        assertEquals(INVALID_CQL_IDENTIFIER, ex.getMessage());
+        statement.close();
+    }
+
+    @Test
+    void givenNullIdentifier_whenEnquote_throwNullPointerException() throws Exception {
+        final Statement statement = sqlConnection.createStatement();
+        assertThrows(NullPointerException.class, () -> statement.enquoteIdentifier(null, false));
+        statement.close();
     }
 }

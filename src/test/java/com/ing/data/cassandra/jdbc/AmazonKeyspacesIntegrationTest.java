@@ -16,6 +16,7 @@ package com.ing.data.cassandra.jdbc;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,10 +25,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.profiles.ProfileProperty;
@@ -46,7 +45,6 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.JSSE_TRUSTSTORE_PROPE
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 
 /**
@@ -77,9 +75,9 @@ import static software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID;
 @Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 @Testcontainers
+@Slf4j
 class AmazonKeyspacesIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmazonKeyspacesIntegrationTest.class);
     private static final Dotenv DOTENV = Dotenv.load();
     private static final String AWS_REGION = DOTENV.get("AWS_REGION");
     private static final String AWS_USER = DOTENV.get("AWS_USER");
@@ -99,47 +97,72 @@ class AmazonKeyspacesIntegrationTest {
         new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
             .withEnv(AWS_ACCESS_KEY_ID.toUpperCase(Locale.ROOT), AWS_ACCESS_KEY)
             .withEnv(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase(Locale.ROOT), AWS_SECRET_ACCESS_KEY)
-            .withServices(SECRETSMANAGER);
+            .withServices("secretsmanager");
 
     @BeforeAll
     static void setupAwsKeyspaces() {
         /* Valid Amazon Keyspaces endpoints:
          * 1. Global
          *    cassandra.us-east-1.amazonaws.com
+         *    cassandra.us-east-1.api.aws
          *    cassandra-fips.us-east-1.amazonaws.com
+         *    cassandra-fips.us-east-1.api.aws
          *    cassandra.us-east-2.amazonaws.com
+         *    cassandra.us-east-2.api.aws
          *    cassandra.us-west-1.amazonaws.com
+         *    cassandra.us-west-1.api.aws
          *    cassandra.us-west-2.amazonaws.com
+         *    cassandra.us-west-2.api.aws
          *    cassandra-fips.us-west-2.amazonaws.com
+         *    cassandra-fips.us-west-2.api.aws
          *    cassandra.af-south-1.amazonaws.com
+         *    cassandra.af-south-1.api.aws
          *    cassandra.ap-east-1.amazonaws.com
+         *    cassandra.ap-east-1.api.aws
          *    cassandra.ap-south-1.amazonaws.com
+         *    cassandra.ap-south-1.api.aws
          *    cassandra.ap-northeast-1.amazonaws.com
+         *    cassandra.ap-northeast-1.api.aws
          *    cassandra.ap-northeast-2.amazonaws.com
+         *    cassandra.ap-northeast-2.api.aws
          *    cassandra.ap-southeast-1.amazonaws.com
+         *    cassandra.ap-southeast-1.api.aws
          *    cassandra.ap-southeast-2.amazonaws.com
+         *    cassandra.ap-southeast-2.api.aws
          *    cassandra.ca-central-1.amazonaws.com
+         *    cassandra.ca-central-1.api.aws
          *    cassandra.eu-central-1.amazonaws.com
+         *    cassandra.eu-central-1.api.aws
          *    cassandra.eu-west-1.amazonaws.com
+         *    cassandra.eu-west-1.api.aws
          *    cassandra.eu-west-2.amazonaws.com
+         *    cassandra.eu-west-2.api.aws
          *    cassandra.eu-west-3.amazonaws.com
+         *    cassandra.eu-west-3.api.aws
          *    cassandra.eu-north-1.amazonaws.com
+         *    cassandra.eu-north-1.api.aws
          *    cassandra.me-south-1.amazonaws.com
+         *    cassandra.me-south-1.api.aws
+         *    cassandra.me-central-1.amazonaws.com
+         *    cassandra.me-central-1.api.aws
          *    cassandra.sa-east-1.amazonaws.com
+         *    cassandra.sa-east-1.api.aws
          *
          * 2. AWS Gov Cloud (US)
          *    cassandra.us-gov-east-1.amazonaws.com
+         *    cassandra.us-gov-east-1.api.aws
          *    cassandra.us-gov-west-1.amazonaws.com
+         *    cassandra.us-gov-west-1.api.aws
          *
          * 3. China
          *    cassandra.cn-north-1.amazonaws.com.cn
          *    cassandra.cn-northwest-1.amazonaws.com.cn
          *
-         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Mar. 2025)
+         * See: https://docs.aws.amazon.com/keyspaces/latest/devguide/programmatic.endpoints.html (Jan. 2026)
          */
 
         if (canRunTests()) {
-            LOG.debug("AWS_* variables are provided, Amazon Keyspaces integration tests will be executed.");
+            log.debug("AWS_* variables are provided, Amazon Keyspaces integration tests will be executed.");
 
             /*
              * Configure truststore.
@@ -158,7 +181,7 @@ class AmazonKeyspacesIntegrationTest {
                 System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), AWS_SECRET_ACCESS_KEY);
             }
         } else {
-            LOG.debug("AWS_* variables are not defined, skipping Amazon Keyspaces integration tests.");
+            log.debug("AWS_* variables are not defined, skipping Amazon Keyspaces integration tests.");
         }
     }
 

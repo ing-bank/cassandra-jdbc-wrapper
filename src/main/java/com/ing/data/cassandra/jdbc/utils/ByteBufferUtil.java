@@ -15,15 +15,40 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.internal.core.type.codec.BooleanCodec;
+import com.datastax.oss.driver.internal.core.type.codec.CqlDurationCodec;
+import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
+import com.datastax.oss.driver.internal.core.type.codec.DecimalCodec;
+import com.datastax.oss.driver.internal.core.type.codec.InetCodec;
+import com.datastax.oss.driver.internal.core.type.codec.TimeCodec;
+import com.datastax.oss.driver.internal.core.type.codec.TimestampCodec;
+import com.datastax.oss.driver.internal.core.type.codec.UuidCodec;
+import com.datastax.oss.driver.internal.core.type.codec.VarIntCodec;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalTime;
+import java.util.UUID;
+
+import static com.datastax.oss.driver.api.core.ProtocolVersion.DEFAULT;
+import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_FOR_BYTEBUFFER;
+import static java.lang.String.format;
+import static java.nio.ByteBuffer.allocate;
+import static java.nio.ByteBuffer.wrap;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.copyOfRange;
 
 /**
  * Utility methods for {@link ByteBuffer} manipulation.
  * <p>
  *     This class is a partial copy of {@code org.apache.cassandra.utils.ByteBufferUtil} class from
- *     {@code cassandra-all} library.
+ *     {@code cassandra-all} library, with some additional methods.
  * </p>
  */
 public final class ByteBufferUtil {
@@ -39,7 +64,7 @@ public final class ByteBufferUtil {
      * @return The encoded string.
      */
     public static ByteBuffer bytes(final String s) {
-        return ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8));
+        return wrap(s.getBytes(UTF_8));
     }
 
     /**
@@ -49,7 +74,7 @@ public final class ByteBufferUtil {
      * @return The encoded byte.
      */
     public static ByteBuffer bytes(final byte b) {
-        return ByteBuffer.allocate(1).put(0, b);
+        return allocate(1).put(0, b);
     }
 
     /**
@@ -59,7 +84,7 @@ public final class ByteBufferUtil {
      * @return The encoded short.
      */
     public static ByteBuffer bytes(final short s) {
-        return ByteBuffer.allocate(2).putShort(0, s);
+        return allocate(2).putShort(0, s);
     }
 
     /**
@@ -69,7 +94,7 @@ public final class ByteBufferUtil {
      * @return The encoded int.
      */
     public static ByteBuffer bytes(final int i) {
-        return ByteBuffer.allocate(4).putInt(0, i);
+        return allocate(4).putInt(0, i);
     }
 
     /**
@@ -79,7 +104,7 @@ public final class ByteBufferUtil {
      * @return The encoded long.
      */
     public static ByteBuffer bytes(final long n) {
-        return ByteBuffer.allocate(8).putLong(0, n);
+        return allocate(8).putLong(0, n);
     }
 
     /**
@@ -89,7 +114,7 @@ public final class ByteBufferUtil {
      * @return The encoded float.
      */
     public static ByteBuffer bytes(final float f) {
-        return ByteBuffer.allocate(4).putFloat(0, f);
+        return allocate(4).putFloat(0, f);
     }
 
     /**
@@ -99,7 +124,59 @@ public final class ByteBufferUtil {
      * @return The encoded double.
      */
     public static ByteBuffer bytes(final double d) {
-        return ByteBuffer.allocate(8).putDouble(0, d);
+        return allocate(8).putDouble(0, d);
+    }
+
+
+    /**
+     * Encodes an object in a {@link ByteBuffer}. The type must be one of the following: {@link ByteBuffer},
+     * {@link String}, {@link Byte}, {@link Short}, {@link Integer}, {@link Long}, {@link Float}, {@link Double},
+     * {@link Boolean}, {@link BigDecimal}, {@link BigInteger}, {@link CqlDuration}, {@link InetAddress},
+     * {@link Date}, {@link Time}, {@link Timestamp}, or {@link UUID}.
+     *
+     * @param o The object to encode.
+     * @return The encoded object.
+     * @throws IllegalArgumentException when the type of the specified object is not supported.
+     */
+    public static ByteBuffer bytes(final Object o) throws IllegalArgumentException {
+        if (o instanceof ByteBuffer byteBuffer) {
+            return byteBuffer;
+        } else if (o instanceof String str) {
+            return bytes(str);
+        } else if (o instanceof Byte b) {
+            return bytes((byte) b);
+        } else if (o instanceof Short s) {
+            return bytes((short) s);
+        } else if (o instanceof Integer i) {
+            return bytes((int) i);
+        } else if (o instanceof Long l) {
+            return bytes((long) l);
+        } else if (o instanceof Float f) {
+            return bytes((float) f);
+        } else if (o instanceof Double d) {
+            return bytes((double) d);
+        } else if (o instanceof BigDecimal bd) {
+            return new DecimalCodec().encode(bd, DEFAULT);
+        } else if (o instanceof Boolean b) {
+            return new BooleanCodec().encodePrimitive(b, DEFAULT);
+        } else if (o instanceof BigInteger bi) {
+            return new VarIntCodec().encode(bi, DEFAULT);
+        } else if (o instanceof CqlDuration duration) {
+            return new CqlDurationCodec().encode(duration, DEFAULT);
+        } else if (o instanceof InetAddress inet) {
+            return new InetCodec().encode(inet, DEFAULT);
+        } else if (o instanceof UUID uuid) {
+            return new UuidCodec().encode(uuid, DEFAULT);
+        } else if (o instanceof Date date) {
+            return new DateCodec().encode(date.toLocalDate(), DEFAULT);
+        } else if (o instanceof Time time) {
+            // Ensure milliseconds are preserved.
+            return new TimeCodec().encode(LocalTime.ofNanoOfDay(time.getTime() * 1_000_000), DEFAULT);
+        } else if (o instanceof Timestamp ts) {
+            return new TimestampCodec().encode(ts.toInstant(), DEFAULT);
+        } else {
+            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE_FOR_BYTEBUFFER, o.getClass()));
+        }
     }
 
     /**
@@ -167,7 +244,7 @@ public final class ByteBufferUtil {
         final int length = buffer.remaining();
         if (buffer.hasArray()) {
             final int boff = buffer.arrayOffset() + buffer.position();
-            return Arrays.copyOfRange(buffer.array(), boff, boff + length);
+            return copyOfRange(buffer.array(), boff, boff + length);
         } else {
             final byte[] bytes = new byte[length];
             buffer.duplicate().get(bytes);

@@ -154,7 +154,8 @@ public abstract class AbstractMetadataResultSetBuilder {
      *                          consumer is used.
      */
     @SuppressWarnings("SameParameterValue")
-    void filterBySchemaNamePattern(final String schemaNamePattern, final Consumer<KeyspaceMetadata> consumer,
+    void filterBySchemaNamePattern(final String schemaNamePattern,
+                                   final Consumer<KeyspaceMetadata> consumer,
                                    final Consumer<KeyspaceMetadata> altConsumer) {
         filterByPattern(schemaNamePattern, this.connection.getClusterMetadata().getKeyspaces(),
             (pattern, keyspaceMetadata) -> pattern == null || StringUtils.EMPTY.equals(pattern)
@@ -176,8 +177,10 @@ public abstract class AbstractMetadataResultSetBuilder {
      *                          consumer is used.
      */
     @SuppressWarnings("SameParameterValue")
-    void filterByTableNamePattern(final String tableNamePattern, final KeyspaceMetadata keyspaceMetadata,
-                                  final Consumer<TableMetadata> consumer, final Consumer<TableMetadata> altConsumer) {
+    void filterByTableNamePattern(final String tableNamePattern,
+                                  final KeyspaceMetadata keyspaceMetadata,
+                                  final Consumer<TableMetadata> consumer,
+                                  final Consumer<TableMetadata> altConsumer) {
         filterByPattern(tableNamePattern, keyspaceMetadata.getTables(),
             (pattern, tableMetadata) -> pattern == null
                 || matchesPattern(pattern, tableMetadata.getName().asInternal()), consumer,
@@ -197,7 +200,8 @@ public abstract class AbstractMetadataResultSetBuilder {
      * @param altConsumer       The applied consumer function when there is no pattern match. If {@code null}, a no-op
      *                          consumer is used.
      */
-    void filterByColumnNamePattern(final String columnNamePattern, final TableMetadata tableMetadata,
+    void filterByColumnNamePattern(final String columnNamePattern,
+                                   final TableMetadata tableMetadata,
                                    final Consumer<ColumnMetadata> consumer,
                                    final Consumer<ColumnMetadata> altConsumer) {
         filterByPattern(columnNamePattern, tableMetadata.getColumns(),
@@ -217,7 +221,8 @@ public abstract class AbstractMetadataResultSetBuilder {
      *                            keyspace are filtered.
      * @param consumer            The applied bi-consumer function when there is a pattern match.
      */
-    void filterByFunctionNamePattern(final String functionNamePattern, final KeyspaceMetadata keyspaceMetadata,
+    void filterByFunctionNamePattern(final String functionNamePattern,
+                                     final KeyspaceMetadata keyspaceMetadata,
                                      final BiConsumer<FunctionSignature, FunctionMetadata> consumer) {
         for (final Map.Entry<FunctionSignature, FunctionMetadata> entry : keyspaceMetadata.getFunctions().entrySet()) {
             final FunctionSignature functionSignature = entry.getKey();
@@ -229,9 +234,11 @@ public abstract class AbstractMetadataResultSetBuilder {
         }
     }
 
-    <M> void filterByPattern(final String pattern, final Map<CqlIdentifier, M> metadataMap,
+    <M> void filterByPattern(final String pattern,
+                             final Map<CqlIdentifier, M> metadataMap,
                              final BiPredicate<String, M> patternMatcher,
-                             final Consumer<M> consumer, final Consumer<M> altConsumer) {
+                             final Consumer<M> consumer,
+                             final Consumer<M> altConsumer) {
         for (final Map.Entry<CqlIdentifier, M> entry : metadataMap.entrySet()) {
             final M entityMetadata = entry.getValue();
             if (patternMatcher.test(pattern, entityMetadata)) {

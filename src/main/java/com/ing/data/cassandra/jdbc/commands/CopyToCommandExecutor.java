@@ -22,32 +22,38 @@ import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
 import com.opencsv.ResultSetHelperService;
-import org.apache.commons.io.IOUtils;
+import jakarta.annotation.Nonnull;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.translateFilename;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.milliOfDayToLocalTime;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.CANNOT_WRITE_CSV_FILE;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.COUNTING_EXPORTED_ROWS_FAILED;
+import static java.nio.file.Files.lines;
+import static java.nio.file.Files.newOutputStream;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.time.TimeZones.GMT;
 
@@ -60,6 +66,14 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     (with single quotes) representing the path to the destination file; and {@code options} are the options among
  *     the following:
  *     <ul>
+ *         <li>{@code BOOLSTYLE}: the boolean indicators for True and False. The value must be a comma-separated string
+ *         of two indicators where the first one is for True values. For example: yes,no. If the provided value is
+ *         invalid, the default style will be applied. Defaults to {@value #DEFAULT_BOOLEAN_STYLE}.</li>
+ *         <li>{@code DATETIMEFORMAT}: the format for writing time data. The timestamp uses the
+ *         <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format. Note that codes {@code %c},
+ *         {@code %x} and {@code %X} are not supported. Also, the code {@code %w} corresponds to the weekday number in
+ *         Java (Monday = 1 ... Sunday = 7). English locale is used to format days and months names.
+ *         Defaults to {@value #DEFAULT_DATETIME_STRFTIME_FORMAT}.</li>
  *         <li>{@code DECIMALSEP}: the character that is used as the decimal point separator.
  *         Defaults to {@value #DEFAULT_DECIMAL_SEPARATOR}.</li>
  *         <li>{@code DELIMITER}: the character that is used to separate fields.
@@ -89,9 +103,7 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     The following options are not supported:
  *     <ul>
  *         <li>{@code BEGINTOKEN}</li>
- *         <li>{@code BOOLSTYLE}</li>
  *         <li>{@code CONFIGFILE}</li>
- *         <li>{@code DATETIMEFORMAT}</li>
  *         <li>{@code ENCODING}</li>
  *         <li>{@code ENDTOKEN}</li>
  *         <li>{@code MAXATTEMPTS}</li>
@@ -126,6 +138,7 @@ import static org.apache.commons.lang3.time.TimeZones.GMT;
  *     is not supported.
  * </p>
  */
+@Slf4j
 public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
 
     private static final int DEFAULT_FETCH_SIZE = 1000;
@@ -145,7 +158,9 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
      *                  instance.
      * @throws SQLSyntaxErrorException if an unknown option is used.
      */
-    public CopyToCommandExecutor(@Nonnull final String tableName, final String columns, @Nonnull final String target,
+    public CopyToCommandExecutor(@Nonnull final String tableName,
+                                 final String columns,
+                                 @Nonnull final String target,
                                  @Nonnull final Properties options) throws SQLSyntaxErrorException {
         this.tableName = tableName;
         this.columns = StringUtils.defaultIfBlank(columns, "*");
@@ -164,47 +179,41 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
     @Override
     public ResultSet execute(final CassandraStatement statement, final String cql) throws SQLException {
         final CassandraConnection connection = statement.getCassandraConnection();
-        final Statement selectStatement = connection.createStatement();
-        selectStatement.setFetchSize(getOptionValueAsInt(OPTION_PAGESIZE, DEFAULT_FETCH_SIZE));
-        final java.sql.ResultSet rs = selectStatement.executeQuery(
-            String.format("SELECT %s FROM %s", this.columns, this.tableName)
-        );
-
         final Path targetPath = Paths.get(translateFilename(this.target));
-        ICSVWriter csvWriter = null;
         long exportedRows = 0;
-        try {
-            final CSVWriterBuilder builder = new CSVWriterBuilder(
-                new OutputStreamWriter(
-                    Files.newOutputStream(targetPath),
-                    StandardCharsets.UTF_8.newEncoder() // Use UTF-8 encoding by default
-                )
-            );
 
-            csvWriter = builder
-                .withResultSetHelper(configureResultSetHelperService())
-                .withQuoteChar(getOptionValueAsChar(OPTION_QUOTE, DEFAULT_QUOTE_CHAR))
-                .withSeparator(getOptionValueAsChar(OPTION_DELIMITER, DEFAULT_DELIMITER_CHAR))
-                .withEscapeChar(getOptionValueAsChar(OPTION_ESCAPE, DEFAULT_ESCAPE_CHAR))
-                .build();
+        try (final Statement selectStatement = connection.createStatement()) {
+            selectStatement.setFetchSize(getOptionValueAsInt(OPTION_PAGESIZE, DEFAULT_FETCH_SIZE));
 
-            final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
-            if (includeHeaders) {
-                exportedRows -= 1;
+            try (
+                final java.sql.ResultSet rs = selectStatement.executeQuery(
+                    String.format("SELECT %s FROM %s", this.columns, this.tableName)
+                );
+                final OutputStreamWriter outWriter = new OutputStreamWriter(
+                    newOutputStream(targetPath),
+                     StandardCharsets.UTF_8.newEncoder() // Use UTF-8 encoding by default
+                );
+                final ICSVWriter csvWriter = new CSVWriterBuilder(outWriter)
+                    .withResultSetHelper(configureResultSetHelperService())
+                    .withQuoteChar(getOptionValueAsChar(OPTION_QUOTE, DEFAULT_QUOTE_CHAR))
+                    .withSeparator(getOptionValueAsChar(OPTION_DELIMITER, DEFAULT_DELIMITER_CHAR))
+                    .withEscapeChar(getOptionValueAsChar(OPTION_ESCAPE, DEFAULT_ESCAPE_CHAR))
+                    .build();
+            ) {
+                final boolean includeHeaders = Boolean.parseBoolean(this.options.getProperty(OPTION_HEADER));
+                if (includeHeaders) {
+                    exportedRows -= 1;
+                }
+                csvWriter.writeAll(rs, includeHeaders);
+            } catch (final IOException e) {
+                throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
             }
-            csvWriter.writeAll(rs, includeHeaders);
-        } catch (final IOException e) {
-            throw new SQLException(String.format(CANNOT_WRITE_CSV_FILE, this.target, e.getMessage()), e);
-        } finally {
-            rs.close();
-            selectStatement.close();
-            IOUtils.closeQuietly(csvWriter);
         }
 
-        try (Stream<String> csvLines = Files.lines(targetPath)) {
+        try (Stream<String> csvLines = lines(targetPath)) {
             exportedRows += csvLines.count();
         } catch (final IOException e) {
-            LOG.warn(COUNTING_EXPORTED_ROWS_FAILED);
+            log.warn(COUNTING_EXPORTED_ROWS_FAILED);
         }
         return buildCopyCommandResultSet("exported to", exportedRows, 1, -1);
     }
@@ -216,31 +225,41 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
         rsHelperService.setFloatingPointFormat(this.decimalFormat);
         rsHelperService.setIntegerFormat(this.decimalFormat);
         rsHelperService.setNullFormat(getOptionValueAsString(OPTION_NULLVAL, DEFAULT_NULL_FORMAT));
+        rsHelperService.setTrueValueFormat(this.trueValueFormat);
+        rsHelperService.setFalseValueFormat(this.falseValueFormat);
         return rsHelperService;
     }
 
     private static final class EnhancedResultSetHelperService extends ResultSetHelperService {
+        /**
+         * Sets a default format for {@code null} values that will be used by the service.
+         */
+        @Setter
         private String nullFormat = DEFAULT_NULL_FORMAT;
 
         /**
-         * Set a default format for {@code null} values that will be used by the service.
-         *
-         * @param nullFormat The desired format for {@code null} values.
+         * Sets a default format for boolean True values.
          */
-        public void setNullFormat(final String nullFormat) {
-            this.nullFormat = nullFormat;
-        }
+        @Setter
+        private String trueValueFormat = DEFAULT_TRUE_VALUE_FORMAT;
+
+        /**
+         * Sets a default format for boolean False values.
+         */
+        @Setter
+        private String falseValueFormat = DEFAULT_FALSE_VALUE_FORMAT;
 
         @Override
-        public String[] getColumnValues(final java.sql.ResultSet rs, final boolean trim,
-                                        final String dateFormatString, final String timeFormatString)
-            throws SQLException, IOException {
+        public String[] getColumnValues(final java.sql.ResultSet rs,
+                                          final boolean trim,
+                                          final String dateFormatString,
+                                          final String timestampFormatString) throws SQLException, IOException {
             // Keep the same logic as the parent class, but use the enhanced getColumnValue method.
             final ResultSetMetaData metadata = rs.getMetaData();
             final String[] valueArray = new String[metadata.getColumnCount()];
             for (int i = 1; i <= metadata.getColumnCount(); i++) {
                 valueArray[i - 1] = getColumnValueFromResultSet(rs, metadata.getColumnType(i), i,
-                    trim, dateFormatString, timeFormatString);
+                    trim, dateFormatString, timestampFormatString);
             }
             return valueArray;
         }
@@ -258,21 +277,24 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
             if (timestamp == null) {
                 return null;
             }
-            final SimpleDateFormat timeFormat = new SimpleDateFormat(timestampFormatString);
+            final DateTimeFormatter dtFormat = DateTimeFormatter.ofPattern(timestampFormatString, Locale.ENGLISH);
             // Use GMT time zone for the timestamp values to get consistent and machine-independent results.
-            timeFormat.setTimeZone(GMT);
-            return timeFormat.format(timestamp);
+            dtFormat.withZone(GMT.toZoneId());
+            return dtFormat.format(OffsetDateTime.ofInstant(timestamp.toInstant(), GMT.toZoneId()));
         }
 
-        private String getColumnValueFromResultSet(final java.sql.ResultSet rs, final int colType, final int colIndex,
-                                                   final boolean trim, final String dateFormatString,
+        private String getColumnValueFromResultSet(final java.sql.ResultSet rs,
+                                                   final int colType,
+                                                   final int colIndex,
+                                                   final boolean trim,
+                                                   final String dateFormatString,
                                                    final String timestampFormatString)
             throws SQLException, IOException {
             String value;
 
             switch (colType) {
                 case Types.BOOLEAN:
-                    value = Objects.toString(rs.getBoolean(colIndex));
+                    value = BooleanUtils.toString(rs.getBoolean(colIndex), this.trueValueFormat, this.falseValueFormat);
                     break;
                 case Types.NCLOB:
                     value = handleNClob(rs, colIndex);
@@ -280,9 +302,7 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.CLOB:
                     value = handleClob(rs, colIndex);
                     break;
-                case Types.DECIMAL:
-                case Types.REAL:
-                case Types.NUMERIC:
+                case Types.DECIMAL, Types.REAL, Types.NUMERIC:
                     value = applyNumberFormatter(this.floatingPointFormat, rs.getBigDecimal(colIndex));
                     break;
                 case Types.DOUBLE:
@@ -306,25 +326,25 @@ public class CopyToCommandExecutor extends AbstractCopyCommandExecutor {
                 case Types.DATE:
                     value = handleDate(rs, colIndex, dateFormatString);
                     break;
-                case Types.TIME:
-                    value = Objects.toString(rs.getTime(colIndex), EMPTY);
+                case Types.TIME, Types.TIME_WITH_TIMEZONE:
+                    final Time timeValue = rs.getTime(colIndex);
+                    if (timeValue == null) {
+                        value = EMPTY;
+                    } else {
+                        final long valueInMillisOfDay = timeValue.getTime();
+                        value = milliOfDayToLocalTime(valueInMillisOfDay).toString();
+                    }
                     break;
-                case Types.TIMESTAMP:
+                case Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE:
                     value = handleTimestamp(rs.getTimestamp(colIndex), timestampFormatString);
                     break;
-                case Types.NVARCHAR:
-                case Types.NCHAR:
-                case Types.LONGNVARCHAR:
+                case Types.NVARCHAR, Types.NCHAR, Types.LONGNVARCHAR:
                     value = handleNVarChar(rs, colIndex, trim);
                     break;
-                case Types.LONGVARCHAR:
-                case Types.VARCHAR:
-                case Types.CHAR:
+                case Types.LONGVARCHAR, Types.VARCHAR, Types.CHAR:
                     value = handleVarChar(rs, colIndex, trim);
                     break;
-                case Types.BINARY:
-                case Types.VARBINARY:
-                case Types.LONGVARBINARY:
+                case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY:
                     value = new String(rs.getBytes(colIndex), StandardCharsets.UTF_8);
                     break;
                 default:

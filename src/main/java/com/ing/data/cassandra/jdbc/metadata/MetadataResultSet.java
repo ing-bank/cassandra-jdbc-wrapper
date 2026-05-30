@@ -16,6 +16,8 @@
 package com.ing.data.cassandra.jdbc.metadata;
 
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Iterator;
 import java.util.List;
@@ -25,16 +27,16 @@ import java.util.List;
  *
  * @see AbstractMetadataResultSetBuilder
  */
+@NoArgsConstructor
 public class MetadataResultSet {
 
     private List<MetadataRow> rows;
-    private ColumnDefinitions columnDefinitions;
 
     /**
-     * Constructor.
+     * The columns of the metadata result set.
      */
-    public MetadataResultSet() {
-    }
+    @Getter
+    private ColumnDefinitions columnDefinitions;
 
     /**
      * Constructor including the columns definitions from a metadata row template.
@@ -60,15 +62,6 @@ public class MetadataResultSet {
             this.columnDefinitions = metadataRows.get(0).getColumnDefinitions();
         }
         return this;
-    }
-
-    /**
-     * Gets the columns of the metadata result set.
-     *
-     * @return The columns of the metadata result set.
-     */
-    public ColumnDefinitions getColumnDefinitions() {
-        return this.columnDefinitions;
     }
 
     /**

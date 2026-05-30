@@ -1,7 +1,6 @@
 package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
-import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.detach.AttachmentPoint;
@@ -9,25 +8,22 @@ import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinition;
 import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinitions;
 import com.datastax.oss.driver.internal.core.cql.DefaultRow;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildDriverResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.MISSING_SOURCE_FILENAME;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.unwrap;
 
@@ -36,9 +32,8 @@ import static org.apache.commons.lang3.StringUtils.unwrap;
  * <a href="https://cassandra.apache.org/doc/stable/cassandra/tools/cqlsh.html#special-commands">special CQL
  * commands</a>.
  */
+@Slf4j
 public final class SpecialCommandsUtil {
-
-    static final Logger LOG = LoggerFactory.getLogger(SpecialCommandsUtil.class);
 
     // Regex for CQL identifiers such as table or keyspace name is specified in the Cassandra documentation here:
     // https://cassandra.apache.org/doc/5.0/cassandra/developing/cql/ddl.html#common-definitions
@@ -96,7 +91,7 @@ public final class SpecialCommandsUtil {
         final String trimmedCql = cql.trim();
         final Matcher matcher = SUPPORTED_COMMANDS_PATTERN.matcher(trimmedCql);
         if (!matcher.matches()) {
-            LOG.trace("CQL statement is not a supported special command: {}", cql);
+            log.trace("CQL statement is not a supported special command: {}", cql);
             return null;
         } else {
             return handleConsistencyLevelCommand(matcher)
@@ -113,7 +108,7 @@ public final class SpecialCommandsUtil {
      * @return The empty result set.
      */
     public static ResultSet buildEmptyResultSet() {
-        return buildSpecialCommandResultSet(new ColumnDefinitions.Definition[]{}, Collections.emptyList());
+        return buildSpecialCommandResultSet(new ColumnDefinitions.Definition[]{}, List.of());
     }
 
     /**
@@ -137,42 +132,9 @@ public final class SpecialCommandsUtil {
         // Populate rows.
         final List<Row> rsRows = rows.stream()
             .map(rowData -> new DefaultRow(rsColumns, rowData))
-            .collect(Collectors.toList());
+            .collect(toList());
 
-        return new ResultSet() {
-            @Override
-            public boolean wasApplied() {
-                return true;
-            }
-
-            @Nonnull
-            @Override
-            public com.datastax.oss.driver.api.core.cql.ColumnDefinitions getColumnDefinitions() {
-                return rsColumns;
-            }
-
-            @Nonnull
-            @Override
-            public List<ExecutionInfo> getExecutionInfos() {
-                return new ArrayList<>();
-            }
-
-            @Override
-            public boolean isFullyFetched() {
-                return true;
-            }
-
-            @Override
-            public int getAvailableWithoutFetching() {
-                return 0;
-            }
-
-            @Nonnull
-            @Override
-            public Iterator<Row> iterator() {
-                return rsRows.iterator();
-            }
-        };
+        return buildDriverResultSet(rsColumns, rsRows);
     }
 
     /**

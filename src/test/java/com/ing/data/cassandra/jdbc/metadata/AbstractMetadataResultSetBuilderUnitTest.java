@@ -23,10 +23,9 @@ import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.CassandraStatement;
 import com.ing.data.cassandra.jdbc.testing.TestMetadataResultSetBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -41,9 +40,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 class AbstractMetadataResultSetBuilderUnitTest {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractMetadataResultSetBuilderUnitTest.class);
 
     static KeyspaceMetadata generateTestKeyspaceMetadata(final String keyspaceName) {
         final KeyspaceMetadata mockKeyspaceMetadata = mock(KeyspaceMetadata.class);
@@ -87,34 +85,34 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final Set<String> filteredSchemas = new HashSet<>();
         sut.filterBySchemaNamePattern(StringUtils.EMPTY,
             keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
-        LOG.info("Schemas matching '': {}", filteredSchemas);
+        log.info("Schemas matching '': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(4));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks", "another"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern(null,
             keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
-        LOG.info("Schemas matching null: {}", filteredSchemas);
+        log.info("Schemas matching null: {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(4));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks", "another"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("ks",
             keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
-        LOG.info("Schemas matching 'ks': {}", filteredSchemas);
+        log.info("Schemas matching 'ks': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(0));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("ks%",
             keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
-        LOG.info("Schemas matching 'ks%': {}", filteredSchemas);
+        log.info("Schemas matching 'ks%': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(2));
         assertThat(filteredSchemas, hasItems("ks1", "ks2"));
 
         filteredSchemas.clear();
         sut.filterBySchemaNamePattern("%ks%",
             keyspaceMetadata -> filteredSchemas.add(keyspaceMetadata.getName().asInternal()), null);
-        LOG.info("Schemas matching '%ks%': {}", filteredSchemas);
+        log.info("Schemas matching '%ks%': {}", filteredSchemas);
         assertThat(filteredSchemas, hasSize(3));
         assertThat(filteredSchemas, hasItems("ks1", "ks2", "test_ks"));
     }
@@ -138,33 +136,33 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final Set<String> filteredTables = new HashSet<>();
         sut.filterByTableNamePattern(StringUtils.EMPTY, ksTestMetadata,
             tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Tables matching '': {}", filteredTables);
+        log.info("Tables matching '': {}", filteredTables);
         assertThat(filteredTables, empty());
 
         filteredTables.clear();
         sut.filterByTableNamePattern(null, ksTestMetadata,
             tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Tables matching null: {}", filteredTables);
+        log.info("Tables matching null: {}", filteredTables);
         assertThat(filteredTables, hasSize(4));
         assertThat(filteredTables, hasItems("cf1", "cf2", "another_table", "test_cf"));
 
         filteredTables.clear();
         sut.filterByTableNamePattern("cf", ksTestMetadata,
             tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Tables matching 'cf': {}", filteredTables);
+        log.info("Tables matching 'cf': {}", filteredTables);
         assertThat(filteredTables, empty());
 
         filteredTables.clear();
         sut.filterByTableNamePattern("cf%", ksTestMetadata,
             tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Tables matching 'cf%': {}", filteredTables);
+        log.info("Tables matching 'cf%': {}", filteredTables);
         assertThat(filteredTables, hasSize(2));
         assertThat(filteredTables, hasItems("cf1", "cf2"));
 
         filteredTables.clear();
         sut.filterByTableNamePattern("%cf%", ksTestMetadata,
             tableMetadata -> filteredTables.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Tables matching '%cf%': {}", filteredTables);
+        log.info("Tables matching '%cf%': {}", filteredTables);
         assertThat(filteredTables, hasSize(3));
         assertThat(filteredTables, hasItems("cf1", "cf2", "test_cf"));
     }
@@ -195,33 +193,33 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final Set<String> filteredColumns = new HashSet<>();
         sut.filterByColumnNamePattern(StringUtils.EMPTY, tableTestMetadata,
             columnMetadata -> filteredColumns.add(columnMetadata.getName().asInternal()), null);
-        LOG.info("Columns matching '': {}", filteredColumns);
+        log.info("Columns matching '': {}", filteredColumns);
         assertThat(filteredColumns, empty());
 
         filteredColumns.clear();
         sut.filterByColumnNamePattern(null, tableTestMetadata,
             tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Columns matching null: {}", filteredColumns);
+        log.info("Columns matching null: {}", filteredColumns);
         assertThat(filteredColumns, hasSize(4));
         assertThat(filteredColumns, hasItems("col1", "col2", "clmn_test", "test_col"));
 
         filteredColumns.clear();
         sut.filterByColumnNamePattern("col", tableTestMetadata,
             tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Columns matching 'col': {}", filteredColumns);
+        log.info("Columns matching 'col': {}", filteredColumns);
         assertThat(filteredColumns, empty());
 
         filteredColumns.clear();
         sut.filterByColumnNamePattern("col%", tableTestMetadata,
             tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Columns matching 'col%': {}", filteredColumns);
+        log.info("Columns matching 'col%': {}", filteredColumns);
         assertThat(filteredColumns, hasSize(2));
         assertThat(filteredColumns, hasItems("col1", "col2"));
 
         filteredColumns.clear();
         sut.filterByColumnNamePattern("%col%", tableTestMetadata,
             tableMetadata -> filteredColumns.add(tableMetadata.getName().asInternal()), null);
-        LOG.info("Columns matching '%col%': {}", filteredColumns);
+        log.info("Columns matching '%col%': {}", filteredColumns);
         assertThat(filteredColumns, hasSize(3));
         assertThat(filteredColumns, hasItems("col1", "col2", "test_col"));
     }
@@ -249,33 +247,33 @@ class AbstractMetadataResultSetBuilderUnitTest {
         final Set<String> filteredFunctions = new HashSet<>();
         sut.filterByFunctionNamePattern(StringUtils.EMPTY, ksTestMetadata,
             (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
-        LOG.info("Functions matching '': {}", filteredFunctions);
+        log.info("Functions matching '': {}", filteredFunctions);
         assertThat(filteredFunctions, empty());
 
         filteredFunctions.clear();
         sut.filterByFunctionNamePattern(null, ksTestMetadata,
             (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
-        LOG.info("Functions matching null: {}", filteredFunctions);
+        log.info("Functions matching null: {}", filteredFunctions);
         assertThat(filteredFunctions, hasSize(4));
         assertThat(filteredFunctions, hasItems("func1", "func2", "another_function", "another_test"));
 
         filteredFunctions.clear();
         sut.filterByFunctionNamePattern("func", ksTestMetadata,
             (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
-        LOG.info("Functions matching 'func': {}", filteredFunctions);
+        log.info("Functions matching 'func': {}", filteredFunctions);
         assertThat(filteredFunctions, empty());
 
         filteredFunctions.clear();
         sut.filterByFunctionNamePattern("func%", ksTestMetadata,
             (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
-        LOG.info("Functions matching 'func%': {}", filteredFunctions);
+        log.info("Functions matching 'func%': {}", filteredFunctions);
         assertThat(filteredFunctions, hasSize(2));
         assertThat(filteredFunctions, hasItems("func1", "func2"));
 
         filteredFunctions.clear();
         sut.filterByFunctionNamePattern("%func%", ksTestMetadata,
             (signature, functionMetadata) -> filteredFunctions.add(signature.getName().asInternal()));
-        LOG.info("Functions matching '%func%': {}", filteredFunctions);
+        log.info("Functions matching '%func%': {}", filteredFunctions);
         assertThat(filteredFunctions, hasSize(3));
         assertThat(filteredFunctions, hasItems("func1", "func2", "another_function"));
     }

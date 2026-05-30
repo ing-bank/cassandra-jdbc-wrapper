@@ -15,27 +15,28 @@
 
 package com.ing.data.cassandra.jdbc.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
  * Serializer for {@link ByteBuffer}s in the context of a JSON returned by a CQL query.
  * <p>
- *     This serializer will convert the {@link ByteBuffer} content into an hexadecimal representation of the byte array
+ *     This serializer will convert the {@link ByteBuffer} content into a hexadecimal representation of the byte array
  *     to be managed as CQL type {@code blob} on Cassandra side.
  * </p>
  */
-public class CassandraBlobSerializer extends JsonSerializer<ByteBuffer> {
+public class CassandraBlobSerializer extends ValueSerializer<ByteBuffer> {
 
     private static final char[] HEX_CHARS_ARRAY = "0123456789ABCDEF".toCharArray();
 
     @Override
-    public void serialize(final ByteBuffer value, final JsonGenerator gen, final SerializerProvider serializers)
-        throws IOException {
+    public void serialize(final ByteBuffer value,
+                          final JsonGenerator gen,
+                          final SerializationContext ctxt) throws JacksonException {
         if (value != null) {
             gen.writeString(byteArrayToHexString(value.array()));
         } else {

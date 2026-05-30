@@ -95,6 +95,9 @@ Please find here some of the main coding guidelines:
 * Left braces are located at the end of the line.
 * Braces are mandatory around conditional and loops blocks.
 * Don't write more than one statement by line.
+* Use Lombok annotations for logging (with `@Slf4j`), and for getters and setters, when applicable.
+* For constructors and methods with more than 2 parameters, write them one below the other, especially if the method
+  throws an exception (avoid having `throws` clause isolated on a separate line)
 
 ### Javadoc
 
@@ -111,7 +114,7 @@ Javadoc for this project.
 ### About dependencies
 
 If your changes require to add a new dependency or update an existing one, be sure to check these points first of all:
-* the dependency is the latest stable version of the library compatible with JDK 8
+* the dependency is the latest stable version of the library compatible with JDK 17
 * the dependency does not introduce vulnerabilities
 * the version of the dependency is specified in a property `<artifactId>.version` in `pom.xml`.
 

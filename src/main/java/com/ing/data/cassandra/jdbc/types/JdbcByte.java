@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code TINYINT} CQL type (corresponding Java type: {@link Byte}).
  * <p>CQL type description: 1 byte signed integer.</p>
@@ -61,11 +63,7 @@ public class JdbcByte extends AbstractJdbcType<Byte> {
 
     @Override
     public String toString(final Byte obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

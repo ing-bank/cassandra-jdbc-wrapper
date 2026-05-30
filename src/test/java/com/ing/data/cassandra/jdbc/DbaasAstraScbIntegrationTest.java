@@ -19,6 +19,7 @@ import com.dtsx.astra.sdk.db.AstraDBOpsClient;
 import com.dtsx.astra.sdk.db.domain.DatabaseStatusType;
 import com.dtsx.astra.sdk.utils.TestUtils;
 import io.github.cdimascio.dotenv.Dotenv;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -28,8 +29,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.sql.DriverManager;
@@ -39,15 +38,15 @@ import java.sql.SQLException;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- * Test JDBC Driver against DBaaS Astra (legacy connection).
+ * Test JDBC Driver against DBaaS Astra using Secure Connect Bundle.
  * To run this test class, define an environment variable ASTRA_DB_APPLICATION_TOKEN containing the AstraDB token,
  * but not having any token does not block the build.
  */
 @Disabled
 @TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
-class DbaasAstraLegacyIntegrationTest {
+@Slf4j
+class DbaasAstraScbIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DbaasAstraLegacyIntegrationTest.class);
     private static final Dotenv DOTENV = Dotenv.load();
     private static final String ASTRA_DB_TOKEN_ENV_VARIABLE = "ASTRA_DB_APPLICATION_TOKEN";
     private static final String ASTRA_DB_TOKEN = DOTENV.get(ASTRA_DB_TOKEN_ENV_VARIABLE);
@@ -61,7 +60,7 @@ class DbaasAstraLegacyIntegrationTest {
     @BeforeAll
     static void setupAstra() throws Exception {
         if (ASTRA_DB_TOKEN != null) {
-            LOG.debug("ASTRA_DB_APPLICATION_TOKEN is provided, AstraDB tests (legacy) are executed.");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is provided, AstraDB tests (legacy) are executed.");
             // Set token as standard environment variable to allow TestUtils methods to work.
             System.setProperty(ASTRA_DB_TOKEN_ENV_VARIABLE, ASTRA_DB_TOKEN);
 
@@ -69,7 +68,7 @@ class DbaasAstraLegacyIntegrationTest {
              * Devops API Client (create database, resume, delete)
              */
             final AstraDBOpsClient astraDbClient = new AstraDBOpsClient(ASTRA_DB_TOKEN);
-            LOG.debug("Connected the DBaaS API.");
+            log.debug("Connected the DBaaS API.");
 
             /*
              * Set up a Database in Astra: create if not exist, resume if needed.
@@ -79,7 +78,7 @@ class DbaasAstraLegacyIntegrationTest {
             String dbId = TestUtils.setupVectorDatabase(DATABASE_NAME, KEYSPACE_NAME);
             Assertions.assertTrue(astraDbClient.findById(dbId).isPresent());
             Assertions.assertEquals(DatabaseStatusType.ACTIVE, astraDbClient.findById(dbId).get().getStatus());
-            LOG.debug("Database ready.");
+            log.debug("Database ready.");
 
             /*
              * Download cloud secure bundle to connect to the database.
@@ -89,19 +88,19 @@ class DbaasAstraLegacyIntegrationTest {
             astraDbClient
                 .database(dbId)
                 .downloadDefaultSecureConnectBundle(SECURE_CONNECT_BUNDLE_FILENAME);
-            LOG.debug("Connection bundle downloaded.");
+            log.debug("Connection bundle downloaded.");
 
             /*
              * Building jdbcUrl and sqlConnection.
              * Note: Astra can be accessed with only a token (username='token').
              */
             sqlConnection = (CassandraConnection) DriverManager.getConnection(
-                "jdbc:cassandra:dbaas:///" + KEYSPACE_NAME +
+                "jdbc:cassandra:astra:///" + KEYSPACE_NAME +
                     "?user=token&password=" + ASTRA_DB_TOKEN +
                     "&consistency=" + "LOCAL_QUORUM&requesttimeout=10000&connecttimeout=15000" +
                     "&secureconnectbundle=/tmp/" + DATABASE_NAME + "_scb.zip");
         } else {
-            LOG.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests (legacy).");
+            log.debug("ASTRA_DB_APPLICATION_TOKEN is not defined, skipping AstraDB tests (legacy).");
         }
     }
 

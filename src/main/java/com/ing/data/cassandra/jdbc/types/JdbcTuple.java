@@ -17,8 +17,10 @@ package com.ing.data.cassandra.jdbc.types;
 
 import com.datastax.oss.driver.api.core.data.TupleValue;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.sql.Types;
+
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
 
 /**
  * JDBC description of CQL tuple (corresponding Java type: {@link TupleValue}).
@@ -60,11 +62,7 @@ public class JdbcTuple extends AbstractJdbcType<TupleValue> {
     }
 
     public String getString(final Object obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

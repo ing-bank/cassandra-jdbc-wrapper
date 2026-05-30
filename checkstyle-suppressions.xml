@@ -4,5 +4,7 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-
+    <!-- Accept EMPTY_RESULT_SET name, even if the variable is not final (cannot be declared as final since it has to
+     be instantiated in a static block). -->
+    <suppress checks="StaticVariableName" files="CassandraResultSet.java"/>
 </suppressions>

@@ -15,9 +15,7 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,24 +35,70 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
-import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.util.Calendar;
+import java.util.Map;
 
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.BINARY_FAILED_CONVERSION;
+import static java.lang.String.format;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoField.MILLI_OF_DAY;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.apache.commons.io.IOUtils.EMPTY_BYTE_ARRAY;
+import static org.apache.commons.io.IOUtils.toByteArray;
 
 /**
  * A set of static utility methods for types conversions.
  */
+@Slf4j
 public final class ConversionsUtil {
 
-    static final Logger LOG = LoggerFactory.getLogger(ConversionsUtil.class);
+    private static final String UNSUPPORTED_TYPE_MESSAGE = "type not supported";
+
+    /**
+     * Mapping of <a href="https://www.bairesdev.com/tools/strftime/">strftime</a> format codes to the equivalent
+     * codes in Java {@link DateTimeFormatter}.
+     * @implNote The {@code strftime} codes {@code %c}, {@code %x} and {@code %X} are not supported. Also, the code
+     * {@code %w} corresponds to the weekday number in Java (Monday = 1 ... Sunday = 7).
+     */
+    private static final Map<String, String> STRFTIME_TO_JAVA = Map.ofEntries(
+        Map.entry("%A", "EEEE"),   // Full weekday name
+        Map.entry("%a", "EEE"),    // Short weekday name
+        Map.entry("%w", "e"),      // Weekday number (in Java, Monday = 1 ... Sunday = 7)
+        Map.entry("%d", "dd"),     // Zero-padded day of the month (01-31)
+        Map.entry("%-d", "d"),     // Day of the month (1-31)
+        Map.entry("%B", "MMMM"),   // Full month name
+        Map.entry("%b", "MMM"),    // Short month name
+        Map.entry("%m", "MM"),     // Zero-padded month (01-12)
+        Map.entry("%-m", "M"),     // Month (1-12)
+        Map.entry("%Y", "yyyy"),   // 4-digit year
+        Map.entry("%y", "yy"),     // 2-digit year
+        Map.entry("%H", "HH"),     // Zero-padded hour 24h (00-23)
+        Map.entry("%-H", "H"),     // Hour 24h (0-23)
+        Map.entry("%I", "hh"),     // Zero-padded hour 12h (01-12)
+        Map.entry("%-I", "h"),     // Hour 12h (01-12)
+        Map.entry("%p", "a"),      // AM/PM
+        Map.entry("%M", "mm"),     // Zero-padded minute (00-59)
+        Map.entry("%-M", "m"),     // Minute (0-59)
+        Map.entry("%S", "ss"),     // Zero-padded second (00-59)
+        Map.entry("%-S", "s"),     // Second (0-59)
+        Map.entry("%f", "SSSSSS"), // Microseconds (Java supports up to nanoseconds)
+        Map.entry("%Z", "zzz"),    // Timezone name
+        Map.entry("%z", "Z"),      // Timezone UTC offset
+        Map.entry("%j", "DDD"),    // Zero-padded day of year
+        Map.entry("%-j", "D"),     // Day of year
+        Map.entry("%U", "ww"),     // Zero-padded week number of year
+        Map.entry("%-U", "w"),     // Week number of year
+        Map.entry("%%", "'%'")     // Percent character
+    );
 
     private ConversionsUtil() {
         // Private constructor to hide the public one.
     }
 
     /**
-     * Converts an object of one these types to a byte array for storage in a column of type {@code blob}:
+     * Converts an object of one of these types to a byte array for storage in a column of type {@code blob}:
      * <ul>
      *     <li>{@code byte[]}</li>
      *     <li>{@link ByteArrayInputStream}</li>
@@ -68,40 +112,35 @@ public final class ConversionsUtil {
      * the conversion failed for some reason (see the logged error for further details).
      * @throws SQLException when the type of the object to convert is not supported.
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static byte[] convertToByteArray(final Object x) throws SQLException {
-        byte[] array = new byte[0];
-        if (x instanceof ByteArrayInputStream) {
-            array = new byte[((ByteArrayInputStream) x).available()];
+        if (x instanceof ByteArrayInputStream byteArrayInputStream) {
             try {
-                ((ByteArrayInputStream) x).read(array);
+                return toByteArray(byteArrayInputStream, byteArrayInputStream.available());
             } catch (final IOException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
-        } else if (x instanceof byte[]) {
-            array = (byte[]) x;
-        } else if (x instanceof Blob) {
+        } else if (x instanceof byte[] byteArray) {
+            return byteArray;
+        } else if (x instanceof Blob blob) {
             try {
-                final InputStream stream = ((Blob) x).getBinaryStream();
-                array = new byte[stream.available()];
-                stream.read(array);
+                final InputStream stream = blob.getBinaryStream();
+                return toByteArray(stream, stream.available());
             } catch (final IOException | SQLException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
-        } else if (x instanceof Clob) {
-            try (Reader reader = ((Clob) x).getCharacterStream()) {
-                array = IOUtils.toByteArray(reader, StandardCharsets.UTF_8);
+        } else if (x instanceof Clob clob) {
+            try (Reader reader = clob.getCharacterStream()) {
+                return toByteArray(reader, StandardCharsets.UTF_8);
             } catch (final IOException | SQLException e) {
-                LOG.warn(BINARY_FAILED_CONVERSION, x.getClass().getName(), e);
+                return onBinaryFailedConversion(e, x);
             }
         } else {
-            throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
+            throw new SQLException(format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
-        return array;
     }
 
     /**
-     * Converts an object of one these types to a {@link LocalDate} for storage in a column of type {@code date}:
+     * Converts an object of one of these types to a {@link LocalDate} for storage in a column of type {@code date}:
      * <ul>
      *     <li>{@link LocalDate}</li>
      *     <li>{@link Date}</li>
@@ -112,17 +151,17 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static LocalDate convertToLocalDate(final Object x) throws SQLException {
-        if (x instanceof LocalDate) {
-            return (LocalDate) x;
-        } else if (x instanceof java.sql.Date) {
-            return ((Date) x).toLocalDate();
+        if (x instanceof LocalDate localDate) {
+            return localDate;
+        } else if (x instanceof java.sql.Date date) {
+            return date.toLocalDate();
         } else {
-            throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
+            throw new SQLException(format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
     }
 
     /**
-     * Converts an object of one these types to a {@link LocalTime} for storage in a column of type {@code time}:
+     * Converts an object of one of these types to a {@link LocalTime} for storage in a column of type {@code time}:
      * <ul>
      *     <li>{@link LocalTime}</li>
      *     <li>{@link Time}</li>
@@ -133,19 +172,19 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static LocalTime convertToLocalTime(final Object x) throws SQLException {
-        if (x instanceof LocalTime) {
-            return (LocalTime) x;
-        } else if (x instanceof java.sql.Time) {
-            return ((Time) x).toLocalTime();
-        } else if (x instanceof OffsetTime) {
-            return ((OffsetTime) x).toLocalTime();
+        if (x instanceof LocalTime localTime) {
+            return localTime;
+        } else if (x instanceof java.sql.Time time) {
+            return time.toLocalTime();
+        } else if (x instanceof OffsetTime offsetTime) {
+            return offsetTime.toLocalTime();
         } else {
-            throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
+            throw new SQLException(format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
     }
 
     /**
-     * Converts an object of one these types to a {@link Instant} for storage in a column of type {@code timestamp}:
+     * Converts an object of one of these types to a {@link Instant} for storage in a column of type {@code timestamp}:
      * <ul>
      *     <li>{@link LocalDateTime}</li>
      *     <li>{@link Timestamp}</li>
@@ -159,18 +198,172 @@ public final class ConversionsUtil {
      * @throws SQLException when the type of the object to convert is not supported.
      */
     public static Instant convertToInstant(final Object x) throws SQLException {
-        if (x instanceof LocalDateTime) {
-            return ((LocalDateTime) x).atZone(ZoneId.systemDefault()).toInstant();
-        } else if (x instanceof java.sql.Timestamp) {
-            return ((Timestamp) x).toInstant();
-        } else if (x instanceof java.util.Date) {
-            return ((java.util.Date) x).toInstant();
-        } else if (x instanceof Calendar) {
-            return ((Calendar) x).toInstant();
-        } else if (x instanceof OffsetDateTime) {
-            return ((OffsetDateTime) x).toInstant();
+        if (x instanceof LocalDateTime localDateTime) {
+            return localDateTime.atZone(systemDefault()).toInstant();
+        } else if (x instanceof java.sql.Timestamp timestamp) {
+            return timestamp.toInstant();
+        } else if (x instanceof java.util.Date date) {
+            return date.toInstant();
+        } else if (x instanceof Calendar calendar) {
+            return calendar.toInstant();
+        } else if (x instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime.toInstant();
         } else {
-            throw new SQLException(String.format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
+            throw new SQLException(format(ErrorConstants.UNSUPPORTED_PARAMETER_TYPE, x.getClass()));
         }
+    }
+
+    /**
+     * Converts an object of one of these types to a {@link Date}:
+     * <ul>
+     *     <li>{@link Date}(the specified object is returned as is)</li>
+     *     <li>{@link LocalDate}</li>
+     *     <li>{@link java.util.Date}</li>
+     *     <li>{@link Instant}</li>
+     *     <li>{@link String}, using the format supported by {@link Date#valueOf(String)}</li>
+     * </ul>
+     *
+     * @param x The object to convert.
+     * @return The {@link Date} instance resulting of the object conversion.
+     * @throws SQLException when the type of the object to convert is not supported, or the conversion failed.
+     */
+    public static Date convertToSqlDate(final Object x) throws SQLException {
+        if (x == null) {
+            return null;
+        }
+        try {
+            if (x instanceof Date sqlDate) {
+                return sqlDate;
+            } else if (x instanceof LocalDate localDate) {
+                return Date.valueOf(localDate);
+            } else if (x instanceof java.util.Date date) {
+                return Date.valueOf(LocalDate.ofInstant(date.toInstant(), systemDefault()));
+            } else if (x instanceof Instant instant) {
+                return Date.valueOf(LocalDate.ofInstant(instant, systemDefault()));
+            } else if (x instanceof String str) {
+                return Date.valueOf(str);
+            } else {
+                throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                    x.getClass(), Date.class, UNSUPPORTED_TYPE_MESSAGE));
+            }
+        } catch (final IllegalArgumentException ex) {
+            throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                x.getClass(), Date.class, ex.getMessage()));
+        }
+    }
+
+    /**
+     * Converts an object of one of these types to a {@link Time}:
+     * <ul>
+     *     <li>{@link Time}(the specified object is returned as is)</li>
+     *     <li>{@link LocalTime}</li>
+     *     <li>{@link OffsetTime}</li>
+     *     <li>{@link Instant}</li>
+     *     <li>{@link String}, using the format supported by {@link Time#valueOf(String)}</li>
+     * </ul>
+     *
+     * @param x The object to convert.
+     * @return The {@link Time} instance resulting of the object conversion.
+     * @throws SQLException when the type of the object to convert is not supported, or the conversion failed.
+     */
+    public static Time convertToSqlTime(final Object x) throws SQLException {
+        if (x == null) {
+            return null;
+        }
+        try {
+            if (x instanceof Time sqlTime) {
+                return sqlTime;
+            } else if (x instanceof LocalTime localTime) {
+                // Keep milliseconds precision from LocalDate when converting to java.sql.Time.
+                return new Time(localTime.getLong(MILLI_OF_DAY));
+            } else if (x instanceof OffsetTime offsetTime) {
+                return new Time(offsetTime.toLocalTime().getLong(MILLI_OF_DAY));
+            } else if (x instanceof Instant instant) {
+                return new Time(LocalTime.ofInstant(instant, systemDefault()).getLong(MILLI_OF_DAY));
+            } else if (x instanceof String str) {
+                return Time.valueOf(str);
+            } else {
+                throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                    x.getClass(), Time.class, UNSUPPORTED_TYPE_MESSAGE));
+            }
+        } catch (final IllegalArgumentException ex) {
+            throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                x.getClass(), Time.class, ex.getMessage()));
+        }
+    }
+
+    /**
+     * Converts an object of one of these types to a {@link Timestamp}:
+     * <ul>
+     *     <li>{@link Timestamp}(the specified object is returned as is)</li>
+     *     <li>{@link LocalDateTime}</li>
+     *     <li>{@link OffsetDateTime}</li>
+     *     <li>{@link Calendar}</li>
+     *     <li>{@link Instant}</li>
+     *     <li>{@link String}, using the format supported by {@link Timestamp#valueOf(String)}</li>
+     * </ul>
+     *
+     * @param x The object to convert.
+     * @return The {@link Timestamp} instance resulting of the object conversion.
+     * @throws SQLException when the type of the object to convert is not supported, or the conversion failed.
+     */
+    public static Timestamp convertToSqlTimestamp(final Object x) throws SQLException {
+        if (x == null) {
+            return null;
+        }
+        try {
+            // Note: Cassandra supports timestamps with millisecond-precision only.
+            if (x instanceof Timestamp sqlTimestamp) {
+                return sqlTimestamp;
+            } else if (x instanceof LocalDateTime localDateTime) {
+                return Timestamp.valueOf(localDateTime.truncatedTo(MILLIS));
+            } else if (x instanceof OffsetDateTime offsetDateTime) {
+                return Timestamp.valueOf(offsetDateTime.toLocalDateTime().truncatedTo(MILLIS));
+            } else if (x instanceof Calendar calendar) {
+                return Timestamp.valueOf(
+                    LocalDateTime.ofInstant(calendar.toInstant(), systemDefault()).truncatedTo(MILLIS)
+                );
+            } else if (x instanceof Instant instant) {
+                return Timestamp.valueOf(LocalDateTime.ofInstant(instant, systemDefault()).truncatedTo(MILLIS));
+            } else if (x instanceof String str) {
+                return Timestamp.valueOf(str);
+            } else {
+                throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                    x.getClass(), Timestamp.class, UNSUPPORTED_TYPE_MESSAGE));
+            }
+        } catch (final IllegalArgumentException ex) {
+            throw new SQLException(format(ErrorConstants.DATA_CONVERSION_FAILED,
+                x.getClass(), Timestamp.class, ex.getMessage()));
+        }
+    }
+
+    /**
+     * Converts a time value in milliseconds of day (i.e. milliseconds within the day, see
+     * {@link ChronoField#MILLI_OF_DAY}) to a {@link LocalTime} instance.
+     *
+     * @param millisOfDay The time value in milliseconds of day.
+     * @return The {@link LocalTime} instance resulting of the object conversion.
+     */
+    public static LocalTime milliOfDayToLocalTime(final long millisOfDay) {
+        return LocalTime.ofNanoOfDay(millisOfDay * 1_000_000);
+    }
+
+    /**
+     * Converts a {@code strftime} pattern string to a Java {@link DateTimeFormatter} pattern.
+     *
+     * @param pattern The {@code strftime} pattern to convert.
+     * @return The converted pattern.
+     */
+    public static String strftimeToJavaPattern(final String pattern) {
+        String javaPattern = pattern;
+        for (final var entry : STRFTIME_TO_JAVA.entrySet()) {
+            javaPattern = javaPattern.replace(entry.getKey(), entry.getValue());
+        }
+        return javaPattern;
+    }
+
+    private static byte[] onBinaryFailedConversion(final Exception e, final Object obj) {
+        log.warn(BINARY_FAILED_CONVERSION, obj.getClass().getName(), e);
+        return EMPTY_BYTE_ARRAY;
     }
 }

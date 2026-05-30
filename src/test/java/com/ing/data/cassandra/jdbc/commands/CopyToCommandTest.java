@@ -69,18 +69,21 @@ public class CopyToCommandTest extends UsingCassandraContainerTest {
                 .value("table_key", literal("key1"))
                 .value("bool_val", literal(true))
                 .value("decimal_val", literal(1.5))
+                .value("ts_val", literal("2026-08-06T23:05:00.000+00:00"))
             .asCql()
         );
         sqlConnection.createStatement().execute(QueryBuilder.insertInto(COPY_CMD_TEST_TABLE_NAME)
             .value("table_key", literal("key2"))
             .value("bool_val", literal(false))
             .value("decimal_val", literal(4200))
+            .value("ts_val", literal("2025-03-22T11:24:16.000+00:00"))
             .asCql()
         );
         sqlConnection.createStatement().execute(QueryBuilder.insertInto(COPY_CMD_TEST_TABLE_NAME)
             .value("table_key", literal("key3"))
             .value("bool_val", literal(false))
             .value("decimal_val", literal(null))
+            .value("ts_val", literal("2025-10-17T15:20:30.987+00:00"))
             .asCql()
         );
 
@@ -152,7 +155,8 @@ public class CopyToCommandTest extends UsingCassandraContainerTest {
             Arguments.of("test_default_options.csv", EMPTY),
             Arguments.of("test_with_header.csv", "WITH HEADER=true"),
             Arguments.of("test_with_format_options.csv",
-                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND NULLVAL=N/A")
+                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND NULLVAL=N/A" +
+                    "  AND BOOLSTYLE=YES,No AND DATETIMEFORMAT='%-d/%b/%y %-I.%M%p%z'")
         );
     }
 
@@ -199,6 +203,16 @@ public class CopyToCommandTest extends UsingCassandraContainerTest {
         final ResultSet resultSet = executeCopyToCommand(COPY_CMD_TEST_ALL_TYPES_TABLE_NAME, null, targetCsvFile,
             "WITH HEADER=true AND DELIMITER=;");
         assertCommandResultSet(resultSet, false, 1, 1);
+        Approvals.verify(new File(targetCsvFile), approvalTestsParameterName(targetCsvFile));
+    }
+
+    @Test
+    void givenTableWithColumnsAndTargetFileAndInvalidBoolstyle_whenExecuteCopyToCommand_generateExpectedCsvFile()
+        throws SQLException {
+        final String targetCsvFile = "test_bool_export.csv";
+        final ResultSet resultSet = executeCopyToCommand(COPY_CMD_TEST_TABLE_NAME,
+            Arrays.asList("table_key", "bool_val"), targetCsvFile, "WITH BOOLSTYLE=0,1,2");
+        assertCommandResultSet(resultSet, false, 3, 1);
         Approvals.verify(new File(targetCsvFile), approvalTestsParameterName(targetCsvFile));
     }
 

@@ -20,14 +20,14 @@ import com.ing.data.cassandra.jdbc.metadata.FunctionMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.SchemaMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TableMetadataResultSetBuilder;
 import com.ing.data.cassandra.jdbc.metadata.TypeMetadataResultSetBuilder;
+import com.ing.data.cassandra.jdbc.testing.AssertionsUtils;
 import com.ing.data.cassandra.jdbc.types.DataTypeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -52,9 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Slf4j
 class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MetadataResultSetsUnitTest.class);
 
     private static final String KEYSPACE = "test_keyspace";
     private static final String ANOTHER_KEYSPACE = "test_keyspace2";
@@ -63,6 +62,20 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
     @BeforeAll
     static void finalizeSetUpTests() throws Exception {
         initConnection(KEYSPACE, "localdatacenter=datacenter1");
+    }
+
+    @Test
+    void givenResultSet_whenMoveCursor_throwException() throws SQLException {
+        final CassandraStatement statement = (CassandraStatement) sqlConnection.createStatement();
+        final ResultSet result = new TableMetadataResultSetBuilder(statement).buildTableTypes();
+        AssertionsUtils.assertNotImplemented(() -> result.absolute(0));
+        AssertionsUtils.assertNotImplemented(() -> result.relative(0));
+        AssertionsUtils.assertNotImplemented(result::afterLast);
+        AssertionsUtils.assertNotImplemented(result::beforeFirst);
+        AssertionsUtils.assertNotImplemented(result::first);
+        AssertionsUtils.assertNotImplemented(result::last);
+        AssertionsUtils.assertNotImplemented(result::previous);
+        result.close();
     }
 
     /*
@@ -293,18 +306,18 @@ class MetadataResultSetsUnitTest extends UsingCassandraContainerTest {
         assertTrue(result.next());
         assertEquals(6, result.getMetaData().getColumnCount());
         for (int i = 1; i <= result.getMetaData().getColumnCount(); i++) {
-            LOG.debug("getColumnName : {}", result.getMetaData().getColumnName(i));
-            LOG.debug("getCatalogName : {}", result.getMetaData().getCatalogName(i));
-            LOG.debug("getColumnClassName : {}", result.getMetaData().getColumnClassName(i));
-            LOG.debug("getColumnDisplaySize : {}", result.getMetaData().getColumnDisplaySize(i));
-            LOG.debug("getColumnLabel : {}", result.getMetaData().getColumnLabel(i));
-            LOG.debug("getColumnType : {}", result.getMetaData().getColumnType(i));
-            LOG.debug("getColumnTypeName : {}", result.getMetaData().getColumnTypeName(i));
-            LOG.debug("getPrecision : {}", result.getMetaData().getPrecision(i));
-            LOG.debug("getScale : {}", result.getMetaData().getScale(i));
-            LOG.debug("getSchemaName : {}", result.getMetaData().getSchemaName(i));
-            LOG.debug("getTableName : {}", result.getMetaData().getTableName(i));
-            LOG.debug("==========================");
+            log.debug("getColumnName : {}", result.getMetaData().getColumnName(i));
+            log.debug("getCatalogName : {}", result.getMetaData().getCatalogName(i));
+            log.debug("getColumnClassName : {}", result.getMetaData().getColumnClassName(i));
+            log.debug("getColumnDisplaySize : {}", result.getMetaData().getColumnDisplaySize(i));
+            log.debug("getColumnLabel : {}", result.getMetaData().getColumnLabel(i));
+            log.debug("getColumnType : {}", result.getMetaData().getColumnType(i));
+            log.debug("getColumnTypeName : {}", result.getMetaData().getColumnTypeName(i));
+            log.debug("getPrecision : {}", result.getMetaData().getPrecision(i));
+            log.debug("getScale : {}", result.getMetaData().getScale(i));
+            log.debug("getSchemaName : {}", result.getMetaData().getSchemaName(i));
+            log.debug("getTableName : {}", result.getMetaData().getTableName(i));
+            log.debug("==========================");
         }
 
         assertEquals("part_key", result.getMetaData().getColumnName(1));

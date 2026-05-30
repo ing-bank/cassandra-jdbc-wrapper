@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code SMALLINT} CQL type (corresponding Java type: {@link Short}).
  * <p>CQL type description: 2 byte signed integer.</p>
@@ -61,11 +63,7 @@ public class JdbcShort extends AbstractJdbcType<Short> {
 
     @Override
     public String toString(final Short obj) {
-        if (obj != null) {
-            return obj.toString();
-        } else {
-            return null;
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

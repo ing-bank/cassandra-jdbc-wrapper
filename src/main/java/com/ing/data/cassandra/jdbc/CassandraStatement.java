@@ -17,18 +17,15 @@ package com.ing.data.cassandra.jdbc;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.cql.MultiPageResultSet;
 import com.datastax.oss.driver.internal.core.cql.SinglePageResultSet;
-import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.ing.data.cassandra.jdbc.commands.SpecialCommandExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Nonnull;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -46,10 +43,14 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TIMEOUT;
+import static com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures.getUninterruptibly;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.containsSpecialCommands;
+import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.getCommandExecutor;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.SINGLE_QUOTE;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.traceCqlQuery;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_AUTO_GEN;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_CONCURRENCY_RS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_FETCH_DIR;
@@ -64,8 +65,7 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_MULTIPLE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_RESULT_SET;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.TOO_MANY_QUERIES;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_STMT;
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.containsSpecialCommands;
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.getCommandExecutor;
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.countMatches;
 
 /**
@@ -75,6 +75,7 @@ import static org.apache.commons.lang3.StringUtils.countMatches;
  * manage some properties specific to the Cassandra statements (e.g. consistency level).
  * </p>
  */
+@Slf4j
 public class CassandraStatement extends AbstractStatement
     implements CassandraStatementExtras, Comparable<Object>, Statement {
 
@@ -86,8 +87,6 @@ public class CassandraStatement extends AbstractStatement
      * CQL statements separator: semi-colon ({@code ;}).
      */
     public static final String STATEMENTS_SEPARATOR_REGEX = ";";
-
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraStatement.class);
 
     /**
      * The Cassandra connection.
@@ -158,6 +157,10 @@ public class CassandraStatement extends AbstractStatement
      */
     private boolean isClosed;
     /**
+     * Whether the statement should be closed when all the dependent result sets are closed.
+     */
+    private boolean isClosedOnCompletion;
+    /**
      * The custom execution profile used by the driver to execute the statement. If not defined, the default profile
      * will be used.
      */
@@ -181,23 +184,6 @@ public class CassandraStatement extends AbstractStatement
     }
 
     /**
-     * Constructor. It instantiates a new Cassandra statement with default values for a {@link CassandraConnection}.
-     * <p>
-     * By default, the result set type is {@link ResultSet#TYPE_FORWARD_ONLY}, the result set concurrency is
-     * {@link ResultSet#CONCUR_READ_ONLY} and the result set holdability is
-     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
-     * </p>
-     *
-     * @param connection The Cassandra connection to the database.
-     * @param cql        The CQL statement.
-     * @throws SQLException when something went wrong during the instantiation of the statement.
-     */
-    CassandraStatement(final CassandraConnection connection, final String cql) throws SQLException {
-        this(connection, cql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-    }
-
-    /**
      * Constructor. It instantiates a new Cassandra statement with default holdability and specified result set type
      * and concurrency for a {@link CassandraConnection}.
      * <p>
@@ -210,7 +196,9 @@ public class CassandraStatement extends AbstractStatement
      * @param resultSetConcurrency The result set concurrency.
      * @throws SQLException when something went wrong during the instantiation of the statement.
      */
-    CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
+    CassandraStatement(final CassandraConnection connection,
+                       final String cql,
+                       final int resultSetType,
                        final int resultSetConcurrency) throws SQLException {
         this(connection, cql, resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
     }
@@ -227,8 +215,11 @@ public class CassandraStatement extends AbstractStatement
      * @throws SQLException            when something went wrong during the instantiation of the statement.
      * @throws SQLSyntaxErrorException when an argument for result set configuration is invalid.
      */
-    CassandraStatement(final CassandraConnection connection, final String cql, final int resultSetType,
-                       final int resultSetConcurrency, final int resultSetHoldability) throws SQLException {
+    CassandraStatement(final CassandraConnection connection,
+                       final String cql,
+                       final int resultSetType,
+                       final int resultSetConcurrency,
+                       final int resultSetHoldability) throws SQLException {
         this.connection = connection;
         this.cql = cql;
         this.batchQueries = new ArrayList<>();
@@ -236,6 +227,7 @@ public class CassandraStatement extends AbstractStatement
         this.serialConsistencyLevel = connection.getSerialConsistencyLevel();
         this.fetchSize = connection.getDefaultFetchSize();
         this.isClosed = false;
+        this.isClosedOnCompletion = false;
 
         if (!(resultSetType == ResultSet.TYPE_FORWARD_ONLY
             || resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
@@ -295,6 +287,12 @@ public class CassandraStatement extends AbstractStatement
     }
 
     @Override
+    public void closeOnCompletion() throws SQLException {
+        checkNotClosed();
+        this.isClosedOnCompletion = true;
+    }
+
+    @Override
     public int compareTo(@Nonnull final Object target) {
         if (this.equals(target)) {
             return 0;
@@ -315,14 +313,14 @@ public class CassandraStatement extends AbstractStatement
         for (final String cqlQuery : cqlQueries) {
             final boolean hasStringValues = cqlQuery.contains(SINGLE_QUOTE);
             final boolean isFirstQueryPartWithIncompleteStringValue =
-                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 1 && prevCqlQuery.length() == 0;
+                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 1 && prevCqlQuery.isEmpty();
             final boolean isNotFirstQueryPartWithCompleteStringValue =
-                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 0 && prevCqlQuery.length() > 0;
+                countMatches(cqlQuery, SINGLE_QUOTE) % 2 == 0 && !prevCqlQuery.isEmpty();
             final boolean isNotFirstQueryPartWithoutStringValue =
-                !prevCqlQuery.toString().isEmpty() && !cqlQuery.contains(SINGLE_QUOTE);
+                !prevCqlQuery.isEmpty() && !cqlQuery.contains(SINGLE_QUOTE);
 
-            if ((hasStringValues && (isFirstQueryPartWithIncompleteStringValue
-                || isNotFirstQueryPartWithCompleteStringValue)) || isNotFirstQueryPartWithoutStringValue) {
+            if (hasStringValues && (isFirstQueryPartWithIncompleteStringValue
+                || isNotFirstQueryPartWithCompleteStringValue) || isNotFirstQueryPartWithoutStringValue) {
                 prevCqlQuery.append(cqlQuery).append(";");
             } else {
                 prevCqlQuery.append(cqlQuery);
@@ -366,9 +364,7 @@ public class CassandraStatement extends AbstractStatement
                     }
                 } else {
                     for (final String cqlQuery : cqlQueries) {
-                        if (LOG.isDebugEnabled() || this.connection.isDebugMode()) {
-                            LOG.debug("CQL: {}", cqlQuery);
-                        }
+                        traceCqlQuery(log, this.connection, this.cql);
                         SimpleStatement stmt = SimpleStatement.newInstance(cqlQuery)
                             .setExecutionProfile(this.connection.getActiveExecutionProfile())
                             .setConsistencyLevel(this.consistencyLevel)
@@ -383,7 +379,7 @@ public class CassandraStatement extends AbstractStatement
                     }
 
                     for (final CompletionStage<AsyncResultSet> future : futures) {
-                        final AsyncResultSet asyncResultSet = CompletableFutures.getUninterruptibly(future);
+                        final AsyncResultSet asyncResultSet = getUninterruptibly(future);
                         final com.datastax.oss.driver.api.core.cql.ResultSet rows;
                         if (asyncResultSet.hasMorePages()) {
                             rows = new MultiPageResultSet(asyncResultSet);
@@ -409,9 +405,7 @@ public class CassandraStatement extends AbstractStatement
 
     private com.datastax.oss.driver.api.core.cql.ResultSet executeSingleStatement(final String cql)
         throws SQLException {
-        if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-            LOG.debug("CQL: {}", cql);
-        }
+        traceCqlQuery(log, this.connection, this.cql);
 
         // If the CQL statement is a special command, execute it using the appropriate special command executor and
         // return the result. Otherwise, execute the statement through the driver.
@@ -467,14 +461,12 @@ public class CassandraStatement extends AbstractStatement
         final int[] returnCounts = new int[this.batchQueries.size()];
         try {
             final List<CompletionStage<AsyncResultSet>> futures = new ArrayList<>();
-            if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                LOG.debug("CQL statements: {}", this.batchQueries.size());
+            if (log.isTraceEnabled() || this.connection.isDebugMode()) {
+                log.debug("CQL statements: {}", this.batchQueries.size());
             }
 
             for (final String query : this.batchQueries) {
-                if (LOG.isTraceEnabled() || this.connection.isDebugMode()) {
-                    LOG.debug("CQL: {}", query);
-                }
+                traceCqlQuery(log, this.connection, this.cql);
                 SimpleStatement stmt = SimpleStatement.newInstance(query)
                     .setExecutionProfile(this.connection.getActiveExecutionProfile())
                     .setConsistencyLevel(this.consistencyLevel)
@@ -492,7 +484,7 @@ public class CassandraStatement extends AbstractStatement
             final StringBuilder errMsgBuilder = new StringBuilder(BATCH_UPDATE_FAILED);
             for (final CompletionStage<AsyncResultSet> future : futures) {
                 try {
-                    final AsyncResultSet asyncResultSet = CompletableFutures.getUninterruptibly(future);
+                    final AsyncResultSet asyncResultSet = getUninterruptibly(future);
                     if (asyncResultSet.getColumnDefinitions().size() > 0) {
                         returnCounts[i] = EXECUTE_FAILED;
                         hasFailures = true;
@@ -597,6 +589,7 @@ public class CassandraStatement extends AbstractStatement
         this.serialConsistencyLevel = consistencyLevel;
     }
 
+    @SuppressWarnings("MagicConstant")
     @Override
     public int getFetchDirection() throws SQLException {
         checkNotClosed();
@@ -691,8 +684,7 @@ public class CassandraStatement extends AbstractStatement
             case CLOSE_CURRENT_RESULT:
                 resetResults();
                 break;
-            case CLOSE_ALL_RESULTS:
-            case KEEP_CURRENT_RESULT:
+            case CLOSE_ALL_RESULTS, KEEP_CURRENT_RESULT:
                 throw new SQLFeatureNotSupportedException(NO_MULTIPLE);
             default:
                 throw new SQLSyntaxErrorException(String.format(BAD_KEEP_RS, current));
@@ -715,8 +707,8 @@ public class CassandraStatement extends AbstractStatement
         if (this.customTimeoutProfile != null) {
             activeProfile = this.customTimeoutProfile;
         }
-        return Math.toIntExact(Objects.requireNonNull(
-            activeProfile.getDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ZERO)
+        return Math.toIntExact(requireNonNull(
+            activeProfile.getDuration(REQUEST_TIMEOUT, Duration.ZERO)
         ).get(ChronoUnit.SECONDS));
     }
 
@@ -736,7 +728,7 @@ public class CassandraStatement extends AbstractStatement
         checkNotClosed();
         final DriverExecutionProfile activeProfile = this.connection.getActiveExecutionProfile();
         this.customTimeoutProfile =
-            activeProfile.withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
+            activeProfile.withDuration(REQUEST_TIMEOUT, Duration.ofSeconds(seconds));
     }
 
     @Override
@@ -748,7 +740,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getResultSetConcurrency() throws SQLException {
         checkNotClosed();
-        return ResultSet.CONCUR_READ_ONLY;
+        return this.resultSetConcurrency;
     }
 
     @Override
@@ -761,7 +753,7 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public int getResultSetType() throws SQLException {
         checkNotClosed();
-        return ResultSet.TYPE_FORWARD_ONLY;
+        return this.resultSetType;
     }
 
     @Override
@@ -781,6 +773,12 @@ public class CassandraStatement extends AbstractStatement
     @Override
     public boolean isClosed() {
         return this.isClosed;
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        checkNotClosed();
+        return this.isClosedOnCompletion;
     }
 
     /**

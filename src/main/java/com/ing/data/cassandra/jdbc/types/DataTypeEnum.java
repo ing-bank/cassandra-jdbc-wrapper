@@ -25,9 +25,10 @@ import com.datastax.oss.driver.api.core.type.VectorType;
 import com.datastax.oss.protocol.internal.ProtocolConstants.DataType;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import com.ing.data.cassandra.jdbc.metadata.VersionedMetadata;
+import jakarta.annotation.Nonnull;
+import lombok.Getter;
 import org.semver4j.Semver;
 
-import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -35,6 +36,7 @@ import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,7 +193,12 @@ public enum DataTypeEnum implements VersionedMetadata {
      */
     public final String cqlType;
 
+    /**
+     * Gets the type ID as defined in CQL binary protocol.
+     */
+    @Getter
     final int protocolId;
+
     final Semver validFrom;
     final Semver invalidFrom;
     final Function<CassandraConnection, Boolean> additionalCondition;
@@ -199,7 +206,7 @@ public enum DataTypeEnum implements VersionedMetadata {
     static {
         CQL_DATATYPE_TO_DATATYPE = new HashMap<>();
         for (final DataTypeEnum dataType : DataTypeEnum.values()) {
-            CQL_DATATYPE_TO_DATATYPE.put(dataType.cqlType, dataType);
+            CQL_DATATYPE_TO_DATATYPE.put(dataType.asLowercaseCql(), dataType);
         }
     }
 
@@ -218,8 +225,12 @@ public enum DataTypeEnum implements VersionedMetadata {
      *                            greater than {@code validFrom}.
      * @param additionalCondition An additional condition to verify on the current connection to the database.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom,
-                 final String invalidFrom, final Function<CassandraConnection, Boolean> additionalCondition) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
+                 final String validFrom,
+                 final String invalidFrom,
+                 final Function<CassandraConnection, Boolean> additionalCondition) {
         this.protocolId = protocolId;
         this.javaType = javaType;
         this.cqlType = cqlType;
@@ -238,7 +249,10 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param cqlType    The CQL type name.
      * @param validFrom  The minimal Cassandra version from which the CQL type exists.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType, final String validFrom) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
+                 final String validFrom) {
         this(protocolId, javaType, cqlType, validFrom, null, connection -> true);
     }
 
@@ -252,7 +266,9 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param cqlType             The CQL type name.
      * @param additionalCondition An additional condition to verify on the current connection to the database.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType,
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType,
                  final Function<CassandraConnection, Boolean> additionalCondition) {
         this(protocolId, javaType, cqlType, null, null, additionalCondition);
     }
@@ -266,7 +282,9 @@ public enum DataTypeEnum implements VersionedMetadata {
      * @param javaType   The corresponding Java type.
      * @param cqlType    The CQL type name.
      */
-    DataTypeEnum(final int protocolId, final Class<?> javaType, final String cqlType) {
+    DataTypeEnum(final int protocolId,
+                 final Class<?> javaType,
+                 final String cqlType) {
         this(protocolId, javaType, cqlType, (String) null);
     }
 
@@ -291,7 +309,7 @@ public enum DataTypeEnum implements VersionedMetadata {
         if (collectionTypeCharPos > 0) {
             cqlDataType = cqlTypeName.substring(0, collectionTypeCharPos);
         }
-        return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType);
+        return CQL_DATATYPE_TO_DATATYPE.get(cqlDataType.toLowerCase());
     }
 
     /**
@@ -311,21 +329,30 @@ public enum DataTypeEnum implements VersionedMetadata {
     }
 
     /**
+     * Gets an enumeration item from a Java class. If several types could match, the first type found is returned.
+     * If no matching type is found, return {@link #CUSTOM}.
+     *
+     * @param javaClass The Java class.
+     * @return The first enumeration item corresponding to the given Java class.
+     */
+    public static DataTypeEnum fromJavaType(final Class<?> javaClass) {
+        return Arrays.stream(values())
+            .filter(dataType -> dataType.asJavaClass().equals(javaClass))
+            .findFirst()
+            .orElse(CUSTOM);
+    }
+
+    /**
      * Returns whether this data type name represents the name of a collection type (i.e. that is a list, set, vector
      * or map).
      *
      * @return {@code true} if this data type name represents the name of a collection type, {@code false} otherwise.
      */
     public boolean isCollection() {
-        switch (this) {
-            case LIST:
-            case SET:
-            case MAP:
-            case VECTOR:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case LIST, SET, MAP, VECTOR -> true;
+            default -> false;
+        };
     }
 
     /**

@@ -18,7 +18,7 @@ package com.ing.data.cassandra.jdbc.metadata;
 import com.ing.data.cassandra.jdbc.CassandraConnection;
 import org.semver4j.Semver;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * A versioned database metadata (such as a CQL type, CQL keyword or a built-in function).

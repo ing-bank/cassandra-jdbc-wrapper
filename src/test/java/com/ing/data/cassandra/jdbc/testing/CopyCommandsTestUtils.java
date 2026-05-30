@@ -32,7 +32,7 @@ public class CopyCommandsTestUtils {
 
     public static final String COPY_CMD_TEST_TABLE_NAME = "copy_cmd_table";
     public static final Pair<String, String> COPY_CMD_TEST_TABLE =
-        Pair.of(COPY_CMD_TEST_TABLE_NAME, "table_key, bool_val, decimal_val");
+        Pair.of(COPY_CMD_TEST_TABLE_NAME, "table_key, bool_val, decimal_val, ts_val");
 
     public static final String COPY_CMD_TEST_PARTIAL_TABLE_NAME = "copy_cmd_skip_rows_table";
     public static final Pair<String, String> COPY_CMD_TEST_PARTIAL_TABLE =

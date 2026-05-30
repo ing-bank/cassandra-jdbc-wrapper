@@ -15,16 +15,15 @@
 
 package com.ing.data.cassandra.jdbc.utils;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ing.data.cassandra.jdbc.json.CassandraBlobDeserializer;
 import com.ing.data.cassandra.jdbc.json.CassandraBlobSerializer;
 import com.ing.data.cassandra.jdbc.json.CassandraDateDeserializer;
 import com.ing.data.cassandra.jdbc.json.CassandraDateTimeDeserializer;
 import com.ing.data.cassandra.jdbc.json.CassandraTimeDeserializer;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
@@ -51,17 +50,16 @@ public final class JsonUtil {
         if (objectMapperInstance != null) {
             return objectMapperInstance;
         } else {
-            final ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-            objectMapper.registerModule(new JavaTimeModule());
             final SimpleModule cassandraExtensionsModule = new SimpleModule();
             cassandraExtensionsModule.addDeserializer(ByteBuffer.class, new CassandraBlobDeserializer());
             cassandraExtensionsModule.addDeserializer(LocalDate.class, new CassandraDateDeserializer());
             cassandraExtensionsModule.addDeserializer(LocalTime.class, new CassandraTimeDeserializer());
             cassandraExtensionsModule.addDeserializer(OffsetDateTime.class, new CassandraDateTimeDeserializer());
             cassandraExtensionsModule.addSerializer(ByteBuffer.class, new CassandraBlobSerializer());
-            objectMapper.registerModule(cassandraExtensionsModule);
+            final ObjectMapper objectMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .addModule(cassandraExtensionsModule)
+                .build();
             objectMapperInstance = objectMapper;
             return objectMapper;
         }

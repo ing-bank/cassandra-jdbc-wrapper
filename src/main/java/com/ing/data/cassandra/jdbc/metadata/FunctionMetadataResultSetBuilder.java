@@ -26,15 +26,16 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
+import static com.ing.data.cassandra.jdbc.CassandraMetadataResultSet.buildFrom;
 import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.types.TypesMap.getTypeForComparator;
 import static java.sql.DatabaseMetaData.functionColumnIn;
 import static java.sql.DatabaseMetaData.functionNoTable;
 import static java.sql.DatabaseMetaData.functionReturn;
 import static java.sql.DatabaseMetaData.typeNullable;
+import static java.util.Comparator.comparing;
 
 /**
  * Utility class building metadata result sets ({@link CassandraMetadataResultSet} objects) related to functions.
@@ -123,10 +124,9 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
 
         // Results should all have the same FUNCTION_CAT, so just sort them by FUNCTION_SCHEM then FUNCTION_NAME (since
         // here SPECIFIC_NAME is equal to FUNCTION_NAME).
-        functionsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
+        functionsRows.sort(comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(functionsRows));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(functionsRows));
     }
 
     /**
@@ -290,12 +290,11 @@ public class FunctionMetadataResultSetBuilder extends AbstractMetadataResultSetB
 
         // Results should all have the same FUNCTION_CAT, so just sort them by FUNCTION_SCHEM then FUNCTION_NAME (since
         // here SPECIFIC_NAME is equal to FUNCTION_NAME), and finally by ORDINAL_POSITION.
-        functionParamsRows.sort(Comparator.comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
+        functionParamsRows.sort(comparing(row -> ((MetadataRow) row).getString(FUNCTION_SCHEMA))
             .thenComparing(row -> ((MetadataRow) row).getString(FUNCTION_NAME))
             .thenComparing(row -> ((MetadataRow) row).getString(SPECIFIC_NAME))
             .thenComparing(row -> ((MetadataRow) row).getInt(ORDINAL_POSITION)));
-        return CassandraMetadataResultSet.buildFrom(this.statement,
-            new MetadataResultSet(rowTemplate).setRows(functionParamsRows));
+        return buildFrom(this.statement, new MetadataResultSet(rowTemplate).setRows(functionParamsRows));
     }
 
 }

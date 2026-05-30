@@ -15,13 +15,14 @@
 
 package com.ing.data.cassandra.jdbc.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static java.nio.ByteBuffer.wrap;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Deserializer for {@link ByteBuffer}s in the context of a JSON returned by a CQL query.
@@ -30,21 +31,21 @@ import java.nio.ByteBuffer;
  *     {@code blob}).
  * </p>
  */
-public class CassandraBlobDeserializer extends JsonDeserializer<ByteBuffer> {
+public class CassandraBlobDeserializer extends ValueDeserializer<ByteBuffer> {
 
     @Override
-    public ByteBuffer deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
-        throws IOException {
+    public ByteBuffer deserialize(final JsonParser jsonParser,
+                                  final DeserializationContext deserializationContext) {
         final String value = jsonParser.getValueAsString();
         if (value != null) {
-            return ByteBuffer.wrap(hexStringToByteArray(value));
+            return wrap(hexStringToByteArray(value));
         } else {
             return null;
         }
     }
 
     private static byte[] hexStringToByteArray(final String input) {
-        final String hexString = input.replace("0x", StringUtils.EMPTY);
+        final String hexString = input.replace("0x", EMPTY);
         final int len = hexString.length();
         if (!hexString.matches("[0-9A-Fa-f]*") || len % 2 != 0) {
             throw new IllegalArgumentException("Invalid value: expecting an even-length hexadecimal string.");

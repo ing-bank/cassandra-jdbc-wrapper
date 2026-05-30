@@ -35,7 +35,9 @@ class ExecutionProfilesUnitTest extends UsingCassandraContainerTest {
     @Test
     void givenCassandraConnectionAndSpecificProfile_whenExecuteStatement_useExpectedProfile() throws Exception {
         final String customProfileName = "customProfile";
-        final ArgumentCaptor<SimpleStatement> stmtCaptor = ArgumentCaptor.forClass(SimpleStatement.class);
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<com.datastax.oss.driver.api.core.cql.Statement<?>> stmtCaptor =
+            ArgumentCaptor.forClass(com.datastax.oss.driver.api.core.cql.Statement.class);
         final URL confTestUrl = this.getClass().getClassLoader().getResource("test_application_multiprofiles.conf");
         if (confTestUrl == null) {
             fail("Unable to find test_application_multiprofiles.conf");
@@ -52,10 +54,8 @@ class ExecutionProfilesUnitTest extends UsingCassandraContainerTest {
 
         // Execute query with default profile.
         jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
-        verify(spiedSession, atLeastOnce())
-            .execute((com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.capture());
-        com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt =
-            (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
+        verify(spiedSession, atLeastOnce()).execute(stmtCaptor.capture());
+        com.datastax.oss.driver.api.core.cql.Statement<?> executedStmt = stmtCaptor.getValue();
         assertNotNull(executedStmt.getExecutionProfile());
         assertEquals(DriverExecutionProfile.DEFAULT_NAME, executedStmt.getExecutionProfile().getName());
 
@@ -64,9 +64,8 @@ class ExecutionProfilesUnitTest extends UsingCassandraContainerTest {
         assertEquals(customProfileName, jdbcConnection.getActiveExecutionProfile().getName());
 
         jdbcConnection.createStatement().executeQuery("SELECT release_version FROM system.local");
-        verify(spiedSession, atLeastOnce())
-            .execute((com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.capture());
-        executedStmt = (com.datastax.oss.driver.api.core.cql.Statement<?>) stmtCaptor.getValue();
+        verify(spiedSession, atLeastOnce()).execute(stmtCaptor.capture());
+        executedStmt = stmtCaptor.getValue();
         assertNotNull(executedStmt.getExecutionProfile());
         assertEquals(customProfileName, executedStmt.getExecutionProfile().getName());
 

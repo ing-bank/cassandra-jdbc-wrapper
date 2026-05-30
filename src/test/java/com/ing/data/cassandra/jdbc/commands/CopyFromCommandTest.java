@@ -39,6 +39,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -58,6 +59,8 @@ import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.COPY_CMD
 import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertCommandResultSet;
 import static com.ing.data.cassandra.jdbc.testing.CopyCommandsTestUtils.assertRowValues;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.DOT;
+import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -110,7 +113,8 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
             Arguments.of("test_simple.csv", EMPTY),
             Arguments.of("test_with_headers.csv", "WITH HEADER=true"),
             Arguments.of("test_with_special_format.csv",
-                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=.")
+                "WITH DELIMITER=| AND QUOTE=` AND DECIMALSEP=, AND THOUSANDSSEP=. AND BOOLSTYLE=yes,NO" +
+                    " AND DATETIMEFORMAT='%-d/%b/%y %-I.%M%p%z'")
         );
     }
 
@@ -121,8 +125,10 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
         throws SQLException {
         final ResultSet resultSet = executeCopyFromCommand(COPY_CMD_TEST_TABLE_NAME, csvFile, options);
         assertCommandResultSet(resultSet, true, 2, 1, 0);
-        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key1", true, new BigDecimal("654000.7"));
-        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key2", false, new BigDecimal("321000.8"));
+        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key1", true, new BigDecimal("654000.7"),
+            new Timestamp(OffsetDateTime.parse("2026-08-06T23:05:00.000+00:00").toInstant().toEpochMilli()));
+        assertRowValues(sqlConnection, COPY_CMD_TEST_TABLE, "key2", false, new BigDecimal("321000.8"),
+            new Timestamp(OffsetDateTime.parse("2025-03-22T08:23:00.000+00:00").toInstant().toEpochMilli()));
     }
 
     @Test
@@ -176,7 +182,7 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
     void givenTableAndOriginFile_whenExecuteCopyFromCommandWithInvalidIntOption_useDefaultOptionValue()
         throws SQLException {
         final ResultSet resultSet = executeCopyFromCommand(
-            COPY_CMD_TEST_KEYSPACE + "." + COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
+            COPY_CMD_TEST_KEYSPACE + DOT + COPY_CMD_TEST_PARTIAL_TABLE_NAME, "test_partial_import.csv",
             "WITH SKIPROWS=a");
         assertCommandResultSet(resultSet, true, 4, 1, 0);
         assertRowValues(sqlConnection, COPY_CMD_TEST_PARTIAL_TABLE, "key1", 1, "test1");
@@ -235,7 +241,8 @@ public class CopyFromCommandTest extends UsingCassandraContainerTest {
                 add(3);
                 add(5);
             }},
-            Time.valueOf("12:30:45"),                                   // time
+            new Time(LocalTime.of(12, 30, 45, 789_000_000)              // time
+                .getLong(MILLI_OF_DAY)),
             Timestamp.valueOf(                                          // timestamp
                 OffsetDateTime.parse("2023-03-25T12:30:45.789Z")
                     .atZoneSameInstant(ZoneId.systemDefault())

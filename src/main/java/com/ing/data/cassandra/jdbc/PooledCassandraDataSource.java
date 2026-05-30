@@ -15,30 +15,34 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nonnull;
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
+import javax.sql.PooledConnectionBuilder;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NOT_SUPPORTED;
 
 /**
- * Pooled Cassandra data source: implementation class for {@link DataSource} and {@link ConnectionEventListener}.
+ * Pooled Cassandra data source: implementation class for {@link ConnectionPoolDataSource} and
+ * {@link ConnectionEventListener}.
  */
-public class PooledCassandraDataSource implements DataSource, ConnectionEventListener {
+@Slf4j
+public class PooledCassandraDataSource implements DataSource, ConnectionPoolDataSource, ConnectionEventListener {
 
     private static final int CONNECTION_IS_VALID_DEFAULT_TIMEOUT = 5;
     private static final int MIN_POOL_SIZE = 4;
-    private static final Logger LOG = LoggerFactory.getLogger(PooledCassandraDataSource.class);
 
     private final CassandraDataSource connectionPoolDataSource;
     private final Set<PooledCassandraConnection> freeConnections = new HashSet<>();
@@ -49,15 +53,47 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
      *
      * @param connectionPoolDataSource The underlying {@link CassandraDataSource}.
      */
-    public PooledCassandraDataSource(final CassandraDataSource connectionPoolDataSource) {
+    public PooledCassandraDataSource(@Nonnull final CassandraDataSource connectionPoolDataSource) {
         this.connectionPoolDataSource = connectionPoolDataSource;
     }
 
     @Override
+    public synchronized PooledConnection getPooledConnection() throws SQLException {
+        return getPooledConnection(
+            this.connectionPoolDataSource.getUser(),
+            this.connectionPoolDataSource.getPassword()
+        );
+    }
+
+    @Override
+    public PooledConnection getPooledConnection(final String user, final String password) throws SQLException {
+        return new PooledCassandraConnection(this.connectionPoolDataSource.getConnection(user, password));
+    }
+
+    /**
+     * Attempts to establish a connection with the data source that this {@link DataSource} object represents.
+     *
+     * @return A connection to the data source, among the available connections of a pool of connections.
+     * @throws SQLException if a database access error occurs.
+     */
+    @Override
     public synchronized Connection getConnection() throws SQLException {
+        return getConnection(this.connectionPoolDataSource.getUser(), this.connectionPoolDataSource.getPassword());
+    }
+
+    /**
+     * Attempts to establish a connection with the data source that this {@link DataSource} object represents.
+     *
+     * @param user      The database user on whose behalf the connection is being made.
+     * @param password  The user's password.
+     * @return A connection to the data source, among the available connections of a pool of connections.
+     * @throws SQLException if a database access error occurs.
+     */
+    @Override
+    public Connection getConnection(final String user, final String password) throws SQLException {
         final PooledCassandraConnection pooledConnection;
         if (this.freeConnections.isEmpty()) {
-            pooledConnection = this.connectionPoolDataSource.getPooledConnection();
+            pooledConnection = this.connectionPoolDataSource.getPooledConnection(user, password);
             pooledConnection.addConnectionEventListener(this);
         } else {
             pooledConnection = this.freeConnections.iterator().next();
@@ -65,11 +101,6 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
         }
         this.usedConnections.add(pooledConnection);
         return new ManagedConnection(pooledConnection);
-    }
-
-    @Override
-    public Connection getConnection(final String username, final String password) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override
@@ -83,7 +114,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                LOG.error(e.getMessage());
+                log.error(e.getMessage());
             }
         }
     }
@@ -96,7 +127,7 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
                 connection.getConnection().close();
             }
         } catch (final SQLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         this.usedConnections.remove(connection);
     }
@@ -114,9 +145,14 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
             try {
                 connection.close();
             } catch (final SQLException e) {
-                LOG.error(e.getMessage());
+                log.error(e.getMessage());
             }
         }
+    }
+
+    @Override
+    public PooledConnectionBuilder createPooledConnectionBuilder() throws SQLException {
+        return new CassandraPooledConnectionBuilder(this.connectionPoolDataSource);
     }
 
     @Override
@@ -137,6 +173,11 @@ public class PooledCassandraDataSource implements DataSource, ConnectionEventLis
     @Override
     public void setLogWriter(final PrintWriter writer) {
         this.connectionPoolDataSource.setLogWriter(writer);
+    }
+
+    @Override
+    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
     @Override

@@ -17,6 +17,8 @@ package com.ing.data.cassandra.jdbc.types;
 
 import java.sql.Types;
 
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringOrNull;
+
 /**
  * JDBC description of {@code ASCII} CQL type (corresponding Java type: {@link String}).
  * <p>CQL type description: US-ASCII character string.</p>
@@ -85,11 +87,7 @@ public class JdbcAscii extends AbstractJdbcType<String> {
 
     @Override
     public String compose(final Object obj) {
-        if (obj == null) {
-            return null;
-        } else {
-            return obj.toString();
-        }
+        return toStringOrNull(obj);
     }
 
     @Override

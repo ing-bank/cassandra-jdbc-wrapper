@@ -17,26 +17,32 @@ package com.ing.data.cassandra.jdbc.commands;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.ing.data.cassandra.jdbc.ColumnDefinitions;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
 import java.sql.SQLSyntaxErrorException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.datastax.oss.driver.api.core.type.DataTypes.TEXT;
-import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.LOG;
+import static com.ing.data.cassandra.jdbc.ColumnDefinitions.Definition.buildDefinitionInAnonymousTable;
 import static com.ing.data.cassandra.jdbc.commands.SpecialCommandsUtil.buildSpecialCommandResultSet;
 import static com.ing.data.cassandra.jdbc.utils.ByteBufferUtil.bytes;
+import static com.ing.data.cassandra.jdbc.utils.ConversionsUtil.strftimeToJavaPattern;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.COMMA;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_COPY_OPTIONS;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.INVALID_OPTION_VALUE;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
  * Executor abstraction for common parts of the special commands {@code COPY}.
@@ -44,9 +50,14 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * @see CopyFromCommandExecutor
  * @see CopyToCommandExecutor
  */
+@Slf4j
 public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecutor {
 
+    static final String DEFAULT_TRUE_VALUE_FORMAT = "True";
+    static final String DEFAULT_FALSE_VALUE_FORMAT = "False";
+    static final String DEFAULT_BOOLEAN_STYLE = DEFAULT_TRUE_VALUE_FORMAT + COMMA + DEFAULT_FALSE_VALUE_FORMAT;
     static final char DEFAULT_DECIMAL_SEPARATOR = '.';
+    static final String DEFAULT_DATETIME_STRFTIME_FORMAT = "%Y-%m-%d %H:%M:%S%z";
     static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ssZ";
     static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     static final String DEFAULT_TIME_FORMAT = "HH:mm:ss";
@@ -56,6 +67,8 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     static final char DEFAULT_ESCAPE_CHAR = '\\';
 
     // Common supported options
+    static final String OPTION_BOOLSTYLE = "BOOLSTYLE";
+    static final String OPTION_DATETIMEFORMAT = "DATETIMEFORMAT";
     static final String OPTION_DECIMALSEP = "DECIMALSEP";
     static final String OPTION_DELIMITER = "DELIMITER";
     static final String OPTION_ESCAPE = "ESCAPE";
@@ -72,9 +85,13 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
     String dateTimeFormat;
     String dateFormat;
     String timeFormat;
+    String trueValueFormat;
+    String falseValueFormat;
 
     private static Set<String> initSupportedOptions() {
         final Set<String> options = new HashSet<>();
+        options.add(OPTION_BOOLSTYLE);
+        options.add(OPTION_DATETIMEFORMAT);
         options.add(OPTION_DECIMALSEP);
         options.add(OPTION_DELIMITER);
         options.add(OPTION_ESCAPE);
@@ -91,15 +108,19 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         final Set<String> invalidKeys = new HashSet<>(this.options.stringPropertyNames());
         invalidKeys.removeAll(SUPPORTED_OPTIONS);
         if (!invalidKeys.isEmpty()) {
-            throw new SQLSyntaxErrorException(String.format(UNSUPPORTED_COPY_OPTIONS, invalidKeys));
+            throw new SQLSyntaxErrorException(format(UNSUPPORTED_COPY_OPTIONS, invalidKeys));
         }
     }
 
     void configureFormatters() {
-        this.dateTimeFormat = DEFAULT_DATETIME_FORMAT;
+        // Date & time formats
+        this.dateTimeFormat = strftimeToJavaPattern(
+            getOptionValueAsString(OPTION_DATETIMEFORMAT, DEFAULT_DATETIME_STRFTIME_FORMAT)
+        );
         this.dateFormat = DEFAULT_DATE_FORMAT;
         this.timeFormat = DEFAULT_TIME_FORMAT;
 
+        // Numbers formatter
         final char thousandsSeparator = getOptionValueAsChar(OPTION_THOUSANDSSEP, Character.MIN_VALUE);
         final DecimalFormatSymbols decimalSymbols = new DecimalFormatSymbols(Locale.getDefault());
         decimalSymbols.setDecimalSeparator(getOptionValueAsChar(OPTION_DECIMALSEP, DEFAULT_DECIMAL_SEPARATOR));
@@ -109,16 +130,25 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         this.decimalFormat = (DecimalFormat) NumberFormat.getNumberInstance();
         this.decimalFormat.setGroupingUsed(thousandsSeparator != Character.MIN_VALUE);
         this.decimalFormat.setDecimalFormatSymbols(decimalSymbols);
+
+        // Boolean indicators formats
+        var booleanIndicators = getOptionValueAsString(OPTION_BOOLSTYLE, DEFAULT_BOOLEAN_STYLE).split(COMMA);
+        if (booleanIndicators.length != 2) {
+            booleanIndicators = DEFAULT_BOOLEAN_STYLE.split(COMMA);
+        }
+        this.trueValueFormat = booleanIndicators[0].strip();
+        this.falseValueFormat = booleanIndicators[1].strip();
     }
 
+    @SuppressWarnings("SameParameterValue")
     String getOptionValueAsString(final String optionName, final String defaultValue) {
         final String optionValue = this.options.getProperty(optionName);
-        return StringUtils.defaultIfBlank(optionValue, defaultValue);
+        return defaultIfBlank(optionValue, defaultValue);
     }
 
     char getOptionValueAsChar(final String optionName, final char defaultValue) {
         final String optionValue = this.options.getProperty(optionName);
-        if (StringUtils.isNotEmpty(optionValue)) {
+        if (isNotEmpty(optionValue)) {
             return optionValue.charAt(0);
         }
         return defaultValue;
@@ -128,9 +158,9 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
         final String optionValue = this.options.getProperty(optionName);
         if (optionValue != null) {
             try {
-                return Integer.parseInt(optionValue);
+                return parseInt(optionValue);
             } catch (final NumberFormatException e) {
-                LOG.warn(INVALID_OPTION_VALUE, optionName, optionValue, defaultValue);
+                log.warn(INVALID_OPTION_VALUE, optionName, optionValue, defaultValue);
             }
         }
         return defaultValue;
@@ -151,22 +181,21 @@ public abstract class AbstractCopyCommandExecutor implements SpecialCommandExecu
      * <a href="https://docs.datastax.com/en/cql-oss/3.x/cql/cql_reference/cqlshCopy.html#Examples">cqlsh
      * documentation</a>.
      */
-    ResultSet buildCopyCommandResultSet(final String actionVerb, final long processedRows, final int executedBatches,
+    ResultSet buildCopyCommandResultSet(final String actionVerb,
+                                        final long processedRows,
+                                        final int executedBatches,
                                         final int skippedRows) {
         String skippedRowsInfo = EMPTY;
         if (skippedRows >= 0) {
-            skippedRowsInfo = String.format(" (%d skipped)", skippedRows);
+            skippedRowsInfo = format(" (%d skipped)", skippedRows);
         }
-        final String result = String.format("%d row(s) %s 1 file in %d batch(es)%s.",
+        final String result = format("%d row(s) %s 1 file in %d batch(es)%s.",
             processedRows, actionVerb, executedBatches, skippedRowsInfo);
         final ByteBuffer resultAsBytes = bytes(result);
         return buildSpecialCommandResultSet(
             new ColumnDefinitions.Definition[]{
-                ColumnDefinitions.Definition.buildDefinitionInAnonymousTable("result", TEXT)
-            },
-            Collections.singletonList(
-                Collections.singletonList(resultAsBytes)
-            )
+                buildDefinitionInAnonymousTable("result", TEXT)
+            }, List.of(List.of(resultAsBytes))
         );
     }
 

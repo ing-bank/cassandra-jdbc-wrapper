@@ -21,6 +21,8 @@ import com.datastax.oss.driver.api.core.data.CqlVector;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +51,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     BigInteger getBigInteger(String columnLabel) throws SQLException;
@@ -74,7 +76,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     List<?> getList(String columnLabel) throws SQLException;
@@ -99,7 +101,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     Set<?> getSet(String columnLabel) throws SQLException;
@@ -124,7 +126,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     Map<?, ?> getMap(String columnLabel) throws SQLException;
@@ -147,10 +149,56 @@ public interface CassandraResultSetExtras extends ResultSet {
      * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     CqlDuration getDuration(String columnLabel) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link LocalDate}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    LocalDate getLocalDate(int columnIndex) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link LocalDate}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    LocalDate getLocalDate(String columnLabel) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link LocalTime}.
+     *
+     * @param columnIndex The column index (the first column is 1).
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    LocalTime getLocalTime(int columnIndex) throws SQLException;
+
+    /**
+     * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
+     * {@link LocalTime}.
+     *
+     * @param columnLabel The label for the column specified with the SQL AS clause. If the SQL AS clause was not
+     *                    specified, then the label is the name of the column.
+     * @return The column value. If the value is SQL {@code NULL}, it should return {@code null}.
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
+     *                      on a closed result set.
+     */
+    LocalTime getLocalTime(String columnLabel) throws SQLException;
 
     /**
      * Retrieves the value of the designated column in the current row of this {@code ResultSet} object as a
@@ -172,7 +220,7 @@ public interface CassandraResultSetExtras extends ResultSet {
      *                    specified, then the label is the name of the column.
      * @return The column value. If the value is SQL {@code NULL}, it should return an empty collection or {@code null},
      * depending on the driver implementation.
-     * @throws SQLException if the columnIndex is not valid; if a database access error occurs or this method is called
+     * @throws SQLException if the columnLabel is not valid; if a database access error occurs or this method is called
      *                      on a closed result set.
      */
     CqlVector<?> getVector(String columnLabel) throws SQLException;

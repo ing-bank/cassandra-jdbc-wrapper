@@ -15,8 +15,6 @@
 
 package com.ing.data.cassandra.jdbc;
 
-import java.sql.Array;
-import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.NClob;
@@ -25,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
+import java.sql.ShardingKey;
 import java.sql.Struct;
 import java.sql.Wrapper;
 import java.util.Map;
@@ -39,14 +38,6 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.NO_INTERFACE;
  */
 @SuppressWarnings("unused")
 abstract class AbstractConnection implements Wrapper {
-    public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
-    public Blob createBlob() throws SQLException {
-        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
-    }
-
     public Clob createClob() throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -67,12 +58,15 @@ abstract class AbstractConnection implements Wrapper {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public CallableStatement prepareCall(final String cql, final int resultSetType, final int resultSetConcurrency)
-        throws SQLException {
+    public CallableStatement prepareCall(final String cql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
-    public CallableStatement prepareCall(final String cql, final int resultSetType, final int resultSetConcurrency,
+    public CallableStatement prepareCall(final String cql,
+                                         final int resultSetType,
+                                         final int resultSetConcurrency,
                                          final int resultSetHoldability) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
@@ -118,6 +112,32 @@ abstract class AbstractConnection implements Wrapper {
     }
 
     public int getNetworkTimeout() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void beginRequest() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void endRequest() throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean setShardingKeyIfValid(final ShardingKey shardingKey,
+                                         final ShardingKey superShardingKey,
+                                         final int timeout) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public boolean setShardingKeyIfValid(final ShardingKey shardingKey, final int timeout) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void setShardingKey(final ShardingKey shardingKey, final ShardingKey superShardingKey) throws SQLException {
+        throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
+    }
+
+    public void setShardingKey(final ShardingKey shardingKey) throws SQLException {
         throw new SQLFeatureNotSupportedException(NOT_SUPPORTED);
     }
 
