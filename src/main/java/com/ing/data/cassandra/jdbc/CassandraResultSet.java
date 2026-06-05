@@ -433,7 +433,7 @@ public class CassandraResultSet extends AbstractResultSet
     public void close() throws SQLException {
         if (!isClosed()) {
             this.isClosed = true;
-            if (this.statement.isCloseOnCompletion()) {
+            if (this.statement != null && this.statement.isCloseOnCompletion()) {
                 this.statement.close();
             }
         }
