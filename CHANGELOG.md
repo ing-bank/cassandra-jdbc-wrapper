@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.1] - Unreleased
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.3.
+- Update Jackson dependencies to version 3.1.4.
+### Fixed
+- Fix issue [#90](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/90): `NullPointerException` was thrown when
+  closing empty result sets returned by some methods of `CassandraDatabaseMetaData`.
+
 ## [5.0.0] - 2026-05-31
 ### Added
 - Implement methods `createArrayOf(String, Objects[])` and `createBlob()` in `CassandraConnection` and 
@@ -444,6 +452,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
