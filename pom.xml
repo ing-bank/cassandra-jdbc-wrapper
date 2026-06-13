@@ -116,7 +116,7 @@
 
         <!-- Versions for dependencies -->
         <astra-sdk-devops.version>2.2.2</astra-sdk-devops.version>
-        <aws-secretsmanager.version>2.45.0</aws-secretsmanager.version>
+        <aws-secretsmanager.version>2.46.8</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>13.4.2</checkstyle.version>
         <caffeine.version>3.2.4</caffeine.version>
@@ -125,7 +125,7 @@
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <java.driver.version>4.19.3</java.driver.version>
-        <jackson.version>3.1.4</jackson.version>
+        <jackson.version>3.2.0</jackson.version>
         <jakarta.version>3.0.0</jakarta.version>
         <lombok.version>1.18.46</lombok.version>
         <opencsv.version>5.12.0</opencsv.version>
