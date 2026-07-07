@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.16.4] - Unreleased
+- Fix vulnerability exposing AstraDB authentication token in debug logs 
+  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), reported by [@dyingman1](https://github.com/dyingman1)).
+
 ## [4.16.3] - 2026-03-18
 ### Changed
 - Update Jackson dependencies to version 2.21.1 to fix vulnerability specified in issue
@@ -393,6 +397,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[4.16.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v4.16.4
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.0...v4.16.1
