@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.16.4] - Unreleased
-- Fix vulnerability exposing AstraDB authentication token in debug logs 
-  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), reported by [@dyingman1](https://github.com/dyingman1)).
+## [4.16.4] - 2026-07-08
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.3.
+- Update Apache Commons IO to version 2.22.0.
+- Update Apache Commons Lang to version 3.20.0.
+- Update Jackson dependencies to version 2.22.0.
+- Update AWS Secrets Manager SDK to 2.46.21.
+### Fixed
+- Fix vulnerability exposing AstraDB authentication token in debug logs
+  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp),
+  reported by [@dyingman1](https://github.com/dyingman1)).
 
 ## [4.16.3] - 2026-03-18
 ### Changed
