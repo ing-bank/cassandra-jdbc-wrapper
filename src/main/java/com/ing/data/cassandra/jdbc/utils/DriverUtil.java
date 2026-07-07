@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.INVALID_COLUMN_DEFINITIONS;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TOKEN;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.DRIVER_PROPERTY_NOT_FOUND;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.URL_REDACTION_FAILED;
 import static java.lang.Boolean.getBoolean;
@@ -343,6 +344,9 @@ public final class DriverUtil {
         if (withRedactedSensitiveValues.containsKey(TAG_PASSWORD)) {
             withRedactedSensitiveValues.setProperty(TAG_PASSWORD, "***");
         }
+        if (withRedactedSensitiveValues.containsKey(TAG_TOKEN)) {
+            withRedactedSensitiveValues.setProperty(TAG_TOKEN, "***");
+        }
         return withRedactedSensitiveValues.toString();
     }
 
@@ -368,6 +372,9 @@ public final class DriverUtil {
                 .map(param -> {
                     if (param.startsWith(TAG_PASSWORD + "=")) {
                         return TAG_PASSWORD + "=***";
+                    }
+                    if (param.startsWith(TAG_TOKEN + "=")) {
+                        return TAG_TOKEN + "=***";
                     }
                     return param;
                 })

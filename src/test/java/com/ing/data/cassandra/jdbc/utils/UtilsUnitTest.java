@@ -46,7 +46,9 @@ import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildMetadataList;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.buildPropertyInfo;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.existsInDatabaseVersion;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.getDriverProperty;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.redactSensitiveValuesInJdbcUrl;
 import static com.ing.data.cassandra.jdbc.utils.DriverUtil.safeParseVersion;
+import static com.ing.data.cassandra.jdbc.utils.DriverUtil.toStringWithoutSensitiveValues;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.BAD_KEYSPACE;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_IN_URL;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.HOST_REQUIRED;
@@ -65,11 +67,13 @@ import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_PASSWORD;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RECONNECT_POLICY;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_REQUEST_TIMEOUT;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_RETRY_POLICY;
+import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_TOKEN;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.TAG_USER;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.createSubName;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseCustomCodecs;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseReconnectionPolicy;
 import static com.ing.data.cassandra.jdbc.utils.JdbcUrlUtil.parseURL;
+import static java.text.MessageFormat.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
@@ -168,6 +172,10 @@ class UtilsUnitTest {
                 }})
         );
     }
+
+    private static final String SECRET_TOKEN_VALUE = "AstraCS:SECRET_TOKEN_VALUE_1234567890";
+    private static final String SECRET_PASSWORD_VALUE = "Test-Password";
+    private static final String TEST_USER_VALUE = "test_user";
 
     @SuppressWarnings("unchecked")
     @ParameterizedTest
@@ -401,4 +409,27 @@ class UtilsUnitTest {
         assertThat(parsedCodecs.get(0), instanceOf(ValidTestCodec.class));
     }
 
+    @Test
+    void givenJdbcUrlWithSensitiveValues_whenRedactSensitiveValues_returnRedactedUrl() {
+        final String urlWithSensitiveValues = format(
+            "jdbc:cassandra://host:9042/ks?user={0}&token={1}&password={2}",
+            TEST_USER_VALUE, SECRET_TOKEN_VALUE, SECRET_PASSWORD_VALUE);
+        final String redactedUrl = redactSensitiveValuesInJdbcUrl(urlWithSensitiveValues);
+        assertFalse(redactedUrl.contains(SECRET_TOKEN_VALUE));
+        assertFalse(redactedUrl.contains(SECRET_PASSWORD_VALUE));
+        assertTrue(redactedUrl.contains(TEST_USER_VALUE));
+        assertEquals("jdbc:cassandra://host:9042/ks?user=test_user&token=***&password=***", redactedUrl);
+    }
+
+    @Test
+    void givenPropertiesWithSensitiveValues_whenToStringWithoutSensitiveValues_returnRedactedProperties() {
+        final Properties props = new Properties();
+        props.setProperty(TAG_TOKEN, SECRET_TOKEN_VALUE);
+        props.setProperty(TAG_PASSWORD, SECRET_PASSWORD_VALUE);
+        props.setProperty(TAG_USER, TEST_USER_VALUE);
+        final String redactedProps = toStringWithoutSensitiveValues(props);
+        assertFalse(redactedProps.contains(SECRET_TOKEN_VALUE));
+        assertFalse(redactedProps.contains(SECRET_PASSWORD_VALUE));
+        assertTrue(redactedProps.contains(TEST_USER_VALUE));
+    }
 }
