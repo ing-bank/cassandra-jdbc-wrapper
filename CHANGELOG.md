@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.2] - 2026-07-08
+### Changed
+- Update Astra SDK to 2.3.0.
+- Update AWS Secrets Manager SDK to 2.46.21.
+### Fixed
+- Fix vulnerability exposing AstraDB authentication token in debug logs
+  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), 
+  reported by [@dyingman1](https://github.com/dyingman1)).
+
 ## [5.0.1] - 2026-06-13
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.3.
@@ -64,9 +73,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.
 
-## [4.16.4] - Unreleased
+## [4.16.4] - 2026-07-08
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.3.
+### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
-  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), reported by [@dyingman1](https://github.com/dyingman1)).
+  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp),
+  reported by [@dyingman1](https://github.com/dyingman1)).
 
 ## [4.16.3] - 2026-03-18
 ### Changed
@@ -457,6 +470,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
 [4.16.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v4.16.4

@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>5.0.1</version>
+    <version>5.0.2</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -115,8 +115,8 @@
         <java.version>17</java.version>
 
         <!-- Versions for dependencies -->
-        <astra-sdk-devops.version>2.2.2</astra-sdk-devops.version>
-        <aws-secretsmanager.version>2.46.8</aws-secretsmanager.version>
+        <astra-sdk-devops.version>2.3.0</astra-sdk-devops.version>
+        <aws-secretsmanager.version>2.46.21</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>13.4.2</checkstyle.version>
         <caffeine.version>3.2.4</caffeine.version>
@@ -131,11 +131,11 @@
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
         <!-- Versions for test dependencies -->
-        <approvaltests.version>30.1.1</approvaltests.version>
+        <approvaltests.version>31.0.0</approvaltests.version>
         <dotenv.version>3.2.0</dotenv.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <hikaricp.version>7.0.2</hikaricp.version>
-        <junit.version>6.1.0</junit.version>
+        <hikaricp.version>7.1.0</hikaricp.version>
+        <junit.version>6.1.1</junit.version>
         <mockito.version>5.23.0</mockito.version>
         <slf4j.version>1.7.36</slf4j.version>
         <testcontainers.version>2.0.5</testcontainers.version>
