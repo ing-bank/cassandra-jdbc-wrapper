@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'release/4.x'
   # Never trigger a release build from a pull request.
 
 jobs:
