@@ -76,6 +76,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [4.16.4] - 2026-07-08
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.3.
+- Update Apache Commons IO to version 2.22.0.
+- Update Apache Commons Lang to version 3.20.0.
+- Update Jackson dependencies to version 2.22.0.
+- Update AWS Secrets Manager SDK to 2.46.21.
 ### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
   ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp),
