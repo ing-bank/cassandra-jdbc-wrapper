@@ -4,13 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.3] - Unreleased
+### Changed
+- Update Apache Commons Collections to version 4.6.0.
+- Update Astra SDK to 2.3.2.
+- Update Jackson dependencies to version 3.2.2.
+- Update AWS Secrets Manager SDK to 2.53.3.
+### Fixed
+- Use an extended implementation of `TupleValue`, including a string representation of the value, for tuple values 
+  returned by `CassandraResultSet.getObject(String|int)` methods (see issue
+  [#92](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/92)). This allows a human-readable string 
+  representation of tuple values in tools such as DBeaver.
+
 ## [5.0.2] - 2026-07-08
 ### Changed
 - Update Astra SDK to 2.3.0.
 - Update AWS Secrets Manager SDK to 2.46.21.
 ### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
-  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), 
+  ([CVE-2026-73504](https://www.cve.org/CVERecord?id=CVE-2026-73504) /
+  [GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp), 
   reported by [@dyingman1](https://github.com/dyingman1)).
 
 ## [5.0.1] - 2026-06-13
@@ -474,6 +487,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.2...v5.0.3
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0

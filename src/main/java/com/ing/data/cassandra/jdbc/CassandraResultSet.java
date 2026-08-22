@@ -108,6 +108,8 @@ import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.UNSUPPORTED_TYPE_
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.VALID_LABELS;
 import static com.ing.data.cassandra.jdbc.utils.ErrorConstants.WAS_CLOSED_RS;
 import static com.ing.data.cassandra.jdbc.utils.JsonUtil.getObjectMapper;
+import static com.ing.data.cassandra.jdbc.utils.TupleUtil.tupleValueUsingFormattedContents;
+import static com.ing.data.cassandra.jdbc.utils.TupleUtil.tupleValuesUsingFormattedContents;
 import static com.ing.data.cassandra.jdbc.utils.UdtUtil.udtValueUsingFormattedContents;
 import static com.ing.data.cassandra.jdbc.utils.UdtUtil.udtValuesUsingFormattedContents;
 import static com.ing.data.cassandra.jdbc.utils.WarningConstants.GET_LIST_FAILED;
@@ -1008,8 +1010,8 @@ public class CassandraResultSet extends AbstractResultSet
                     resultSet = udtValuesUsingFormattedContents(this.currentRow.getSet(columnIndex - 1,
                         getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType()));
                 } else if (elementsType instanceof TupleType) {
-                    resultSet = this.currentRow.getSet(columnIndex - 1,
-                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
+                    resultSet = tupleValuesUsingFormattedContents(this.currentRow.getSet(columnIndex - 1,
+                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType()));
                 } else {
                     resultSet = this.currentRow.getSet(columnIndex - 1,
                         getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -1030,8 +1032,8 @@ public class CassandraResultSet extends AbstractResultSet
                     resultList = udtValuesUsingFormattedContents(this.currentRow.getList(columnIndex - 1,
                         getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType()));
                 } else if (elementsType instanceof TupleType) {
-                    resultList = this.currentRow.getList(columnIndex - 1,
-                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
+                    resultList = tupleValuesUsingFormattedContents(this.currentRow.getList(columnIndex - 1,
+                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType()));
                 } else {
                     resultList = this.currentRow.getList(columnIndex - 1,
                         getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -1053,6 +1055,7 @@ public class CassandraResultSet extends AbstractResultSet
                 final DataType keyType = mapType.getKeyType();
                 final DataType valueType = mapType.getValueType();
                 boolean containsUdtValues = false;
+                boolean containsTupleValues = false;
 
                 Class<?> keyClass = getTypeForComparator(keyType.asCql(false, false)).getType();
                 if (keyType instanceof UserDefinedType) {
@@ -1060,6 +1063,7 @@ public class CassandraResultSet extends AbstractResultSet
                     containsUdtValues = true;
                 } else if (keyType instanceof TupleType) {
                     keyClass = getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
+                    containsTupleValues = true;
                 }
 
                 Class<?> valueClass = getTypeForComparator(valueType.asCql(false, false)).getType();
@@ -1068,14 +1072,18 @@ public class CassandraResultSet extends AbstractResultSet
                     containsUdtValues = true;
                 } else if (valueType instanceof TupleType) {
                     valueClass = getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
+                    containsTupleValues = true;
                 }
 
-                final Map<?, ?> resultMap = this.currentRow.getMap(columnIndex - 1, keyClass, valueClass);
+                Map<?, ?> resultMap = this.currentRow.getMap(columnIndex - 1, keyClass, valueClass);
                 if (resultMap == null) {
                     return null;
                 }
                 if (containsUdtValues) {
-                    return udtValuesUsingFormattedContents(resultMap);
+                    resultMap = udtValuesUsingFormattedContents(resultMap);
+                }
+                if (containsTupleValues) {
+                    resultMap = tupleValuesUsingFormattedContents(resultMap);
                 }
                 return new HashMap<>(resultMap);
             }
@@ -1100,7 +1108,7 @@ public class CassandraResultSet extends AbstractResultSet
                 case DURATION -> this.currentRow.getCqlDuration(columnIndex - 1);
                 case UUID, TIMEUUID -> this.currentRow.getUuid(columnIndex - 1);
                 case UDT -> udtValueUsingFormattedContents(this.currentRow.getUdtValue(columnIndex - 1));
-                case TUPLE -> this.currentRow.getTupleValue(columnIndex - 1);
+                case TUPLE -> tupleValueUsingFormattedContents(this.currentRow.getTupleValue(columnIndex - 1));
                 default -> null;
             };
         }
@@ -1130,8 +1138,8 @@ public class CassandraResultSet extends AbstractResultSet
                     resultSet = udtValuesUsingFormattedContents(this.currentRow.getSet(columnLabel,
                         getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType()));
                 } else if (elementsType instanceof TupleType) {
-                    resultSet = this.currentRow.getSet(columnLabel,
-                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
+                    resultSet = tupleValuesUsingFormattedContents(this.currentRow.getSet(columnLabel,
+                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType()));
                 } else {
                     resultSet = this.currentRow.getSet(columnLabel,
                         getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -1152,8 +1160,8 @@ public class CassandraResultSet extends AbstractResultSet
                     resultList = udtValuesUsingFormattedContents(this.currentRow.getList(columnLabel,
                         getTypeForComparator(DataTypeEnum.UDT.asLowercaseCql()).getType()));
                 } else if (elementsType instanceof TupleType) {
-                    resultList = this.currentRow.getList(columnLabel,
-                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType());
+                    resultList = tupleValuesUsingFormattedContents(this.currentRow.getList(columnLabel,
+                        getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType()));
                 } else {
                     resultList = this.currentRow.getList(columnLabel,
                         getTypeForComparator(elementsType.asCql(false, false)).getType());
@@ -1175,6 +1183,7 @@ public class CassandraResultSet extends AbstractResultSet
                 final DataType keyType = mapType.getKeyType();
                 final DataType valueType = mapType.getValueType();
                 boolean containsUdtValues = false;
+                boolean containsTupleValues = false;
 
                 Class<?> keyClass = getTypeForComparator(keyType.asCql(false, false)).getType();
                 if (keyType instanceof UserDefinedType) {
@@ -1182,6 +1191,7 @@ public class CassandraResultSet extends AbstractResultSet
                     containsUdtValues = true;
                 } else if (keyType instanceof TupleType) {
                     keyClass = getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
+                    containsTupleValues = true;
                 }
 
                 Class<?> valueClass = getTypeForComparator(valueType.asCql(false, false)).getType();
@@ -1190,14 +1200,18 @@ public class CassandraResultSet extends AbstractResultSet
                     containsUdtValues = true;
                 } else if (valueType instanceof TupleType) {
                     valueClass = getTypeForComparator(DataTypeEnum.TUPLE.asLowercaseCql()).getType();
+                    containsTupleValues = true;
                 }
 
-                final Map<?, ?> resultMap = this.currentRow.getMap(columnLabel, keyClass, valueClass);
+                Map<?, ?> resultMap = this.currentRow.getMap(columnLabel, keyClass, valueClass);
                 if (resultMap == null) {
                     return null;
                 }
                 if (containsUdtValues) {
-                    return udtValuesUsingFormattedContents(resultMap);
+                    resultMap = udtValuesUsingFormattedContents(resultMap);
+                }
+                if (containsTupleValues) {
+                    resultMap = tupleValuesUsingFormattedContents(resultMap);
                 }
                 return new HashMap<>(resultMap);
             }
@@ -1222,7 +1236,7 @@ public class CassandraResultSet extends AbstractResultSet
                 case DURATION -> this.currentRow.getCqlDuration(columnLabel);
                 case UUID, TIMEUUID -> this.currentRow.getUuid(columnLabel);
                 case UDT -> udtValueUsingFormattedContents(this.currentRow.getUdtValue(columnLabel));
-                case TUPLE -> this.currentRow.getTupleValue(columnLabel);
+                case TUPLE -> tupleValueUsingFormattedContents(this.currentRow.getTupleValue(columnLabel));
                 default -> null;
             };
         }
