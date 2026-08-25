@@ -86,6 +86,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.
 
+## [4.16.5] - 2026-08-25
+### Changed
+- Update Apache Commons Collections to version 4.6.0.
+- Update Jackson dependencies to version 2.22.2.
+- Update AWS Secrets Manager SDK to 2.53.3.
+
 ## [4.16.4] - 2026-07-08
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.3.
@@ -95,7 +101,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update AWS Secrets Manager SDK to 2.46.21.
 ### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
-  ([GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp),
+  ([CVE-2026-73504](https://www.cve.org/CVERecord?id=CVE-2026-73504) /
+  [GHSA-jc42-994r-vvwp](https://github.com/ing-bank/cassandra-jdbc-wrapper/security/advisories/GHSA-jc42-994r-vvwp),
   reported by [@dyingman1](https://github.com/dyingman1)).
 
 ## [4.16.3] - 2026-03-18
@@ -491,6 +498,7 @@ For this version, the changelog lists the main changes comparatively to the late
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
+[4.16.5]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.4...v4.16.5
 [4.16.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v4.16.4
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.1...v4.16.2
