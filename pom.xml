@@ -127,6 +127,7 @@
         <java.driver.version>4.19.3</java.driver.version>
         <jackson.version>3.2.2</jackson.version>
         <jakarta.version>3.0.0</jakarta.version>
+        <jcip-annotations.version>1.0-1</jcip-annotations.version>
         <lombok.version>1.18.46</lombok.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>6.0.0</semver4j.version>
@@ -158,6 +159,14 @@
             <groupId>org.apache.cassandra</groupId>
             <artifactId>java-driver-core</artifactId>
             <version>${java.driver.version}</version>
+        </dependency>
+
+        <!-- JCIP annotations: provided-scoped by the driver, needed to compile against its API -->
+        <dependency>
+            <groupId>com.github.stephenc.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>${jcip-annotations.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Apache Commons Lang 3 -->
@@ -244,6 +253,13 @@
                 <exclusion>
                     <artifactId>auth</artifactId>
                     <groupId>software.amazon.awssdk</groupId>
+                </exclusion>
+                <!-- The plugin still depends on the DataStax driver (com.datastax.oss), which is not mediated with the
+                 Apache one (org.apache.cassandra) declared above, so exclude it to avoid both drivers on the
+                 classpath. -->
+                <exclusion>
+                    <artifactId>java-driver-core</artifactId>
+                    <groupId>com.datastax.oss</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
