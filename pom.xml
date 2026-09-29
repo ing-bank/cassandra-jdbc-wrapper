@@ -269,6 +269,13 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>secretsmanager</artifactId>
             <version>${aws-secretsmanager.version}</version>
+            <exclusions>
+                <!-- Only the synchronous client is used, so the Netty-based asynchronous HTTP client is not needed. -->
+                <exclusion>
+                    <artifactId>netty-nio-client</artifactId>
+                    <groupId>software.amazon.awssdk</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Astra SDK for integration with AstraDB -->
