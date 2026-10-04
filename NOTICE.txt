@@ -70,3 +70,8 @@ Copyright 2022-present Semver4j contributors
 This product includes software developed as part of the Semver4j project
 ( https://github.com/semver4j/semver4j ), which is available under a MIT license.
 For details, see https://github.com/semver4j/semver4j/blob/main/LICENSE
+
+JCIP Annotations
+Copyright 2013 Stephen Connolly
+This product includes software developed as part of the JCIP Annotations project
+( https://github.com/stephenc/jcip-annotations ).

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.4] - Unreleased
+### Changed
+- Update Apache Commons Lang to version 3.21.0.
+- Update Caffeine to version 3.3.0.
+- Update Jackson dependencies to version 3.2.3.
+- Update AWS Secrets Manager SDK to 2.55.11.
+### Fixed
+- Exclude old Datastax Java Driver Core, brought by `aws-sigv4-auth-cassandra-java-driver-plugin` dependency, from the 
+  classpath (see issue [#93](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/93),
+  pull request [#94](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/94)).
+
 ## [5.0.3] - 2026-08-25
 ### Changed
 - Update Apache Commons Collections to version 4.6.0.
@@ -494,6 +505,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.3...v5.0.4
 [5.0.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.2...v5.0.3
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
