@@ -4,11 +4,11 @@
 
 The table below specifies the versions of `cassandra-jdbc-wrapper` that receive security updates.
 
-| Versions       | Supported |
-|----------------|-----------|
-| 5.x            | ✅️        |
-| 4.16.x         | ✅️        |
-| Older versions | ❌         |
+| Versions       | Supported | End of support |
+|----------------|-----------|----------------|
+| 5.x            | ✅️        | -              |
+| 4.16.x         | ✅️        | 31 March 2027  |
+| Older versions | ❌         | -              |
 
 ## Reporting a vulnerability
 
