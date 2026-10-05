@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v6.0.1
         with:
           java-version: '21'
-          distribution: 'adopt'
+          distribution: 'temurin'
           cache: 'maven'
 
       - name: Build with Maven
