@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.16.5</version>
+    <version>4.16.6</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -109,16 +109,16 @@
 
         <!-- Versions for dependencies -->
         <astra-sdk.version>1.2.9</astra-sdk.version>
-        <aws-secretsmanager.version>2.53.3</aws-secretsmanager.version>
+        <aws-secretsmanager.version>2.55.11</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
         <cassandra-driver-krb5.version>3.0.0</cassandra-driver-krb5.version>
         <commons-collections.version>4.6.0</commons-collections.version>
         <commons-io.version>2.22.0</commons-io.version>
-        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <commons-lang3.version>3.21.0</commons-lang3.version>
         <java.driver.version>4.19.3</java.driver.version>
-        <jackson.version>2.22.2</jackson.version>
+        <jackson.version>2.22.3</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>5.8.0</semver4j.version>
@@ -235,6 +235,13 @@
                     <artifactId>auth</artifactId>
                     <groupId>software.amazon.awssdk</groupId>
                 </exclusion>
+                <!-- The plugin still depends on the DataStax driver (com.datastax.oss), which is not mediated with the
+                Apache one (org.apache.cassandra) declared above, so exclude it to avoid both drivers on the
+                classpath. -->
+                <exclusion>
+                    <artifactId>java-driver-core</artifactId>
+                    <groupId>com.datastax.oss</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -250,6 +257,14 @@
             <groupId>com.datastax.astra</groupId>
             <artifactId>astra-sdk-devops</artifactId>
             <version>${astra-sdk.version}</version>
+            <exclusions>
+                <!-- Exclude to avoid conflicts with the same dependency imported by AWS Secrets Manager requiring a
+                 higher version -->
+                <exclusion>
+                    <artifactId>httpclient5</artifactId>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- OpenCSV for implementation of COPY special command -->
