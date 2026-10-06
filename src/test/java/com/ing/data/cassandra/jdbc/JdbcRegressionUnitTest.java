@@ -1301,4 +1301,28 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
         }
     }
 
+    @Test
+    void testIngIssue95() throws Exception {
+        // Create the table.
+        final String createTableQuery = "CREATE TABLE t95 (id int PRIMARY KEY, inet_addr inet);";
+        try (final Statement stmt = sqlConnection.createStatement()) {
+            stmt.execute(createTableQuery);
+        }
+
+        // Insert data into the table.
+        try (final Statement insertStmt = sqlConnection.createStatement()) {
+            insertStmt.execute("INSERT INTO t95 (id, inet_addr) VALUES (1, '192.168.0.1');");
+        }
+
+        // Get data from the table.
+        try (
+            final Statement stmt2 = sqlConnection.createStatement();
+            final ResultSet resultSet = stmt2.executeQuery("SELECT * FROM t95 WHERE id = 1;")
+        ) {
+            resultSet.next();
+            final var inetAddrVal = resultSet.getObject("inet_addr", InetAddress.class);
+            assertEquals(InetAddress.getByName("192.168.0.1"), inetAddrVal);
+        }
+    }
+
 }

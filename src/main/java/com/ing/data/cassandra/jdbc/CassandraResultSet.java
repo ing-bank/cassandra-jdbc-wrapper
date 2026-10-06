@@ -839,6 +839,11 @@ public class CassandraResultSet extends AbstractResultSet
         return this.statement.getResultSetHoldability();
     }
 
+    private InetAddress getInetAddress(final int columnIndex) throws SQLException {
+        checkIndex(columnIndex);
+        return this.currentRow.getInetAddress(columnIndex - 1);
+    }
+
     @Override
     public int getInt(final int columnIndex) throws SQLException {
         checkIndex(columnIndex);
@@ -1333,6 +1338,8 @@ public class CassandraResultSet extends AbstractResultSet
             returnValue = getURL(columnIndex);
         } else if (type == CqlVector.class) {
             returnValue = getVector(columnIndex);
+        } else if (type == InetAddress.class) {
+            returnValue = getInetAddress(columnIndex);
         } else {
             throw new SQLException(format(UNSUPPORTED_TYPE_CONVERSION, type.getSimpleName()));
         }

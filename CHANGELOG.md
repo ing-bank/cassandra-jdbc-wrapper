@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Exclude old Datastax Java Driver Core, brought by `aws-sigv4-auth-cassandra-java-driver-plugin` dependency, from the 
   classpath (see issue [#93](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/93),
   pull request [#94](https://github.com/ing-bank/cassandra-jdbc-wrapper/pull/94)).
+- Return expected value when calling `CassandraResultSet.getObject(int|String, InetAddress.class)` instead of throwing
+  an `SQLException` (see issue [#95](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/95)).
 
 ## [5.0.3] - 2026-08-25
 ### Changed
