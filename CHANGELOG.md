@@ -4,12 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.4] - Unreleased
+## [5.0.4] - 2026-10-07
 ### Changed
 - Update Apache Commons Lang to version 3.21.0.
 - Update Caffeine to version 3.3.0.
 - Update Jackson dependencies to version 3.2.3.
-- Update AWS Secrets Manager SDK to 2.55.11.
+- Update AWS Secrets Manager SDK to version 2.55.11.
 ### Fixed
 - Exclude old Datastax Java Driver Core, brought by `aws-sigv4-auth-cassandra-java-driver-plugin` dependency, from the 
   classpath (see issue [#93](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/93),
@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [5.0.3] - 2026-08-25
 ### Changed
 - Update Apache Commons Collections to version 4.6.0.
-- Update Astra SDK to 2.3.2.
+- Update Astra SDK to version 2.3.2.
 - Update Jackson dependencies to version 3.2.2.
-- Update AWS Secrets Manager SDK to 2.53.3.
+- Update AWS Secrets Manager SDK to version 2.53.3.
 ### Fixed
 - Use an extended implementation of `TupleValue`, including a string representation of the value, for tuple values 
   returned by `CassandraResultSet.getObject(String|int)` methods (see issue
@@ -31,8 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [5.0.2] - 2026-07-08
 ### Changed
-- Update Astra SDK to 2.3.0.
-- Update AWS Secrets Manager SDK to 2.46.21.
+- Update Astra SDK to version 2.3.0.
+- Update AWS Secrets Manager SDK to version 2.46.21.
 ### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
   ([CVE-2026-73504](https://www.cve.org/CVERecord?id=CVE-2026-73504) /
@@ -43,7 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.3.
 - Update Jackson dependencies to version 3.2.0.
-- Update AWS Secrets Manager SDK to 2.46.8.
+- Update AWS Secrets Manager SDK to version 2.46.8.
 ### Fixed
 - Fix issue [#90](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/90): `NullPointerException` was thrown when
   closing empty result sets returned by some methods of `CassandraDatabaseMetaData`.
@@ -73,8 +73,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Jackson dependencies to version 3.1.3.
 - Update Caffeine to version 3.2.4.
 - Update Semver4j to version 6.0.0.
-- Update Astra SDK to 2.2.2.
-- Update AWS Secrets Manager SDK to 2.45.0.
+- Update Astra SDK to version 2.2.2.
+- Update AWS Secrets Manager SDK to version 2.45.0.
 - Replace Javax JSR-305 dependency by Jakarta Annotations™ API 3.0.0.
 - Return an empty result set instead of a `SQLFeatureNotSupportedException` for the following methods of 
   `CassandraDatabaseMetaData` to respect JDBC API specifications:
@@ -99,11 +99,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.
 
+## [4.16.6] - 2026-10-07
+### Changed
+- Update Apache Commons Lang to version 3.21.0.
+- Update Jackson dependencies to version 2.22.3.
+- Update AWS Secrets Manager SDK to version 2.55.11.
+### Fixed
+- Exclude old Datastax Java Driver Core, brought by `aws-sigv4-auth-cassandra-java-driver-plugin` dependency, from the
+  classpath (see issue [#93](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/93)).
+- Fix connection to Amazon Keyspaces using password from AWS Secret manager.
+
 ## [4.16.5] - 2026-08-25
 ### Changed
 - Update Apache Commons Collections to version 4.6.0.
 - Update Jackson dependencies to version 2.22.2.
-- Update AWS Secrets Manager SDK to 2.53.3.
+- Update AWS Secrets Manager SDK to version 2.53.3.
 
 ## [4.16.4] - 2026-07-08
 ### Changed
@@ -111,7 +121,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons IO to version 2.22.0.
 - Update Apache Commons Lang to version 3.20.0.
 - Update Jackson dependencies to version 2.22.0.
-- Update AWS Secrets Manager SDK to 2.46.21.
+- Update AWS Secrets Manager SDK to version 2.46.21.
 ### Fixed
 - Fix vulnerability exposing AstraDB authentication token in debug logs
   ([CVE-2026-73504](https://www.cve.org/CVERecord?id=CVE-2026-73504) /
@@ -136,7 +146,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons Lang to version 3.19.0.
 - Update Jackson dependencies to version 2.20.0.
 - Update Semver4j to version 5.8.0.
-- Update AWS Secrets Manager SDK to 2.36.1.
+- Update AWS Secrets Manager SDK to version 2.36.1.
 ### Fixed
 - Fix issue [#85](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/85) when checking the validity of a 
   connection to AstraDB with `CassandraConnection.isValid(int)`.
@@ -152,8 +162,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons IO to version 2.20.0.
 - Update Apache Commons Lang to version 3.18.0.
 - Update Jackson dependencies to version 2.19.2.
-- Update AWS Secrets Manager SDK to 2.32.18.
-- Update OpenCSV to 5.12.0.
+- Update AWS Secrets Manager SDK to version 2.32.18.
+- Update OpenCSV to version 5.12.0.
 ### Fixed
 - Fix implementation of `CassandraDatabaseMetaData.getStringFunctions()`.
 - Fix issue [#79](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/79) setting username and password to `null`
@@ -175,7 +185,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update Apache Commons IO to version 2.19.0.
 - Update Jackson dependencies to version 2.18.3.
 - Update Semver4j to version 5.6.0.
-- Update AWS Secrets Manager SDK to 2.31.21.
+- Update AWS Secrets Manager SDK to version 2.31.21.
 ### Fixed
 - Add codec for conversion between `Short` and CQL type `tinyint` (see issue
   [#76](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/76)).
@@ -512,6 +522,7 @@ For this version, the changelog lists the main changes comparatively to the late
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
+[4.16.6]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.5...v4.16.6
 [4.16.5]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.4...v4.16.5
 [4.16.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v4.16.4
 [4.16.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.2...v4.16.3
