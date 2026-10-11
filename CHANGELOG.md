@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- Return expected values when calling
+  `CassandraResultSet.getObject(int|String, BigInteger|ByteBuffer|List|Map|Set|TupleValue|UdtValue.class)` instead of 
+  throwing an `SQLException` (see issue [#96](https://github.com/ing-bank/cassandra-jdbc-wrapper/issues/96)).
+
 ## [5.0.4] - 2026-10-07
 ### Changed
 - Update Apache Commons Lang to version 3.21.0.

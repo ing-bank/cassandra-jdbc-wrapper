@@ -99,18 +99,6 @@ public final class WarningConstants {
         "Unsupported SQL Array implementation: {}, an empty list will be inserted.";
 
     /**
-     * Warning message used when getting the value of a column of type {@code list} from a {@link ResultSet} fails.
-     * This generally happens when the class of items cannot be determined/found.
-     */
-    public static final String GET_LIST_FAILED = "Error while executing getList()";
-
-    /**
-     * Warning message used when getting the value of a column of type {@code set} from a {@link ResultSet} fails.
-     * This generally happens when the class of items cannot be determined/found.
-     */
-    public static final String GET_SET_FAILED = "Error while executing getSet()";
-
-    /**
      * Warning message used when getting the value of a column of type {@code vector} from a {@link ResultSet} fails.
      * This generally happens when the class of items cannot be determined/found.
      */

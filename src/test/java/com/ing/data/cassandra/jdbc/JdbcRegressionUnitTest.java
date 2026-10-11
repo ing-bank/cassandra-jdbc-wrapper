@@ -22,6 +22,7 @@ import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.ing.data.cassandra.jdbc.optionset.Default;
 import com.ing.data.cassandra.jdbc.utils.ContactPoint;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -1322,6 +1324,56 @@ class JdbcRegressionUnitTest extends UsingCassandraContainerTest {
             resultSet.next();
             final var inetAddrVal = resultSet.getObject("inet_addr", InetAddress.class);
             assertEquals(InetAddress.getByName("192.168.0.1"), inetAddrVal);
+        }
+    }
+
+    @Test
+    void testIngIssue96() throws Exception {
+        // Create the table.
+        final String createTableQuery = "CREATE TABLE t96 (id int PRIMARY KEY, bigint_val varint, " +
+            "tuple_val tuple<int, text>, set_val set<int>, list_val list<text>, map_val map<int, text>);";
+        try (final Statement stmt = sqlConnection.createStatement()) {
+            stmt.execute(createTableQuery);
+        }
+
+        // Insert data into the table.
+        try (final Statement insertStmt = sqlConnection.createStatement()) {
+            insertStmt.execute("INSERT INTO t96 (id, bigint_val, tuple_val, set_val, list_val, map_val) " +
+                "VALUES (1, 1234567890, (2, 'test'), {2, 3, 4}, ['aa', 'bb'], {1: 'a1', 2: 'b2'});");
+        }
+
+        // Get data from the table.
+        try (
+            final Statement stmt2 = sqlConnection.createStatement();
+            final ResultSet resultSet = stmt2.executeQuery("SELECT * FROM t96 WHERE id = 1;")
+        ) {
+            resultSet.next();
+            final var bigIntVal = resultSet.getObject("bigint_val", BigInteger.class);
+            assertEquals(new BigInteger("1234567890"), bigIntVal);
+
+            final var tupleVal = resultSet.getObject("tuple_val", TupleValue.class);
+            assertThat(tupleVal, CoreMatchers.is(instanceOf(TupleValue.class)));
+            assertEquals(2, tupleVal.getInt(0));
+            assertEquals("test", tupleVal.getString(1));
+
+            final var setVal = resultSet.getObject("set_val", Set.class);
+            assertThat(setVal, CoreMatchers.is(instanceOf(LinkedHashSet.class)));
+            assertEquals(3, setVal.size());
+            assertTrue(setVal.contains(2));
+            assertTrue(setVal.contains(3));
+            assertTrue(setVal.contains(4));
+
+            final var listVal = resultSet.getObject("list_val", List.class);
+            assertThat(listVal, CoreMatchers.is(instanceOf(ArrayList.class)));
+            assertEquals(2, listVal.size());
+            assertEquals("aa", listVal.get(0));
+            assertEquals("bb", listVal.get(1));
+
+            final var mapVal = resultSet.getObject("map_val", Map.class);
+            assertThat(mapVal, CoreMatchers.is(instanceOf(HashMap.class)));
+            assertEquals(2, mapVal.size());
+            assertEquals("a1", mapVal.get(1));
+            assertEquals("b2", mapVal.get(2));
         }
     }
 
