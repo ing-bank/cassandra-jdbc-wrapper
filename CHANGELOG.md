@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [5.0.5] - Unreleased
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.4.
+- Update Caffeine to version 3.3.1.
+- Update Jackson dependencies to version 3.2.4.
+- Update AWS Secrets Manager SDK to version 2.57.3.
 ### Fixed
 - Return expected values when calling
   `CassandraResultSet.getObject(int|String, BigInteger|ByteBuffer|List|Map|Set|TupleValue|UdtValue.class)` instead of 
@@ -523,6 +528,7 @@ For this version, the changelog lists the main changes comparatively to the late
 - Fix logs in `CassandraConnection` constructor.
 
 [original project]: https://github.com/adejanovski/cassandra-jdbc-wrapper/
+[5.0.5]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.4...v5.0.5
 [5.0.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.3...v5.0.4
 [5.0.3]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.2...v5.0.3
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
