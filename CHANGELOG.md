@@ -4,12 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.5] - Unreleased
+## [5.0.5] - 2026-11-01
 ### Changed
 - Update Java Driver for Apache Cassandra® to version 4.19.4.
 - Update Caffeine to version 3.3.1.
 - Update Jackson dependencies to version 3.2.4.
-- Update AWS Secrets Manager SDK to version 2.57.3.
+- Update AWS Secrets Manager SDK to version 2.57.7.
 ### Fixed
 - Return expected values when calling
   `CassandraResultSet.getObject(int|String, BigInteger|ByteBuffer|List|Map|Set|TupleValue|UdtValue.class)` instead of 
@@ -109,6 +109,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Removed
 - Remove deprecated protocol `jdbc:cassandra:dbaas`.
 - Remove deprecated `CassandraDataSource` constructors.
+
+## [4.16.7] - 2026-11-01
+### Changed
+- Update Java Driver for Apache Cassandra® to version 4.19.4.
+- Update Jackson dependencies to version 2.22.4.
+- Update AWS Secrets Manager SDK to version 2.57.7.
 
 ## [4.16.6] - 2026-10-07
 ### Changed
@@ -534,6 +540,7 @@ For this version, the changelog lists the main changes comparatively to the late
 [5.0.2]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v5.0.0
+[4.16.7]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.6...v4.16.7
 [4.16.6]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.5...v4.16.6
 [4.16.5]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.4...v4.16.5
 [4.16.4]: https://github.com/ing-bank/cassandra-jdbc-wrapper/compare/v4.16.3...v4.16.4
