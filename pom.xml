@@ -5,7 +5,7 @@
 
 	<groupId>com.ing.data</groupId>
 	<artifactId>cassandra-jdbc-wrapper</artifactId>
-    <version>4.16.6</version>
+    <version>4.16.7</version>
 	<packaging>jar</packaging>
 
     <name>Cassandra JDBC Wrapper</name>
@@ -109,7 +109,7 @@
 
         <!-- Versions for dependencies -->
         <astra-sdk.version>1.2.9</astra-sdk.version>
-        <aws-secretsmanager.version>2.55.11</aws-secretsmanager.version>
+        <aws-secretsmanager.version>2.57.7</aws-secretsmanager.version>
         <aws-sigv4-auth-cassandra.version>4.0.9</aws-sigv4-auth-cassandra.version>
         <checkstyle.version>9.3</checkstyle.version>
         <caffeine.version>2.9.3</caffeine.version>
@@ -117,8 +117,8 @@
         <commons-collections.version>4.6.0</commons-collections.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.21.0</commons-lang3.version>
-        <java.driver.version>4.19.3</java.driver.version>
-        <jackson.version>2.22.3</jackson.version>
+        <java.driver.version>4.19.4</java.driver.version>
+        <jackson.version>2.22.4</jackson.version>
         <javax-jsr305.version>3.0.2</javax-jsr305.version>
         <opencsv.version>5.12.0</opencsv.version>
         <semver4j.version>5.8.0</semver4j.version>
